@@ -5,6 +5,7 @@ Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Alloy.Syntax.Signature
 import ThoR.Alloy.Syntax.Predicate
+import ThoR.Alloy.Syntax.Module
 
 import ThoR.Alloy.Syntax.factDecl
 
@@ -17,5 +18,6 @@ namespace Alloy
   syntax factDecl : specification
   syntax predDecl : specification
   syntax assertDecl : specification
+  syntax moduleOpen : specification
 
 end Alloy

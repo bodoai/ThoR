@@ -10,6 +10,7 @@ import ThoR.Basic
 
 import ThoR.Alloy.Syntax.Signature
 import ThoR.Alloy.Syntax.Predicate
+import ThoR.Alloy.Syntax.Module
 import ThoR.Alloy.Syntax.assertDecl
 import ThoR.Alloy.Syntax.factDecl
 import ThoR.Alloy.Syntax.specification
@@ -28,6 +29,7 @@ structure AST where
         (factDecls : List (factDecl))
         (assertDecls : List (assertDecl))
         (predDecls : List (predDecl))
+        (moduleOpens : List (moduleOpen))
 deriving Repr
 
 instance : ToString AST where
@@ -37,7 +39,8 @@ instance : ToString AST where
         sigDecls := {ast.sigDelcs},
         factDecls := {ast.factDecls},
         assertDecls := {ast.assertDecls},
-        predDecls := {ast.predDecls}
+        predDecls := {ast.predDecls},
+        moduleOpens := {ast.moduleOpens}
       }"
 namespace AST
 
@@ -71,6 +74,12 @@ namespace AST
     {ast with predDecls := ast.predDecls.concat pd}
 
   /--
+  Adds a single `moduleOpen` to the AST
+  -/
+  def addModuleOpen (ast : AST) (mo : moduleOpen) : AST :=
+    {ast with moduleOpens := ast.moduleOpens.concat mo}
+
+  /--
   Creates an AST from a name and an array of `specifications`
   -/
   def create
@@ -84,6 +93,7 @@ namespace AST
         factDecls := []
         assertDecls := []
         predDecls := []
+        moduleOpens := []
       }
 
       -- used for default fact name
@@ -113,6 +123,10 @@ namespace AST
         --Predicate
         | `(specification| $pd:predDecl) =>
           ast := ast.addPredDecl (predDecl.toType pd)
+
+        --Module open
+        | `(specification| $mo:moduleOpen) =>
+          ast := ast.addModuleOpen (moduleOpen.toType mo)
 
         | _ => unreachable!
 
