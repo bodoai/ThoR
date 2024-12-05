@@ -15,6 +15,15 @@ end
   }
 end
 
+#alloy x2
+  sig a {
+    r : x/a
+  }
+end
+
+#check x.vars.a
+#check x2.vars.r
+
 #alloy b2
   sig A extends B{
     r: B
