@@ -20,7 +20,7 @@ alloy module empty_module_section
 end
 
 /-With Content to create the namespace-/
-alloy
+#alloy
   sig A {}
 end
 #check default.vars.A

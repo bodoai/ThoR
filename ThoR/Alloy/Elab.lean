@@ -386,13 +386,12 @@ private def evalAlloyBlock
 /--
 Finds a suitable defaultName for unnamed Blocks.
 -/
-private def findDefaultName
+private partial def findDefaultName
   (env: Environment)
   (defaultName: Name := `default) -- defaultName here
   (depth : Int := 0)
   : Name := Id.run  do
     let mut finalDefaultName := defaultName
-    let mut finalDefaultNameToCheck := finalDefaultName
 
     let namespaceNames := Lean.namespacesExt.getEntries env
 
@@ -400,15 +399,24 @@ private def findDefaultName
     if depth > 0 then
       finalDefaultName := s!"{defaultName}{depth}".toName
 
-    finalDefaultNameToCheck := s!"{finalDefaultName}.vars".toName
+    let extensions := [
+      "",
+      ".vars",
+      ".preds",
+      ".facts",
+      ".inheritance_facts"
+    ]
 
-    if !namespaceNames.contains finalDefaultNameToCheck then
-      return finalDefaultName
-    else
+    let finalDefaultNameToCheck : List Name :=
+      List.foldl
+        (fun lst suf => lst.concat (s!"{finalDefaultName}{suf}".toName))
+        []
+        extensions
+
+    if finalDefaultNameToCheck.any (fun elem => namespaceNames.contains elem) then
       return findDefaultName env defaultName (depth+1)
-
-decreasing_by
-repeat admit
+    else
+      return finalDefaultName
 
 /--
 Implementation for the alloy block syntax
