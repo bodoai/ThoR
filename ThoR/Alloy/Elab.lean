@@ -329,7 +329,8 @@ Options:
 - To get a logoutput: #alloy
 - To succeed on failure (with the exception of syntax errors): ~alloy
 -/
-syntax (name := alloyBlock) ("#" <|> "~")? "alloy " ident specification* " end" : command
+syntax (name := alloyBlock)
+  ("#" <|> "~")? "alloy " (("module")? ident)? specification* " end" : command
 
 /--
 Evaluates the alloy block syntax.
@@ -383,23 +384,77 @@ private def evalAlloyBlock
         logInfo extensionAxiomCommandsString
 
 /--
+Finds a suitable defaultName for unnamed Blocks.
+-/
+private def findDefaultName
+  (env: Environment)
+  (defaultName: Name := `default) -- defaultName here
+  (depth : Int := 0)
+  : Name := Id.run  do
+    let mut finalDefaultName := defaultName
+    let mut finalDefaultNameToCheck := finalDefaultName
+
+    let namespaceNames := Lean.namespacesExt.getEntries env
+
+    --add Depth to Name
+    if depth > 0 then
+      finalDefaultName := s!"{defaultName}{depth}".toName
+
+    finalDefaultNameToCheck := s!"{finalDefaultName}.vars".toName
+
+    if !namespaceNames.contains finalDefaultNameToCheck then
+      return finalDefaultName
+    else
+      return findDefaultName env defaultName (depth+1)
+
+decreasing_by
+repeat admit
+
+/--
 Implementation for the alloy block syntax
 -/
 @[command_elab alloyBlock]
 private def alloyBlockImpl : CommandElab := fun stx => do
   try
+
     match stx with
       | `(alloy $blockName:ident $specifications:specification* end) =>
-              evalAlloyBlock blockName specifications false
+            evalAlloyBlock blockName specifications false
+
+      | `(alloy module $blockName:ident $specifications:specification* end) =>
+            evalAlloyBlock blockName specifications false
+
+      | `(alloy $specifications:specification* end) =>
+            let defaultBlockName := mkIdent (findDefaultName (← get).env)
+            evalAlloyBlock defaultBlockName  specifications false
 
       | `(#alloy $blockName:ident
             $specifications:specification* end) =>
               evalAlloyBlock blockName specifications true
 
+      | `(#alloy module $blockName:ident
+            $specifications:specification* end) =>
+              evalAlloyBlock blockName specifications true
+
+      | `(#alloy $specifications:specification* end) =>
+            let defaultBlockName := mkIdent (findDefaultName (← get).env)
+            evalAlloyBlock defaultBlockName specifications true
+
       | `(~alloy $blockName:ident
             $specifications:specification* end) =>
               Lean.Elab.Command.failIfSucceeds
                 (evalAlloyBlock blockName specifications false)
+
+      | `(~alloy module $blockName:ident
+            $specifications:specification* end) =>
+              Lean.Elab.Command.failIfSucceeds
+                (evalAlloyBlock blockName specifications false)
+
+      | `(~alloy $specifications:specification* end) =>
+            let defaultBlockName := mkIdent (findDefaultName (← get).env)
+            Lean.Elab.Command.failIfSucceeds
+              (evalAlloyBlock defaultBlockName specifications false)
+
 
       | _ => return -- if you enter # it might try to match and end here => do nothing
 
