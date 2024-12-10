@@ -144,6 +144,21 @@ namespace Shared
 
         | arrowOp.multArrowOp ae1 m1 m2 ae2 =>
           arrowOp.multArrowOp (ae1.toStringRb) m1 m2 (ae2.toStringRb)
+
+    instance : ToString arrowOp where
+      toString : arrowOp -> String := fun ae => ae.toString
+
+    instance : BEq arrowOp where
+      beq : arrowOp -> arrowOp -> Bool := fun ae1 ae2 => ae1.compare ae2
+
+    instance : Inhabited arrowOp where
+      default :=
+        arrowOp.multArrowOpExpr
+          (expr.const constant.none)
+          (mult.set)
+          (mult.set)
+          (expr.const constant.none)
+
     /--
     Generates syntax corosponding to the type
     -/
@@ -266,7 +281,7 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (op : TSyntax `arrowOp) : arrowOp :=
+    partial def toType (op : TSyntax `arrowOp) : arrowOp :=
       match op with
         -- multArrowOpExpr
         | `(arrowOp| ($ae:arrowOp)) => toType ae
@@ -309,8 +324,6 @@ namespace Shared
         | _ => arrowOp.multArrowOpExpr (expr.const constant.none)
             (mult.set) (mult.set)
             (expr.const constant.none) -- unreachable
-          decreasing_by -- subexprs are obv smaller than the expression they are part of
-          repeat admit
 
     /--
     Gets the required variables for the arrowOp to work (as a term)
@@ -324,10 +337,6 @@ namespace Shared
 
   end arrowOp
 
-  instance : ToString arrowOp where
-    toString : arrowOp -> String := fun ae => ae.toString
 
-  instance : BEq arrowOp where
-    beq : arrowOp -> arrowOp -> Bool := fun ae1 ae2 => ae1.compare ae2
 
 end Shared
