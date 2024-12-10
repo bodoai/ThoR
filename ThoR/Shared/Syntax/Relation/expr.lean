@@ -103,6 +103,15 @@ namespace Shared
           expr.dotjoin dj (e1.toStringRb) (e2.toStringRb)
         | e => e
 
+    instance : ToString expr where
+    toString : expr -> String := fun e => e.toString
+
+    instance : BEq expr where
+      beq : expr -> expr -> Bool := fun e1 e2 => e1.compare e2
+
+    instance : Inhabited expr where
+      default := expr.const constant.none
+
     /--
     Generates a syntax representation of the type
     -/
@@ -191,7 +200,7 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (e : TSyntax `expr) : expr :=
+    partial def toType (e : TSyntax `expr) : expr :=
       match e with
         | `(expr | ( $e:expr )) => expr.toType e
         | `(expr |
@@ -255,9 +264,6 @@ namespace Shared
             (expr.toType subExpr2)
 
         | _ => expr.const constant.none -- unreachable
-        decreasing_by -- subexprs are obv smaller than the expression they are part of
-          all_goals simp_wf
-          repeat admit
 
     /--
     Gets the required variables for the type
@@ -271,11 +277,5 @@ namespace Shared
         | _ => []
 
   end expr
-
-  instance : ToString expr where
-    toString : expr -> String := fun e => e.toString
-
-  instance : BEq expr where
-    beq : expr -> expr -> Bool := fun e1 e2 => e1.compare e2
 
 end Shared
