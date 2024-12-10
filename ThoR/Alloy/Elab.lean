@@ -15,6 +15,7 @@ import ThoR.Shared.Syntax
 import ThoR.Alloy.Syntax.AST
 import ThoR.Alloy.SymbolTable
 import ThoR.Alloy.InheritanceTree.UnTyped.InheritanceTree
+import ThoR.Alloy.Syntax.namespaceSeparator
 
 open ThoR Shared Alloy
 open Lean Lean.Elab Command Term
@@ -330,7 +331,7 @@ Options:
 - To succeed on failure (with the exception of syntax errors): ~alloy
 -/
 syntax (name := alloyBlock)
-  ("#" <|> "~")? "alloy " (("module")? ident)? specification* " end" : command
+  ("#" <|> "~")? "alloy " (("module")? namespaceSeparator)? specification* " end" : command
 
 /--
 Evaluates the alloy block syntax.
@@ -424,44 +425,57 @@ Implementation for the alloy block syntax
 @[command_elab alloyBlock]
 private def alloyBlockImpl : CommandElab := fun stx => do
   try
-
     match stx with
-      | `(alloy $blockName:ident $specifications:specification* end) =>
-            evalAlloyBlock blockName specifications false
+      | `(alloy $blockName:namespaceSeparator
+            $specifications:specification* end) =>
+          let blockName :=
+            (namespaceSeparator.toType blockName).representedNamespace
+          evalAlloyBlock blockName specifications false
 
-      | `(alloy module $blockName:ident $specifications:specification* end) =>
-            evalAlloyBlock blockName specifications false
+      | `(alloy module $blockName:namespaceSeparator
+            $specifications:specification* end) =>
+          let blockName :=
+            (namespaceSeparator.toType blockName).representedNamespace
+          evalAlloyBlock blockName specifications false
 
       | `(alloy $specifications:specification* end) =>
-            let defaultBlockName := mkIdent (findDefaultName (← get).env)
-            evalAlloyBlock defaultBlockName  specifications false
+          let defaultBlockName := mkIdent (findDefaultName (← get).env)
+          evalAlloyBlock defaultBlockName  specifications false
 
-      | `(#alloy $blockName:ident
+      | `(#alloy $blockName:namespaceSeparator
             $specifications:specification* end) =>
-              evalAlloyBlock blockName specifications true
+            let blockName :=
+              (namespaceSeparator.toType blockName).representedNamespace
+            evalAlloyBlock blockName specifications true
 
-      | `(#alloy module $blockName:ident
+      | `(#alloy module $blockName:namespaceSeparator
             $specifications:specification* end) =>
-              evalAlloyBlock blockName specifications true
+            let blockName :=
+              (namespaceSeparator.toType blockName).representedNamespace
+            evalAlloyBlock blockName specifications true
 
       | `(#alloy $specifications:specification* end) =>
             let defaultBlockName := mkIdent (findDefaultName (← get).env)
             evalAlloyBlock defaultBlockName specifications true
 
-      | `(~alloy $blockName:ident
+      | `(~alloy $blockName:namespaceSeparator
             $specifications:specification* end) =>
-              Lean.Elab.Command.failIfSucceeds
-                (evalAlloyBlock blockName specifications false)
+            let blockName :=
+              (namespaceSeparator.toType blockName).representedNamespace
+            Lean.Elab.Command.failIfSucceeds
+              (evalAlloyBlock blockName specifications false)
 
-      | `(~alloy module $blockName:ident
+      | `(~alloy module $blockName:namespaceSeparator
             $specifications:specification* end) =>
-              Lean.Elab.Command.failIfSucceeds
-                (evalAlloyBlock blockName specifications false)
+            let blockName :=
+              (namespaceSeparator.toType blockName).representedNamespace
+            Lean.Elab.Command.failIfSucceeds
+              (evalAlloyBlock blockName specifications false)
 
       | `(~alloy $specifications:specification* end) =>
-            let defaultBlockName := mkIdent (findDefaultName (← get).env)
-            Lean.Elab.Command.failIfSucceeds
-              (evalAlloyBlock defaultBlockName specifications false)
+          let defaultBlockName := mkIdent (findDefaultName (← get).env)
+          Lean.Elab.Command.failIfSucceeds
+            (evalAlloyBlock defaultBlockName specifications false)
 
 
       | _ => return -- if you enter # it might try to match and end here => do nothing
