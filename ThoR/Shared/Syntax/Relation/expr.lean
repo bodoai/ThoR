@@ -36,10 +36,6 @@ namespace Shared
         (expression1 : expr) →
         (expression2 : expr) →
         expr
-    | namespace_call:
-      (expression1 : expr) →
-      (expression2 : expr) →
-      expr
     | string_rb : (string : String) → expr
   deriving Repr
 
@@ -51,9 +47,6 @@ namespace Shared
   syntax ident : expr
   syntax "(" expr ")" : expr
   syntax:60 expr:60 binRelOp expr:60 : expr
-
-  --namespace caller with /
-  syntax expr "/" expr : expr
 
   -- dotjoin has higher precendence
   syntax:70 expr:70 dotjoin expr:70 : expr
@@ -79,8 +72,6 @@ namespace Shared
           expr.binaryRelOperation op2 e3 e4 =>
           (op1 == op2) && (compare e1 e3) && (compare e2 e4)
         | expr.string_rb s1, expr.string_rb s2 => s1 == s2
-        | expr.namespace_call e1 e2, expr.namespace_call e3 e4 =>
-          (compare e1 e3) && (compare e2 e4)
         | _, _ => false
 
     /--
@@ -95,8 +86,6 @@ namespace Shared
           (e1.toString) ++ (op.toString) ++ (e2.toString)
         | expr.dotjoin dj e1 e2 =>
           s!"{e1.toString}{dj}{e2.toString}"
-        | expr.namespace_call e1 e2 =>
-          s!"{e1.toString}/{e2.toString}"
         | expr.string_rb s => s
 
     /--
@@ -112,8 +101,6 @@ namespace Shared
           expr.unaryRelOperation op (e.toStringRb)
         | expr.dotjoin dj e1 e2 =>
           expr.dotjoin dj (e1.toStringRb) (e2.toStringRb)
-        | expr.namespace_call e1 e2 =>
-          expr.namespace_call (e1.toStringRb) (e2.toStringRb)
         | e => e
 
     /--
@@ -131,8 +118,6 @@ namespace Shared
             `(expr| $(e1.toSyntax blockName):expr $(op.toSyntax):binRelOp $(e2.toSyntax blockName):expr)
           | expr.dotjoin dj e1 e2 =>
             `(expr|$(e1.toSyntax blockName):expr $(dj.toSyntax):dotjoin $(e2.toSyntax blockName):expr)
-          | expr.namespace_call e1 e2 =>
-            `(expr|$(e1.toSyntax blockName):expr / $(e2.toSyntax blockName):expr)
           -- FIXME In der folgenden Zeile fehlt noch das $rb -> Macht das Probleme?
           | expr.string_rb s => `(expr| @$(mkIdent s!"{blockName}.vars.{s}".toName):ident)
 
@@ -181,12 +166,6 @@ namespace Shared
                   blockName quantorNames
                   )
               ))
-
-          | expr.namespace_call e1 e2 =>
-
-            let term1 := e1.toTerm inBLock blockName quantorNames
-            let term2 := e2.toTerm inBLock blockName quantorNames
-            `(term| $term1.$(mkIdent s!"{term2}".toName))
 
           | expr.string_rb s => do
             `((@$(mkIdent s.toName) $(baseType.getIdent) _ _))
@@ -274,14 +253,6 @@ namespace Shared
             dotjoin.dot_join
             (expr.toType subExpr1)
             (expr.toType subExpr2)
-
-        | `(expr |
-          $subExpr1:expr
-          /
-          $subExpr2:expr) =>
-          expr.namespace_call
-          (expr.toType subExpr1)
-          (expr.toType subExpr2)
 
         | _ => expr.const constant.none -- unreachable
         decreasing_by -- subexprs are obv smaller than the expression they are part of
