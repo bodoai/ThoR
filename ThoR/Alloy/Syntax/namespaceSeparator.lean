@@ -19,12 +19,12 @@ namespace Alloy
   deriving Repr
 
   /--
-  A syntax repreaentation of an assert declaration.
+  A syntax repreaentation of an namespaceSeparator
   -/
   declare_syntax_cat namespaceSeparator
   declare_syntax_cat namespaceSeparatorExtension
-  syntax "/" str : namespaceSeparatorExtension
-  syntax str (namespaceSeparatorExtension)*: namespaceSeparator
+  syntax "/" ident : namespaceSeparatorExtension
+  syntax ident (namespaceSeparatorExtension)*: namespaceSeparator
 
   instance : ToString namespaceSeparator where
     toString (ns : namespaceSeparator) : String :=
@@ -43,20 +43,20 @@ namespace Alloy
       (ns : TSyntax `namespaceSeparator)
       : namespaceSeparator := Id.run do
         match ns with
-          | `(namespaceSeparator| $ns:str) =>
-            return {representedNamespace := (mkIdent ns.getString.toName)}
+          | `(namespaceSeparator| $ns:ident) =>
+            return {representedNamespace := (mkIdent ns.getId)}
 
           | `(namespaceSeparator|
-                $ns:str $nse:namespaceSeparatorExtension*) =>
-            let nseString :=
+                $ns:ident $nse:namespaceSeparatorExtension*) =>
+            let finalName :=
               nse.foldl (fun result elem =>
                 match elem with
-                  | `(namespaceSeparatorExtension| / $ns:str) =>
-                    result.append ns.getString
+                  | `(namespaceSeparatorExtension| / $ns:ident) =>
+                    result.appendAfter s!".{ns.getId}"
                   | _ => result
-              ) ns.getString
+              ) ns.getId
 
-            return {representedNamespace := (mkIdent nseString.toName)}
+            return {representedNamespace := (mkIdent finalName)}
 
           | _ => default
 
