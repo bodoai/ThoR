@@ -45,24 +45,46 @@ namespace Alloy
     private def create
       (name : TSyntax `ident)
       (formulas : TSyntaxArray `formula)
+      (signatureName : String := "")
+      (signatureRelationNames : List String := [])
       : property := Id.run do
 
       let formulas : List (formula) :=
-        (formulas.map fun (f) => (formula.toType f)).toList
+        (formulas.map fun (f) =>
+          (formula.toType f signatureRelationNames)).toList
 
-      {
-        name:= name.getId.lastComponentAsString,
-        formulas := formulas
-      }
+      if !(signatureName.isEmpty) &&
+          !(signatureRelationNames.isEmpty) &&
+            !(formulas.isEmpty) then
+
+        return {
+          name:= name.getId.lastComponentAsString,
+          formulas := [
+            formula.quantification
+              (quantifier := quant.all)
+              (disjunction := false)
+              (names := ["this"])
+              (typeExpression :=
+                typeExpr.relExpr (expr.string (signatureName)))
+              (formulas := (formulas))
+          ]
+        }
+      else
+        return {
+          name:= name.getId.lastComponentAsString,
+          formulas := formulas
+        }
 
     /-- Creates a type representation from syntax and a name-/
     def toType
       (name: TSyntax `ident)
       (p:TSyntax `property)
+      (signatureName : String := "")
+      (signatureRelationNames : List String := [])
       : property :=
       match p with
         | `(property | { $formulas:formula*}) =>
-          create name formulas
+          create name formulas signatureName signatureRelationNames
         | _ => default
 
   end property

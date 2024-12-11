@@ -13,7 +13,7 @@ namespace Alloy
   This syntax category specifies what can be a specification in an alloy block
   -/
   declare_syntax_cat specification
-  syntax sigDecl : specification
+  syntax sigDecl (signatureFactDecl)? : specification
   syntax factDecl : specification
   syntax predDecl : specification
   syntax assertDecl : specification

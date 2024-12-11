@@ -14,6 +14,7 @@ Signatur <sigDecl> ::= ([abstract] <mult>
   sig <name>,+
   [sigExt]
   { <fieldDecl>,* }
+  { formula* }? <-- see 03a_signature_facts
 
 -/
 
