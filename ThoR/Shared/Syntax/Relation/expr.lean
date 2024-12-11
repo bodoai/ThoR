@@ -188,77 +188,93 @@ namespace Shared
       (quantorNames : List (String) := []) :=
         toTerm e true blockName quantorNames
 
+
+    set_option maxRecDepth 3000
     /--
     Parses the given syntax to the type
     -/
-    def toType (e : TSyntax `expr) : expr :=
-      match e with
-        | `(expr | ( $e:expr )) => expr.toType e
-        | `(expr |
-            $op:unRelOp
-            $subExpr: expr) =>
-            expr.unaryRelOperation
-            (unRelOp.toType op)
-            (expr.toType subExpr)
+    def toType
+      (e : TSyntax `expr)
+      (signatureFactSigNames : List String := [])
+      : expr :=
+        match e with
+          | `(expr | ( $e:expr )) => expr.toType e
+          | `(expr |
+              $op:unRelOp
+              $subExpr: expr) =>
+              expr.unaryRelOperation
+              (unRelOp.toType op)
+              (expr.toType subExpr)
 
-        | `(expr |
-            $subExpr1:expr
-            $op:binRelOp
-            $subExpr2:expr) =>
-            expr.binaryRelOperation
-            (binRelOp.toType op)
-            (expr.toType subExpr1)
-            (expr.toType subExpr2)
+          | `(expr |
+              $subExpr1:expr
+              $op:binRelOp
+              $subExpr2:expr) =>
+              expr.binaryRelOperation
+              (binRelOp.toType op)
+              (expr.toType subExpr1)
+              (expr.toType subExpr2)
 
-        | `(expr |
-            $subExpr1:expr
-            $dj:dotjoin
-            $subExpr2:expr) =>
-            expr.dotjoin
-            (dotjoin.toType dj)
-            (expr.toType subExpr1)
-            (expr.toType subExpr2)
-
-        | `(expr | $const:constant) =>
-            expr.const (constant.toType const)
-
-        | `(expr | @$name:ident) => Id.run do
-            expr.string_rb name.getId.toString
-
-        | `(expr | $name:ident) => Id.run do
-            let parsedName := name.getId
-
-            if parsedName.isAtomic then
-              expr.string name.getId.lastComponentAsString
-
-            else -- ident contains . which must be parsed as dotjoin
-              let x := (parsedName.splitAt (parsedName.components.length - 1))
-              let subExpr1 := x.1
-              let subExpr2 := x.2
-
-              let subE1 : TSyntax `expr := Unhygienic.run
-                `(expr| $(mkIdent subExpr1): ident)
-
-              let subE2 : TSyntax `expr := Unhygienic.run
-                `(expr| $(mkIdent subExpr2): ident)
-
+          | `(expr |
+              $subExpr1:expr
+              $dj:dotjoin
+              $subExpr2:expr) =>
               expr.dotjoin
-                dotjoin.dot_join
-                (expr.toType subE1)
-                (expr.toType subE2)
+              (dotjoin.toType dj)
+              (expr.toType subExpr1)
+              (expr.toType subExpr2)
 
-        | `(expr | -- Hack to allow dotjoin before ()
-          $subExpr1:expr .( $subExpr2:expr )) =>
-          expr.dotjoin
-            dotjoin.dot_join
-            (expr.toType subExpr1)
-            (expr.toType subExpr2)
+          | `(expr | $const:constant) =>
+              expr.const (constant.toType const)
+
+          | `(expr | @$name:ident) => Id.run do
+              expr.string_rb name.getId.toString
+
+          | `(expr | $name:ident) => Id.run do
+              let parsedName := name.getId
+
+              if parsedName.isAtomic then
+
+                let exprStringName := name.getId.lastComponentAsString
+
+                -- If the string (name) of the expr is a sigField in a sigFact
+                if (signatureFactSigNames.contains exprStringName) then
+                  expr.dotjoin
+                    dotjoin.dot_join
+                    (expr.string "this")
+                    (expr.string exprStringName)
+
+                else
+                  expr.string exprStringName
+
+              else -- ident contains . which must be parsed as dotjoin
+                let x := (parsedName.splitAt (parsedName.components.length - 1))
+                let subExpr1 := x.1
+                let subExpr2 := x.2
+
+                let subE1 : TSyntax `expr := Unhygienic.run
+                  `(expr| $(mkIdent subExpr1): ident)
+
+                let subE2 : TSyntax `expr := Unhygienic.run
+                  `(expr| $(mkIdent subExpr2): ident)
+
+                expr.dotjoin
+                  dotjoin.dot_join
+                  (expr.toType subE1)
+                  (expr.toType subE2)
+
+          | `(expr | -- Hack to allow dotjoin before ()
+            $subExpr1:expr .( $subExpr2:expr )) =>
+            expr.dotjoin
+              dotjoin.dot_join
+              (expr.toType subExpr1)
+              (expr.toType subExpr2)
 
 
-        | _ => expr.const constant.none -- unreachable
-        decreasing_by -- subexprs are obv smaller than the expression they are part of
-          all_goals simp_wf
-          repeat admit
+          | _ => expr.const constant.none -- unreachable
+          decreasing_by -- subexprs are obv smaller than the expression they are part of
+            all_goals simp_wf
+            repeat admit
 
     /--
     Gets the required variables for the type
