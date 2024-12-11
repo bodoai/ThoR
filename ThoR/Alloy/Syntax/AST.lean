@@ -92,9 +92,32 @@ namespace AST
       for spec in specifications do
         match spec with
 
+        --signature WITH signatureFact
+        | `(specification| $sd:sigDecl $sf:signatureFactDecl) =>
+          let sigDeclTyped := sigDecl.toType sd
+          ast := ast.addSigDecl sigDeclTyped
+
+          let signatureNames : List String := sigDeclTyped.names
+          let signatureRelationNames : List String :=
+            (sigDeclTyped.fieldDecls.map fun fd => fd.names).join
+
+          -- create a fact per created signature
+          for signatureName in signatureNames do
+            let defaultName : String := s!"f{factCount}"
+
+            let factDecl :=
+              (signatureFactDecl.toType defaultName sf
+                signatureName signatureRelationNames)
+
+            ast := ast.addFactDecl factDecl
+
+            --icrease factcounter accordingly
+            factCount := factCount + 1
+
         --signature
         | `(specification| $sd:sigDecl) =>
           ast := ast.addSigDecl (sigDecl.toType sd)
+
 
         --fact
         | `(specification| $fd:factDecl) =>
