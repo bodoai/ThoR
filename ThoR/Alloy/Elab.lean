@@ -47,7 +47,7 @@ private def createVariableCommands
       for vd in variableDecls do
         let varField ←
           `(Lean.Parser.Command.structExplicitBinder |
-              ($(mkIdent vd.name.toName) :
+              ($(mkIdent s!"{vd.relationOf}{vd.name}".toName) :
                 ∷ $(vd.type.toSyntax blockNameIdent.getId)))
 
         variableFields := variableFields.push varField
