@@ -249,9 +249,11 @@ namespace Alloy
               st := st.addReqDecl requirement
 
           -- add Declarations
-          for name in sigDecl.names do
+          for signatureName in sigDecl.names do
             st := st.addVarDecl
-                    ({  name:= name,
+                    ({  name:= signatureName,
+                        isRelation := false,
+                        relationOf := default,
                         type := (sigDecl.extension.getType sigDecl.mult)
                         requiredDecls := localVarRequirements
                       } : varDecl)
@@ -266,7 +268,7 @@ namespace Alloy
                   | typeExpr.multExpr m e =>
                     typeExpr.arrowExpr
                       (arrowOp.multArrowOpExpr
-                        (expr.string name)
+                        (expr.string signatureName)
                         (mult.set) (m)
                         (e)
                       )
@@ -274,7 +276,7 @@ namespace Alloy
                   | typeExpr.relExpr e =>
                     typeExpr.arrowExpr
                       (arrowOp.multArrowOpExpr
-                        (expr.string name)
+                        (expr.string signatureName)
                         (mult.set) (mult.one)
                         (e)
                       )
@@ -282,7 +284,7 @@ namespace Alloy
                   | typeExpr.arrowExpr ae =>
                       typeExpr.arrowExpr
                         (arrowOp.multArrowOpExprLeft
-                          (expr.string name)
+                          (expr.string signatureName)
                           (mult.set)
                           (mult.set)
                           (ae)
@@ -307,6 +309,8 @@ namespace Alloy
 
                 st := st.addVarDecl ({
                       name:= fieldName,
+                      isRelation := true,
+                      relationOf := signatureName,
                       type := completeFieldType,
                       requiredDecls := localFieldRequirements} : varDecl)
 

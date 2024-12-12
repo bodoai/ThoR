@@ -48,6 +48,9 @@ namespace Shared
       | _, _ => false
   namespace typeExpr
 
+  instance : Inhabited typeExpr where
+    default := typeExpr.relExpr default
+
     /--
     Generates a string representation of the type
     -/
