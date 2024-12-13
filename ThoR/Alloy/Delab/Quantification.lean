@@ -93,7 +93,7 @@ def unexpThoRQuantificationFormulaProp : Unexpander
   | `($_ $a) => `($a)
   | _ => throw Unit.unit
 
-def extractGroupBVarNames (e:Expr) : List (Name) :=
+partial def extractGroupBVarNames (e:Expr) : List (Name) :=
   let fName := e.getAppFn.constName.toString
   match fName with
   | "ThoR.Quantification.Formula.disj" =>
@@ -108,9 +108,9 @@ def extractGroupBVarNames (e:Expr) : List (Name) :=
     | Expr.lam bn bt body bi => [bn].append (extractGroupBVarNames body)
     | _ => []
   | _ => []
-  decreasing_by repeat admit
 
-def extractGroupBody (e:Expr) : Expr :=
+
+partial def extractGroupBody (e:Expr) : Expr :=
   let fName := e.getAppFn.constName.toString
   match fName with
   | "ThoR.Quantification.Formula.disj" =>
@@ -128,7 +128,6 @@ def extractGroupBody (e:Expr) : Expr :=
     let formulaExpr := (e.getAppArgs.get! 2)
     formulaExpr
   | _ => default
-  decreasing_by repeat admit
 
 @[delab app.ThoR.Quantification.Formula.group]
 def delab4 : Delab := do
