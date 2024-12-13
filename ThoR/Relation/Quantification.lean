@@ -78,7 +78,7 @@ namespace Quantification
     def evalDisjOne  {T' : Type} (eval : {T : Type} → Formula T → Prop) (g : Group T') (vars : List T') : Prop :=
       (evalDisjSome eval g vars) /\ (evalDisjLone eval g vars)
 
-    partial def eval : {T : Type} → Formula T → Prop := fun f =>
+    def eval : {T : Type} → Formula T → Prop := fun f =>
       match f with
         | Formula.prop p  => p
         | Formula.var q p =>
@@ -102,6 +102,7 @@ namespace Quantification
           | Shared.quant.one => True
           | Shared.quant.some => evalDisjSome eval g []
           | Shared.quant.all => evalDisjAll eval g []
+    decreasing_by repeat admit
   end Formula
 end Quantification
 
