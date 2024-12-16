@@ -19,6 +19,12 @@ end
 alloy module empty_module_section
 end
 
+#alloy name/uses/alloy/like/separator
+  sig A {}
+end
+
+#check name.uses.alloy.like.separator.vars.A
+
 /-With Content to create the namespace-/
 #alloy
   sig A {}

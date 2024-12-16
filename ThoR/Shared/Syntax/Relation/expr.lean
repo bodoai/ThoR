@@ -288,6 +288,7 @@ namespace Shared
         | expr.string s => [s]
         | expr.binaryRelOperation _ e1 e2 => (e1.getReqVariables) ++ (e2.getReqVariables)
         | expr.unaryRelOperation _ e => e.getReqVariables
+        | expr.dotjoin _ e1 e2 => (e1.getReqVariables) ++ (e2.getReqVariables)
         | _ => []
 
   end expr
