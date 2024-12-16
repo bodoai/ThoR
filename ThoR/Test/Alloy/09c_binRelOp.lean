@@ -28,7 +28,7 @@ sig a {
 end
 
 startTestBlock intersection
-#check (r : ∷ a set → one (a & a))
+#check (a_r : ∷ a set → one (a & a))
 
 end intersection
 
@@ -40,7 +40,7 @@ sig a {
 end
 
 startTestBlock union
-#check (r : ∷ a set → one (a + a))
+#check (a_r : ∷ a set → one (a + a))
 
 end union
 
@@ -52,7 +52,7 @@ sig a {
 end
 
 startTestBlock difference
-#check (r : ∷ a set → one (a - a))
+#check (a_r : ∷ a set → one (a - a))
 
 end difference
 
@@ -64,7 +64,7 @@ sig a {
 end
 
 startTestBlock overwrite
-#check (r : ∷ a set → one (a ++ a))
+#check (a_r : ∷ a set → one (a ++ a))
 
 end overwrite
 
@@ -76,7 +76,7 @@ sig a {
 end
 
 startTestBlock domain_restriction
-#check (r : ∷ a set → one (a <: a))
+#check (a_r : ∷ a set → one (a <: a))
 
 end domain_restriction
 
@@ -88,7 +88,7 @@ sig a {
 end
 
 startTestBlock range_restriction
-#check (r : ∷ a set → one (a :> a))
+#check (a_r : ∷ a set → one (a :> a))
 
 end range_restriction
 
@@ -100,6 +100,6 @@ sig a {
 end
 
 startTestBlock dot_join
-#check (r : ∷ a set → one (a.a))
+#check (a_r : ∷ a set → one (a.a))
 
 end dot_join

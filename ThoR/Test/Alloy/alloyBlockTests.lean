@@ -140,7 +140,7 @@ end
 #check buch.vars.Buch
 #print buch.preds.WennSequelDannPrequel
 #check buch.facts.keineDopplungInReihe
-#check buch.vars.prequel
+#check buch.vars.Buch_prequel
 #print buch.preds.EntwederPrequelOderSequel
 open Shared.quant
 #print buch.preds.test
