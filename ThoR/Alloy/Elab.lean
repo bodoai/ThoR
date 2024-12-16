@@ -45,10 +45,15 @@ private def createVariableCommands
         Array (TSyntax ``Lean.Parser.Command.structExplicitBinder) := #[]
 
       for vd in variableDecls do
+        let newName :=
+          if vd.isRelation then
+             s!"{vd.relationOf}_{vd.name}".toName
+          else
+            s!"{vd.name}".toName
+
         let varField ←
           `(Lean.Parser.Command.structExplicitBinder |
-              ($(mkIdent ((s!"{vd.relationOf}".toName).appendCore s!"{vd.name}".toName)) :
-                ∷ $(vd.type.toSyntax blockNameIdent.getId)))
+              ($(mkIdent newName) : ∷ $(vd.type.toSyntax blockNameIdent.getId)))
 
         variableFields := variableFields.push varField
 
