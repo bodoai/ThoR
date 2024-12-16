@@ -83,7 +83,8 @@ namespace Shared
   syntax expr relCompareOp expr : formula
 
   syntax algExpr algCompareOp algExpr : formula
-  syntax quant ("disj")? ident,+ ":" typeExpr "|" (formula)+ : formula
+  syntax quant ("disj")? ident,+ ":" typeExpr "|" "{" (formula)+ "}" : formula
+  syntax quant ("disj")? ident,+ ":" typeExpr "|" formula : formula
 
   --Special tertiariy Syntax
   syntax "if " formula " then " formula " else " formula : formula
@@ -365,7 +366,21 @@ namespace Shared
               disj
               $names:ident,* :
               $typeExpression:typeExpr |
-              $form:formula*
+              $form:formula
+              ) =>
+            formula.quantification
+            (quant.toType q)
+            true
+            (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+            (typeExpr.toType typeExpression)
+            ([toType form])
+
+          | `(formula|
+              $q:quant
+              disj
+              $names:ident,* :
+              $typeExpression:typeExpr |
+              { $form:formula* }
               ) =>
             formula.quantification
             (quant.toType q)
@@ -378,7 +393,20 @@ namespace Shared
               $q:quant
               $names:ident,* :
               $typeExpression:typeExpr |
-              $form:formula*
+              $form:formula
+              ) =>
+            formula.quantification
+            (quant.toType q)
+            false
+            (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+            (typeExpr.toType typeExpression)
+            ([toType form])
+
+          | `(formula|
+              $q:quant
+              $names:ident,* :
+              $typeExpression:typeExpr |
+              {$form:formula*}
               ) =>
             formula.quantification
             (quant.toType q)

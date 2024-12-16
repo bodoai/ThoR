@@ -195,7 +195,7 @@ namespace Shared
     -/
     def toType
       (e : TSyntax `expr)
-      (signatureFactSigNames : List String := [])
+      (signatureRelationNames : List String := [])
       : expr :=
         match e with
           | `(expr | ( $e:expr )) => expr.toType e
@@ -238,7 +238,7 @@ namespace Shared
                 let exprStringName := name.getId.lastComponentAsString
 
                 -- If the string (name) of the expr is a sigField in a sigFact
-                if (signatureFactSigNames.contains exprStringName) then
+                if (signatureRelationNames.contains exprStringName) then
                   expr.dotjoin
                     dotjoin.dot_join
                     (expr.string "this")
