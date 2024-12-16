@@ -146,3 +146,19 @@ end
 
 #check noSingleQuant.preds.p1
 #check noSingleQuant.preds.p2
+
+alloy multiQuantDefinition
+sig a {}
+pred p1 {}
+pred p2 {}
+pred p3 {}
+pred p4 {some x : a | p1}
+pred p5 {some y : a | {p1 p2 p3 p4}}
+end
+
+#check multiQuantDefinition.preds.p1
+#check multiQuantDefinition.preds.p2
+#check multiQuantDefinition.preds.p3
+#check multiQuantDefinition.preds.p4
+#check multiQuantDefinition.preds.p5
+#print multiQuantDefinition.preds.p5

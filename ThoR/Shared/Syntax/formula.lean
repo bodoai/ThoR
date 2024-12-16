@@ -61,7 +61,7 @@ namespace Shared
       (disjunction : Bool) →
       (names : List (String)) →
       (typeExpression : typeExpr) →
-      (form : formula) →
+      (formulas : List formula) →
       formula
   deriving Repr
 
@@ -83,6 +83,7 @@ namespace Shared
   syntax expr relCompareOp expr : formula
 
   syntax algExpr algCompareOp algExpr : formula
+  syntax quant ("disj")? ident,+ ":" typeExpr "|" "{" (formula)+ "}" : formula
   syntax quant ("disj")? ident,+ ":" typeExpr "|" formula : formula
 
   --Special tertiariy Syntax
@@ -96,7 +97,7 @@ namespace Shared
     /--
     Generates a string representation of the type
     -/
-    def toString (f : formula) : String :=
+    partial def toString (f : formula) : String :=
       match f with
         | formula.string s => s
         | formula.pred_with_args p pa => Id.run do
@@ -115,7 +116,7 @@ namespace Shared
         | formula.relationComarisonOperation op e1 e2 =>
           s!"{e1} {op} {e2}"
         | formula.quantification q d n te f =>
-          s!"{q} {if d then "disj" else ""} {n} : {te} | {toString f}"
+          s!"{q} {if d then "disj" else ""} {n} : {te} | {f.map fun e => e.toString}"
 
     instance : ToString formula where
       toString := toString
@@ -123,7 +124,7 @@ namespace Shared
     /--
     Generates a Lean term corosponding with the type
     -/
-    def toTerm
+    partial def toTerm
       (f: formula)
       (blockName : Name)
       (variableNames : List (String)) -- to check if var or pred
@@ -210,11 +211,28 @@ namespace Shared
 
           let names := (n.map fun (name) => mkIdent name.toName).reverse
 
-          let fTerm ←
-            `(($(mkIdent ``Formula.prop)
-              ($(f.toTerm
-                blockName variableNames (pureNames.append n)
-               ))))
+          -- one form ist present -> see syntax (+)
+          let firstForm := f.get! 0
+          let mut fTerm ←
+            `($(firstForm.toTerm
+                blockName variableNames
+                (pureNames.append n)
+              ))
+
+          for form in f.drop 1 do
+            fTerm ←
+              `(( $fTerm ∧
+                  ($(form.toTerm
+                    blockName variableNames
+                    (pureNames.append n)
+                  ))
+                ))
+
+          fTerm ←
+            `((
+              $(mkIdent ``Formula.prop)
+              ($fTerm)
+              ))
 
           -- singular parameter is var constructor
           if names.length == 1 then
@@ -245,7 +263,7 @@ namespace Shared
     These are returned as a List of Lists. The inner lists contain the
     name of the pred followed by the arguments.
     -/
-    def getPredCalls (f : formula) : Option (List (String)) :=
+    partial def getPredCalls (f : formula) : Option (List (String)) :=
       match f with
         | formula.pred_with_args p pa =>
           (Option.some ([p].append (pa.map fun (e) => e.toString)))
@@ -281,94 +299,130 @@ namespace Shared
               return (f2pcs ++ f3pcs)
             | _, _, _ => return []
 
-        | formula.quantification _ _ _ _ f =>
-          f.getPredCalls
+        | formula.quantification _ _ _ _ f => do
+          let mut result : List String := []
+          for form in f do
+            let opc := form.getPredCalls
+            if opc.isSome then
+              result := result.append opc.get!
+          return result
 
         | _ => Option.none
 
     /--
     Parses the given syntax to the type
     -/
-    partial def toType (f : TSyntax `formula) : formula :=
-      match f with
-        | `(formula| ( $f:formula )) => toType f
+    partial def toType
+      (f : TSyntax `formula)
+      (signatureFactSigNames : List String := [])
+      : formula :=
+        match f with
+          | `(formula| ( $f:formula )) => toType f
 
-        | `(formula| $name:ident) => formula.string name.getId.lastComponentAsString
+          | `(formula| $name:ident) =>
+            formula.string name.getId.lastComponentAsString
 
-        | `(formula| $predName:ident [$predargs,*]) =>
-          formula.pred_with_args predName.getId.lastComponentAsString
-            (predargs.getElems.map fun (elem) =>
-              expr.toType elem).toList
+          | `(formula| $predName:ident [$predargs,*]) =>
+            formula.pred_with_args predName.getId.lastComponentAsString
+              (predargs.getElems.map fun (elem) =>
+                expr.toType elem signatureFactSigNames).toList
 
-        | `(formula| $op:unRelBoolOp $expression:expr ) =>
-          formula.unaryRelBoolOperation
-            (unRelBoolOp.toType op) (expr.toType expression)
+          | `(formula| $op:unRelBoolOp $expression:expr ) =>
+            formula.unaryRelBoolOperation
+              (unRelBoolOp.toType op) (expr.toType expression signatureFactSigNames)
 
-        | `(formula| $op:unLogOp $f:formula ) =>
-          formula.unaryLogicOperation
-            (unLogOp.toType op) (toType f)
+          | `(formula| $op:unLogOp $f:formula ) =>
+            formula.unaryLogicOperation
+              (unLogOp.toType op) (toType f)
 
-        | `(formula| $form1:formula $op:binLogOp $form2:formula) =>
-          formula.binaryLogicOperation
-            (binLogOp.toType op) (toType form1) (toType form2)
+          | `(formula| $form1:formula $op:binLogOp $form2:formula) =>
+            formula.binaryLogicOperation
+              (binLogOp.toType op) (toType form1) (toType form2)
 
-        | `(formula| if $form1 then $form2 else $form3) =>
-          formula.tertiaryLogicOperation terLogOp.ifelse
-            (toType form1) (toType form2) (toType form3)
+          | `(formula| if $form1 then $form2 else $form3) =>
+            formula.tertiaryLogicOperation terLogOp.ifelse
+              (toType form1) (toType form2) (toType form3)
 
-        | `(formula|
-            $algExpr1:algExpr
-            $compOp:algCompareOp
-            $algExpr2:algExpr) =>
-          formula.algebraicComparisonOperation
-            (algCompareOp.toType compOp)
-            (algExpr.toType algExpr1)
-            (algExpr.toType algExpr2)
+          | `(formula|
+              $algExpr1:algExpr
+              $compOp:algCompareOp
+              $algExpr2:algExpr) =>
+            formula.algebraicComparisonOperation
+              (algCompareOp.toType compOp)
+              (algExpr.toType algExpr1)
+              (algExpr.toType algExpr2)
 
-        | `(formula|
-            $expr1:expr
-            $op:relCompareOp
-            $expr2:expr) =>
-          formula.relationComarisonOperation
-            (relCompareOp.toType op)
-            (expr.toType expr1)
-            (expr.toType expr2)
+          | `(formula|
+              $expr1:expr
+              $op:relCompareOp
+              $expr2:expr) =>
+            formula.relationComarisonOperation
+              (relCompareOp.toType op)
+              (expr.toType expr1 signatureFactSigNames)
+              (expr.toType expr2 signatureFactSigNames)
 
-        | `(formula|
-            $q:quant
-            disj
-            $names:ident,* :
-            $typeExpression:typeExpr |
-            $form:formula
-            ) =>
-          formula.quantification
-          (quant.toType q)
-          true
-          (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
-          (typeExpr.toType typeExpression)
-          (toType form)
+          | `(formula|
+              $q:quant
+              disj
+              $names:ident,* :
+              $typeExpression:typeExpr |
+              $form:formula
+              ) =>
+            formula.quantification
+            (quant.toType q)
+            true
+            (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+            (typeExpr.toType typeExpression)
+            ([toType form])
 
-        | `(formula|
-            $q:quant
-            $names:ident,* :
-            $typeExpression:typeExpr |
-            $form:formula
-            ) =>
-          formula.quantification
-          (quant.toType q)
-          false
-          (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
-          (typeExpr.toType typeExpression)
-          (toType form)
+          | `(formula|
+              $q:quant
+              disj
+              $names:ident,* :
+              $typeExpression:typeExpr |
+              { $form:formula* }
+              ) =>
+            formula.quantification
+            (quant.toType q)
+            true
+            (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+            (typeExpr.toType typeExpression)
+            (form.map fun f => toType f).toList
 
-        | _ => formula.unaryRelBoolOperation
-                unRelBoolOp.no
-                (expr.const constant.none) -- unreachable
+          | `(formula|
+              $q:quant
+              $names:ident,* :
+              $typeExpression:typeExpr |
+              $form:formula
+              ) =>
+            formula.quantification
+            (quant.toType q)
+            false
+            (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+            (typeExpr.toType typeExpression)
+            ([toType form])
+
+          | `(formula|
+              $q:quant
+              $names:ident,* :
+              $typeExpression:typeExpr |
+              {$form:formula*}
+              ) =>
+            formula.quantification
+            (quant.toType q)
+            false
+            (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+            (typeExpr.toType typeExpression)
+            (form.map fun f => toType f).toList
+
+          | _ => formula.unaryRelBoolOperation
+                  unRelBoolOp.no
+                  (expr.const constant.none) -- unreachable
 
     /--
     Returns the required definitions for the formula to work in Lean
     -/
-    def getReqDefinitions
+    partial def getReqDefinitions
       (f : formula)
       : List (String) := Id.run do
         match f with
@@ -383,12 +437,14 @@ namespace Shared
           | formula.algebraicComparisonOperation _ _ _ => []
           | formula.relationComarisonOperation _ _ _ => []
           | formula.quantification _ _ n _ f =>
-            f.getReqDefinitions.filter fun (elem) => !(n.contains elem)
+            ((f.map fun form =>
+              form.getReqDefinitions).join
+                ).filter fun (elem) => !(n.contains elem)
 
     /--
     Returns the required variables for the formula to work in Lean
     -/
-    def getReqVariables
+    partial def getReqVariables
       (f : formula)
       : List (String) := Id.run do
         match f with
@@ -406,7 +462,9 @@ namespace Shared
           | formula.relationComarisonOperation _ e1 e2 =>
             e1.getReqVariables ++ e2.getReqVariables
           | formula.quantification _ _ n e f =>
-            (f.getReqVariables ++ e.getReqVariables).filter
+             (((f.map fun form =>
+              form.getReqVariables).join)
+              ++ e.getReqVariables).filter
               fun (elem) => !(n.contains elem) -- quantor vars are not required
 
   end formula
