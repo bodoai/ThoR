@@ -104,13 +104,13 @@ namespace Shared
         | e => e
 
     instance : ToString expr where
-    toString : expr -> String := fun e => e.toString
+      toString : expr -> String := fun e => e.toString
 
     instance : BEq expr where
       beq : expr -> expr -> Bool := fun e1 e2 => e1.compare e2
 
     instance : Inhabited expr where
-      default := expr.const constant.none
+      default := expr.const (constant.none)
 
     /--
     Generates a syntax representation of the type
@@ -277,5 +277,7 @@ namespace Shared
         | _ => []
 
   end expr
+
+
 
 end Shared

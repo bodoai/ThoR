@@ -289,7 +289,7 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (f : TSyntax `formula) : formula :=
+    partial def toType (f : TSyntax `formula) : formula :=
       match f with
         | `(formula| ( $f:formula )) => toType f
 
@@ -364,10 +364,6 @@ namespace Shared
         | _ => formula.unaryRelBoolOperation
                 unRelBoolOp.no
                 (expr.const constant.none) -- unreachable
-
-      -- subexprs are obv smaller than the expression they are part of
-      decreasing_by
-      repeat admit
 
     /--
     Returns the required definitions for the formula to work in Lean

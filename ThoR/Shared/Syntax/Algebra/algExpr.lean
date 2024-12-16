@@ -55,6 +55,9 @@ namespace Shared
     instance : ToString algExpr where
       toString := toString
 
+    instance : Inhabited algExpr where
+      default := algExpr.number (1:Int)
+
     /--
     Generates a Lean term corosponding with the type
     -/
@@ -73,7 +76,7 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (ae : TSyntax `algExpr) : algExpr :=
+    partial def toType (ae : TSyntax `algExpr) : algExpr :=
       match ae with
         | `(algExpr| $number:num) =>
           algExpr.number (number.getNat : Int)
@@ -95,9 +98,6 @@ namespace Shared
             (binAlgOp.toType op) (toType algExpr1) (toType algExpr2)
 
         | _ => algExpr.number (1:Int) -- unreachable
-
-        decreasing_by -- subexprs are obv smaller than the expression they are part of
-        repeat admit
 
     /--
     Gets the required variables for the algebra expression.
