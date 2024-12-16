@@ -13,17 +13,17 @@ This file tests the alloy section
 
 -/
 
-alloy empty_sec
+alloy empty_section
 end
 
 alloy module empty_module_section
 end
 
-#alloy name/uses/alloy_like/separator
+#alloy name/uses/alloy/like/separator
   sig A {}
 end
 
-#check name.uses.alloy_like.separator.vars.A
+#check name.uses.alloy.like.separator.vars.A
 
 /-With Content to create the namespace-/
 #alloy
