@@ -467,7 +467,7 @@ namespace Shared
               ++ e.getReqVariables).filter
               fun (elem) => !(n.contains elem) -- quantor vars are not required
 
-    def replaceRelationCalls
+    partial def replaceRelationCalls
       (f: formula)
       (relationNames :List (String))
       (replacementNames :List (String))
@@ -518,13 +518,13 @@ namespace Shared
               (e1.replaceRelationCalls relationNames replacementNames)
               (e2.replaceRelationCalls relationNames replacementNames)
 
-          | formula.quantification q d n te f =>
+          | formula.quantification q d n te forms =>
             formula.quantification
               q
               d
               n
               (te.replaceRelationCalls relationNames replacementNames)
-              (f.replaceRelationCalls relationNames replacementNames)
+              (forms.map fun f => f.replaceRelationCalls relationNames replacementNames)
 
   end formula
 
