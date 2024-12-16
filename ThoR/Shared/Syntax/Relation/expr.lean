@@ -103,6 +103,15 @@ namespace Shared
           expr.dotjoin dj (e1.toStringRb) (e2.toStringRb)
         | e => e
 
+    instance : ToString expr where
+      toString : expr -> String := fun e => e.toString
+
+    instance : BEq expr where
+      beq : expr -> expr -> Bool := fun e1 e2 => e1.compare e2
+
+    instance : Inhabited expr where
+      default := expr.const default
+
     /--
     Generates a syntax representation of the type
     -/
@@ -191,7 +200,7 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (e : TSyntax `expr) : expr :=
+    partial def toType (e : TSyntax `expr) : expr :=
       match e with
         | `(expr | ( $e:expr )) => expr.toType e
         | `(expr |
@@ -256,9 +265,6 @@ namespace Shared
 
 
         | _ => expr.const constant.none -- unreachable
-        decreasing_by -- subexprs are obv smaller than the expression they are part of
-          all_goals simp_wf
-          repeat admit
 
     /--
     Gets the required variables for the type
@@ -270,15 +276,38 @@ namespace Shared
         | expr.unaryRelOperation _ e => e.getReqVariables
         | _ => []
 
+    def replaceRelationCalls
+      (e: expr)
+      (relationNames :List (String))
+      (replacementNames :List (String))
+      : expr := Id.run do
+        match e with
+          | expr.string s =>
+            let index := relationNames.indexOf s
+            if index == relationNames.length then
+              e
+            else
+              expr.string (replacementNames.get! index)
+
+          | expr.binaryRelOperation op e1 e2 =>
+            expr.binaryRelOperation
+              op
+              (e1.replaceRelationCalls relationNames replacementNames)
+              (e2.replaceRelationCalls relationNames replacementNames)
+
+          | expr.unaryRelOperation op e =>
+            expr.unaryRelOperation
+              op
+              (e.replaceRelationCalls relationNames replacementNames)
+
+          | expr.dotjoin dj e1 e2 =>
+            expr.dotjoin
+              dj
+              (e1.replaceRelationCalls relationNames replacementNames)
+              (e2.replaceRelationCalls relationNames replacementNames)
+
+          | _ => default
+
   end expr
-
-  instance : ToString expr where
-    toString : expr -> String := fun e => e.toString
-
-  instance : BEq expr where
-    beq : expr -> expr -> Bool := fun e1 e2 => e1.compare e2
-
-  instance : Inhabited expr where
-    default := expr.const default
 
 end Shared

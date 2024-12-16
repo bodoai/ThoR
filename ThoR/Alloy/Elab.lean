@@ -80,7 +80,11 @@ private def createDefOrAxiomCommand
   (blockName : Name)
   (cd : commandDecl)
   (definition : Bool)
+  (relations : List (varDecl))
   : Option (TSyntax `command) := Unhygienic.run do
+
+    let relationNames := relations.map fun r => r.name
+    let replacementNames := relations.map fun r => s!"{r.relationOf}_{r.name}"
 
     -- formula evaluation
     -- All formulas (lines) in an Alloy pred or in an Alloy fact are
@@ -91,14 +95,18 @@ private def createDefOrAxiomCommand
 
     if !(cd.formulas.isEmpty) then
 
+      let forms :=
+        cd.formulas.map
+          fun f => f.replaceRelationCalls relationNames replacementNames
+
       let argnames := (cd.args.map fun (arg) => arg.names).join
 
-      let ff := (cd.formulas.get! 0)
+      let ff := (forms.get! 0)
 
       bodyTerm : TSyntax `term ←
         `($(ff.toTerm blockName cd.requiredVars argnames))
 
-      for formula in cd.formulas.drop 1 do
+      for formula in forms.drop 1 do
         let newTerm ← `($(formula.toTerm blockName cd.requiredVars argnames))
         bodyTerm ←
           `($bodyTerm ∧ ($newTerm))
@@ -115,9 +123,11 @@ private def createDefOrAxiomCommand
           Array (TSyntax ``Lean.Parser.Term.bracketedBinderF) := #[]
         let mut names : Array (TSyntax `ident) := #[]
 
+        let argExpr := arg.expression.replaceRelationCalls relationNames replacementNames
+
         let t :=
           (typeExpr.relExpr
-            arg.expression.toStringRb).toSyntax blockName
+            argExpr.toStringRb).toSyntax blockName
 
         for name in arg.names do
           names := names.push (mkIdent name.toName)
@@ -162,8 +172,9 @@ blockname and command declaration.
 private def createDefCommand
   (blockName : Name)
   (cd : commandDecl)
+  (relations : List (varDecl))
   : Option (TSyntax `command) :=
-    createDefOrAxiomCommand blockName cd true
+    createDefOrAxiomCommand blockName cd true relations
 
 /--
 convenience function:
@@ -173,8 +184,9 @@ blockname and command declaration.
 private def createAxiomCommand
   (blockName : Name)
   (cd : commandDecl)
+  (relations : List (varDecl))
   : Option (TSyntax `command) :=
-    createDefOrAxiomCommand blockName cd false
+    createDefOrAxiomCommand blockName cd false relations
 
 /--
 Creates commands to create Lean definitions from the given blockname and commandDecls.
@@ -185,6 +197,7 @@ private def createDefsCommandsWithNamespace
   (blockName : Name)
   (namespaceName : Name)
   (commandDecls : List (commandDecl))
+  (relations : List (varDecl))
   :List ((TSyntax `command) ) := Unhygienic.run do
     let mut commandList : List ((TSyntax `command) ) := []
 
@@ -206,7 +219,7 @@ private def createDefsCommandsWithNamespace
 
       --Def declaration
       for cd in commandDecls do
-        let cdCmd := (createDefCommand blockName cd)
+        let cdCmd := (createDefCommand blockName cd relations)
         if cdCmd.isSome then
           commandList := commandList.concat cdCmd.get!
 
@@ -225,8 +238,9 @@ The created commands are encapsulated in a namespace named blockname.preds
 private def createPredDefsCommands
   (blockName : Name)
   (defDecls : List (commandDecl))
+  (relations : List (varDecl))
   :List ((TSyntax `command) ) :=
-    createDefsCommandsWithNamespace blockName (s!"{blockName}.preds".toName) defDecls
+    createDefsCommandsWithNamespace blockName (s!"{blockName}.preds".toName) defDecls relations
 
 /--
 Creates commands to create Lean definitions (for asserts) from the given
@@ -237,8 +251,9 @@ The created commands are encapsulated in a namespace named blockname.asserts
 private def createAssertDefsCommands
   (blockName : Name)
   (defDecls : List (commandDecl))
+  (relations : List (varDecl))
   :List ((TSyntax `command) ) :=
-    createDefsCommandsWithNamespace blockName (s!"{blockName}.asserts".toName) defDecls
+    createDefsCommandsWithNamespace blockName (s!"{blockName}.asserts".toName) defDecls relations
 
 /--
 Creates commands to create Lean axioms from the given blockname and commandDecls.
@@ -248,6 +263,7 @@ The created commands are encapsulated in a namespace named blockname.facts
 private def createAxiomCommands
   (blockName : Name)
   (axiomDecls : List (commandDecl))
+  (relations : List (varDecl))
   :List ((TSyntax `command)) := Unhygienic.run do
     let mut commandList : List ((TSyntax `command)) := []
 
@@ -271,7 +287,7 @@ private def createAxiomCommands
 
       --Axiom declaration
       for ad in axiomDecls do
-       let adCmd := (createAxiomCommand blockName ad)
+       let adCmd := (createAxiomCommand blockName ad relations)
         if adCmd.isSome then
           commandList := commandList.concat adCmd.get!
 
@@ -300,20 +316,23 @@ private def createCommands (st : SymbolTable)
     if !(varCommands.isEmpty) then
       namespacesToOpen := namespacesToOpen.push (mkIdent s!"{blockName}.vars".toName)
 
+    -- getAllRelations (to calculate their final name)
+    let relations := st.variableDecls.filter fun vd => vd.isRelation
+
     -- defs
-    let defCommands := createPredDefsCommands blockName st.defDecls
+    let defCommands := createPredDefsCommands blockName st.defDecls relations
     commandList := commandList.append defCommands
     if !(defCommands.isEmpty) then
       namespacesToOpen := namespacesToOpen.push (mkIdent s!"{blockName}.preds".toName)
 
     -- axioms
-    let axCommands := createAxiomCommands blockName st.axiomDecls
+    let axCommands := createAxiomCommands blockName st.axiomDecls relations
     commandList := commandList.append axCommands
     if !(axCommands.isEmpty) then
       namespacesToOpen := namespacesToOpen.push (mkIdent s!"{blockName}.facts".toName)
 
     -- asserts
-    let assertCommands := createAssertDefsCommands blockName st.assertDecls
+    let assertCommands := createAssertDefsCommands blockName st.assertDecls relations
     commandList := commandList.append assertCommands
     if !(assertCommands.isEmpty) then
       namespacesToOpen := namespacesToOpen.push (mkIdent s!"{blockName}.asserts".toName)

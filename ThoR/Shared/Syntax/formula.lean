@@ -413,6 +413,65 @@ namespace Shared
             (f.getReqVariables ++ e.getReqVariables).filter
               fun (elem) => !(n.contains elem) -- quantor vars are not required
 
+    def replaceRelationCalls
+      (f: formula)
+      (relationNames :List (String))
+      (replacementNames :List (String))
+      : formula := Id.run do
+        match f with
+          | formula.string s =>
+            let index := relationNames.indexOf s
+            if index == relationNames.length then
+              f
+            else
+              formula.string (replacementNames.get! index)
+
+          | formula.pred_with_args n pas =>
+            formula.pred_with_args
+              n
+              (pas.map fun pa =>
+                pa.replaceRelationCalls relationNames replacementNames)
+
+          | formula.unaryRelBoolOperation op e =>
+            formula.unaryRelBoolOperation
+              op
+              (e.replaceRelationCalls relationNames replacementNames)
+
+          | formula.unaryLogicOperation op f =>
+            formula.unaryLogicOperation
+              op
+              (f.replaceRelationCalls relationNames replacementNames)
+
+          | formula.binaryLogicOperation op f1 f2 =>
+            formula.binaryLogicOperation
+              op
+              (f1.replaceRelationCalls relationNames replacementNames)
+              (f2.replaceRelationCalls relationNames replacementNames)
+
+          | formula.tertiaryLogicOperation op f1 f2 f3 =>
+            formula.tertiaryLogicOperation
+              op
+              (f1.replaceRelationCalls relationNames replacementNames)
+              (f2.replaceRelationCalls relationNames replacementNames)
+              (f3.replaceRelationCalls relationNames replacementNames)
+
+          | formula.algebraicComparisonOperation op ae1 ae2 =>
+            formula.algebraicComparisonOperation op ae1 ae2
+
+          | formula.relationComarisonOperation op e1 e2 =>
+            formula.relationComarisonOperation
+              op
+              (e1.replaceRelationCalls relationNames replacementNames)
+              (e2.replaceRelationCalls relationNames replacementNames)
+
+          | formula.quantification q d n te f =>
+            formula.quantification
+              q
+              d
+              n
+              (te.replaceRelationCalls relationNames replacementNames)
+              (f.replaceRelationCalls relationNames replacementNames)
+
   end formula
 
 end Shared

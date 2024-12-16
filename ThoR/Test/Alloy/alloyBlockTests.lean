@@ -20,7 +20,7 @@ end
     r: B
   }
   sig B {
-    r: B
+    q: B
   }
   pred xte {
     all t: r | some t
