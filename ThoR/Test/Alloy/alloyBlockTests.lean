@@ -20,10 +20,11 @@ end
     r: B
   }
   sig B {
-    q: B
+    q: C
   }
+  sig C {}
   pred xte {
-    all t: r | some t
+    all t: B.q | some t
   }
 end
 

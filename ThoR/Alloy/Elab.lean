@@ -92,7 +92,6 @@ private def createDefOrAxiomCommand
     let emptyTerm : TSyntax `term ← `($(mkIdent "".toName))
     let mut bodyTerm : TSyntax `term := emptyTerm
 
-
     if !(cd.formulas.isEmpty) then
 
       let forms :=

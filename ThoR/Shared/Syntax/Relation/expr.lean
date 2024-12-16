@@ -301,6 +301,15 @@ namespace Shared
               (e.replaceRelationCalls relationNames replacementNames)
 
           | expr.dotjoin dj e1 e2 =>
+            let namesToCheck := replacementNames.map fun rn => (rn.splitOn "_")
+            for index in [0 : (namesToCheck.length)] do
+              let name := namesToCheck.get! index
+              if
+                e1 == (expr.string (name.get! 0)) &&
+                e2 == (expr.string (name.get! 1))
+              then
+                return expr.string (replacementNames.get! index)
+
             expr.dotjoin
               dj
               (e1.replaceRelationCalls relationNames replacementNames)
