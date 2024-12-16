@@ -15,6 +15,18 @@ end
   }
 end
 
+#alloy x2
+  sig A extends B{
+    r: B
+  }
+  sig B {
+    r: B
+  }
+  pred xte {
+    all t: r | some t
+  }
+end
+
 #alloy b2
   sig A extends B{
     r: B

@@ -165,15 +165,50 @@ namespace Alloy
     This function stops at first error and states which symbol is missing.
     -/
     private def checkSymbols (st : SymbolTable) : Bool × String := Id.run do
-      let avariableSymbols : List (String) :=
+      let availableSymbols : List (String) :=
         (st.variableDecls.map fun (vd) => vd.name) ++
           (st.axiomDecls.map  fun (ad) => ad.name) ++
             (st.defDecls.map  fun (dd) => dd.name) ++
             (st.defDecls.map  fun (dd) => (dd.args.map fun (arg) => arg.names).join).join
 
       for requiredSymbol in st.requiredDecls do
-        if !(avariableSymbols.contains requiredSymbol) then
+        if !(availableSymbols.contains requiredSymbol) then
           return (false, s!"{requiredSymbol} is not defined")
+
+      return (true, "no error")
+
+    /--
+    Checks if all reffered Relations are not ambiguous
+
+    This function stops at first error which symbol is ambiguous.
+    -/
+    private def checkRelationCalls (st : SymbolTable) : Bool × String := Id.run do
+      let availableRelations : List (varDecl) :=
+        st.variableDecls.filter fun (vd) => vd.isRelation
+
+      let availableSignatures : List (varDecl) :=
+        st.variableDecls.filter fun (vd) => !vd.isRelation
+
+      let availableSymbols : List (String) :=
+        (availableSignatures.map fun (vd) => vd.name) ++
+          (st.axiomDecls.map  fun (ad) => ad.name) ++
+            (st.defDecls.map  fun (dd) => dd.name) ++
+            (st.defDecls.map  fun (dd) =>
+              (dd.args.map fun (arg) => arg.names).join).join
+
+      for requiredSymbol in st.requiredDecls do
+        if !(availableSymbols.contains requiredSymbol) then
+          let possibleSignatures :=
+            (availableRelations.filter
+              fun vd => vd.name = requiredSymbol).map
+                fun vd => s!"{vd.relationOf}"
+
+          if (possibleSignatures.length > 1) then
+            return (false,
+              s!"{requiredSymbol} is ambiguous. \
+              It could refer to the relation \
+              of the same name in the following \
+              signatures {possibleSignatures}")
 
       return (true, "no error")
 
@@ -471,14 +506,19 @@ namespace Alloy
 
       let symbolCheck := st.checkSymbols
       if symbolCheck.1 then -- symbolCheck OK
-        let predCallCheck := st.checkPredCalls ast
-        if predCallCheck.1 then -- predCallCheck OK
-          let orderedSt := (st.replaceVarDecls (orderVarDecls st.variableDecls))
-          return (orderedSt, true, predCallCheck.2)
 
+        let relationCallCheck := st.checkRelationCalls
+        if relationCallCheck.1 then -- relationCallCheck OK
+
+          let predCallCheck := st.checkPredCalls ast
+          if predCallCheck.1 then -- predCallCheck OK
+            let orderedSt := (st.replaceVarDecls (orderVarDecls st.variableDecls))
+            return (orderedSt, true, predCallCheck.2)
+
+          else
+            return (st, false, predCallCheck.2)
         else
-          return (st, false, predCallCheck.2)
-
+          return (st, false, relationCallCheck.2)
       else
         return (st, false, symbolCheck.2)
 
