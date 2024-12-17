@@ -239,7 +239,7 @@ namespace Alloy
 
             let pd? := availablePredDecls.find? fun (apd) => apd.name == predName
             if pd?.isNone then -- check: predicate exists?
-              return (false, s!"Definition {predName} not found")
+              return (false, s!"Predicate {predName} does not exist")
 
             else -- check: number of arguments
               let pd := pd?.get!
