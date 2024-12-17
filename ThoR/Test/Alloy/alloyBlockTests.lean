@@ -26,7 +26,7 @@ end
     all t: A.r | some t
   }
   pred p2 {
-    all t: A | one r
+    all t: A | p2
   }
 end
 

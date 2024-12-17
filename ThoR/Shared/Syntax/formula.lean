@@ -265,6 +265,7 @@ namespace Shared
     -/
     partial def getPredCalls (f : formula) : Option (List (String)) :=
       match f with
+        | formula.string s => (Option.some [s])
         | formula.pred_with_args p pa =>
           (Option.some ([p].append (pa.map fun (e) => e.toString)))
         | formula.unaryLogicOperation _ f => f.getPredCalls
@@ -279,7 +280,7 @@ namespace Shared
               return f1pcs
             | Option.none , Option.some f2pcs =>
               return f2pcs
-            | _, _ => return []
+            | _, _ => Option.none
 
         | formula.tertiaryLogicOperation _ f1 f2 f3 =>
           let f1pc := f1.getPredCalls
@@ -297,7 +298,7 @@ namespace Shared
               return (f1pcs ++ f3pcs)
             | Option.none, Option.some f2pcs, Option.some f3pcs =>
               return (f2pcs ++ f3pcs)
-            | _, _, _ => return []
+            | _, _, _ => Option.none
 
         | formula.quantification _ _ _ _ f => do
           let mut result : List String := []
@@ -305,7 +306,10 @@ namespace Shared
             let opc := form.getPredCalls
             if opc.isSome then
               result := result.append opc.get!
-          return result
+          if result.isEmpty then
+            Option.none
+          else
+            return result
 
         | _ => Option.none
 

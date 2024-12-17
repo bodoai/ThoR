@@ -369,7 +369,7 @@ namespace Alloy
       for predDecl in predDecls do
         for formula in predDecl.forms do
           if let Option.some pc := formula.getPredCalls then
-              predCalls := predCalls.concat pc
+            predCalls := predCalls.concat pc
 
         -- get list of referenced signatures and signature fields
         let reqVars : List (String) := predDecl.getReqVariables.eraseDups
