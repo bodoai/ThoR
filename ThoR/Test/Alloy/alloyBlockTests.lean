@@ -20,13 +20,13 @@ end
     r: A
   }
   sig B {
-    q: B
+    r: B
   }
   pred p1 {
     all t: A.r | some t
   }
   pred p2 {
-    all t: A | p2
+    all uu : B | some uu
   }
 end
 

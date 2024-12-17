@@ -335,6 +335,27 @@ namespace Shared
         | arrowOp.multArrowOpExprRight ae1 _ _ e2 => ae1.getReqVariables ++ e2.getReqVariables
         | arrowOp.multArrowOp ae1 _ _ ae2 => ae1.getReqVariables ++ ae2.getReqVariables
 
+    def getRelationCalls
+      (ao: arrowOp)
+      (relationNames : List (String))
+      : List (String) := Id.run do
+        match ao with
+          | multArrowOpExpr e1 _ _ e2 =>
+            (e1.getRelationCalls relationNames) ++
+              (e2.getRelationCalls relationNames)
+
+          | multArrowOpExprLeft e _ _ ao1 =>
+            (e.getRelationCalls relationNames) ++
+              (ao1.getRelationCalls relationNames)
+
+          | multArrowOpExprRight ao1 _ _ e =>
+            (ao1.getRelationCalls relationNames) ++
+              (e.getRelationCalls relationNames)
+
+          | multArrowOp ao1 _ _ ao2 =>
+            (ao1.getRelationCalls relationNames) ++
+              (ao2.getRelationCalls relationNames)
+
     def replaceRelationCalls
       (ao: arrowOp)
       (relationNames :List (String))

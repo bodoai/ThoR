@@ -149,6 +149,18 @@ namespace Shared
         | typeExpr.multExpr _ e => e.getReqVariables
         | typeExpr.relExpr e => e.getReqVariables
 
+    def getRelationCalls
+      (te: typeExpr)
+      (relationNames : List (String))
+      : List (String) := Id.run do
+        match te with
+          | arrowExpr ae =>
+              (ae.getRelationCalls relationNames)
+          | multExpr _ e =>
+              (e.getRelationCalls relationNames)
+          | relExpr e =>
+              (e.getRelationCalls relationNames)
+
     def replaceRelationCalls
       (te: typeExpr)
       (relationNames :List (String))

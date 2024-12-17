@@ -31,14 +31,7 @@ structure AST where
 deriving Repr
 
 instance : ToString AST where
-  toString ( ast : AST ) : String :=
-    s!"AST : \{
-        name := {ast.name},
-        sigDecls := {ast.sigDelcs},
-        factDecls := {ast.factDecls},
-        assertDecls := {ast.assertDecls},
-        predDecls := {ast.predDecls}
-      }"
+  toString ( ast : AST ) : String := reprStr ast
 namespace AST
 
   /--

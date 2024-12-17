@@ -293,6 +293,40 @@ namespace Shared
           | expr.dotjoin _ e1 e2 => (e1.getReqVariables) ++ (e2.getReqVariables)
           | _ => []
 
+    def getRelationCalls
+      (e : expr)
+      (relationNames : List (String))
+      : List (String) := Id.run do
+        match e with
+          | expr.string s =>
+            if relationNames.contains s then
+              return [s]
+            else
+              return []
+
+          | expr.unaryRelOperation _ e =>
+            e.getRelationCalls relationNames
+
+          | expr.binaryRelOperation _ e1 e2 =>
+            (e1.getRelationCalls relationNames) ++
+              (e2.getRelationCalls relationNames)
+
+          | expr.dotjoin _ e1 e2 =>
+            let e1eval := (e1.getRelationCalls relationNames)
+            let e2eval := (e2.getRelationCalls relationNames)
+            if (e2eval.length == 1) then
+              match e1 with
+                | expr.string s =>
+                  let e2value := e2eval.get! 0
+                  return [s!"{s}.{e2value}"]
+
+                | _ => return e1eval ++ e2eval
+
+            else
+              return e1eval ++ e2eval
+
+          | _ => []
+
     def replaceRelationCalls
       (e: expr)
       (relationNames :List (String))

@@ -471,6 +471,33 @@ namespace Shared
               ++ e.getReqVariables).filter
               fun (elem) => !(n.contains elem) -- quantor vars are not required
 
+    partial def getRelationCalls
+      (f : formula)
+      (relationNames : List (String))
+      : List (String) := Id.run do
+      match f with
+        | formula.string _ => []
+        | formula.pred_with_args _ pa =>
+          (pa.map fun e => e.getRelationCalls relationNames).join
+        | formula.unaryRelBoolOperation _ e => e.getRelationCalls relationNames
+        | formula.unaryLogicOperation _ f => f.getRelationCalls relationNames
+        | formula.binaryLogicOperation _ f1 f2 =>
+          f1.getRelationCalls relationNames ++
+            f2.getRelationCalls relationNames
+        | formula.tertiaryLogicOperation _ f1 f2 f3 =>
+          f1.getRelationCalls relationNames ++
+            f2.getRelationCalls relationNames ++
+              f3.getRelationCalls relationNames
+        | formula.algebraicComparisonOperation _ _ _ => []
+        | formula.relationComarisonOperation _ e1 e2 =>
+          e1.getRelationCalls relationNames ++
+            e2.getRelationCalls relationNames
+        | formula.quantification _ _ _ te f =>
+          let typeExprRelCalls := te.getRelationCalls relationNames
+          let formRelCalls := (f.map fun form =>
+              form.getRelationCalls relationNames).join
+          return formRelCalls ++ typeExprRelCalls
+
     partial def replaceRelationCalls
       (f: formula)
       (relationNames :List (String))
