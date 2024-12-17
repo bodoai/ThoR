@@ -16,15 +16,17 @@ end
 end
 
 #alloy x2
-  sig A extends B{
-    r: B
+  sig A {
+    r: A
   }
   sig B {
-    q: C
+    q: B
   }
-  sig C {}
-  pred xte {
-    all t: B.q | some t
+  pred p1 {
+    all t: A.r | some t
+  }
+  pred p2 {
+    all t: A | one r
   }
 end
 
