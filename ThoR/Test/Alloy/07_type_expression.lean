@@ -23,7 +23,7 @@ sig a {
 end
 
 startTestBlock typeExpr
-  #check (r : ∷ a set → one a)
+  #check (a_r : ∷ a set → one a)
 
 end typeExpr.test
 
@@ -35,7 +35,7 @@ sig a {
 end
 
 startTestBlock typeExprMult
-  #check (r : ∷ a set → set a)
+  #check (a_r : ∷ a set → set a)
 
 end typeExprMult.test
 
@@ -47,7 +47,7 @@ sig a {
 end
 
 startTestBlock typeExprSome
-  #check (r : ∷ a set → some a)
+  #check (a_r : ∷ a set → some a)
 
 end typeExprSome.test
 
@@ -59,7 +59,7 @@ sig a {
 end
 
 startTestBlock typeExprLone
-  #check (r : ∷ a set → lone a)
+  #check (a_r : ∷ a set → lone a)
 
 end typeExprLone.test
 
@@ -71,6 +71,6 @@ sig a {
 end
 
 startTestBlock typeExprOne
-  #check (r : ∷ a set → one a)
+  #check (a_r : ∷ a set → one a)
 
 end typeExprOne.test

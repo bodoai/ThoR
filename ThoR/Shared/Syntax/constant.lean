@@ -40,6 +40,9 @@ namespace Shared
       | constant.iden, constant.iden => true
       | constant.none, constant.none => true
       | _, _ => false
+
+  instance : Inhabited constant where
+    default := constant.none
   namespace constant
 
     /--

@@ -15,6 +15,23 @@ end
   }
 end
 
+#alloy x2
+  sig A {
+    r: A
+  }
+  sig B {
+    r: B
+  }
+  pred p1 {
+    all t: A.r | some t
+  }
+  pred p2 {
+    all uu : B | some uu
+  }
+end
+
+#check x2.vars.B.q
+
 #alloy b2
   sig A extends B{
     r: B
@@ -127,7 +144,7 @@ end
 #check buch.vars.Buch
 #print buch.preds.WennSequelDannPrequel
 #check buch.facts.keineDopplungInReihe
-#check buch.vars.prequel
+#check buch.vars.Buch_prequel
 #print buch.preds.EntwederPrequelOderSequel
 open Shared.quant
 #print buch.preds.test
