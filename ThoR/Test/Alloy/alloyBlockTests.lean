@@ -28,6 +28,8 @@ end
   }
 end
 
+#check x2.vars.B.q
+
 #alloy b2
   sig A extends B{
     r: B

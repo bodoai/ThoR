@@ -297,6 +297,24 @@ private def createAxiomCommands
       return commandList
 
 /--
+Creates commands to create Lean aliases for signature relation names.
+
+These are intendet to offer a natural (alloy-like) way to acces these relations
+-/
+private def createRelationAliasCommands
+  (blockName : Name)
+  (relations : List (varDecl))
+  : List ((TSyntax `command)) := Unhygienic.run do
+    let mut commandList : List ((TSyntax `command)) := []
+    for relation in relations do
+      let undottetName := s!"{blockName}.vars.{relation.relationOf}_{relation.name}".toName
+      let dottetName := s!"{blockName}.vars.{relation.relationOf}.{relation.name}".toName
+      let command ← `(alias $(mkIdent dottetName) := $(mkIdent undottetName))
+      commandList := commandList.concat command
+
+    return commandList
+
+/--
 Creates commands to create all variables, definitions and axioms in Lean.
 
 The created commands are encapsulated in a namespaces, which are opened as the last command.
@@ -315,8 +333,12 @@ private def createCommands (st : SymbolTable)
     if !(varCommands.isEmpty) then
       namespacesToOpen := namespacesToOpen.push (mkIdent s!"{blockName}.vars".toName)
 
-    -- getAllRelations (to calculate their final name)
+    -- getAllRelations (to calculate their final name and references)
     let relations := st.variableDecls.filter fun vd => vd.isRelation
+
+    -- create Relation aliases
+    let relationAliasCommands := createRelationAliasCommands blockName relations
+    commandList := commandList.append relationAliasCommands
 
     -- defs
     let defCommands := createPredDefsCommands blockName st.defDecls relations
