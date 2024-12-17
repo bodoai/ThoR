@@ -283,12 +283,15 @@ namespace Shared
     /--
     Gets the required variables for the type
     -/
-    def getReqVariables (e : expr) : List (String) :=
-      match e with
-        | expr.string s => [s]
-        | expr.binaryRelOperation _ e1 e2 => (e1.getReqVariables) ++ (e2.getReqVariables)
-        | expr.unaryRelOperation _ e => e.getReqVariables
-        | _ => []
+    def getReqVariables
+      (e : expr)
+      : List (String) :=
+        match e with
+          | expr.string s => [s]
+          | expr.unaryRelOperation _ e => e.getReqVariables
+          | expr.binaryRelOperation _ e1 e2 => (e1.getReqVariables) ++ (e2.getReqVariables)
+          | expr.dotjoin _ e1 e2 => (e1.getReqVariables) ++ (e2.getReqVariables)
+          | _ => []
 
     def replaceRelationCalls
       (e: expr)
