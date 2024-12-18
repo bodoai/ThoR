@@ -23,14 +23,24 @@ end
     r: B
   }
   pred p1 {
-    all t: A.r | some t
+    all t: A | some t.r
   }
-  pred p2 {
-    all uu : B | some uu.A.r
-  }
+
 end
 
-#check x2.vars.B.q
+~alloy x3
+  sig A {
+    r: A
+  }
+  sig B {
+    r: B
+  }
+  pred p1 {
+    all t: A | some r
+  }
+
+end
+
 
 #alloy b2
   sig A extends B{

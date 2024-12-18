@@ -186,26 +186,34 @@ namespace Alloy
       let availableRelations : List (varDecl) :=
         st.variableDecls.filter fun (vd) => vd.isRelation
 
-      let availableSignatures : List (varDecl) :=
-        st.variableDecls.filter fun (vd) => !vd.isRelation
+      let relationNames := availableRelations.map fun r => r.name
 
-      let availableSymbols : List (String) :=
-        (availableSignatures.map fun (vd) => vd.name) ++
-          (st.axiomDecls.map  fun (ad) => ad.name) ++
-            (st.defDecls.map  fun (dd) => dd.name) ++
-            (st.defDecls.map  fun (dd) =>
-              (dd.args.map fun (arg) => arg.names).join).join
+      let allFormulas :=
+        (((st.axiomDecls.map fun ad => ad.formulas)++
+          (st.defDecls.map fun dd => dd.formulas)).join)
 
-      for requiredSymbol in st.requiredDecls do
-        if !(availableSymbols.contains requiredSymbol) then
-          let possibleSignatures :=
-            (availableRelations.filter
-              fun vd => vd.name = requiredSymbol).map
-                fun vd => s!"{vd.relationOf}"
+      let allRelationCalls :=
+        (allFormulas.map
+          fun f => f.getRelationCalls relationNames).join
 
-          if (possibleSignatures.length > 1) then
+      let allowedRelationCalls :=
+        (allFormulas.map
+          fun f => f.getQuantifiedRelationCalls relationNames).join
+
+      let allowedRelationCallsString :=
+        allowedRelationCalls.map fun arc => arc.1
+
+      for rc in allRelationCalls do
+        if !(allowedRelationCallsString.contains rc) then
+          if !(rc.contains '.') then
+            let possibleSignatures :=
+              (availableRelations.filter
+                fun vd => vd.name = rc).map
+                  fun vd => s!"{vd.relationOf}"
+
+            if (possibleSignatures.length > 1) then
             return (false,
-              s!"{requiredSymbol} is ambiguous. \
+              s!"{rc} is ambiguous. \
               It could refer to the relation \
               of the same name in the following \
               signatures {possibleSignatures}")
