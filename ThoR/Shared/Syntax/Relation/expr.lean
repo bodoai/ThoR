@@ -314,7 +314,7 @@ namespace Shared
           | expr.dotjoin _ e1 e2 =>
             let e1eval := (e1.getRelationCalls relationNames)
             let e2eval := (e2.getRelationCalls relationNames)
-            if (e2eval.length == 1) then
+            if (e1eval.length == 0) && (e2eval.length == 1) then
               match e1 with
                 | expr.string s =>
                   let e2value := e2eval.get! 0
