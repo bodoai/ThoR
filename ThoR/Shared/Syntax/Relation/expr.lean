@@ -293,6 +293,11 @@ namespace Shared
           | expr.dotjoin _ e1 e2 => (e1.getReqVariables) ++ (e2.getReqVariables)
           | _ => []
 
+    def getStringExpr (e:expr) : String :=
+      match e with
+        | expr.string s => s
+        | _ => default
+
     def getRelationCalls
       (e : expr)
       (relationNames : List (String))

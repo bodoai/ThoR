@@ -26,7 +26,7 @@ end
     all t: A.r | some t
   }
   pred p2 {
-    all uu : B | some uu
+    all uu : B | some uu.A.r
   }
 end
 

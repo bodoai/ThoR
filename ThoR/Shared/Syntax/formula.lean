@@ -471,6 +471,116 @@ namespace Shared
               ++ e.getReqVariables).filter
               fun (elem) => !(n.contains elem) -- quantor vars are not required
 
+    private def filterRelevantRelationCalls
+      (rcs : List String)
+      (quantifications : List (typeExpr × List (String)))
+      : List (String × List (typeExpr × List (String))) := Id.run do
+        let mut result :
+          List (String × List (typeExpr × List (String)))
+            := []
+
+        for rc in rcs do
+          if rc.contains '.' then
+            let data := rc.splitOn "_"
+            let possibleQuantorName := data.get! 0
+
+            for quantification in quantifications do
+              let quantNames := quantification.2
+
+              if quantNames.contains possibleQuantorName then
+                  result := result.concat (rc, quantifications)
+
+        return result
+
+    partial def getQuantifiedRelationCalls
+      (f:formula)
+      (relationNames : List (String))
+      (inside : Bool := false)
+      (currentQuantifications : List (typeExpr × List (String)) := [])
+      (result : List (String × List (typeExpr × List (String))) := [])
+      : List (String × List (typeExpr × List (String))) := Id.run do
+        match f with
+          | formula.string _ => result
+          | formula.pred_with_args _ pa =>
+            if !inside then
+              result
+            else
+              let rcs :=
+                (pa.map fun e =>
+                  e.getRelationCalls
+                    relationNames).join
+
+              result ++
+                filterRelevantRelationCalls
+                  rcs currentQuantifications
+
+          | formula.unaryRelBoolOperation _ e =>
+            if !inside then
+                result
+            else
+              let rcs := e.getRelationCalls relationNames
+
+              result ++
+                filterRelevantRelationCalls
+                  rcs currentQuantifications
+
+          | formula.unaryLogicOperation _ f =>
+            f.getQuantifiedRelationCalls
+              relationNames inside currentQuantifications result
+
+          | formula.binaryLogicOperation _ f1 f2 =>
+            let newResult := f1.getQuantifiedRelationCalls
+              relationNames inside currentQuantifications result
+            f2.getQuantifiedRelationCalls
+              relationNames inside currentQuantifications newResult
+
+          | formula.tertiaryLogicOperation _ f1 f2 f3 =>
+            let newResult1 := f1.getQuantifiedRelationCalls
+              relationNames inside currentQuantifications result
+            let newResult2 := f2.getQuantifiedRelationCalls
+              relationNames inside currentQuantifications newResult1
+            f3.getQuantifiedRelationCalls
+              relationNames inside currentQuantifications newResult2
+
+          | formula.algebraicComparisonOperation _ _ _ => result
+
+          | formula.relationComarisonOperation _ e1 e2 =>
+            if !inside then
+                result
+            else
+              let rcs1 := e1.getRelationCalls relationNames
+              let rcs2 := e2.getRelationCalls relationNames
+
+              result ++
+                filterRelevantRelationCalls
+                  rcs1 currentQuantifications ++
+                    filterRelevantRelationCalls
+                      rcs2 currentQuantifications
+
+          | formula.quantification _ _ names te f => do
+            let rcs := te.getRelationCalls relationNames
+
+            let newResult :=
+              filterRelevantRelationCalls
+                  rcs currentQuantifications
+
+            let tes := te.getStringExpr
+
+            --only single name types (e.g. x:A or x: one A)
+            let insideRelevantQuant := tes != ""
+
+            let mut newQuants := currentQuantifications
+            if insideRelevantQuant then
+              newQuants := newQuants.concat (te, names)
+
+            let formRelCalls := (f.map fun form =>
+                form.getQuantifiedRelationCalls
+                  relationNames
+                  true
+                  newQuants
+                  newResult).join
+            formRelCalls
+
     partial def getRelationCalls
       (f : formula)
       (relationNames : List (String))

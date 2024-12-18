@@ -149,6 +149,12 @@ namespace Shared
         | typeExpr.multExpr _ e => e.getReqVariables
         | typeExpr.relExpr e => e.getReqVariables
 
+    def getStringExpr (te:typeExpr) : String :=
+      match te with
+        | typeExpr.multExpr _ e => e.getStringExpr
+        | typeExpr.relExpr e => e.getStringExpr
+        | typeExpr.arrowExpr _ => default
+
     def getRelationCalls
       (te: typeExpr)
       (relationNames : List (String))
