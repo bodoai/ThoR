@@ -497,16 +497,36 @@ private def alloyBlockImpl : CommandElab := fun stx => do
 syntax (name := creationSyntax) ("#")? "create" ident : command
 
 private def evaluateCreationCommand
-  (name : Ident)
+  (ident : Ident)
   (logging : Bool)
   : CommandElabM Unit := do
-    let env ← get
-    env.env.displayStats
+    let monadeState ← get
+
+    let name : Name := ident.getId
+
+    let dataDefList :=
+      (monadeState.env.constants.toList.filter fun c =>
+        c.1 == name)
+    if dataDefList.isEmpty then
+      logError s!"Definition of {name} not found"
+
+    else
+      let dataDefInfo := (dataDefList.get! 0).2
+      if logging then
+        logInfo s!"Definition of {name} with type {dataDefInfo.type} found"
+
+      if !dataDefInfo.hasValue then
+        logError s!"Definition of {name} has no value"
+      else
+        let dataDefValue := dataDefInfo.value!
+
+        logInfo s!"{dataDefValue}"
 
 @[command_elab creationSyntax]
 private def creationImpl : CommandElab := fun stx => do
   try
     match stx with
       | `(create $name:ident) => evaluateCreationCommand name false
+      | `(#create $name:ident) => evaluateCreationCommand name true
       | _ => return
   catch | x => throwError x.toMessageData

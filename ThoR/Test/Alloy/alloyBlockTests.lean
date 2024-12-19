@@ -17,7 +17,7 @@ end
 
 #check x
 #print x
-create x
+#create x
 
 #alloy b2
   sig A extends B{
