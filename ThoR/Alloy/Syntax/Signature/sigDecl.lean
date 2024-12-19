@@ -209,6 +209,22 @@ namespace Alloy
             fieldDecls := []
           }
 
+    def toTerm (sd : sigDecl) : TSyntax `term := Unhygienic.run do
+      let absTerm ← `(term | $(if sd.abs then (mkIdent `true) else (mkIdent `false)))
+      let multTerm := sd.mult.toTerm
+
+      let mut namesTerm : TSyntax `term ← `(term | (List.nil))
+      for name in sd.names.reverse do
+        namesTerm  ← `(term | (List.cons $(Lean.Syntax.mkStrLit name) ($namesTerm)))
+
+      return ← `(term | ({
+                            abs := $absTerm,
+                            mult := $multTerm,
+                            names := $namesTerm,
+                            extension := Alloy.sigExt.none,
+                            fieldDecls := []
+                        } : Alloy.sigDecl ))
+
   end sigDecl
 
 end Alloy

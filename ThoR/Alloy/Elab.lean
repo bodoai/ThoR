@@ -16,6 +16,7 @@ import ThoR.Alloy.Syntax.AST
 import ThoR.Alloy.SymbolTable
 import ThoR.Alloy.InheritanceTree.UnTyped.InheritanceTree
 import ThoR.Alloy.Syntax.SeparatedNamespace
+import ThoR.Alloy.Syntax.alloyData
 
 open ThoR Shared Alloy
 open Lean Lean.Elab Command Term
@@ -337,7 +338,7 @@ syntax (name := alloyBlock)
 Evaluates the alloy block syntax.
 -/
 private def evalAlloyBlock
-  (name : TSyntax `ident)
+  (name : Ident)
   (specifications : Array (TSyntax `specification))
   (logging: Bool)
   : CommandElabM Unit := do
@@ -350,15 +351,25 @@ private def evalAlloyBlock
     let st := result.1
 
     let check := result.2
-    let allSymbolsFound := check.1
+    let allChecksCorrect := check.1
     let checkMsg := check.2
     if logging then
       logInfo (st.toString)
 
-    if !(allSymbolsFound) then
+    if !allChecksCorrect then
       logError (checkMsg)
 
     else
+
+      let data : alloyData := {ast := ast, st := st}
+      let dataName := name
+      let dataCommand ←
+        `(def $dataName : alloyData := $(data.toTerm))
+      elabCommand dataCommand
+      if logging then
+        logInfo s!"{dataCommand.raw.prettyPrint}"
+
+      /-
       let commands := createCommands st
 
       let mut commandString : String := ""
@@ -383,6 +394,7 @@ private def evalAlloyBlock
 
       if logging then
         logInfo extensionAxiomCommandsString
+      -/
 
 /--
 Finds a suitable defaultName for unnamed Blocks.
@@ -480,4 +492,21 @@ private def alloyBlockImpl : CommandElab := fun stx => do
 
       | _ => return -- if you enter # it might try to match and end here => do nothing
 
+  catch | x => throwError x.toMessageData
+
+syntax (name := creationSyntax) ("#")? "create" ident : command
+
+private def evaluateCreationCommand
+  (name : Ident)
+  (logging : Bool)
+  : CommandElabM Unit := do
+    let env ← get
+    env.env.displayStats
+
+@[command_elab creationSyntax]
+private def creationImpl : CommandElab := fun stx => do
+  try
+    match stx with
+      | `(create $name:ident) => evaluateCreationCommand name false
+      | _ => return
   catch | x => throwError x.toMessageData
