@@ -104,13 +104,13 @@ namespace InheritanceTree
   def create (ast : AST) : InheritanceTree := Id.run do
     let mut it : InheritanceTree := InheritanceTree.emptyTree
 
-    for sd in ast.sigDelcs do
+    for sd in ast.sigDecls do
       match sd.extension with
         | sigExt.extends e =>
           for name in sd.names do
             let parentName := (e.type.getReqVariables)[0]!
             let parentDecl :=
-              (ast.sigDelcs.filter fun (sd) => sd.names.contains parentName).get! 0
+              (ast.sigDecls.filter fun (sd) => sd.names.contains parentName).get! 0
             it := it.updateNodeExChild
               parentName parentDecl.abs name
 
@@ -119,7 +119,7 @@ namespace InheritanceTree
           for parentName in parentNames do
             for name in sd.names do
               let parentDecl :=
-                (ast.sigDelcs.filter fun (sd) => sd.names.contains parentName).get! 0
+                (ast.sigDecls.filter fun (sd) => sd.names.contains parentName).get! 0
               it := it.updateNodeInChild parentName parentDecl.abs name
         | sigExt.none => continue
 

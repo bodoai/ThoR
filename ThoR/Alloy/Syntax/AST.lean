@@ -24,7 +24,7 @@ A structure representation of the abstract syntax tree (AST) of Alloy.
 -/
 structure AST where
   mk :: (name : String)
-        (sigDelcs : List (sigDecl))
+        (sigDecls : List (sigDecl))
         (factDecls : List (factDecl))
         (assertDecls : List (assertDecl))
         (predDecls : List (predDecl))
@@ -34,7 +34,7 @@ instance : ToString AST where
   toString ( ast : AST ) : String :=
     s!"AST : \{
         name := {ast.name},
-        sigDecls := {ast.sigDelcs},
+        sigDecls := {ast.sigDecls},
         factDecls := {ast.factDecls},
         assertDecls := {ast.assertDecls},
         predDecls := {ast.predDecls}
@@ -50,7 +50,7 @@ namespace AST
   Adds a single `sigDecl` to the AST
   -/
   def addSigDecl (ast : AST) (sd : sigDecl) : AST :=
-    {ast with sigDelcs := ast.sigDelcs.concat sd}
+    {ast with sigDecls := ast.sigDecls.concat sd}
 
   /--
   Adds a single `factDecl` to the AST
@@ -80,7 +80,7 @@ namespace AST
 
       let mut ast : AST := {
         name := name.getId.lastComponentAsString
-        sigDelcs := []
+        sigDecls := []
         factDecls := []
         assertDecls := []
         predDecls := []
@@ -140,6 +140,21 @@ namespace AST
         | _ => unreachable!
 
       return ast
+
+  def toTerm (ast : AST) : TSyntax `term := Unhygienic.run do
+    let nameTerm ← `(term | $(Lean.Syntax.mkStrLit ast.name))
+
+    let mut sigDeclsTerms ← `(term | (List.nil))
+    for sigDecl in ast.sigDecls do
+      sigDeclsTerms ← `((List.cons $(sigDecl.toTerm) $sigDeclsTerms))
+
+    return ← `(term | ({
+                            name := $nameTerm,
+                            sigDecls := $sigDeclsTerms,
+                            factDecls := [],
+                            assertDecls := [],
+                            predDecls := []
+                      } : Alloy.AST ))
 
   end AST
 

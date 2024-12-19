@@ -454,7 +454,7 @@ namespace Alloy
           } : SymbolTable)
 
       -- sigs
-      st := st.addSigs ast.sigDelcs
+      st := st.addSigs ast.sigDecls
 
       -- facts
       st := st.addFacts ast.factDecls
@@ -477,6 +477,19 @@ namespace Alloy
 
       else
         return (st, false, symbolCheck.2)
+
+    def toTerm (st : SymbolTable) : TSyntax `term := Unhygienic.run do
+      let nameTerm ← `(term | $(Lean.Syntax.mkStrLit st.blockName))
+
+      return ← `(({
+                                  blockName := $nameTerm,
+                                  variableDecls := [],
+                                  defDecls := [],
+                                  axiomDecls := [],
+                                  assertDecls := [],
+                                  requiredDecls := []
+
+                  } : Alloy.SymbolTable ))
 
   end SymbolTable
 
