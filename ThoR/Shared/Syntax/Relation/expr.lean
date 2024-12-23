@@ -371,6 +371,19 @@ namespace Shared
                   dj
                   e1
                   (expr.string (replacementNames.get! index))
+              else
+                let rn := relationNames.get! index
+                if rn.contains '.' then
+                  let rns := rn.splitOn "."
+                  if
+                    ((rns.get! 1) == (name.get! 1)) &&
+                    e1 == (expr.string (rns.get! 0)) &&
+                    e2 == (expr.string (rns.get! 1))
+                  then
+                    return expr.dotjoin
+                      dj
+                      e1
+                      (expr.string (replacementNames.get! index))
 
             expr.dotjoin
               dj

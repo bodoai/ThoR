@@ -23,7 +23,7 @@ end
     r: B
   }
   pred p1 {
-    all t: A | some t.r
+    all t: B | some t.r
   }
 
 end

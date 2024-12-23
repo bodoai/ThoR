@@ -660,12 +660,36 @@ namespace Shared
               (e2.replaceRelationCalls relationNames replacementNames)
 
           | formula.quantification q d n te forms =>
+            let mut newRelationNames := []
+            let mut newReplacementNames := []
+            let typeString := te.getStringExpr
+            if typeString != default then
+              let possibleRelations :=
+                (replacementNames.map
+                  fun rm =>
+                    (rm.splitOn relationSeparator.get)).filter
+                      fun rpn => rpn.get! 0 == typeString
+              if !possibleRelations.isEmpty then
+
+                let relationName := (possibleRelations.get! 0).get! 1
+
+                for name in n do
+                  newRelationNames :=
+                    newRelationNames.concat s!"{name}.{relationName}"
+                  newReplacementNames :=
+                    newReplacementNames.concat
+                      s!"{typeString}{relationSeparator.get}{relationName}"
+
+            newRelationNames := newRelationNames ++ relationNames
+            newReplacementNames :=
+              newReplacementNames ++ replacementNames
+
             formula.quantification
               q
               d
               n
               (te.replaceRelationCalls relationNames replacementNames)
-              (forms.map fun f => f.replaceRelationCalls relationNames replacementNames)
+              (forms.map fun f => f.replaceRelationCalls newRelationNames newReplacementNames)
 
   end formula
 
