@@ -11,6 +11,7 @@ import ThoR.Shared.Syntax.Relation.binRelOp
 import ThoR.Shared.Syntax.Relation.dotjoin
 import ThoR.Relation.ElabCallMacro
 import ThoR.Shared.Syntax.baseType
+import ThoR.Shared.Syntax.Relation.relationSeparator
 
 open Lean
 
@@ -357,14 +358,19 @@ namespace Shared
               (e.replaceRelationCalls relationNames replacementNames)
 
           | expr.dotjoin dj e1 e2 =>
-            let namesToCheck := replacementNames.map fun rn => (rn.splitOn "_")
+            let namesToCheck := replacementNames.map
+              fun rn => (rn.splitOn relationSeparator.get)
+
             for index in [0 : (namesToCheck.length)] do
               let name := namesToCheck.get! index
               if
                 e1 == (expr.string (name.get! 0)) &&
                 e2 == (expr.string (name.get! 1))
               then
-                return expr.string (replacementNames.get! index)
+                return expr.dotjoin
+                  dj
+                  e1
+                  (expr.string (replacementNames.get! index))
 
             expr.dotjoin
               dj

@@ -16,6 +16,7 @@ import ThoR.Alloy.Syntax.AST
 import ThoR.Alloy.SymbolTable
 import ThoR.Alloy.InheritanceTree.UnTyped.InheritanceTree
 import ThoR.Alloy.Syntax.SeparatedNamespace
+import ThoR.Shared.Syntax.Relation.relationSeparator
 
 open ThoR Shared Alloy
 open Lean Lean.Elab Command Term
@@ -85,7 +86,8 @@ private def createDefOrAxiomCommand
   : Option (TSyntax `command) := Unhygienic.run do
 
     let relationNames := relations.map fun r => r.name
-    let replacementNames := relations.map fun r => s!"{r.relationOf}_{r.name}"
+    let replacementNames := relations.map
+      fun r => s!"{r.relationOf}{relationSeparator.get}{r.name}"
 
     -- formula evaluation
     -- All formulas (lines) in an Alloy pred or in an Alloy fact are
