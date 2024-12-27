@@ -342,7 +342,6 @@ private def evalAlloyBlock
   (specifications : Array (TSyntax `specification))
   (logging: Bool)
   : CommandElabM Unit := do
-
     let ast := AST.create name specifications
     if logging then
       logInfo (ast.toString)
@@ -362,39 +361,23 @@ private def evalAlloyBlock
     else
 
       let data : alloyData := {ast := ast, st := st}
-      let dataName := name
-      let dataCommand ←
-        `(def $dataName : alloyData := $(data.toTerm))
-      elabCommand dataCommand
-      if logging then
-        logInfo s!"{dataCommand.raw.prettyPrint}"
 
-      /-
-      let commands := createCommands st
+      let monadeState ← get
+      let monadeEnv := monadeState.env
 
-      let mut commandString : String := ""
+      let newMonadeEnv := addAlloyData monadeEnv data
+      let newMonadeEnvOption := newMonadeEnv.toOption
 
-      for command in commands do
-        elabCommand command
-        commandString := s!"{commandString} {command.raw.prettyPrint} \n\n"
+      match newMonadeEnvOption with
+        | Option.some nme =>
+          setEnv nme
+          if logging then
+            logInfo s!"Storing the Data as environment \
+            extension under the name {data.ast.name}_Data"
 
-      if logging then
-        logInfo commandString
+        | _ => logError s!"Data could not be stored"
 
-      let it :=  InheritanceTree.create ast
-      if logging then
-        logInfo it.toString
 
-      let extensionAxiomCommands := it.createAxiomsCommand name.getId
-      let mut extensionAxiomCommandsString := ""
-      for axiomCommand in extensionAxiomCommands do
-        elabCommand axiomCommand
-        extensionAxiomCommandsString :=
-          s!"{extensionAxiomCommandsString} {axiomCommand.raw.prettyPrint} \n\n"
-
-      if logging then
-        logInfo extensionAxiomCommandsString
-      -/
 
 /--
 Finds a suitable defaultName for unnamed Blocks.
@@ -494,7 +477,7 @@ private def alloyBlockImpl : CommandElab := fun stx => do
 
   catch | x => throwError x.toMessageData
 
-syntax (name := creationSyntax) ("#")? "create" ident : command
+syntax (name := creationSyntax) ("#")? "create" separatedNamespace : command
 
 private def evaluateCreationCommand
   (ident : Ident)
@@ -502,31 +485,57 @@ private def evaluateCreationCommand
   : CommandElabM Unit := do
     let monadeState ← get
 
-    let name : Name := ident.getId
+    let dataName : Name := s!"{ident.getId.lastComponentAsString}_Data".toName
+    let ads := getAlloyData monadeState.env
+    if let Option.some ad := ads.find? dataName then
+      if logging then
+        logInfo s!"Data with name {dataName} found:\n\n {ad}"
 
-    let dataDefList :=
-      (monadeState.env.constants.toList.filter fun c =>
-        c.1 == name)
-    if dataDefList.isEmpty then
-      logError s!"Definition of {name} not found"
+      let st := ad.st
+      let ast := ad.ast
+
+      let commands := createCommands st
+
+      let mut commandString : String := ""
+
+      for command in commands do
+        elabCommand command
+        commandString := s!"{commandString} {command.raw.prettyPrint} \n\n"
+
+      if logging then
+        logInfo commandString
+
+      let it :=  InheritanceTree.create ast
+      if logging then
+        logInfo it.toString
+
+      let extensionAxiomCommands := it.createAxiomsCommand ident.getId
+      let mut extensionAxiomCommandsString := ""
+      for axiomCommand in extensionAxiomCommands do
+        elabCommand axiomCommand
+        extensionAxiomCommandsString :=
+          s!"{extensionAxiomCommandsString} {axiomCommand.raw.prettyPrint} \n\n"
+
+      if logging then
+        logInfo extensionAxiomCommandsString
 
     else
-      let dataDefInfo := (dataDefList.get! 0).2
-      if logging then
-        logInfo s!"Definition of {name} with type {dataDefInfo.type} found"
+      logError s!"No data found for {dataName}"
 
-      if !dataDefInfo.hasValue then
-        logError s!"Definition of {name} has no value"
-      else
-        let dataDefValue := dataDefInfo.value!
-
-        logInfo s!"{dataDefValue}"
 
 @[command_elab creationSyntax]
 private def creationImpl : CommandElab := fun stx => do
   try
     match stx with
-      | `(create $name:ident) => evaluateCreationCommand name false
-      | `(#create $name:ident) => evaluateCreationCommand name true
+      | `(create $name:separatedNamespace) =>
+        evaluateCreationCommand
+          (separatedNamespace.toType name).representedNamespace
+          false
+
+      | `(#create $name:separatedNamespace) =>
+        evaluateCreationCommand
+          (separatedNamespace.toType name).representedNamespace
+          true
+
       | _ => return
   catch | x => throwError x.toMessageData

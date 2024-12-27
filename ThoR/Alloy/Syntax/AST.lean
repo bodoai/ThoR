@@ -39,6 +39,16 @@ instance : ToString AST where
         assertDecls := {ast.assertDecls},
         predDecls := {ast.predDecls}
       }"
+
+instance : Inhabited AST where
+  default := {
+    name := default,
+    sigDecls := default,
+    factDecls := default,
+    assertDecls := default,
+    predDecls := default
+  }
+
 namespace AST
 
   /--

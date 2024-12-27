@@ -93,11 +93,22 @@ namespace Alloy
         varDecls := {st.variableDecls},
         defDecls := {st.defDecls},
         axiomDecls := {st.axiomDecls},
-        reqDecls := {st.requiredDecls}
+        assertDecls := {st.assertDecls},
+        requiredDecls := {st.requiredDecls}
       }"
 
     instance : ToString SymbolTable where
       toString := toString
+
+    instance : Inhabited SymbolTable where
+      default := {
+        blockName := default,
+        variableDecls := default,
+        defDecls := default,
+        axiomDecls := default,
+        assertDecls := default,
+        requiredDecls := default
+      }
 
     /--
     Adds a single variable declaration to the ST
