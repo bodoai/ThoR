@@ -19,5 +19,7 @@ alloy cardCmp
 sig a {}
 pred b {#a = #a}
 end
+create cardCmp
+
 #check b
 #print b

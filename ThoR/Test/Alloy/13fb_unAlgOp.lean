@@ -19,5 +19,7 @@ alloy negNumbersCmp
 sig a {}
 pred b { -1 = -1 }
 end
+create negNumbersCmp
+
 #check b
 #print b

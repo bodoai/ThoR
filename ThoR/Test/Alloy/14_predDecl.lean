@@ -18,6 +18,7 @@ alloy emptyPred
 sig a {}
 pred b {}
 end
+create emptyPred
 
 #check a
 #check b

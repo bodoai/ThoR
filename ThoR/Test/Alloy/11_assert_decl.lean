@@ -17,5 +17,6 @@ alloy emptyAssert
 sig a {}
 assert a1 {}
 end
+create emptyAssert
 
 #check emptyAssert.asserts.a1

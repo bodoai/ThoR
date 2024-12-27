@@ -19,6 +19,7 @@ namespace emptySigInSig.test
     sig a in b {}
     sig b {}
   end
+  create emptySigInSig
 
   open emptySigInSig
   startTestBlock emptySigInSig
@@ -38,6 +39,7 @@ namespace emptySigInSigs.test
     sig a in b + c {}
     sig b,c {}
   end
+  create emptySigInSigs
 
   open emptySigInSigs
   startTestBlock emptySigInSigs
@@ -60,6 +62,7 @@ namespace emptySigsInSig.test
     sig a,b in c {}
     sig c {}
   end
+  create emptySigsInSig
 
   open emptySigsInSig
   startTestBlock emptySigsInSig
@@ -84,6 +87,7 @@ namespace emptySigsInSigs.test
     sig a,b in c + d {}
     sig c,d {}
   end
+  create emptySigsInSigs
 
   open emptySigsInSigs
   startTestBlock emptySigsInSigs

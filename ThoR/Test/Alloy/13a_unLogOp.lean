@@ -20,5 +20,6 @@ sig a {}
 pred p {}
 fact {not p}
 end
+create unRelOpNot
 
 #check f0

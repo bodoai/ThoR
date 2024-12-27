@@ -23,15 +23,19 @@ end
   sig A {}
 end
 
+create name/uses/alloy/like/separator
+
 #check name.uses.alloy.like.separator.vars.A
 
 /-With Content to create the namespace-/
 #alloy
   sig A {}
 end
+create default
 #check default.vars.A
 
 #alloy
   sig A {}
 end
+create default1
 #check default1.vars.A

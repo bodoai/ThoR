@@ -17,6 +17,7 @@ alloy emptyNamelessFact
 sig a {}
 fact {}
 end
+create emptyNamelessFact
 
 #check emptyNamelessFact.facts.f0
 
@@ -24,5 +25,6 @@ alloy emptyFact
 sig a {}
 fact factName {}
 end
+create emptyFact
 
 #check emptyFact.facts.factName

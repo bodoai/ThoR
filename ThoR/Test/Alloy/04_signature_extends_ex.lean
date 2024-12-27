@@ -19,6 +19,7 @@ namespace emptySigExtendsSig.test
     sig a extends b {}
     sig b {}
   end
+  create emptySigExtendsSig
   startTestBlock emptySigExtendsSig
     #check (a : ∷ set b)
     #check emptySigExtendsSig.inheritance_facts.a
@@ -36,6 +37,7 @@ namespace emptySigExtendsSigs.test
     sig b extends c {}
     sig c {}
   end
+  create emptySigExtendsSigs
   startTestBlock emptySigExtendsSigs
     #check (a : ∷ set b)
     #check emptySigExtendsSigs.inheritance_facts.a
@@ -59,6 +61,7 @@ namespace emptySigsExtendsSig.test
     sig a,b extends c {}
     sig c {}
   end
+  create emptySigsExtendsSig
 
   startTestBlock emptySigsExtendsSig
     #check (a : ∷ set c)
@@ -80,10 +83,11 @@ end emptySigsExtendsSig.test
 
 namespace emptySigsExtendsSigs.test
   alloy emptySigsExtendsSigs
-  sig a,b extends c {}
-  sig c extends d{}
-  sig d {}
-end
+    sig a,b extends c {}
+    sig c extends d{}
+    sig d {}
+  end
+  create emptySigsExtendsSigs
 
   startTestBlock emptySigsExtendsSigs
     #check a
@@ -108,6 +112,7 @@ namespace emptySigsExtendsAbstractSig.test
     sig b extends c {}
     abstract sig c {}
   end
+  create emptySigsExtendsAbstractSig
 
   startTestBlock emptySigsExtendsAbstractSig
     #check a

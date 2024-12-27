@@ -23,6 +23,7 @@ pred p {
   some x : r | x in ^r
 }
 end
+create transClose
 
 #check transClose.preds.p
 #print transClose.preds.p
@@ -41,6 +42,7 @@ pred p {
   some x : r | x in *r
 }
 end
+create reflexiveClose
 
 #check reflexiveClose.preds.p
 #print reflexiveClose.preds.p
@@ -59,6 +61,7 @@ pred p {
   some x : r | ~x in r
 }
 end
+create transpose
 
 #check transpose.preds.p
 #print transpose.preds.p

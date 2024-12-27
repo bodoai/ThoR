@@ -21,23 +21,28 @@ Signatur <sigDecl> ::= ([abstract] <mult>
 alloy empty_signature
   sig a {}
 end
+create empty_signature
 #check empty_signature.vars.a
 
 alloy empty_signatures
   sig a,b {}
 end
+create empty_signatures
 
 startTestBlock empty_signatures
   #check (empty_signatures.vars.a : ∷ set univ)
   #check (empty_signatures.vars.b : ∷ set univ)
 
+--does not work in alloy but in ThoR atm
 ~alloy emptySetSig
   set sig a {}
 end
+create emptySetSig
 
 #alloy emptySomeSig
   some sig a {}
 end
+create emptySomeSig
 
 startTestBlock emptySomeSig
   #check (emptySomeSig.vars.a : ∷ some univ)
@@ -45,6 +50,7 @@ startTestBlock emptySomeSig
 alloy emptySomeSigs
   some sig a,b {}
 end
+create emptySomeSigs
 
 startTestBlock emptySomeSigs
   #check (emptySomeSigs.vars.a : ∷ some univ)
@@ -53,6 +59,7 @@ startTestBlock emptySomeSigs
 alloy emptyLoneSig
   lone sig a {}
 end
+create emptyLoneSig
 
 startTestBlock emptyLoneSig
   #check (emptyLoneSig.vars.a : ∷ lone univ)
@@ -60,6 +67,7 @@ startTestBlock emptyLoneSig
 alloy emptyOneSig
   one sig a {}
 end
+create emptyOneSig
 
 startTestBlock emptyOneSig
   #check (emptyOneSig.vars.a : ∷ one univ)
@@ -68,6 +76,7 @@ alloy abstractEmptySig
   abstract sig a {}
 end
 
+--does not work in alloy but in ThoR atm
 ~alloy abstractSetEmptySig
   abstract set sig a {}
 end
@@ -75,6 +84,7 @@ end
 alloy abstractSomeEmptySig
   abstract some sig a {}
 end
+create abstractSomeEmptySig
 
 startTestBlock abstractSomeEmptySig
   #check (abstractSomeEmptySig.vars.a : ∷ some univ)
@@ -83,6 +93,8 @@ startTestBlock abstractSomeEmptySig
 alloy abstractSomeEmptySigs
   abstract some sig a,b {}
 end
+create abstractSomeEmptySigs
+
 startTestBlock abstractSomeEmptySigs
   #check (abstractSomeEmptySigs.vars.a : ∷ some univ)
   #check_failure abstractSomeEmptySigs.inheritance_facts.a
@@ -92,6 +104,8 @@ startTestBlock abstractSomeEmptySigs
 alloy abstractLoneEmptySig
   abstract lone sig a {}
 end
+create abstractLoneEmptySig
+
 startTestBlock abstractLoneEmptySig
   #check (abstractLoneEmptySig.vars.a : ∷ lone univ)
   #check_failure abstractLoneEmptySig.inheritance_facts.a
@@ -99,6 +113,8 @@ startTestBlock abstractLoneEmptySig
 alloy abstractOneEmptySig
   abstract one sig a {}
 end
+create abstractOneEmptySig
+
 startTestBlock abstractOneEmptySig
   #check (abstractOneEmptySig.vars.a : ∷ one univ)
   #check_failure abstractOneEmptySig.inheritance_facts.a
