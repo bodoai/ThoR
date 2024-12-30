@@ -12,7 +12,7 @@ defined alloy blocks from other files
 
 import ThoR
 
-import ThoR.Test.Alloy.t01_section
+import ThoR.Test.Alloy.unitTests.t01_section
 
 -- from t01_section
 create default2

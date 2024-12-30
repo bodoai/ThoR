@@ -28,11 +28,14 @@ create transClose
 #check transClose.preds.p
 #print transClose.preds.p
 
+
+--single transclose not allowed in Alloy
 ~alloy transCloseFail
 sig a {
   r : ^a
 }
 end
+
 
 alloy reflexiveClose
 sig a {
@@ -47,11 +50,14 @@ create reflexiveClose
 #check reflexiveClose.preds.p
 #print reflexiveClose.preds.p
 
+
+--single reflexiveClose not allowed in Alloy
 ~alloy reflexiveCloseFail
 sig a {
   r : *a
 }
 end
+
 
 alloy transpose
 sig a {
@@ -66,6 +72,8 @@ create transpose
 #check transpose.preds.p
 #print transpose.preds.p
 
+
+--single transclose not allowed in Alloy
 ~alloy transposeFail
 sig a {
   r : ~a
