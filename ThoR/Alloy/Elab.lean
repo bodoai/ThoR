@@ -366,18 +366,15 @@ private def evalAlloyBlock
       let monadeEnv := monadeState.env
 
       let newMonadeEnv := addAlloyData monadeEnv data
-      let newMonadeEnvOption := newMonadeEnv.toOption
 
-      match newMonadeEnvOption with
-        | Option.some nme =>
+      match newMonadeEnv with
+        | Except.ok nme =>
           setEnv nme
           if logging then
             logInfo s!"Storing the Data as environment \
             extension under the name {data.ast.name}_Data"
 
-        | _ => logError s!"Data could not be stored"
-
-
+        | Except.error e => logError e
 
 /--
 Finds a suitable defaultName for unnamed Blocks.
@@ -487,7 +484,8 @@ private def evaluateCreationCommand
 
     let dataName : Name := s!"{ident.getId.lastComponentAsString}_Data".toName
     let ads := getAlloyData monadeState.env
-    if let Option.some ad := ads.find? dataName then
+
+    if let Option.some (ad : alloyData) := ads.find? dataName then
       if logging then
         logInfo s!"Data with name {dataName} found:\n\n {ad}"
 

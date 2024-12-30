@@ -63,7 +63,8 @@ namespace Alloy
 
   def addAlloyData
     (env : Environment)
-    (ad : alloyData) : Except String Environment := do
+    (ad : alloyData)
+    : Except String Environment := do
       let ad' := (getAlloyData env).find? s!"{ad.ast.name}_Data".toName
       if ad'.isSome then
         let ads' := ad'.get!

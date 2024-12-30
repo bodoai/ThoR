@@ -15,4 +15,5 @@ import ThoR
 import ThoR.Test.Alloy.unitTests.t01_section
 
 -- from t01_section
-create default2
+#create default2
+#check default2.vars.A
