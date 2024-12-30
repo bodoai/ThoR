@@ -15,6 +15,8 @@ end
   }
 end
 
+#create x
+
 #alloy b2
   sig A extends B{
     r: B
@@ -26,6 +28,8 @@ end
   }
   fact {xte}
 end
+
+#create b2
 
 -- variables (ThoR_TupleSet : Type) [TupleSet ThoR_TupleSet] [b2.vars ThoR_TupleSet]
 -- def  xte'  :=
@@ -81,6 +85,8 @@ alloy verwandschaft
     }
 end
 
+create verwandschaft
+
 #check verwandschaft.inheritance_facts.FRAU
 #check verwandschaft.inheritance_facts.MANN
 #check verwandschaft.inheritance_facts.PERSON
@@ -123,6 +129,8 @@ pred main {
 }
 
 end
+
+create buch
 
 #check buch.vars.Buch
 #print buch.preds.WennSequelDannPrequel

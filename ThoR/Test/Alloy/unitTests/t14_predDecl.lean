@@ -7,15 +7,18 @@ Authors: s. file CONTRIBUTORS
 import ThoR
 
 /-
-This file tests the alloy fact declaration
+This file tests the alloy predicate declaration
 
-<assertDecl> ::= assert <name> <property>
+pred <name> ([<preArg>,*])
+{ <formula>* }
 
 -/
 
-alloy emptyAssert
+alloy emptyPred
 sig a {}
-assert a1 {}
+pred b {}
 end
+create emptyPred
 
-#check emptyAssert.asserts.a1
+#check a
+#check b

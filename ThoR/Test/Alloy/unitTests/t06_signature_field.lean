@@ -20,6 +20,7 @@ sig a {
   r : a
 }
 end
+create sigField
 
 startTestBlock sigField
   #check (r : ∷ a set → one a)
@@ -32,6 +33,7 @@ sig a {
   r1,r2 : a
 }
 end
+create sigFields
 
 startTestBlock sigFields
   #check (r1 : ∷ a set → one a)
@@ -46,6 +48,7 @@ sig a {
   r2 : a
 }
 end
+create sigFields2
 
 startTestBlock sigFields2
   #check (r1 : ∷ a set → one a)

@@ -23,5 +23,7 @@ alloy numbers
 sig a {}
 pred b {1 = 1}
 end
+create numbers
+
 #check b
 #print b

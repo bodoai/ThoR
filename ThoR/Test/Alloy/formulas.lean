@@ -10,6 +10,7 @@ alloy emptyPred
 sig a {}
 pred p1 {}
 end
+create emptyPred
 
 #check p1
 
@@ -17,6 +18,7 @@ alloy emptyFact
 sig a {}
 fact f1 {}
 end
+create emptyFact
 
 #check f1
 
