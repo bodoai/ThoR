@@ -151,21 +151,6 @@ namespace AST
 
       return ast
 
-  def toTerm (ast : AST) : TSyntax `term := Unhygienic.run do
-    let nameTerm ← `(term | $(Lean.Syntax.mkStrLit ast.name))
-
-    let mut sigDeclsTerms ← `(term | (List.nil))
-    for sigDecl in ast.sigDecls do
-      sigDeclsTerms ← `((List.cons $(sigDecl.toTerm) $sigDeclsTerms))
-
-    return ← `(term | ({
-                            name := $nameTerm,
-                            sigDecls := $sigDeclsTerms,
-                            factDecls := [],
-                            assertDecls := [],
-                            predDecls := []
-                      } : Alloy.AST ))
-
   end AST
 
 end Alloy

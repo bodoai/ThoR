@@ -19,11 +19,6 @@ namespace Alloy
     (st : SymbolTable)
 
   namespace alloyData
-    def toTerm (ad : alloyData) : TSyntax `term := Unhygienic.run do
-      let astTerm := ad.ast.toTerm
-      let stTerm := ad.st.toTerm
-
-      return ← `(({ast := $(astTerm), st := $(stTerm)} : Alloy.alloyData ))
 
     instance : ToString alloyData where
       toString ( ad : alloyData ) : String :=

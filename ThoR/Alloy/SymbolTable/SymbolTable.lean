@@ -489,19 +489,6 @@ namespace Alloy
       else
         return (st, false, symbolCheck.2)
 
-    def toTerm (st : SymbolTable) : TSyntax `term := Unhygienic.run do
-      let nameTerm ← `(term | $(Lean.Syntax.mkStrLit st.blockName))
-
-      return ← `(({
-                                  blockName := $nameTerm,
-                                  variableDecls := [],
-                                  defDecls := [],
-                                  axiomDecls := [],
-                                  assertDecls := [],
-                                  requiredDecls := []
-
-                  } : Alloy.SymbolTable ))
-
   end SymbolTable
 
 end Alloy
