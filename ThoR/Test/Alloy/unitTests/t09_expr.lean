@@ -27,6 +27,8 @@ namespace referenceSelf.test
     r : a
   }
   end
+  create referenceSelf
+
   startTestBlock referenceSelf
   #check (a : ∷ set univ)
   #check (a_r : ∷ a set → one a)
@@ -40,6 +42,8 @@ namespace referenceOther.test
     }
     sig b {}
   end
+  create referenceOther
+
   startTestBlock referenceOther
   #check (a : ∷ set univ)
   #check (a_r : ∷ a set → one b)

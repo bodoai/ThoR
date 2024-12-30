@@ -7,17 +7,13 @@ Authors: s. file CONTRIBUTORS
 import ThoR
 
 /-
-This file tests the alloy predicate declaration
+This file tests the alloy section specification
 
-pred <name> ([<preArg>,*])
-{ <formula>* }
+<spec> ::= <sigDecl>
+| <factDecl>
+| <predDecl>
+| <assertDecl>
+
+No Terminals to be tested
 
 -/
-
-alloy emptyPred
-sig a {}
-pred b {}
-end
-
-#check a
-#check b

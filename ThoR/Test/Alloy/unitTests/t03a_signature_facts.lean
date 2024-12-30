@@ -21,6 +21,7 @@ Signatur <sigDecl> ::= ([abstract] <mult>
 #alloy empty_signature_with_empty_sigFacts
   sig a {} {}
 end
+create empty_signature_with_empty_sigFacts
 #check empty_signature_with_empty_sigFacts.vars.a
 
 #alloy signature_with_empty_sigFacts
@@ -28,6 +29,7 @@ end
     r : a
   } {}
 end
+create signature_with_empty_sigFacts
 #check signature_with_empty_sigFacts.vars.a
 
 #alloy signature_with_sigFacts
@@ -38,6 +40,7 @@ end
     r = q
   }
 end
+create signature_with_sigFacts
 #check signature_with_sigFacts.vars.a
 #check signature_with_sigFacts.vars.r
 #check signature_with_sigFacts.vars.q
@@ -57,7 +60,8 @@ an issue has already been created for this.
   }
   sig c {}
 end
-#check signature_with_sigFacts.vars.a
-#check signature_with_sigFacts.vars.r
-#check signature_with_sigFacts.vars.q
-#check signature_with_sigFacts.facts.f0
+create signatures_with_sigFacts
+#check signatures_with_sigFacts.vars.a
+#check signatures_with_sigFacts.vars.r
+#check signatures_with_sigFacts.vars.q
+#check signatures_with_sigFacts.facts.f0

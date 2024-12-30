@@ -19,6 +19,7 @@ alloy In
 sig a {}
 fact {a in a}
 end
+create In
 
 #check In.facts.f0
 
@@ -26,6 +27,7 @@ alloy Eq
 sig a {}
 fact {a = a}
 end
+create Eq
 
 #check Eq.facts.f0
 
@@ -33,5 +35,6 @@ alloy NEq
 sig a {}
 fact {a != a}
 end
+create NEq
 
 #check NEq.facts.f0

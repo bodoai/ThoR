@@ -5,20 +5,21 @@ Authors: s. file CONTRIBUTORS
 -/
 
 import ThoR
-import ThoR.Test.Alloy.test_macro
 
 /-
-This file tests the alloy unary logic operator
+This file tests the alloy cardinal expression
 
-<unLogOp> ::= not
+<cardExpr> ::= # <expr>
+
+like numbers a card expr cant stand alone
 
 -/
 
-
-alloy unRelOpNot
+alloy cardCmp
 sig a {}
-pred p {}
-fact {not p}
+pred b {#a = #a}
 end
+create cardCmp
 
-#check f0
+#check b
+#print b

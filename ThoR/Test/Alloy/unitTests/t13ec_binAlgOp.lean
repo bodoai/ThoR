@@ -23,6 +23,7 @@ alloy plusNumbers
 sig a {}
 pred b { plus[1,1] = 2 }
 end
+create plusNumbers
 #check b
 #print b
 
@@ -30,6 +31,7 @@ alloy minusNumbers
 sig a {}
 pred b { minus[1,1] = 0 }
 end
+create minusNumbers
 #check minusNumbers.preds.b
 #print minusNumbers.preds.b
 
@@ -37,6 +39,7 @@ alloy divNumbers
 sig a {}
 pred b { div[4,2] = 2 }
 end
+create divNumbers
 
 #check divNumbers.preds.b
 #print divNumbers.preds.b
@@ -45,6 +48,7 @@ alloy mulNumbers
 sig a {}
 pred b { mul[2,2] = 4 }
 end
+create mulNumbers
 
 #check mulNumbers.preds.b
 #print mulNumbers.preds.b
@@ -53,6 +57,7 @@ alloy remNumbers
 sig a {}
 pred b { rem[5,2] = 1 }
 end
+create remNumbers
 
 #check remNumbers.preds.b
 #print remNumbers.preds.b

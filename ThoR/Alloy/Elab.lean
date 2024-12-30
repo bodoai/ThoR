@@ -17,6 +17,7 @@ import ThoR.Alloy.SymbolTable
 import ThoR.Alloy.InheritanceTree.UnTyped.InheritanceTree
 import ThoR.Alloy.Syntax.SeparatedNamespace
 import ThoR.Shared.Syntax.Relation.relationSeparator
+import ThoR.Alloy.Syntax.alloyData
 
 open ThoR Shared Alloy
 open Lean Lean.Elab Command Term
@@ -384,11 +385,10 @@ syntax (name := alloyBlock)
 Evaluates the alloy block syntax.
 -/
 private def evalAlloyBlock
-  (name : TSyntax `ident)
+  (name : Ident)
   (specifications : Array (TSyntax `specification))
   (logging: Bool)
   : CommandElabM Unit := do
-
     let ast := AST.create name specifications
     if logging then
       logInfo (ast.toString)
@@ -397,39 +397,31 @@ private def evalAlloyBlock
     let st := result.1
 
     let check := result.2
-    let allSymbolsFound := check.1
+    let allChecksCorrect := check.1
     let checkMsg := check.2
     if logging then
       logInfo (st.toString)
 
-    if !(allSymbolsFound) then
+    if !allChecksCorrect then
       logError (checkMsg)
 
     else
-      let commands := createCommands st
 
-      let mut commandString : String := ""
+      let data : alloyData := {ast := ast, st := st}
 
-      for command in commands do
-        elabCommand command
-        commandString := s!"{commandString} {command.raw.prettyPrint} \n\n"
+      let monadeState ← get
+      let monadeEnv := monadeState.env
 
-      if logging then
-        logInfo commandString
+      let newMonadeEnv := addAlloyData monadeEnv data
 
-      let it :=  InheritanceTree.create ast
-      if logging then
-        logInfo it.toString
+      match newMonadeEnv with
+        | Except.ok nme =>
+          setEnv nme
+          if logging then
+            logInfo s!"Storing the Data as environment \
+            extension under the name {data.ast.name}_Data"
 
-      let extensionAxiomCommands := it.createAxiomsCommand name.getId
-      let mut extensionAxiomCommandsString := ""
-      for axiomCommand in extensionAxiomCommands do
-        elabCommand axiomCommand
-        extensionAxiomCommandsString :=
-          s!"{extensionAxiomCommandsString} {axiomCommand.raw.prettyPrint} \n\n"
-
-      if logging then
-        logInfo extensionAxiomCommandsString
+        | Except.error e => logError e
 
 /--
 Finds a suitable defaultName for unnamed Blocks.
@@ -527,4 +519,68 @@ private def alloyBlockImpl : CommandElab := fun stx => do
 
       | _ => return -- if you enter # it might try to match and end here => do nothing
 
+  catch | x => throwError x.toMessageData
+
+syntax (name := creationSyntax) ("#")? "create" separatedNamespace : command
+
+private def evaluateCreationCommand
+  (ident : Ident)
+  (logging : Bool)
+  : CommandElabM Unit := do
+    let monadeState ← get
+
+    let dataName : Name := s!"{ident.getId.lastComponentAsString}_Data".toName
+    let ads := getAlloyData monadeState.env
+
+    if let Option.some (ad : alloyData) := ads.find? dataName then
+      if logging then
+        logInfo s!"Data with name {dataName} found:\n\n {ad}"
+
+      let st := ad.st
+      let ast := ad.ast
+
+      let commands := createCommands st
+
+      let mut commandString : String := ""
+
+      for command in commands do
+        elabCommand command
+        commandString := s!"{commandString} {command.raw.prettyPrint} \n\n"
+
+      if logging then
+        logInfo commandString
+
+      let it :=  InheritanceTree.create ast
+      if logging then
+        logInfo it.toString
+
+      let extensionAxiomCommands := it.createAxiomsCommand ident.getId
+      let mut extensionAxiomCommandsString := ""
+      for axiomCommand in extensionAxiomCommands do
+        elabCommand axiomCommand
+        extensionAxiomCommandsString :=
+          s!"{extensionAxiomCommandsString} {axiomCommand.raw.prettyPrint} \n\n"
+
+      if logging then
+        logInfo extensionAxiomCommandsString
+
+    else
+      logError s!"No data found for {dataName}"
+
+
+@[command_elab creationSyntax]
+private def creationImpl : CommandElab := fun stx => do
+  try
+    match stx with
+      | `(create $name:separatedNamespace) =>
+        evaluateCreationCommand
+          (separatedNamespace.toType name).representedNamespace
+          false
+
+      | `(#create $name:separatedNamespace) =>
+        evaluateCreationCommand
+          (separatedNamespace.toType name).representedNamespace
+          true
+
+      | _ => return
   catch | x => throwError x.toMessageData
