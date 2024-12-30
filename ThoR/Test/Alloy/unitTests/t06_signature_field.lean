@@ -23,7 +23,7 @@ end
 create sigField
 
 startTestBlock sigField
-  #check (a_r : ∷ a set → one a)
+  #check (a.r : ∷ a set → one a)
 
 end sigField.test
 
@@ -36,8 +36,8 @@ end
 create sigFields
 
 startTestBlock sigFields
-  #check (a_r1 : ∷ a set → one a)
-  #check (a_r2 : ∷ a set → one a)
+  #check (a.r1 : ∷ a set → one a)
+  #check (a.r2 : ∷ a set → one a)
 
 end sigFields.test
 
@@ -51,7 +51,7 @@ end
 create sigFields2
 
 startTestBlock sigFields2
-  #check (a_r1 : ∷ a set → one a)
-  #check (a_r2 : ∷ a set → one a)
+  #check (a.r1 : ∷ a set → one a)
+  #check (a.r2 : ∷ a set → one a)
 
 end sigFields2.test

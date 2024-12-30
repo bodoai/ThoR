@@ -31,7 +31,7 @@ namespace referenceSelf.test
 
   startTestBlock referenceSelf
   #check (a : ∷ set univ)
-  #check (a_r : ∷ a set → one a)
+  #check (a.r : ∷ a set → one a)
 
 end referenceSelf.test
 
@@ -46,7 +46,7 @@ namespace referenceOther.test
 
   startTestBlock referenceOther
   #check (a : ∷ set univ)
-  #check (a_r : ∷ a set → one b)
+  #check (a.r : ∷ a set → one b)
   #check (b : ∷ set univ)
 
 end referenceOther.test
