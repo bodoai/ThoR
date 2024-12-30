@@ -23,7 +23,7 @@ end
     r: B
   }
   pred p1 {
-    all t: B | some t.r
+    all t: B | some t + B.r
   }
 
 end
@@ -86,7 +86,7 @@ open b2.preds
 #check b2.inheritance_facts.B
 #check b2.facts.f0
 
-alloy verwandschaft
+#alloy verwandschaft
   abstract sig PERSON {
     hatVater: lone MANN,
     hatMutter: lone FRAU
@@ -154,7 +154,7 @@ end
 #check buch.vars.Buch
 #print buch.preds.WennSequelDannPrequel
 #check buch.facts.keineDopplungInReihe
-#check buch.vars.Buch_prequel
+#check buch.vars.Buch.prequel
 #print buch.preds.EntwederPrequelOderSequel
 open Shared.quant
 #print buch.preds.test

@@ -49,7 +49,7 @@ private def createVariableCommands
       for vd in variableDecls do
         let newName :=
           if vd.isRelation then
-             s!"{vd.relationOf}_{vd.name}".toName
+             s!"{vd.relationOf}{relationSeparator.get}{vd.name}".toName
           else
             s!"{vd.name}".toName
 
@@ -310,7 +310,7 @@ private def createRelationAliasCommands
   : List ((TSyntax `command)) := Unhygienic.run do
     let mut commandList : List ((TSyntax `command)) := []
     for relation in relations do
-      let undottetName := s!"{blockName}.vars.{relation.relationOf}_{relation.name}".toName
+      let undottetName := s!"{blockName}.vars.{relation.relationOf}{relationSeparator.get}{relation.name}".toName
       let dottetName := s!"{blockName}.vars.{relation.relationOf}.{relation.name}".toName
       let command ← `(alias $(mkIdent dottetName) := $(mkIdent undottetName))
       commandList := commandList.concat command
