@@ -35,7 +35,7 @@ namespace arrowOps.test
   create arrowOps
 
   startTestBlock arrowOps
-    #check (arrowOps.vars.r : ∷ a set → set (a set → set a))
+    #check (arrowOps.vars.a.r : ∷ a set → set (a set → set a))
 end arrowOps.test
 
 namespace a_set_arrow_a.test
@@ -48,9 +48,9 @@ namespace a_set_arrow_a.test
 
 
   #check a
-  #check r
+  #check a.r
   startTestBlock a_set_arrow_a
-    #check (r : ∷ a set → set (a set → set a))
+    #check (a.r : ∷ a set → set (a set → set a))
 end a_set_arrow_a.test
 
 namespace a_some_arrow_a.test
@@ -62,7 +62,7 @@ namespace a_some_arrow_a.test
   create a_some_arrow_a
 
   startTestBlock a_some_arrow_a
-    #check (r : ∷ a set → set (a some → set a))
+    #check (a.r : ∷ a set → set (a some → set a))
 end a_some_arrow_a.test
 
 namespace a_lone_arrow_a.test
@@ -74,7 +74,7 @@ namespace a_lone_arrow_a.test
   create a_lone_arrow_a
 
   startTestBlock a_lone_arrow_a
-    #check (r : ∷ a set → set (a lone → set a))
+    #check (a.r : ∷ a set → set (a lone → set a))
 end a_lone_arrow_a.test
 
 namespace a_one_arrow_a.test
@@ -86,7 +86,7 @@ namespace a_one_arrow_a.test
   create a_one_arrow_a
 
   startTestBlock a_one_arrow_a
-    #check (r : ∷ a set → set (a one → set a))
+    #check (a.r : ∷ a set → set (a one → set a))
 end a_one_arrow_a.test
 
 namespace a_arrow_set_a.test
@@ -98,7 +98,7 @@ namespace a_arrow_set_a.test
   create a_arrow_set_a
 
   startTestBlock a_arrow_set_a
-    #check (r : ∷ a set → set (a set → set a))
+    #check (a.r : ∷ a set → set (a set → set a))
 end a_arrow_set_a.test
 
 namespace a_arrow_some_a.test
@@ -110,7 +110,7 @@ namespace a_arrow_some_a.test
   create a_arrow_some_a
 
   startTestBlock a_arrow_some_a
-    #check (r : ∷ a set → set (a set → some a))
+    #check (a.r : ∷ a set → set (a set → some a))
 end a_arrow_some_a.test
 
 namespace a_arrow_lone_a.test
@@ -122,7 +122,7 @@ namespace a_arrow_lone_a.test
   create a_arrow_lone_a
 
   startTestBlock a_arrow_lone_a
-    #check (r : ∷ a set → set (a set → lone a))
+    #check (a.r : ∷ a set → set (a set → lone a))
 end a_arrow_lone_a.test
 
 namespace a_arrow_one_a.test
@@ -134,7 +134,7 @@ namespace a_arrow_one_a.test
   create a_arrow_one_a
 
   startTestBlock a_arrow_one_a
-    #check (r : ∷ a set → set (a set → one a))
+    #check (a.r : ∷ a set → set (a set → one a))
 end a_arrow_one_a.test
 
 namespace a_set_arrow_set_a.test
@@ -146,7 +146,7 @@ namespace a_set_arrow_set_a.test
   create a_set_arrow_set_a
 
   startTestBlock a_set_arrow_set_a
-    #check (r : ∷ a set → set (a set → set a))
+    #check (a.r : ∷ a set → set (a set → set a))
 end a_set_arrow_set_a.test
 
 namespace a_some_arrow_some_a.test
@@ -158,7 +158,7 @@ namespace a_some_arrow_some_a.test
   create a_some_arrow_some_a
 
   startTestBlock a_some_arrow_some_a
-    #check (r : ∷ a set → set (a some → some a))
+    #check (a.r : ∷ a set → set (a some → some a))
 end a_some_arrow_some_a.test
 
 namespace a_lone_arrow_lone_a.test
@@ -170,7 +170,7 @@ namespace a_lone_arrow_lone_a.test
   create a_lone_arrow_lone_a
 
   startTestBlock a_lone_arrow_lone_a
-    #check (r : ∷ a set → set (a lone → lone a))
+    #check (a.r : ∷ a set → set (a lone → lone a))
 end a_lone_arrow_lone_a.test
 
 namespace a_one_arrow_one_a.test
@@ -182,7 +182,7 @@ namespace a_one_arrow_one_a.test
   create a_one_arrow_one_a
 
   startTestBlock a_one_arrow_one_a
-    #check (r : ∷ a set → set (a one → one a))
+    #check (a.r : ∷ a set → set (a one → one a))
 end a_one_arrow_one_a.test
 
 namespace a_set_arrow_some_a.test
@@ -194,7 +194,7 @@ namespace a_set_arrow_some_a.test
   create a_set_arrow_some_a
 
   startTestBlock a_set_arrow_some_a
-    #check (r : ∷ a set → set (a set → some a))
+    #check (a.r : ∷ a set → set (a set → some a))
 end a_set_arrow_some_a.test
 
 namespace a_set_arrow_lone_a.test
@@ -206,7 +206,7 @@ namespace a_set_arrow_lone_a.test
   create a_set_arrow_lone_a
 
   startTestBlock a_set_arrow_lone_a
-    #check (r : ∷ a set → set (a set → lone a))
+    #check (a.r : ∷ a set → set (a set → lone a))
 end a_set_arrow_lone_a.test
 
 namespace a_set_arrow_one_a.test
@@ -218,7 +218,7 @@ namespace a_set_arrow_one_a.test
   create a_set_arrow_one_a
 
   startTestBlock a_set_arrow_one_a
-    #check (r : ∷ a set → set (a set → one a))
+    #check (a.r : ∷ a set → set (a set → one a))
 end a_set_arrow_one_a.test
 
 namespace a_some_arrow_set_a.test
@@ -230,7 +230,7 @@ namespace a_some_arrow_set_a.test
   create a_some_arrow_set_a
 
   startTestBlock a_some_arrow_set_a
-    #check (r : ∷ a set → set (a some → set a))
+    #check (a.r : ∷ a set → set (a some → set a))
 end a_some_arrow_set_a.test
 
 namespace a_some_arrow_lone_a.test
@@ -242,7 +242,7 @@ namespace a_some_arrow_lone_a.test
   create a_some_arrow_lone_a
 
   startTestBlock a_some_arrow_lone_a
-    #check (r : ∷ a set → set (a some → lone a))
+    #check (a.r : ∷ a set → set (a some → lone a))
 end a_some_arrow_lone_a.test
 
 namespace a_some_arrow_one_a.test
@@ -254,7 +254,7 @@ namespace a_some_arrow_one_a.test
   create a_some_arrow_one_a
 
   startTestBlock a_some_arrow_one_a
-    #check (r : ∷ a set → set (a some → one a))
+    #check (a.r : ∷ a set → set (a some → one a))
 end a_some_arrow_one_a.test
 
 namespace a_lone_arrow_set_a.test
@@ -266,7 +266,7 @@ namespace a_lone_arrow_set_a.test
   create a_lone_arrow_set_a
 
   startTestBlock a_lone_arrow_set_a
-    #check (r : ∷ a set → set (a lone → set a))
+    #check (a.r : ∷ a set → set (a lone → set a))
 end a_lone_arrow_set_a.test
 
 namespace a_lone_arrow_some_a.test
@@ -278,7 +278,7 @@ namespace a_lone_arrow_some_a.test
   create a_lone_arrow_some_a
 
   startTestBlock a_lone_arrow_some_a
-    #check (r : ∷ a set → set (a lone → some a))
+    #check (a.r : ∷ a set → set (a lone → some a))
 end a_lone_arrow_some_a.test
 
 namespace a_lone_arrow_one_a.test
@@ -290,7 +290,7 @@ namespace a_lone_arrow_one_a.test
   create a_lone_arrow_one_a
 
   startTestBlock a_lone_arrow_one_a
-    #check (r : ∷ a set → set (a lone → one a))
+    #check (a.r : ∷ a set → set (a lone → one a))
 end a_lone_arrow_one_a.test
 
 namespace a_one_arrow_set_a.test
@@ -302,7 +302,7 @@ namespace a_one_arrow_set_a.test
   create a_one_arrow_set_a
 
   startTestBlock a_one_arrow_set_a
-    #check (r : ∷ a set → set (a one → set a))
+    #check (a.r : ∷ a set → set (a one → set a))
 end a_one_arrow_set_a.test
 
 namespace a_one_arrow_some_a.test
@@ -314,7 +314,7 @@ namespace a_one_arrow_some_a.test
   create a_one_arrow_some_a
 
   startTestBlock a_one_arrow_some_a
-    #check (r : ∷ a set → set (a one → some a))
+    #check (a.r : ∷ a set → set (a one → some a))
 end a_one_arrow_some_a.test
 
 namespace a_one_arrow_lone_a.test
@@ -326,7 +326,7 @@ namespace a_one_arrow_lone_a.test
   create a_one_arrow_lone_a
 
   startTestBlock a_one_arrow_lone_a
-    #check (r : ∷ a set → set (a one → lone a))
+    #check (a.r : ∷ a set → set (a one → lone a))
 end a_one_arrow_lone_a.test
 
 namespace a_arrow_a_arrow_a.test
@@ -338,5 +338,5 @@ namespace a_arrow_a_arrow_a.test
   create a_arrow_a_arrow_a
 
   startTestBlock a_arrow_a_arrow_a
-    #check (r : ∷ a set → set (a set → set (a set → set a)))
+    #check (a.r : ∷ a set → set (a set → set (a set → set a)))
 end a_arrow_a_arrow_a.test

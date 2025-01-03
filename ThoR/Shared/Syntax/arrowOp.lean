@@ -335,6 +335,61 @@ namespace Shared
         | arrowOp.multArrowOpExprRight ae1 _ _ e2 => ae1.getReqVariables ++ e2.getReqVariables
         | arrowOp.multArrowOp ae1 _ _ ae2 => ae1.getReqVariables ++ ae2.getReqVariables
 
+    def getRelationCalls
+      (ao: arrowOp)
+      (relationNames : List (String))
+      : List (String) := Id.run do
+        match ao with
+          | multArrowOpExpr e1 _ _ e2 =>
+            (e1.getRelationCalls relationNames) ++
+              (e2.getRelationCalls relationNames)
+
+          | multArrowOpExprLeft e _ _ ao1 =>
+            (e.getRelationCalls relationNames) ++
+              (ao1.getRelationCalls relationNames)
+
+          | multArrowOpExprRight ao1 _ _ e =>
+            (ao1.getRelationCalls relationNames) ++
+              (e.getRelationCalls relationNames)
+
+          | multArrowOp ao1 _ _ ao2 =>
+            (ao1.getRelationCalls relationNames) ++
+              (ao2.getRelationCalls relationNames)
+
+    def replaceRelationCalls
+      (ao: arrowOp)
+      (relationNames :List (String))
+      (replacementNames :List (String))
+      : arrowOp :=
+        match ao with
+          | multArrowOpExpr e1 m1 m2 e2 =>
+            multArrowOpExpr
+              (e1.replaceRelationCalls relationNames replacementNames)
+              m1
+              m2
+              (e2.replaceRelationCalls relationNames replacementNames)
+
+          | multArrowOpExprLeft e m1 m2 ao1 =>
+            multArrowOpExprLeft
+              (e.replaceRelationCalls relationNames replacementNames)
+              m1
+              m2
+              (ao1.replaceRelationCalls relationNames replacementNames)
+
+          | multArrowOpExprRight ao1 m1 m2 e =>
+            multArrowOpExprRight
+              (ao1.replaceRelationCalls relationNames replacementNames)
+              m1
+              m2
+              (e.replaceRelationCalls relationNames replacementNames)
+
+          | multArrowOp ao1 m1 m2 ao2 =>
+            multArrowOp
+              (ao1.replaceRelationCalls relationNames replacementNames)
+              m1
+              m2
+              (ao2.replaceRelationCalls relationNames replacementNames)
+
   end arrowOp
 
 

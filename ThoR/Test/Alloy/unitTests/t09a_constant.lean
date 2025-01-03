@@ -28,8 +28,10 @@ sig a {
   r : univ
 }
 end
+create univConst
+
 startTestBlock univConst
-#check (r : ∷ a set -> one univ)
+#check (a.r : ∷ a set -> one univ)
 
 end univConst.test
 

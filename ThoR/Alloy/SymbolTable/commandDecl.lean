@@ -20,7 +20,8 @@ namespace Alloy
           (formulas : List (formula)) -- formulas in an Alloy pred or an Alloy fact
           (requiredDefs : List (String)) -- only for Lean Infoview
           (requiredVars : List (String)) -- only for Lean Infoview
-          (predCalls : List (List (String)))
+          (predCalls : List (List (String))) -- called predicates
+          (relationCalls : List (String)) -- called relations
   deriving Repr
 
   namespace commandDecl
@@ -38,9 +39,10 @@ namespace Alloy
     s!"commandDeclaration : \{
       name := {cd.name},
       args := {cd.args},
-      requiredDefinitions := {cd.requiredDefs},
-      requiredVariables := {cd.requiredVars},
-      calledPredicates := {cd.predCalls}
+      required definitions := {cd.requiredDefs},
+      required variables := {cd.requiredVars},
+      called predicates := {cd.predCalls},
+      called relations := {cd.relationCalls}
     }"
 
   instance : ToString commandDecl where

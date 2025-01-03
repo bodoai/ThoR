@@ -176,15 +176,58 @@ namespace Alloy
     This function stops at first error and states which symbol is missing.
     -/
     private def checkSymbols (st : SymbolTable) : Bool × String := Id.run do
-      let avariableSymbols : List (String) :=
+      let availableSymbols : List (String) :=
         (st.variableDecls.map fun (vd) => vd.name) ++
           (st.axiomDecls.map  fun (ad) => ad.name) ++
             (st.defDecls.map  fun (dd) => dd.name) ++
             (st.defDecls.map  fun (dd) => (dd.args.map fun (arg) => arg.names).join).join
 
       for requiredSymbol in st.requiredDecls do
-        if !(avariableSymbols.contains requiredSymbol) then
+        if !(availableSymbols.contains requiredSymbol) then
           return (false, s!"{requiredSymbol} is not defined")
+
+      return (true, "no error")
+
+    /--
+    Checks if all reffered Relations are not ambiguous
+
+    This function stops at first error which symbol is ambiguous.
+    -/
+    private def checkRelationCalls (st : SymbolTable) : Bool × String := Id.run do
+      let availableRelations : List (varDecl) :=
+        st.variableDecls.filter fun (vd) => vd.isRelation
+
+      let relationNames := availableRelations.map fun r => r.name
+
+      let allFormulas :=
+        (((st.axiomDecls.map fun ad => ad.formulas)++
+          (st.defDecls.map fun dd => dd.formulas)).join)
+
+      let allRelationCalls :=
+        (allFormulas.map
+          fun f => f.getRelationCalls relationNames).join
+
+      let allowedRelationCalls :=
+        (allFormulas.map
+          fun f => f.getQuantifiedRelationCalls relationNames).join
+
+      let allowedRelationCallsString :=
+        allowedRelationCalls.map fun arc => arc.1
+
+      for rc in allRelationCalls do
+        if !(allowedRelationCallsString.contains rc) then
+          if !(rc.contains '.') then
+            let possibleSignatures :=
+              (availableRelations.filter
+                fun vd => vd.name = rc).map
+                  fun vd => s!"{vd.relationOf}"
+
+            if (possibleSignatures.length > 1) then
+            return (false,
+              s!"{rc} is ambiguous. \
+              It could refer to the relation \
+              of the same name in the following \
+              signatures {possibleSignatures}")
 
       return (true, "no error")
 
@@ -215,7 +258,7 @@ namespace Alloy
 
             let pd? := availablePredDecls.find? fun (apd) => apd.name == predName
             if pd?.isNone then -- check: predicate exists?
-              return (false, s!"Definition {predName} not found")
+              return (false, s!"Predicate {predName} does not exist")
 
             else -- check: number of arguments
               let pd := pd?.get!
@@ -260,9 +303,11 @@ namespace Alloy
               st := st.addReqDecl requirement
 
           -- add Declarations
-          for name in sigDecl.names do
+          for signatureName in sigDecl.names do
             st := st.addVarDecl
-                    ({  name:= name,
+                    ({  name:= signatureName,
+                        isRelation := false,
+                        relationOf := default,
                         type := (sigDecl.extension.getType sigDecl.mult)
                         requiredDecls := localVarRequirements
                       } : varDecl)
@@ -277,7 +322,7 @@ namespace Alloy
                   | typeExpr.multExpr m e =>
                     typeExpr.arrowExpr
                       (arrowOp.multArrowOpExpr
-                        (expr.string name)
+                        (expr.string signatureName)
                         (mult.set) (m)
                         (e)
                       )
@@ -285,7 +330,7 @@ namespace Alloy
                   | typeExpr.relExpr e =>
                     typeExpr.arrowExpr
                       (arrowOp.multArrowOpExpr
-                        (expr.string name)
+                        (expr.string signatureName)
                         (mult.set) (mult.one)
                         (e)
                       )
@@ -293,7 +338,7 @@ namespace Alloy
                   | typeExpr.arrowExpr ae =>
                       typeExpr.arrowExpr
                         (arrowOp.multArrowOpExprLeft
-                          (expr.string name)
+                          (expr.string signatureName)
                           (mult.set)
                           (mult.set)
                           (ae)
@@ -318,6 +363,8 @@ namespace Alloy
 
                 st := st.addVarDecl ({
                       name:= fieldName,
+                      isRelation := true,
+                      relationOf := signatureName,
                       type := completeFieldType,
                       requiredDecls := localFieldRequirements} : varDecl)
 
@@ -335,13 +382,22 @@ namespace Alloy
 
       let mut st := inputST
 
-      let mut predCalls : List (List (String)):= []
+      let relationNames :=
+        (st.variableDecls.filter
+          fun vd => vd.isRelation).map
+            fun vd => vd.name
 
-      -- predCalls = concatenated list of all predCalls in all formulas of all predDecl
       for predDecl in predDecls do
+        let mut predCalls : List (List (String)) := []
+        let mut relCalls : List (String) := []
+
         for formula in predDecl.forms do
           if let Option.some pc := formula.getPredCalls then
-              predCalls := predCalls.concat pc
+            predCalls := predCalls.concat pc
+
+          let relationCalls := formula.getRelationCalls relationNames
+          if !(relationCalls.isEmpty) then
+            relCalls := relCalls.append relationCalls
 
         -- get list of referenced signatures and signature fields
         let reqVars : List (String) := predDecl.getReqVariables.eraseDups
@@ -355,7 +411,8 @@ namespace Alloy
               formulas := predDecl.forms,
               requiredVars := reqVars,
               requiredDefs := reqDefs,
-              predCalls := predCalls
+              predCalls := predCalls,
+              relationCalls := relCalls
           }
 
         st :=
@@ -377,14 +434,24 @@ namespace Alloy
 
       let mut st := inputST
 
-      let mut predCalls : List (List (String)):= []
+      let relationNames :=
+        (st.variableDecls.filter
+          fun vd => vd.isRelation).map
+            fun vd => vd.name
 
       for factDecl in factDecls do
+        let mut predCalls : List (List (String)):= []
+        let mut relCalls : List (String) := []
 
         -- get list of referenced preds (including arguments)
         for formula in factDecl.formulas do
+
           if let Option.some pc := formula.getPredCalls then
             predCalls := predCalls.concat pc
+
+          let relationCalls := formula.getRelationCalls relationNames
+          if !(relationCalls.isEmpty) then
+            relCalls := relCalls.append relationCalls
 
         -- get list of the names of the referenced signatures and signature fields
         let reqVars : List (String) := factDecl.getReqVariables.eraseDups
@@ -398,7 +465,8 @@ namespace Alloy
               formulas := factDecl.formulas,
               requiredVars := reqVars,
               requiredDefs := reqDefs,
-              predCalls := predCalls
+              predCalls := predCalls,
+              relationCalls := relCalls
           }
 
         st :=
@@ -420,14 +488,23 @@ namespace Alloy
 
       let mut st := inputST
 
-      let mut predCalls : List (List (String)):= []
+      let relationNames :=
+        (st.variableDecls.filter
+          fun vd => vd.isRelation).map
+            fun vd => vd.name
 
       for assertDecla in assertDecls do
+        let mut predCalls : List (List (String)):= []
+        let mut relCalls : List (String) := []
 
         -- get list of referenced preds (including arguments)
         for formula in assertDecla.formulas do
           if let Option.some pc := formula.getPredCalls then
             predCalls := predCalls.concat pc
+
+          let relationCalls := formula.getRelationCalls relationNames
+          if !(relationCalls.isEmpty) then
+            relCalls := relCalls.append relationCalls
 
         -- get list of the names of the referenced signatures and signature fields
         let reqVars : List (String) := assertDecla.getReqVariables.eraseDups
@@ -441,7 +518,8 @@ namespace Alloy
               formulas := assertDecla.formulas,
               requiredVars := reqVars,
               requiredDefs := reqDefs,
-              predCalls := predCalls
+              predCalls := predCalls,
+              relationCalls := relCalls
           }
 
         st :=
@@ -478,14 +556,19 @@ namespace Alloy
 
       let symbolCheck := st.checkSymbols
       if symbolCheck.1 then -- symbolCheck OK
-        let predCallCheck := st.checkPredCalls ast
-        if predCallCheck.1 then -- predCallCheck OK
-          let orderedSt := (st.replaceVarDecls (orderVarDecls st.variableDecls))
-          return (orderedSt, true, predCallCheck.2)
 
+        let relationCallCheck := st.checkRelationCalls
+        if relationCallCheck.1 then -- relationCallCheck OK
+
+          let predCallCheck := st.checkPredCalls ast
+          if predCallCheck.1 then -- predCallCheck OK
+            let orderedSt := (st.replaceVarDecls (orderVarDecls st.variableDecls))
+            return (orderedSt, true, predCallCheck.2)
+
+          else
+            return (st, false, predCallCheck.2)
         else
-          return (st, false, predCallCheck.2)
-
+          return (st, false, relationCallCheck.2)
       else
         return (st, false, symbolCheck.2)
 

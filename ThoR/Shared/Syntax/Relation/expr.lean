@@ -11,6 +11,7 @@ import ThoR.Shared.Syntax.Relation.binRelOp
 import ThoR.Shared.Syntax.Relation.dotjoin
 import ThoR.Relation.ElabCallMacro
 import ThoR.Shared.Syntax.baseType
+import ThoR.Shared.Syntax.Relation.relationSeparator
 
 open Lean
 
@@ -283,13 +284,113 @@ namespace Shared
     /--
     Gets the required variables for the type
     -/
-    def getReqVariables (e : expr) : List (String) :=
+    def getReqVariables
+      (e : expr)
+      : List (String) :=
+        match e with
+          | expr.string s => [s]
+          | expr.unaryRelOperation _ e => e.getReqVariables
+          | expr.binaryRelOperation _ e1 e2 => (e1.getReqVariables) ++ (e2.getReqVariables)
+          | expr.dotjoin _ e1 e2 => (e1.getReqVariables) ++ (e2.getReqVariables)
+          | _ => []
+
+    def getStringExpr (e:expr) : String :=
       match e with
-        | expr.string s => [s]
-        | expr.binaryRelOperation _ e1 e2 => (e1.getReqVariables) ++ (e2.getReqVariables)
-        | expr.unaryRelOperation _ e => e.getReqVariables
-        | expr.dotjoin _ e1 e2 => (e1.getReqVariables) ++ (e2.getReqVariables)
-        | _ => []
+        | expr.string s => s
+        | _ => default
+
+    def getRelationCalls
+      (e : expr)
+      (relationNames : List (String))
+      : List (String) := Id.run do
+        match e with
+          | expr.string s =>
+            if relationNames.contains s then
+              return [s]
+            else
+              return []
+
+          | expr.unaryRelOperation _ e =>
+            e.getRelationCalls relationNames
+
+          | expr.binaryRelOperation _ e1 e2 =>
+            (e1.getRelationCalls relationNames) ++
+              (e2.getRelationCalls relationNames)
+
+          | expr.dotjoin _ e1 e2 =>
+            let e1eval := (e1.getRelationCalls relationNames)
+            let e2eval := (e2.getRelationCalls relationNames)
+            if (e1eval.length == 0) && (e2eval.length == 1) then
+              match e1 with
+                | expr.string s =>
+                  let e2value := e2eval.get! 0
+                  return [s!"{s}.{e2value}"]
+
+                | _ => return e1eval ++ e2eval
+
+            else
+              return e1eval ++ e2eval
+
+          | _ => []
+
+    def replaceRelationCalls
+      (e: expr)
+      (relationNames :List (String))
+      (replacementNames :List (String))
+      : expr := Id.run do
+        match e with
+          | expr.string s =>
+            let index := relationNames.indexOf s
+            if index == relationNames.length then
+              e
+            else
+              expr.string (replacementNames.get! index)
+
+          | expr.binaryRelOperation op e1 e2 =>
+            expr.binaryRelOperation
+              op
+              (e1.replaceRelationCalls relationNames replacementNames)
+              (e2.replaceRelationCalls relationNames replacementNames)
+
+          | expr.unaryRelOperation op e =>
+            expr.unaryRelOperation
+              op
+              (e.replaceRelationCalls relationNames replacementNames)
+
+          | expr.dotjoin dj e1 e2 =>
+            let namesToCheck := replacementNames.map
+              fun rn => (rn.splitOn relationSeparator.get)
+
+            for index in [0 : (namesToCheck.length)] do
+              let name := namesToCheck.get! index
+              if
+                e1 == (expr.string (name.get! 0)) &&
+                e2 == (expr.string (name.get! 1))
+              then
+                return expr.dotjoin
+                  dj
+                  e1
+                  (expr.string (replacementNames.get! index))
+              else
+                let rn := relationNames.get! index
+                if rn.contains '.' then
+                  let rns := rn.splitOn "."
+                  if
+                    ((rns.get! 1) == (name.get! 1)) &&
+                    e1 == (expr.string (rns.get! 0)) &&
+                    e2 == (expr.string (rns.get! 1))
+                  then
+                    return expr.dotjoin
+                      dj
+                      e1
+                      (expr.string (replacementNames.get! index))
+
+            expr.dotjoin
+              dj
+              (e1.replaceRelationCalls relationNames replacementNames)
+              (e2.replaceRelationCalls relationNames replacementNames)
+
+          | _ => default
 
   end expr
 

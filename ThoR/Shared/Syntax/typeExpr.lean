@@ -48,6 +48,9 @@ namespace Shared
       | _, _ => false
   namespace typeExpr
 
+  instance : Inhabited typeExpr where
+    default := typeExpr.relExpr default
+
     /--
     Generates a string representation of the type
     -/
@@ -145,6 +148,41 @@ namespace Shared
         | typeExpr.arrowExpr ae => ae.getReqVariables
         | typeExpr.multExpr _ e => e.getReqVariables
         | typeExpr.relExpr e => e.getReqVariables
+
+    def getStringExpr (te:typeExpr) : String :=
+      match te with
+        | typeExpr.multExpr _ e => e.getStringExpr
+        | typeExpr.relExpr e => e.getStringExpr
+        | typeExpr.arrowExpr _ => default
+
+    def getRelationCalls
+      (te: typeExpr)
+      (relationNames : List (String))
+      : List (String) := Id.run do
+        match te with
+          | arrowExpr ae =>
+              (ae.getRelationCalls relationNames)
+          | multExpr _ e =>
+              (e.getRelationCalls relationNames)
+          | relExpr e =>
+              (e.getRelationCalls relationNames)
+
+    def replaceRelationCalls
+      (te: typeExpr)
+      (relationNames :List (String))
+      (replacementNames :List (String))
+      : typeExpr := Id.run do
+        match te with
+          | arrowExpr ae =>
+            arrowExpr
+              (ae.replaceRelationCalls relationNames replacementNames)
+          | multExpr m e =>
+            multExpr
+              m
+              (e.replaceRelationCalls relationNames replacementNames)
+          | relExpr e =>
+            relExpr
+              (e.replaceRelationCalls relationNames replacementNames)
 
   end typeExpr
 

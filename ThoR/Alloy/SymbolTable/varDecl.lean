@@ -14,6 +14,8 @@ namespace Alloy
   -/
   structure varDecl where
     mk :: (name : String)
+          (isRelation : Bool)
+          (relationOf : String)
           (type : typeExpr)
           (requiredDecls : List (String))
   deriving Repr
@@ -24,6 +26,8 @@ namespace Alloy
     def toString (vd : varDecl) : String :=
       s!"variableDeclaration : \{
         name := {vd.name},
+        isRelationOf := {vd.isRelation},
+        relationOf := {vd.relationOf},
         type := {vd.type},
         requiredDeclarations := {vd.requiredDecls}
       }"
@@ -33,13 +37,17 @@ namespace Alloy
 
     instance : BEq varDecl where
       beq : varDecl -> varDecl -> Bool
-        | vd1, vd2 => (vd1.name == vd2.name) && (vd1.type == vd2.type)
+        | vd1, vd2 => (vd1.name == vd2.name) &&
+                        (vd1.type == vd2.type) &&
+                          (vd1.isRelation == vd2.isRelation) &&
+                            (vd1.requiredDecls == vd2.requiredDecls)
 
     instance : Inhabited varDecl where
-      default := {  name:= "default",
-                    type := typeExpr.multExpr mult.set
-                      (expr.string "default"),
-                    requiredDecls := []
+      default := {  name:= default,
+                    isRelation := default,
+                    relationOf := default,
+                    type := default,
+                    requiredDecls := default
                   }
 
   end varDecl
