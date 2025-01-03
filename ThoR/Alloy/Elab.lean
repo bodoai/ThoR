@@ -18,6 +18,7 @@ import ThoR.Alloy.InheritanceTree.UnTyped.InheritanceTree
 import ThoR.Alloy.Syntax.SeparatedNamespace
 import ThoR.Shared.Syntax.Relation.relationSeparator
 import ThoR.Alloy.Syntax.alloyData
+import ThoR.Alloy.Syntax.OpenModule.openModuleHelper
 
 open ThoR Shared Alloy
 open Lean Lean.Elab Command Term
@@ -382,6 +383,36 @@ syntax (name := alloyBlock)
   ("#" <|> "~")? "alloy " (("module")? separatedNamespace)? specification* " end" : command
 
 /--
+This function tries to recursivly open all modules.
+-/
+private partial def openModules
+  (ast_withUnopenedModules : AST)
+  (env : Environment)
+  : Except String AST := do
+
+    let mut ast_withOpenedModules : AST :=
+      {ast_withUnopenedModules with modulesToOpen := default}
+
+    -- for each opened Module, add all of their ASTS
+    for moduleToOpen in ast_withUnopenedModules.modulesToOpen do
+      let data_with_exception := openModule.toAlloyData moduleToOpen env
+      match data_with_exception with
+        | Except.error msg =>
+          throw msg
+        | Except.ok data =>
+          ast_withOpenedModules := ast_withOpenedModules.concat data.ast
+
+    if ast_withOpenedModules.modulesToOpen.isEmpty then
+      return ast_withOpenedModules
+    else
+      let astWithExcept := (openModules ast_withOpenedModules env)
+      match astWithExcept with
+        | Except.error msg =>
+          throw msg
+        | Except.ok data =>
+          return data
+
+/--
 Evaluates the alloy block syntax.
 -/
 private def evalAlloyBlock
@@ -389,9 +420,31 @@ private def evalAlloyBlock
   (specifications : Array (TSyntax `specification))
   (logging: Bool)
   : CommandElabM Unit := do
-    let ast := AST.create name specifications
+
+    let monadeState ← get
+    let monadeEnv := monadeState.env
+
+    let mut ast := AST.create name specifications
     if logging then
-      logInfo (ast.toString)
+      logInfo
+        s!"AST without opened Modules: \n
+        {ast.toString}"
+
+    -- try to open all modules
+    let ast_withExcept := openModules ast monadeEnv
+
+    -- if an exception occured: log it and abort
+    match ast_withExcept with
+      | Except.error msg =>
+        logError msg
+        return
+      | Except.ok result_ast =>
+        ast := result_ast
+
+    if logging then
+      logInfo
+        s!"AST with opened Modules: \n
+        {ast.toString}"
 
     let result := SymbolTable.create ast
     let st := result.1
@@ -408,9 +461,6 @@ private def evalAlloyBlock
     else
 
       let data : alloyData := {ast := ast, st := st}
-
-      let monadeState ← get
-      let monadeEnv := monadeState.env
 
       let newMonadeEnv := addAlloyData monadeEnv data
 

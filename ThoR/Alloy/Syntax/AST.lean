@@ -28,6 +28,7 @@ structure AST where
         (factDecls : List (factDecl))
         (assertDecls : List (assertDecl))
         (predDecls : List (predDecl))
+        (modulesToOpen : List (openModule))
 deriving Repr
 
 instance : ToString AST where
@@ -37,7 +38,8 @@ instance : ToString AST where
         sigDecls := {ast.sigDecls},
         factDecls := {ast.factDecls},
         assertDecls := {ast.assertDecls},
-        predDecls := {ast.predDecls}
+        predDecls := {ast.predDecls},
+        modules to open := {ast.modulesToOpen}
       }"
 
 instance : Inhabited AST where
@@ -46,7 +48,8 @@ instance : Inhabited AST where
     sigDecls := default,
     factDecls := default,
     assertDecls := default,
-    predDecls := default
+    predDecls := default,
+    modulesToOpen := default
   }
 
 namespace AST
@@ -81,6 +84,12 @@ namespace AST
     {ast with predDecls := ast.predDecls.concat pd}
 
   /--
+  Adds a single module to open to the AST
+  -/
+  def addModuleToOpen (ast : AST) (om : openModule) : AST :=
+    {ast with modulesToOpen := ast.modulesToOpen.concat om}
+
+  /--
   Creates an AST from a name and an array of `specifications`
   -/
   def create
@@ -88,13 +97,8 @@ namespace AST
     (specifications : Array (TSyntax `specification))
     : AST := Id.run do
 
-      let mut ast : AST := {
-        name := name.getId.lastComponentAsString
-        sigDecls := []
-        factDecls := []
-        assertDecls := []
-        predDecls := []
-      }
+      let mut ast : AST := default
+      ast := {ast with name := name.getId.lastComponentAsString}
 
       -- used for default fact name
       let mut factCount := 0
@@ -147,10 +151,28 @@ namespace AST
         | `(specification| $pd:predDecl) =>
           ast := ast.addPredDecl (predDecl.toType pd)
 
+        -- Open Module
+        | `(specification| $om:openModule) =>
+          ast := ast.addModuleToOpen (openModule.toType om)
+
         | _ => unreachable!
 
       return ast
 
-  end AST
+  /--
+  Concatenates two abstact syntax trees.
+  The resulting AST takes the name of the first fiven AST.
+  -/
+  def concat (ast1 ast2 : AST) : AST :=
+    {
+      name := ast1.name,
+      sigDecls := ast1.sigDecls.append ast2.sigDecls,
+      factDecls := ast1.factDecls.append ast2.factDecls,
+      assertDecls := ast1.assertDecls.append ast2.assertDecls,
+      predDecls := ast1.predDecls.append ast2.predDecls,
+      modulesToOpen := ast1.modulesToOpen.append ast2.modulesToOpen
+    }
+
+end AST
 
 end Alloy
