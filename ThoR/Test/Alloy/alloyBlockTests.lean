@@ -30,7 +30,7 @@ end
 
 end
 
-create x2
+#create x2
 
 ~alloy x3
   sig A {
@@ -182,3 +182,16 @@ end
   open m2/te
   sig c {}
 end
+
+alloy xy
+  sig a, b {
+    r : a
+  }
+  fact {
+    some b.a
+  }
+end
+
+#create xy
+
+#print xy.facts.f0
