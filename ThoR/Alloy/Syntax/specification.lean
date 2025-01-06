@@ -7,6 +7,7 @@ import ThoR.Alloy.Syntax.Signature
 import ThoR.Alloy.Syntax.Predicate
 
 import ThoR.Alloy.Syntax.factDecl
+import ThoR.Alloy.Syntax.OpenModule
 
 namespace Alloy
   /--
@@ -17,5 +18,6 @@ namespace Alloy
   syntax factDecl : specification
   syntax predDecl : specification
   syntax assertDecl : specification
+  syntax openModule : specification
 
 end Alloy

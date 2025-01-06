@@ -168,3 +168,17 @@ create buch
 #print buch.preds.EntwederPrequelOderSequel
 open Shared.quant
 #print buch.preds.test
+
+alloy module m1
+  sig a {}
+end
+
+#alloy m2/te
+  open m1
+  sig b {}
+end
+
+#alloy m3
+  open m2/te
+  sig c {}
+end
