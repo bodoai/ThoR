@@ -449,9 +449,9 @@ private def evalAlloyBlock
     let result := SymbolTable.create ast
     let st := result.1
 
-    let check := result.2
-    let allChecksCorrect := check.1
-    let checkMsg := check.2
+    let rcheck := result.2
+    let allChecksCorrect := rcheck.1
+    let checkMsg := rcheck.2
     if logging then
       logInfo (st.toString)
 

@@ -46,7 +46,7 @@ namespace Alloy
   initialize alloyDataExtension : AlloyDataExtension ←
     registerSimplePersistentEnvExtension {
       addImportedFn :=
-        mkStateFromImportedEntries alloyDataState.addEntry {}
+        mkStateFromImportedEntries alloyDataState.addEntry ∅
 
       addEntryFn    := alloyDataState.addEntry
     }

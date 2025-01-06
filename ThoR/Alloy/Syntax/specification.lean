@@ -9,6 +9,9 @@ import ThoR.Alloy.Syntax.Predicate
 import ThoR.Alloy.Syntax.factDecl
 import ThoR.Alloy.Syntax.OpenModule
 
+import ThoR.Alloy.Syntax.IgnoredSyntax.run
+import ThoR.Alloy.Syntax.IgnoredSyntax.check
+
 namespace Alloy
   /--
   This syntax category specifies what can be a specification in an alloy block
@@ -19,5 +22,8 @@ namespace Alloy
   syntax predDecl : specification
   syntax assertDecl : specification
   syntax openModule : specification
+
+  syntax runSyntax : specification
+  syntax checkSyntax : specification
 
 end Alloy
