@@ -4,6 +4,8 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 
+import ThoR.Alloy.Syntax.SeparatedNamespace
+
 open Lean
 
 /-
@@ -18,7 +20,7 @@ structure openModule where
 deriving Repr
 
 declare_syntax_cat openModule
-syntax "open" ident : openModule
+syntax "open" separatedNamespace : openModule
 
 instance : Inhabited openModule where
   default := {moduleToOpen := default}
@@ -35,8 +37,8 @@ namespace openModule
     (om : TSyntax `openModule)
     : openModule := Id.run do
       match om with
-        | `(openModule| open $identifier:ident) =>
-          let name := identifier.getId
+        | `(openModule| open $sn:separatedNamespace) =>
+          let name := (separatedNamespace.toType sn).representedNamespace.getId
           {moduleToOpen := name}
 
         | _ => default

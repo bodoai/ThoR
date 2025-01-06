@@ -144,7 +144,12 @@ alloy module m1
   sig a {}
 end
 
-#alloy m2
+#alloy m2/te
   open m1
   sig b {}
+end
+
+#alloy m3
+  open m2/te
+  sig c {}
 end
