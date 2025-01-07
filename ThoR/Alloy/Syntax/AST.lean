@@ -22,72 +22,127 @@ namespace Alloy
 /--
 A structure representation of the abstract syntax tree (AST) of Alloy.
 -/
-structure AST where
-  mk :: (name : String)
+inductive AST
+  | mk  (name : String)
         (sigDecls : List (sigDecl))
         (factDecls : List (factDecl))
         (assertDecls : List (assertDecl))
         (predDecls : List (predDecl))
         (modulesToOpen : List (openModule))
+        (openedModules : List (AST))
 deriving Repr
 
-instance : ToString AST where
-  toString ( ast : AST ) : String :=
+namespace AST
+
+  def name | mk name _ _ _ _ _ _ => name
+  def sigDecls | mk _ sigDecls _ _ _ _ _ => sigDecls
+  def factDecls | mk _ _ factDecls _ _ _ _ => factDecls
+  def assertDecls | mk _ _ _ assertDecls _ _ _ => assertDecls
+  def predDecls | mk _ _ _ _ predDecls _ _ => predDecls
+  def modulesToOpen | mk _ _ _ _ _ modulesToOpen _ => modulesToOpen
+  def openedModules | mk _ _ _ _ _ _ openedModules => openedModules
+
+  instance : Inhabited AST where
+    default :=
+      AST.mk
+        (name := default)
+        (sigDecls := default)
+        (factDecls := default)
+        (assertDecls := default)
+        (predDecls := default)
+        (modulesToOpen := default)
+        (openedModules := default)
+
+  /--
+  Generates a String representation of the AST
+  -/
+  partial def toString (ast : AST) : String := Id.run do
+    let oms := ast.openedModules.map fun om => toString om
+
     s!"AST : \{
         name := {ast.name},
         sigDecls := {ast.sigDecls},
         factDecls := {ast.factDecls},
         assertDecls := {ast.assertDecls},
         predDecls := {ast.predDecls},
-        modules to open := {ast.modulesToOpen}
+        modules to open := {ast.modulesToOpen},
+        opened modules := {oms}
       }"
 
-instance : Inhabited AST where
-  default := {
-    name := default,
-    sigDecls := default,
-    factDecls := default,
-    assertDecls := default,
-    predDecls := default,
-    modulesToOpen := default
-  }
-
-namespace AST
+  instance : ToString AST where
+  toString ( ast : AST ) : String := toString ast
 
   /--
-  Generates a String representation of the AST
+  Updates the name of the AST to the given value
   -/
-  def toString (ast : AST) : String := ToString.toString ast
+  def updateName (name : String)
+    | mk _ sigDecls factDecls assertDecls
+      predDecls modulesToOpen openendModules =>
+        AST.mk name sigDecls factDecls assertDecls
+        predDecls modulesToOpen openendModules
+
+  /--
+  Clears the modules to open from the AST
+  -/
+  def clearModulesToOpen
+    | mk name sigDecls factDecls assertDecls
+      predDecls _ openendModules =>
+        AST.mk name sigDecls factDecls assertDecls
+        predDecls default openendModules
 
   /--
   Adds a single `sigDecl` to the AST
   -/
-  def addSigDecl (ast : AST) (sd : sigDecl) : AST :=
-    {ast with sigDecls := ast.sigDecls.concat sd}
+  def addSigDecl (sd : sigDecl)
+    | mk name sigDecls factDecls assertDecls
+      predDecls modulesToOpen openendModules =>
+        AST.mk name (sigDecls.concat sd) factDecls assertDecls
+        predDecls modulesToOpen openendModules
 
   /--
   Adds a single `factDecl` to the AST
   -/
-  def addFactDecl (ast : AST) (fd : factDecl) : AST :=
-    {ast with factDecls := ast.factDecls.concat fd}
+  def addFactDecl (fd : factDecl)
+    | mk name sigDecls factDecls assertDecls
+      predDecls modulesToOpen openendModules =>
+        AST.mk name sigDecls (factDecls.concat fd) assertDecls
+        predDecls modulesToOpen openendModules
 
   /--
   Adds a single `assertDecl` to the AST
   -/
-  def addAssertDecl (ast : AST) (ad : assertDecl) : AST :=
-    {ast with assertDecls := ast.assertDecls.concat ad}
+  def addAssertDecl (ad : assertDecl)
+    | mk name sigDecls factDecls assertDecls
+      predDecls modulesToOpen openendModules =>
+        AST.mk name sigDecls factDecls (assertDecls.concat ad)
+        predDecls modulesToOpen openendModules
 
   /--
   Adds a single `predDecl` to the AST
   -/
-  def addPredDecl (ast : AST) (pd : predDecl) : AST :=
-    {ast with predDecls := ast.predDecls.concat pd}
+  def addPredDecl (pd : predDecl)
+    | mk name sigDecls factDecls assertDecls
+      predDecls modulesToOpen openendModules =>
+        AST.mk name sigDecls factDecls assertDecls
+        (predDecls.concat pd) modulesToOpen openendModules
 
   /--
-  Adds a single module to open to the AST
+  Adds a single module to open (`openModule`) to the AST
   -/
-  def addModuleToOpen (ast : AST) (om : openModule) : AST :=
-    {ast with modulesToOpen := ast.modulesToOpen.concat om}
+  def addModuleToOpen (om : openModule)
+    | mk name sigDecls factDecls assertDecls
+      predDecls modulesToOpen openendModules =>
+        AST.mk name sigDecls factDecls assertDecls
+        predDecls (modulesToOpen.concat om) openendModules
+
+  /--
+  Adds a single opened module (`AST`) to the AST
+  -/
+  def addOpenedModule (om : AST)
+    | mk name sigDecls factDecls assertDecls
+      predDecls modulesToOpen openendModules =>
+        AST.mk name sigDecls factDecls assertDecls
+        predDecls modulesToOpen (openendModules.concat om)
 
   /--
   Creates an AST from a name and an array of `specifications`
@@ -97,8 +152,8 @@ namespace AST
     (specifications : Array (TSyntax `specification))
     : AST := Id.run do
 
-      let mut ast : AST := default
-      ast := {ast with name := name.getId.lastComponentAsString}
+      let mut ast : AST := (default)
+      ast := ast.updateName name.getId.lastComponentAsString
 
       -- used for default fact name
       let mut factCount := 0
@@ -161,17 +216,22 @@ namespace AST
 
   /--
   Concatenates two abstact syntax trees.
-  The resulting AST takes the name of the first fiven AST.
+  The resulting AST takes the name of the first given AST.
   -/
   def concat (ast1 ast2 : AST) : AST :=
-    {
-      name := ast1.name,
-      sigDecls := ast1.sigDecls.append ast2.sigDecls,
-      factDecls := ast1.factDecls.append ast2.factDecls,
-      assertDecls := ast1.assertDecls.append ast2.assertDecls,
-      predDecls := ast1.predDecls.append ast2.predDecls,
-      modulesToOpen := ast1.modulesToOpen.append ast2.modulesToOpen
-    }
+    match ast1, ast2 with
+      | mk name1 sigDecls1 factDecls1 assertDecls1
+        predDecls1 modulesToOpen1 openendModules1,
+        mk _ sigDecls2 factDecls2 assertDecls2
+        predDecls2 modulesToOpen2 openendModules2
+        =>
+        mk name1
+          (sigDecls1.append sigDecls2)
+          (factDecls1.append factDecls2)
+          (assertDecls1.append assertDecls2)
+          (predDecls1.append predDecls2)
+          (modulesToOpen1.append modulesToOpen2)
+          (openendModules1.append openendModules2)
 
 end AST
 
