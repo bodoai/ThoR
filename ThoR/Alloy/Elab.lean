@@ -390,8 +390,7 @@ private partial def openModules
   (env : Environment)
   : Except String AST := do
 
-    let mut ast_withOpenedModules : AST :=
-      {ast_withUnopenedModules with modulesToOpen := default}
+    let mut ast_withOpenedModules := ast_withUnopenedModules.clearModulesToOpen
 
     -- for each opened Module, add all of their ASTS
     for moduleToOpen in ast_withUnopenedModules.modulesToOpen do
@@ -400,17 +399,17 @@ private partial def openModules
         | Except.error msg =>
           throw msg
         | Except.ok data =>
-          ast_withOpenedModules := ast_withOpenedModules.concat data.ast
+          let mut newAst := data.ast
+          if !newAst.modulesToOpen.isEmpty then
+            let additionalModules := (openModules newAst env)
+            match additionalModules with
+              | Except.error msg => throw msg
+              | Except.ok newData =>
+                newAst := newAst.addOpenedModule newData
 
-    if ast_withOpenedModules.modulesToOpen.isEmpty then
-      return ast_withOpenedModules
-    else
-      let astWithExcept := (openModules ast_withOpenedModules env)
-      match astWithExcept with
-        | Except.error msg =>
-          throw msg
-        | Except.ok data =>
-          return data
+          ast_withOpenedModules := ast_withOpenedModules.addOpenedModule newAst
+
+    return ast_withOpenedModules
 
 /--
 Evaluates the alloy block syntax.
