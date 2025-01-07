@@ -175,10 +175,12 @@ end
 
 #alloy m2/te
   open m1
-  sig b {}
+  sig a {}
 end
 
 #alloy m3
   open m2/te
   sig c {}
 end
+
+#create m3

@@ -14,6 +14,8 @@ import ThoR.Alloy.Syntax.AST
 import ThoR.Alloy.SymbolTable.varDecl
 import ThoR.Alloy.SymbolTable.commandDecl
 
+import ThoR.Alloy.Syntax.Signature.signatureSeparator
+
 open Lean
 open Shared
 
@@ -283,6 +285,7 @@ namespace Alloy
     private def addSigs
       (inputST : SymbolTable)
       (sigDecls : List (sigDecl))
+      (moduleName : String := default)
       : SymbolTable := Id.run do
 
         let mut st : SymbolTable := inputST
@@ -303,7 +306,18 @@ namespace Alloy
               st := st.addReqDecl requirement
 
           -- add Declarations
-          for signatureName in sigDecl.names do
+          for sn in sigDecl.names do
+
+            let mut signatureName := sn
+
+            /-
+            if a moduleName is given, it is added to the
+            signature name to make it unique
+            -/
+            if moduleName != default then
+              signatureName :=
+                s!"{moduleName}{signatureSeparator.get}{signatureName}"
+
             st := st.addVarDecl
                     ({  name:= signatureName,
                         isRelation := false,
@@ -378,6 +392,7 @@ namespace Alloy
     private def addPreds
     (inputST : SymbolTable)
     (predDecls : List (predDecl))
+    (moduleName : String := default)
     : SymbolTable := Unhygienic.run do
 
       let mut st := inputST
@@ -405,8 +420,17 @@ namespace Alloy
         -- get list of referenced preds
         let reqDefs : List (String) := predDecl.getReqDefinitions.eraseDups
 
+        let mut declarationName := predDecl.name
+        /-
+        if a moduleName is given, it is added to the
+        signature name to make it unique
+        -/
+        if moduleName != default then
+          declarationName :=
+            s!"{moduleName}{signatureSeparator.get}{declarationName}"
+
         st := st.addDefDecl
-          {   name := predDecl.name,
+          {   name := declarationName,
               args := predDecl.args,
               formulas := predDecl.forms,
               requiredVars := reqVars,
@@ -430,6 +454,7 @@ namespace Alloy
     private def addFacts
     (inputST : SymbolTable)
     (factDecls : List (factDecl))
+    (moduleName : String := default)
     : SymbolTable := Unhygienic.run do
 
       let mut st := inputST
@@ -459,8 +484,17 @@ namespace Alloy
         -- get list of the names of the referenced preds
         let reqDefs : List (String) := factDecl.getReqDefinitions.eraseDups
 
+        let mut declarationName := factDecl.name
+        /-
+        if a moduleName is given, it is added to the
+        signature name to make it unique
+        -/
+        if moduleName != default then
+          declarationName :=
+            s!"{moduleName}{signatureSeparator.get}{declarationName}"
+
         st := st.addAxiomDecl
-          {   name := factDecl.name,
+          {   name := declarationName,
               args := [],
               formulas := factDecl.formulas,
               requiredVars := reqVars,
@@ -484,6 +518,7 @@ namespace Alloy
     private def addAsserts
     (inputST : SymbolTable)
     (assertDecls : List (assertDecl))
+    (moduleName : String := default)
     : SymbolTable := Unhygienic.run do
 
       let mut st := inputST
@@ -512,8 +547,17 @@ namespace Alloy
         -- get list of the names of the referenced preds
         let reqDefs : List (String) := assertDecla.getReqVariables.eraseDups
 
+        let mut declarationName := assertDecla.name
+        /-
+        if a moduleName is given, it is added to the
+        signature name to make it unique
+        -/
+        if moduleName != default then
+          declarationName :=
+            s!"{moduleName}{signatureSeparator.get}{declarationName}"
+
         st := st.addAssertDecl
-          {   name := assertDecla.name,
+          {   name := declarationName,
               args := [],
               formulas := assertDecla.formulas,
               requiredVars := reqVars,
@@ -529,6 +573,38 @@ namespace Alloy
 
       return st
 
+    private partial def addModule
+      (input : SymbolTable)
+      (ast : AST)
+      : SymbolTable := Id.run do
+        let mut st := input
+
+        let mut name := ast.name
+        /-
+          dots (.) are not valid to be contained in
+          the name a variable (in a typeclass), thus
+          they are removed here
+        -/
+        if name.contains '.' then
+          name := name.replace "." "_"
+
+        /-
+          add all sigs, preds, facts and asserts of the current MAIN module
+        -/
+        st := st.addSigs ast.sigDecls name
+        st := st.addPreds ast.predDecls name
+        st := st.addFacts ast.factDecls name
+        st := st.addAsserts ast.assertDecls name
+
+        /-
+          if there are modules left, they have to be addes as well
+        -/
+        for module in ast.openedModules do
+          st := st.addModule module
+
+        return st
+
+
     /--
     Creates a SymbolTable from an AST
     -/
@@ -542,6 +618,7 @@ namespace Alloy
             requiredDecls := []
           } : SymbolTable)
 
+      -- Add the elements of the CURRENT module (block)
       -- sigs
       st := st.addSigs ast.sigDecls
 
@@ -554,6 +631,11 @@ namespace Alloy
       --asserts
       st := st.addAsserts ast.assertDecls
 
+      -- Add elements from OPENED (imported) modules
+      for openedModuleAST in ast.openedModules do
+        st := st.addModule openedModuleAST
+
+      -- CHECKS
       let symbolCheck := st.checkSymbols
       if symbolCheck.1 then -- symbolCheck OK
 
