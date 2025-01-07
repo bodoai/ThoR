@@ -138,11 +138,12 @@ namespace AST
   /--
   Adds a single opened module (`AST`) to the AST
   -/
-  def addOpenedModule (om : AST)
-    | mk name sigDecls factDecls assertDecls
-      predDecls modulesToOpen openendModules =>
-        AST.mk name sigDecls factDecls assertDecls
-        predDecls modulesToOpen (openendModules.concat om)
+  def addOpenedModule (ast : AST) (om : AST) : AST :=
+    match ast with
+      | mk name sigDecls factDecls assertDecls
+        predDecls modulesToOpen openendModules =>
+          AST.mk name sigDecls factDecls assertDecls
+          predDecls modulesToOpen (openendModules.concat om)
 
   /--
   Creates an AST from a name and an array of `specifications`

@@ -169,7 +169,7 @@ create buch
 open Shared.quant
 #print buch.preds.test
 
-alloy module m1
+#alloy module m1
   sig a {}
 end
 

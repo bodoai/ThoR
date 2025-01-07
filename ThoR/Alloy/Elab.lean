@@ -394,8 +394,7 @@ private partial def openModules
 
     -- for each opened Module, add all of their ASTS
     for moduleToOpen in ast_withUnopenedModules.modulesToOpen do
-      let data_with_exception := openModule.toAlloyData moduleToOpen env
-      match data_with_exception with
+      match (openModule.toAlloyData moduleToOpen env) with
         | Except.error msg =>
           throw msg
         | Except.ok data =>
