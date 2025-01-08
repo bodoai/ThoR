@@ -444,32 +444,27 @@ private def evalAlloyBlock
         s!"AST with opened Modules: \n
         {ast.toString}"
 
-    let result := SymbolTable.create ast
-    let st := result.1
+    let result := SymbolTable.create ast logging
+    match result with
+      | Except.error msg =>
+        logError msg
 
-    let check := result.2
-    let allChecksCorrect := check.1
-    let checkMsg := check.2
-    if logging then
-      logInfo (st.toString)
+      | Except.ok st =>
 
-    if !allChecksCorrect then
-      logError (checkMsg)
+        if logging then logInfo st.toString
 
-    else
+        let data : alloyData := {ast := ast, st := st}
 
-      let data : alloyData := {ast := ast, st := st}
+        let newMonadeEnv := addAlloyData monadeEnv data
 
-      let newMonadeEnv := addAlloyData monadeEnv data
+        match newMonadeEnv with
+          | Except.ok nme =>
+            setEnv nme
+            if logging then
+              logInfo s!"Storing the Data as environment \
+              extension under the name {data.ast.name}_Data"
 
-      match newMonadeEnv with
-        | Except.ok nme =>
-          setEnv nme
-          if logging then
-            logInfo s!"Storing the Data as environment \
-            extension under the name {data.ast.name}_Data"
-
-        | Except.error e => logError e
+          | Except.error e => logError e
 
 /--
 Finds a suitable defaultName for unnamed Blocks.

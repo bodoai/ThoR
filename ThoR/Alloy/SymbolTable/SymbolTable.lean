@@ -184,7 +184,7 @@ namespace Alloy
 
     This function stops at first error and states which symbol is missing.
     -/
-    private def checkSymbols (st : SymbolTable) : Bool × String := Id.run do
+    private def checkSymbols (st : SymbolTable) : Except String String := do
       let availableSymbols : List (String) :=
         (st.variableDecls.map fun (vd) => vd.name) ++
           (st.axiomDecls.map  fun (ad) => ad.name) ++
@@ -193,57 +193,58 @@ namespace Alloy
 
       for requiredSymbol in st.requiredDecls do
         if !(availableSymbols.contains requiredSymbol) then
-          return (false, s!"{requiredSymbol} is not defined")
+          throw s!"{requiredSymbol} is not defined"
 
-      return (true, "no error")
+      return "no error"
 
     /--
     Checks if all reffered Relations are not ambiguous
 
     This function stops at first error which symbol is ambiguous.
     -/
-    private def checkRelationCalls (st : SymbolTable) : Bool × String := Id.run do
-      let availableRelations : List (varDecl) :=
-        st.variableDecls.filter fun (vd) => vd.isRelation
+    private def checkRelationCalls
+      (st : SymbolTable)
+      : Except String String := do
+        let availableRelations : List (varDecl) :=
+          st.variableDecls.filter fun (vd) => vd.isRelation
 
-      let relationNames := availableRelations.map fun r => r.name
+        let relationNames := availableRelations.map fun r => r.name
 
-      let allFormulas := st.getAllFormulas
+        let allFormulas := st.getAllFormulas
 
-      let allRelationCalls :=
-        (allFormulas.map
-          fun f => f.getRelationCalls relationNames).join
+        let allRelationCalls :=
+          (allFormulas.map
+            fun f => f.getRelationCalls relationNames).join
 
-      let allowedRelationCalls :=
-        (allFormulas.map
-          fun f => f.getQuantifiedRelationCalls relationNames).join
+        let allowedRelationCalls :=
+          (allFormulas.map
+            fun f => f.getQuantifiedRelationCalls relationNames).join
 
-      let allowedRelationCallsString :=
-        allowedRelationCalls.map fun arc => arc.1
+        let allowedRelationCallsString :=
+          allowedRelationCalls.map fun arc => arc.1
 
-      for rc in allRelationCalls do
-        if !(allowedRelationCallsString.contains rc) then
-          if !(rc.contains '.') then
-            let possibleSignatures :=
-              (availableRelations.filter
-                fun vd => vd.name = rc).map
-                  fun vd => s!"{vd.relationOf}"
+        for rc in allRelationCalls do
+          if !(allowedRelationCallsString.contains rc) then
+            if !(rc.contains '.') then
+              let possibleSignatures :=
+                (availableRelations.filter
+                  fun vd => vd.name = rc).map
+                    fun vd => s!"{vd.relationOf}"
 
-            if (possibleSignatures.length > 1) then
-            return (false,
-              s!"{rc} is ambiguous. \
-              It could refer to the relation \
-              of the same name in the following \
-              signatures {possibleSignatures}")
+              if (possibleSignatures.length > 1) then
+                throw s!"{rc} is ambiguous. \
+                      It could refer to the relation \
+                      of the same name in the following \
+                      signatures {possibleSignatures}"
 
-      return (true, "no error")
+        return "no error"
 
     /--
     Checks if the called signatures are valid and not ambiguous
     -/
     private def checkSignatureCalls
       (st : SymbolTable)
-      : Bool × String := Id.run do
+      : Except String String := do
 
       let signatures := st.variableDecls.filter fun vd => !vd.isRelation
 
@@ -254,15 +255,15 @@ namespace Alloy
             signatures.filter fun s => s.name == signatureCall
 
           if possibleSignatures.isEmpty then
-            return (false, s!"No signature with name {signatureCall} is defined.")
+            throw s!"No signature with name {signatureCall} is defined."
           else
             if possibleSignatures.length > 1 then
-              return (false, s!"The call to signature {signatureCall} is \
+              throw s!"The call to signature {signatureCall} is \
               ambiguous. It could refer so the signature of the blocks \
               {possibleSignatures.map
-                fun ps => if ps.isOpened then ps.openedFrom else "this"}")
+                fun ps => if ps.isOpened then ps.openedFrom else "this"}"
 
-      return (true, "no error")
+      return "no error"
 
     /--
     Checks if all predicate calls are correct.
@@ -276,7 +277,7 @@ namespace Alloy
     private def checkPredCalls
       (st : SymbolTable)
       (ast : AST)
-      : Bool × String := Id.run do
+      : Except String String := do
         let availablePredDecls : List (predDecl) :=
           ast.predDecls
 
@@ -291,7 +292,7 @@ namespace Alloy
 
             let pd? := availablePredDecls.find? fun (apd) => apd.name == predName
             if pd?.isNone then -- check: predicate exists?
-              return (false, s!"Predicate {predName} does not exist")
+              throw s!"Predicate {predName} does not exist"
 
             else -- check: number of arguments
               let pd := pd?.get!
@@ -302,10 +303,10 @@ namespace Alloy
               let cal := calledArgs.length
 
               if al != cal then
-                return (false,
-                  s!"Definition {predName} called with {cal} arguments ({calledArgs}), but expected {al}")
+                throw s!"Definition {predName} called with {cal} \
+                arguments ({calledArgs}), but expected {al}"
 
-        return (true, "no error")
+        return "no error"
 
     /--
     Adds the given signature declarations (including the contained signature field
@@ -661,57 +662,71 @@ namespace Alloy
 
         return st
 
+    private def getExtensiveErrorMsg
+      (msg : String)
+      (st : SymbolTable)
+      : String := s!"Error: '{msg}' occured in \n\n {st}"
 
     /--
     Creates a SymbolTable from an AST
     -/
-    def create (ast : AST) : SymbolTable × Bool × String := Id.run do
-      let mut st : SymbolTable :=
-        ({  blockName := ast.name,
-            variableDecls := [],
-            defDecls := [],
-            axiomDecls := [],
-            assertDecls := [],
-            requiredDecls := []
-          } : SymbolTable)
+    def create
+      (ast : AST)
+      (extensive_logging : Bool := false)
+      : Except String SymbolTable := do
+        let mut st : SymbolTable :=
+          ({  blockName := ast.name,
+              variableDecls := [],
+              defDecls := [],
+              axiomDecls := [],
+              assertDecls := [],
+              requiredDecls := []
+            } : SymbolTable)
 
-      -- Add elements from OPENED (imported) modules
-      for openedModuleAST in ast.openedModules do
-        st := st.addModule openedModuleAST
+        -- Add elements from OPENED (imported) modules
+        for openedModuleAST in ast.openedModules do
+          st := st.addModule openedModuleAST
 
-      -- Add the elements of the CURRENT module (block)
-      -- sigs
-      st := st.addSigs ast.sigDecls
+        -- Add the elements of the CURRENT module (block)
+        -- sigs
+        st := st.addSigs ast.sigDecls
 
-      -- facts
-      st := st.addFacts ast.factDecls
+        -- facts
+        st := st.addFacts ast.factDecls
 
-      --preds
-      st := st.addPreds ast.predDecls
+        --preds
+        st := st.addPreds ast.predDecls
 
-      --asserts
-      st := st.addAsserts ast.assertDecls
+        --asserts
+        st := st.addAsserts ast.assertDecls
 
-      -- CHECKS
-      let symbolCheck := st.checkSymbols
-      if !symbolCheck.1 then
-        return (st, false, symbolCheck.2)
+        -- CHECKS
+        if let Except.error msg := st.checkSymbols then
+          if extensive_logging then
+            throw (getExtensiveErrorMsg msg st)
+          else
+            throw msg
 
-      let relationCallCheck := st.checkRelationCalls
-      if !relationCallCheck.1 then
-        return (st, false, relationCallCheck.2)
+        if let Except.error msg := st.checkRelationCalls then
+          if extensive_logging then
+            throw (getExtensiveErrorMsg msg st)
+          else
+            throw msg
 
-      let sigCallCheck := st.checkSignatureCalls
-      if !sigCallCheck.1 then
-        return (st, false, sigCallCheck.2)
+        if let Except.error msg := st.checkSignatureCalls then
+          if extensive_logging then
+            throw (getExtensiveErrorMsg msg st)
+          else
+            throw msg
 
-      let predCallCheck := st.checkPredCalls ast
-      if !predCallCheck.1 then
-        return (st, false, predCallCheck.2)
+        if let Except.error msg := st.checkPredCalls ast then
+          if extensive_logging then
+            throw (getExtensiveErrorMsg msg st)
+          else
+            throw msg
 
-      -- Order the ST
-      let orderedSt := (st.replaceVarDecls (orderVarDecls st.variableDecls))
-      return (orderedSt, true, "no error")
+        -- Order the ST
+        return (st.replaceVarDecls (orderVarDecls st.variableDecls))
 
   end SymbolTable
 
