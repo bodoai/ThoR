@@ -581,6 +581,39 @@ namespace Shared
                   newResult).join
             formRelCalls
 
+    /--
+    returns all signatures that are called and also are in the
+    given name list (signature names).
+
+    note that giving the names is required, since you can't decide
+    on syntax alone if something is a signature or a relation
+    -/
+    partial def getSignatureCalls
+      (f : formula)
+      (signatureNames : List (String))
+      : List (String) := Id.run do
+        match f with
+        | formula.pred_with_args _ pa =>
+          (pa.map fun e => e.getSignatureCalls signatureNames).join
+        | formula.unaryRelBoolOperation _ e => e.getSignatureCalls signatureNames
+        | formula.unaryLogicOperation _ f => f.getSignatureCalls signatureNames
+        | formula.binaryLogicOperation _ f1 f2 =>
+          f1.getSignatureCalls signatureNames ++
+            f2.getSignatureCalls signatureNames
+        | formula.tertiaryLogicOperation _ f1 f2 f3 =>
+          f1.getSignatureCalls signatureNames ++
+            f2.getSignatureCalls signatureNames ++
+              f3.getSignatureCalls signatureNames
+        | formula.relationComarisonOperation _ e1 e2 =>
+          e1.getSignatureCalls signatureNames ++
+            e2.getSignatureCalls signatureNames
+        | formula.quantification _ _ _ te f =>
+          let typeExprRelCalls := te.getSignatureCalls signatureNames
+          let formRelCalls := (f.map fun form =>
+              form.getSignatureCalls signatureNames).join
+          return formRelCalls ++ typeExprRelCalls
+        | _ => []
+
     partial def getRelationCalls
       (f : formula)
       (relationNames : List (String))

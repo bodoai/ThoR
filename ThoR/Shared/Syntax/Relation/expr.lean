@@ -299,6 +299,34 @@ namespace Shared
         | expr.string s => s
         | _ => default
 
+    /--
+    returns all signatures that are called and also are in the
+    given name list (signature names).
+
+    note that giving the names is required, since you can't decide
+    on syntax alone if something is a signature or a relation
+    -/
+    def getSignatureCalls
+      (e : expr)
+      (signatureNames : List (String))
+      : List (String) := Id.run do
+        match e with
+          | expr.string s =>
+            if signatureNames.contains s then [s] else []
+
+          | expr.unaryRelOperation _ e =>
+            e.getSignatureCalls signatureNames
+
+          | expr.binaryRelOperation _ e1 e2 =>
+            (e1.getSignatureCalls signatureNames) ++
+              (e2.getSignatureCalls signatureNames)
+
+          | expr.dotjoin _ e1 e2 =>
+            (e1.getSignatureCalls signatureNames) ++
+              (e2.getSignatureCalls signatureNames)
+
+          | _ => [] -- unreachable
+
     def getRelationCalls
       (e : expr)
       (relationNames : List (String))

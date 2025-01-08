@@ -335,6 +335,34 @@ namespace Shared
         | arrowOp.multArrowOpExprRight ae1 _ _ e2 => ae1.getReqVariables ++ e2.getReqVariables
         | arrowOp.multArrowOp ae1 _ _ ae2 => ae1.getReqVariables ++ ae2.getReqVariables
 
+    /--
+    returns all signatures that are called and also are in the
+    given name list (signature names).
+
+    note that giving the names is required, since you can't decide
+    on syntax alone if something is a signature or a relation
+    -/
+    def getSignatureCalls
+      (ao: arrowOp)
+      (signatureNames : List (String))
+      : List (String) := Id.run do
+        match ao with
+          | multArrowOpExpr e1 _ _ e2 =>
+            (e1.getSignatureCalls signatureNames) ++
+              (e2.getSignatureCalls signatureNames)
+
+          | multArrowOpExprLeft e _ _ ao1 =>
+            (e.getSignatureCalls signatureNames) ++
+              (ao1.getSignatureCalls signatureNames)
+
+          | multArrowOpExprRight ao1 _ _ e =>
+            (ao1.getSignatureCalls signatureNames) ++
+              (e.getSignatureCalls signatureNames)
+
+          | multArrowOp ao1 _ _ ao2 =>
+            (ao1.getSignatureCalls signatureNames) ++
+              (ao2.getSignatureCalls signatureNames)
+
     def getRelationCalls
       (ao: arrowOp)
       (relationNames : List (String))

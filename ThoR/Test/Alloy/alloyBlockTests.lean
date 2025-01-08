@@ -180,7 +180,13 @@ end
 
 #alloy m3
   open m2/te
-  sig c {}
+  sig c {
+    r : m1_φ_a
+  }
+
+  fact {
+    some m1_φ_a
+  }
 end
 
 #create m3

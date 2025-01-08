@@ -393,7 +393,7 @@ namespace Alloy
     (inputST : SymbolTable)
     (predDecls : List (predDecl))
     (moduleName : String := default)
-    : SymbolTable := Unhygienic.run do
+    : SymbolTable := Id.run do
 
       let mut st := inputST
 
@@ -402,9 +402,15 @@ namespace Alloy
           fun vd => vd.isRelation).map
             fun vd => vd.name
 
+      let signatureNames :=
+        (st.variableDecls.filter
+          fun vd => !vd.isRelation).map
+            fun vd => vd.name
+
       for predDecl in predDecls do
         let mut predCalls : List (List (String)) := []
         let mut relCalls : List (String) := []
+        let mut sigCalls : List (String) := []
 
         for formula in predDecl.forms do
           if let Option.some pc := formula.getPredCalls then
@@ -413,6 +419,9 @@ namespace Alloy
           let relationCalls := formula.getRelationCalls relationNames
           if !(relationCalls.isEmpty) then
             relCalls := relCalls.append relationCalls
+
+          sigCalls :=
+            sigCalls.append (formula.getSignatureCalls signatureNames)
 
         -- get list of referenced signatures and signature fields
         let reqVars : List (String) := predDecl.getReqVariables.eraseDups
@@ -436,7 +445,8 @@ namespace Alloy
               requiredVars := reqVars,
               requiredDefs := reqDefs,
               predCalls := predCalls,
-              relationCalls := relCalls
+              relationCalls := relCalls,
+              signatureCalls := sigCalls
           }
 
         st :=
@@ -455,7 +465,7 @@ namespace Alloy
     (inputST : SymbolTable)
     (factDecls : List (factDecl))
     (moduleName : String := default)
-    : SymbolTable := Unhygienic.run do
+    : SymbolTable := Id.run do
 
       let mut st := inputST
 
@@ -464,9 +474,15 @@ namespace Alloy
           fun vd => vd.isRelation).map
             fun vd => vd.name
 
+      let signatureNames :=
+        (st.variableDecls.filter
+          fun vd => !vd.isRelation).map
+            fun vd => vd.name
+
       for factDecl in factDecls do
         let mut predCalls : List (List (String)):= []
         let mut relCalls : List (String) := []
+        let mut sigCalls : List (String) := []
 
         -- get list of referenced preds (including arguments)
         for formula in factDecl.formulas do
@@ -477,6 +493,10 @@ namespace Alloy
           let relationCalls := formula.getRelationCalls relationNames
           if !(relationCalls.isEmpty) then
             relCalls := relCalls.append relationCalls
+
+          sigCalls :=
+            sigCalls.append (formula.getSignatureCalls signatureNames)
+
 
         -- get list of the names of the referenced signatures and signature fields
         let reqVars : List (String) := factDecl.getReqVariables.eraseDups
@@ -500,7 +520,8 @@ namespace Alloy
               requiredVars := reqVars,
               requiredDefs := reqDefs,
               predCalls := predCalls,
-              relationCalls := relCalls
+              relationCalls := relCalls,
+              signatureCalls := sigCalls
           }
 
         st :=
@@ -519,7 +540,7 @@ namespace Alloy
     (inputST : SymbolTable)
     (assertDecls : List (assertDecl))
     (moduleName : String := default)
-    : SymbolTable := Unhygienic.run do
+    : SymbolTable := Id.run do
 
       let mut st := inputST
 
@@ -528,9 +549,15 @@ namespace Alloy
           fun vd => vd.isRelation).map
             fun vd => vd.name
 
+      let signatureNames :=
+        (st.variableDecls.filter
+          fun vd => !vd.isRelation).map
+            fun vd => vd.name
+
       for assertDecla in assertDecls do
         let mut predCalls : List (List (String)):= []
         let mut relCalls : List (String) := []
+        let mut signatureCalls : List (String) := []
 
         -- get list of referenced preds (including arguments)
         for formula in assertDecla.formulas do
@@ -540,6 +567,10 @@ namespace Alloy
           let relationCalls := formula.getRelationCalls relationNames
           if !(relationCalls.isEmpty) then
             relCalls := relCalls.append relationCalls
+
+          signatureCalls :=
+            signatureCalls.append
+              (formula.getSignatureCalls signatureNames)
 
         -- get list of the names of the referenced signatures and signature fields
         let reqVars : List (String) := assertDecla.getReqVariables.eraseDups
@@ -563,7 +594,8 @@ namespace Alloy
               requiredVars := reqVars,
               requiredDefs := reqDefs,
               predCalls := predCalls,
-              relationCalls := relCalls
+              relationCalls := relCalls,
+              signatureCalls := signatureCalls
           }
 
         st :=
@@ -618,6 +650,10 @@ namespace Alloy
             requiredDecls := []
           } : SymbolTable)
 
+      -- Add elements from OPENED (imported) modules
+      for openedModuleAST in ast.openedModules do
+        st := st.addModule openedModuleAST
+
       -- Add the elements of the CURRENT module (block)
       -- sigs
       st := st.addSigs ast.sigDecls
@@ -630,10 +666,6 @@ namespace Alloy
 
       --asserts
       st := st.addAsserts ast.assertDecls
-
-      -- Add elements from OPENED (imported) modules
-      for openedModuleAST in ast.openedModules do
-        st := st.addModule openedModuleAST
 
       -- CHECKS
       let symbolCheck := st.checkSymbols

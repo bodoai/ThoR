@@ -155,6 +155,25 @@ namespace Shared
         | typeExpr.relExpr e => e.getStringExpr
         | typeExpr.arrowExpr _ => default
 
+    /--
+    returns all signatures that are called and also are in the
+    given name list (signature names).
+
+    note that giving the names is required, since you can't decide
+    on syntax alone if something is a signature or a relation
+    -/
+    def getSignatureCalls
+      (te: typeExpr)
+      (signatureNames : List (String))
+      : List (String) := Id.run do
+        match te with
+          | arrowExpr ae =>
+              (ae.getSignatureCalls signatureNames)
+          | multExpr _ e =>
+              (e.getSignatureCalls signatureNames)
+          | relExpr e =>
+              (e.getSignatureCalls signatureNames)
+
     def getRelationCalls
       (te: typeExpr)
       (relationNames : List (String))

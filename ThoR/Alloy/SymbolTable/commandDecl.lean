@@ -22,6 +22,7 @@ namespace Alloy
           (requiredVars : List (String)) -- only for Lean Infoview
           (predCalls : List (List (String))) -- called predicates
           (relationCalls : List (String)) -- called relations
+          (signatureCalls : List (String)) -- called signatures
   deriving Repr
 
   namespace commandDecl
@@ -42,7 +43,8 @@ namespace Alloy
       required definitions := {cd.requiredDefs},
       required variables := {cd.requiredVars},
       called predicates := {cd.predCalls},
-      called relations := {cd.relationCalls}
+      called relations := {cd.relationCalls},
+      called signatures := {cd.signatureCalls}
     }"
 
   instance : ToString commandDecl where
