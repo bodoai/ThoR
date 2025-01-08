@@ -14,6 +14,8 @@ namespace Alloy
   -/
   structure varDecl where
     mk :: (name : String)
+          (isOpened : Bool) -- imported
+          (openedFrom : String)
           (isRelation : Bool)
           (relationOf : String)
           (type : typeExpr)
@@ -26,6 +28,8 @@ namespace Alloy
     def toString (vd : varDecl) : String :=
       s!"variableDeclaration : \{
         name := {vd.name},
+        isOpenend := {vd.isOpened},
+        openedFrom := {vd.openedFrom},
         isRelationOf := {vd.isRelation},
         relationOf := {vd.relationOf},
         type := {vd.type},
@@ -44,6 +48,8 @@ namespace Alloy
 
     instance : Inhabited varDecl where
       default := {  name:= default,
+                    isOpened := default,
+                    openedFrom := default,
                     isRelation := default,
                     relationOf := default,
                     type := default,

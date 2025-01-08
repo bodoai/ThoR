@@ -306,20 +306,12 @@ namespace Alloy
               st := st.addReqDecl requirement
 
           -- add Declarations
-          for sn in sigDecl.names do
-
-            let mut signatureName := sn
-
-            /-
-            if a moduleName is given, it is added to the
-            signature name to make it unique
-            -/
-            if moduleName != default then
-              signatureName :=
-                s!"{moduleName}{signatureSeparator.get}{signatureName}"
+          for signatureName in sigDecl.names do
 
             st := st.addVarDecl
                     ({  name:= signatureName,
+                        isOpened := moduleName != default,
+                        openedFrom := moduleName,
                         isRelation := false,
                         relationOf := default,
                         type := (sigDecl.extension.getType sigDecl.mult)
@@ -377,6 +369,8 @@ namespace Alloy
 
                 st := st.addVarDecl ({
                       name:= fieldName,
+                      isOpened := moduleName != default,
+                      openedFrom := moduleName,
                       isRelation := true,
                       relationOf := signatureName,
                       type := completeFieldType,
