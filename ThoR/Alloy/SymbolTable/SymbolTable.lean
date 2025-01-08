@@ -172,6 +172,13 @@ namespace Alloy
         requiredDecls := st.requiredDecls.append temp
       }
 
+    def getAllFormulas (st : SymbolTable) : List (formula) :=
+      ((
+        (st.axiomDecls.map fun ad => ad.formulas) ++
+        (st.defDecls.map fun dd => dd.formulas) ++
+        (st.assertDecls.map fun ad => ad.formulas)
+        ).join)
+
     /--
     Checks if all required symbols are present.
 
@@ -201,9 +208,7 @@ namespace Alloy
 
       let relationNames := availableRelations.map fun r => r.name
 
-      let allFormulas :=
-        (((st.axiomDecls.map fun ad => ad.formulas)++
-          (st.defDecls.map fun dd => dd.formulas)).join)
+      let allFormulas := st.getAllFormulas
 
       let allRelationCalls :=
         (allFormulas.map
@@ -230,6 +235,32 @@ namespace Alloy
               It could refer to the relation \
               of the same name in the following \
               signatures {possibleSignatures}")
+
+      return (true, "no error")
+
+    /--
+    Checks if the called signatures are valid and not ambiguous
+    -/
+    private def checkSignatureCalls
+      (st : SymbolTable)
+      : Bool × String := Id.run do
+
+      let signatures := st.variableDecls.filter fun vd => !vd.isRelation
+
+      let allCallLocations := st.assertDecls ++ st.axiomDecls ++ st.defDecls
+      for location in allCallLocations do
+        for signatureCall in location.signatureCalls do
+          let possibleSignatures :=
+            signatures.filter fun s => s.name == signatureCall
+
+          if possibleSignatures.isEmpty then
+            return (false, s!"No signature with name {signatureCall} is defined.")
+          else
+            if possibleSignatures.length > 1 then
+              return (false, s!"The call to signature {signatureCall} is \
+              ambiguous. It could refer so the signature of the blocks \
+              {possibleSignatures.map
+                fun ps => if ps.isOpened then ps.openedFrom else "this"}")
 
       return (true, "no error")
 
@@ -663,22 +694,24 @@ namespace Alloy
 
       -- CHECKS
       let symbolCheck := st.checkSymbols
-      if symbolCheck.1 then -- symbolCheck OK
-
-        let relationCallCheck := st.checkRelationCalls
-        if relationCallCheck.1 then -- relationCallCheck OK
-
-          let predCallCheck := st.checkPredCalls ast
-          if predCallCheck.1 then -- predCallCheck OK
-            let orderedSt := (st.replaceVarDecls (orderVarDecls st.variableDecls))
-            return (orderedSt, true, predCallCheck.2)
-
-          else
-            return (st, false, predCallCheck.2)
-        else
-          return (st, false, relationCallCheck.2)
-      else
+      if !symbolCheck.1 then
         return (st, false, symbolCheck.2)
+
+      let relationCallCheck := st.checkRelationCalls
+      if !relationCallCheck.1 then
+        return (st, false, relationCallCheck.2)
+
+      let sigCallCheck := st.checkSignatureCalls
+      if !sigCallCheck.1 then
+        return (st, false, sigCallCheck.2)
+
+      let predCallCheck := st.checkPredCalls ast
+      if !predCallCheck.1 then
+        return (st, false, predCallCheck.2)
+
+      -- Order the ST
+      let orderedSt := (st.replaceVarDecls (orderVarDecls st.variableDecls))
+      return (orderedSt, true, "no error")
 
   end SymbolTable
 
