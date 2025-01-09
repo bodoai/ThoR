@@ -129,13 +129,9 @@ abstract sig Buch {
 
 sig Seite {}
 
-pred test {
-  lone x : Buch | some y, z : Seite | x.prequel = z.sequel and
-    one disj a : Buch | y = z and z = a
-}
-
 fact keineDopplungInReihe{
-  lone b:Buch | not (b in b.^prequel and b in b.^sequel)
+  lone b:Buch | some z:Buch | not (b in b.^prequel and b in b.^sequel) and
+    not z in z.prequel
 }
 
 pred EntwederPrequelOderSequel{
@@ -167,15 +163,18 @@ create buch
 #check buch.vars.Buch.prequel
 #print buch.preds.EntwederPrequelOderSequel
 open Shared.quant
-#print buch.preds.test
 
 #alloy module m1
-  sig a {}
+  sig a {
+    r : a
+  }
 end
 
 #alloy m2/te
   open m1
-  sig a {}
+  sig a {
+    r : a
+  }
 end
 
 #alloy m3
@@ -185,7 +184,7 @@ end
   }
 
   fact {
-    some this/a
+    some m2/te/a/r
   }
 end
 

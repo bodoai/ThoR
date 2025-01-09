@@ -216,15 +216,16 @@ namespace Alloy
           (allFormulas.map
             fun f => f.getRelationCalls relationNames).join
 
-        let allowedRelationCalls :=
+        let allowedQuantifiedRelationCalls :=
           (allFormulas.map
             fun f => f.getQuantifiedRelationCalls relationNames).join
 
-        let allowedRelationCallsString :=
-          allowedRelationCalls.map fun arc => arc.1
+        let allowedQuantifiedRelationCallsStrings :=
+          allowedQuantifiedRelationCalls.map fun arc => arc.1
 
         for rc in allRelationCalls do
-          if !(allowedRelationCallsString.contains rc) then
+          -- is in quantification or not
+          if !(allowedQuantifiedRelationCallsStrings.contains rc) then
             if !(rc.contains '.') then
               let possibleSignatures :=
                 (availableRelations.filter
@@ -236,6 +237,32 @@ namespace Alloy
                       It could refer to the relation \
                       of the same name in the following \
                       signatures {possibleSignatures}"
+
+            else
+              let rcSplit := rc.splitOn "."
+              if rcSplit.isEmpty then
+                throw s!"No relation for {rc} found"
+              else
+                let lastSplit := rcSplit.getLast!
+                let originNamespace : String :=
+                  ((rcSplit.drop 1).reverse.drop 1).reverse.foldl
+                    (fun string split => s!"{string}_{split}")
+                    (rcSplit.get! 0)
+                let possibleSigName :=
+                  if rcSplit.length > 1 then
+                    rcSplit.get! (rcSplit.length - 2)
+                  else
+                    rcSplit.getLast!
+
+                let possibleRelations :=
+                  (availableRelations.filter
+                    fun ar => (ar.name == lastSplit &&
+                      (ar.openedFrom == originNamespace ||
+                        (possibleSigName == ar.relationOf))
+                      ))
+
+                if possibleRelations.isEmpty then
+                  throw s!"No Relation {lastSplit} found in {originNamespace}"
 
         return "no error"
 
@@ -529,9 +556,8 @@ namespace Alloy
           if let Option.some pc := formula.getPredCalls then
             predCalls := predCalls.concat pc
 
-          let relationCalls := formula.getRelationCalls relationNames
-          if !(relationCalls.isEmpty) then
-            relCalls := relCalls.append relationCalls
+          relCalls := relCalls.append
+            (formula.getRelationCalls relationNames)
 
           sigCalls :=
             sigCalls.append (formula.getSignatureCalls signatureNames)
@@ -603,9 +629,8 @@ namespace Alloy
           if let Option.some pc := formula.getPredCalls then
             predCalls := predCalls.concat pc
 
-          let relationCalls := formula.getRelationCalls relationNames
-          if !(relationCalls.isEmpty) then
-            relCalls := relCalls.append relationCalls
+          relCalls := relCalls.append
+            (formula.getRelationCalls relationNames)
 
           signatureCalls :=
             signatureCalls.append

@@ -481,7 +481,7 @@ namespace Shared
 
         for rc in rcs do
           if rc.contains '.' then
-            let data := rc.splitOn "_"
+            let data := rc.splitOn "."
             let possibleQuantorName := data.get! 0
 
             for quantification in quantifications do
@@ -558,11 +558,7 @@ namespace Shared
                       rcs2 currentQuantifications
 
           | formula.quantification _ _ names te f => do
-            let rcs := te.getRelationCalls relationNames
 
-            let newResult :=
-              filterRelevantRelationCalls
-                  rcs currentQuantifications
 
             let tes := te.getStringExpr
 
@@ -573,12 +569,19 @@ namespace Shared
             if insideRelevantQuant then
               newQuants := newQuants.concat (te, names)
 
+            let rcs := te.getRelationCalls relationNames
+
+            let newResult :=
+              filterRelevantRelationCalls
+                  rcs newQuants
+
             let formRelCalls := (f.map fun form =>
                 form.getQuantifiedRelationCalls
                   relationNames
                   true
                   newQuants
                   newResult).join
+
             formRelCalls
 
     /--

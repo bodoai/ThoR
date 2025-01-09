@@ -365,6 +365,14 @@ namespace Shared
             else
               return []
 
+          | expr.callFromOpen sn =>
+            let sns := sn.representedNamespace.getId.lastComponentAsString
+            let snsSplit := sns.splitOn "."
+            if snsSplit.isEmpty then
+              if relationNames.contains sns then [sns] else []
+            else
+              if relationNames.contains snsSplit.getLast! then [sns] else []
+
           | expr.unaryRelOperation _ e =>
             e.getRelationCalls relationNames
 
