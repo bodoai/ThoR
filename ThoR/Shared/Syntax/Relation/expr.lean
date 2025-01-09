@@ -12,6 +12,7 @@ import ThoR.Shared.Syntax.Relation.dotjoin
 import ThoR.Relation.ElabCallMacro
 import ThoR.Shared.Syntax.baseType
 import ThoR.Shared.Syntax.Relation.relationSeparator
+import ThoR.Alloy.Syntax.SeparatedNamespace
 
 open Lean
 
@@ -23,6 +24,7 @@ namespace Shared
   inductive expr where
     | const : (const: constant) → expr
     | string : (string : String) → expr
+    | callFromOpen : (calledEntry : Alloy.separatedNamespace) → expr
     | unaryRelOperation :
         (operator : unRelOp) →
         (expression : expr) →
@@ -46,6 +48,7 @@ namespace Shared
   declare_syntax_cat expr
   syntax constant : expr
   syntax ident : expr
+  syntax separatedNamespace : expr -- to call opened module entries
   syntax "(" expr ")" : expr
   syntax:60 expr:60 binRelOp expr:60 : expr
 
@@ -67,6 +70,7 @@ namespace Shared
       match e1, e2 with
         | expr.const c1, expr.const c2 => c1 == c2
         | expr.string s1, expr.string s2 => s1 == s2
+        | expr.callFromOpen sn1, expr.callFromOpen sn2 => sn1 == sn2
         | expr.unaryRelOperation op1 e1, expr.unaryRelOperation op2 e2 =>
           (op1 == op2) && (compare e1 e2)
         | expr.binaryRelOperation op1 e1 e2,
@@ -82,6 +86,7 @@ namespace Shared
       match e with
         | expr.const c => c.toString
         | expr.string s => s
+        | expr.callFromOpen sn => sn.toString
         | expr.unaryRelOperation op e => (op.toString) ++ (e.toString)
         | expr.binaryRelOperation op e1 e2 =>
           (e1.toString) ++ (op.toString) ++ (e2.toString)
@@ -123,6 +128,7 @@ namespace Shared
         match e with
           | expr.const c => `(expr| $(c.toSyntax):constant)
           | expr.string s => `(expr| $(mkIdent s.toName):ident)
+          | expr.callFromOpen sn => `(expr| $(sn.toSyntax):separatedNamespace)
           | expr.unaryRelOperation op e => `(expr| $(op.toSyntax):unRelOp $(e.toSyntax blockName):expr)
           | expr.binaryRelOperation op e1 e2 =>
             `(expr| $(e1.toSyntax blockName):expr $(op.toSyntax):binRelOp $(e2.toSyntax blockName):expr)
@@ -150,6 +156,8 @@ namespace Shared
               ))
             else
               `($(mkIdent s.toName))
+
+          | expr.callFromOpen sn => return sn.toTerm
 
           | expr.unaryRelOperation op e =>
             `(( $(op.toTerm)
@@ -238,6 +246,9 @@ namespace Shared
           | `(expr | @$name:ident) => Id.run do
               expr.string_rb name.getId.toString
 
+          | `(expr | $sn:separatedNamespace) =>
+            expr.callFromOpen (Alloy.separatedNamespace.toType sn)
+
           | `(expr | $name:ident) => Id.run do
               let parsedName := name.getId
 
@@ -289,6 +300,14 @@ namespace Shared
       : List (String) :=
         match e with
           | expr.string s => [s]
+          | expr.callFromOpen sn => Id.run do
+            -- this String can be something like m1.A
+            let sns := sn.representedNamespace.getId.lastComponentAsString
+            let snsSplit := sns.splitOn "."
+            if snsSplit.isEmpty then
+              return [sns]
+            else
+              [snsSplit.getLast!]
           | expr.unaryRelOperation _ e => e.getReqVariables
           | expr.binaryRelOperation _ e1 e2 => (e1.getReqVariables) ++ (e2.getReqVariables)
           | expr.dotjoin _ e1 e2 => (e1.getReqVariables) ++ (e2.getReqVariables)
@@ -313,6 +332,14 @@ namespace Shared
         match e with
           | expr.string s =>
             if signatureNames.contains s then [s] else []
+
+          | expr.callFromOpen sn =>
+            let sns := sn.representedNamespace.getId.lastComponentAsString
+            let snsSplit := sns.splitOn "."
+            if snsSplit.isEmpty then
+              if signatureNames.contains sns then [sns] else []
+            else
+              if signatureNames.contains snsSplit.getLast! then [sns] else []
 
           | expr.unaryRelOperation _ e =>
             e.getSignatureCalls signatureNames

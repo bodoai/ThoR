@@ -252,7 +252,20 @@ namespace Alloy
       for location in allCallLocations do
         for signatureCall in location.signatureCalls do
           let possibleSignatures :=
-            signatures.filter fun s => s.name == signatureCall
+            signatures.filter
+              fun s => Id.run do
+                let splittedCall := signatureCall.splitOn "."
+                let originNamespace : String :=
+                  ((splittedCall.drop 1).reverse.drop 1).reverse.foldl
+                    (fun string callSplit => s!"{string}_{callSplit}")
+                    (splittedCall.get! 0)
+
+                s.name == signatureCall ||
+                  (
+                    !splittedCall.isEmpty &&
+                    splittedCall.getLast! == s.name &&
+                    s.openedFrom == originNamespace
+                  )
 
           if possibleSignatures.isEmpty then
             throw s!"No signature with name {signatureCall} is defined."

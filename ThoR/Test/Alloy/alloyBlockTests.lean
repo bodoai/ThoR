@@ -181,11 +181,11 @@ end
 #alloy m3
   open m2/te
   sig c {
-    r : x
+    r : c
   }
 
   fact {
-    some a
+    some m2/te/a
   }
 end
 
