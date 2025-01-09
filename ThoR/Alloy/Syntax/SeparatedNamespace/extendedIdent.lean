@@ -22,6 +22,12 @@ namespace Alloy
         | `(extendedIdent| alloy) => `alloy
         | _ => default
 
+    def mkEIdent (n : Name) : TSyntax `extendedIdent := Unhygienic.run do
+      match n with
+        | `def => `(extendedIdent| def)
+        | `alloy => `(extendedIdent| alloy)
+        | nn => `(extendedIdent| $(mkIdent nn):ident)
+
   end extendedIdent
 
 end Alloy
