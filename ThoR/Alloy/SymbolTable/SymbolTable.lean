@@ -274,7 +274,7 @@ namespace Alloy
               throw s!"The call to signature {signatureCall} is \
               ambiguous. It could refer so the signature of the blocks \
               {possibleSignatures.map
-                fun ps => if ps.isOpened then ps.openedFrom else "this"}"
+                fun ps => ps.openedFrom}"
 
       return "no error"
 
@@ -330,7 +330,7 @@ namespace Alloy
     private def addSigs
       (inputST : SymbolTable)
       (sigDecls : List (sigDecl))
-      (moduleName : String := default)
+      (moduleName : String := "this")
       : SymbolTable := Id.run do
 
         let mut st : SymbolTable := inputST
@@ -355,7 +355,7 @@ namespace Alloy
 
             st := st.addVarDecl
                     ({  name:= signatureName,
-                        isOpened := moduleName != default,
+                        isOpened := moduleName != "this",
                         openedFrom := moduleName,
                         isRelation := false,
                         relationOf := default,
@@ -414,7 +414,7 @@ namespace Alloy
 
                 st := st.addVarDecl ({
                       name:= fieldName,
-                      isOpened := moduleName != default,
+                      isOpened := moduleName != "this",
                       openedFrom := moduleName,
                       isRelation := true,
                       relationOf := signatureName,
