@@ -186,6 +186,11 @@ end
   fact {
     some m2/te/a/r
   }
+
+  fact {
+    some abc/y/x/a/r
+  }
+
 end
 
 #create m3

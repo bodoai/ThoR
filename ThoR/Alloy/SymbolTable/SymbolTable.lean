@@ -244,25 +244,35 @@ namespace Alloy
                 throw s!"No relation for {rc} found"
               else
                 let lastSplit := rcSplit.getLast!
-                let originNamespace : String :=
+
+                let complete_origin : String :=
                   ((rcSplit.drop 1).reverse.drop 1).reverse.foldl
                     (fun string split => s!"{string}_{split}")
                     (rcSplit.get! 0)
+
                 let possibleSigName :=
                   if rcSplit.length > 1 then
                     rcSplit.get! (rcSplit.length - 2)
                   else
                     rcSplit.getLast!
 
+                let origin_without_sig :=
+                  complete_origin.replace s!"_{possibleSigName}" ""
+
                 let possibleRelations :=
                   (availableRelations.filter
                     fun ar => (ar.name == lastSplit &&
-                      (ar.openedFrom == originNamespace ||
-                        (possibleSigName == ar.relationOf))
+                      (ar.openedFrom == complete_origin ||
+                        (possibleSigName == ar.relationOf &&
+                          ar.openedFrom == origin_without_sig
+                        ))
                       ))
 
                 if possibleRelations.isEmpty then
-                  throw s!"No Relation {lastSplit} found in {originNamespace}"
+                  throw s!"No Relation {lastSplit} found \
+                  in module {complete_origin} or \
+                  under signature {possibleSigName} \
+                  in {origin_without_sig}}]"
 
         return "no error"
 
