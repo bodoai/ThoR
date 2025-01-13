@@ -4,6 +4,8 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 
+import ThoR.Shared.Syntax
+
 namespace Alloy
   /--
   This syntax category represents the run command from Alloy.
@@ -11,13 +13,10 @@ namespace Alloy
   -/
   declare_syntax_cat runSyntaxIdents
   syntax ident : runSyntaxIdents
-  syntax "{" "}" : runSyntaxIdents
+  syntax "{" formula* "}" : runSyntaxIdents
 
   declare_syntax_cat runSyntaxButs
-  syntax num ident : runSyntaxButs
-
-  declare_syntax_cat runSyntaxButsExactly
-  syntax "exactly" num ident : runSyntaxButsExactly
+  syntax ("exactly")? num ident : runSyntaxButs
 
   declare_syntax_cat runSyntaxFors
   syntax num : runSyntaxFors
@@ -26,6 +25,6 @@ namespace Alloy
   declare_syntax_cat runSyntax
   syntax "run" runSyntaxIdents : runSyntax
   syntax "run" runSyntaxIdents "for" runSyntaxFors : runSyntax
-  syntax "run" runSyntaxIdents "for" runSyntaxFors "but" (runSyntaxButs <|> runSyntaxButsExactly) : runSyntax
+  syntax "run" runSyntaxIdents "for" runSyntaxFors "but" runSyntaxButs,+ : runSyntax
 
 end Alloy
