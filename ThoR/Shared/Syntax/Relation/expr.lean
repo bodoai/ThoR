@@ -157,7 +157,14 @@ namespace Shared
             else
               `($(mkIdent s.toName))
 
-          | expr.callFromOpen sn => return sn.toTerm
+          | expr.callFromOpen sn =>
+            let snt := sn.toTerm
+            if inBLock then
+              `((
+                ∻ $(mkIdent s!"{blockName}.vars.{snt}".toName)
+              ))
+            else
+              return snt
 
           | expr.unaryRelOperation op e =>
             `(( $(op.toTerm)
@@ -409,6 +416,20 @@ namespace Shared
             else
               expr.string (replacementNames.get! index)
 
+          | expr.callFromOpen sn =>
+            let ns := sn.representedNamespace.getId.lastComponentAsString
+            let nsSplit := ns.splitOn "."
+            if nsSplit.length > 1 then
+              let last := nsSplit.getLast!
+              if relationNames.contains last then
+                let index := relationNames.indexOf last
+                return expr.string (replacementNames.get! index)
+
+            if nsSplit.isEmpty then
+              return e
+            else
+              return expr.string (nsSplit.getLast!)
+
           | expr.binaryRelOperation op e1 e2 =>
             expr.binaryRelOperation
               op
@@ -453,7 +474,60 @@ namespace Shared
               (e1.replaceRelationCalls relationNames replacementNames)
               (e2.replaceRelationCalls relationNames replacementNames)
 
-          | _ => default
+          | _ => e
+
+    /--
+    Replaces all occuring names from the List `names`
+    with the replacement name on the corrosponding index in `rNames`
+    in the given expression `e`
+    -/
+    def replaceNames
+      (e: expr)
+      (names :List (String))
+      (rNames :List (String))
+      : expr := Id.run do
+        match e with
+          | expr.string s =>
+            if !names.contains s then
+              return e
+
+            else
+              let rIndex := names.indexOf s
+              expr.string
+                (rNames.get! rIndex)
+
+          | expr.callFromOpen sn =>
+            let ns := sn.representedNamespace.getId.lastComponentAsString
+            let nsSplit := ns.splitOn "."
+            if nsSplit.length > 1 then
+              let last := nsSplit.getLast!
+              if names.contains last then
+                let index := names.indexOf last
+                return expr.string (rNames.get! index)
+
+            if nsSplit.isEmpty then
+              return e
+            else
+              return expr.string (nsSplit.getLast!)
+
+          | expr.binaryRelOperation op e1 e2 =>
+            expr.binaryRelOperation
+              op
+              (e1.replaceNames names rNames)
+              (e2.replaceNames names rNames)
+
+          | expr.unaryRelOperation op e =>
+            expr.unaryRelOperation
+              op
+              (e.replaceNames names rNames)
+
+          | expr.dotjoin dj e1 e2 =>
+            expr.dotjoin
+              dj
+              (e1.replaceNames names rNames)
+              (e2.replaceNames names rNames)
+
+          | _ => e
 
   end expr
 

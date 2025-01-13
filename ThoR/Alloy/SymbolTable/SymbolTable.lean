@@ -96,7 +96,7 @@ namespace Alloy
         defDecls := {st.defDecls},
         axiomDecls := {st.axiomDecls},
         assertDecls := {st.assertDecls},
-        requiredDecls := {st.requiredDecls}
+        requiredDecls := {st.requiredDecls},
       }"
 
     instance : ToString SymbolTable where
@@ -178,6 +178,32 @@ namespace Alloy
         (st.defDecls.map fun dd => dd.formulas) ++
         (st.assertDecls.map fun ad => ad.formulas)
         ).join)
+
+    /--
+    Get all defined relations (signature fields) from the symbol table
+    -/
+    def getRelations (st : SymbolTable) : List (varDecl) :=
+      st.variableDecls.filter fun vd => vd.isRelation
+
+    /--
+    Get all defined signatures from the symbol table
+    -/
+    def getSignatures (st : SymbolTable) : List (varDecl) :=
+      st.variableDecls.filter fun vd => !vd.isRelation
+
+    /--
+    Get all signature names from the symbol table
+    -/
+    def getSignatureNames (st : SymbolTable) : List (String) :=
+      (st.variableDecls.filter fun vd => !vd.isRelation).map
+        fun s => s.name
+
+    /--
+    Get all replacement signature names from the symbol table.
+    -/
+    def getSignatureRNames (st : SymbolTable) : List (String) :=
+      (st.variableDecls.filter fun vd => !vd.isRelation).map
+        fun s => s.getSignatureReplacementName
 
     /--
     Checks if all required symbols are present.
@@ -265,7 +291,10 @@ namespace Alloy
                       (ar.openedFrom == complete_origin ||
                         (possibleSigName == ar.relationOf &&
                           ar.openedFrom == origin_without_sig
-                        ))
+                        ) ||
+                        (origin_without_sig == possibleSigName)
+                      )
+
                       ))
 
                 if possibleRelations.isEmpty then

@@ -4,6 +4,8 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Shared.Syntax
+import ThoR.Shared.Syntax.Relation.relationSeparator
+import ThoR.Alloy.Syntax.Signature.signatureSeparator
 
 open Shared
 
@@ -55,6 +57,18 @@ namespace Alloy
                     type := default,
                     requiredDecls := default
                   }
+
+    def getRelationReplacementName (vd : varDecl) : String :=
+      s!"{vd.openedFrom}\
+      {signatureSeparator.get}\
+      {vd.relationOf}\
+      {relationSeparator.get}\
+      {vd.name}"
+
+    def getSignatureReplacementName (vd : varDecl) : String :=
+      s!"{vd.openedFrom}\
+      {signatureSeparator.get}\
+      {vd.name}"
 
   end varDecl
 

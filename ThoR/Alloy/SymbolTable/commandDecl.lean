@@ -30,9 +30,6 @@ namespace Alloy
   /--
   Generates a String representation from the type.
 
-  Note that formulas := {cd.formulas},
-  is not included, since it is irrelevant for the user here
-  but needed to form the commands in Commands.Lean
   -/
   def toString (cd : commandDecl) : String :=
     /-
@@ -44,7 +41,8 @@ namespace Alloy
       required variables := {cd.requiredVars},
       called predicates := {cd.predCalls},
       called relations := {cd.relationCalls},
-      called signatures := {cd.signatureCalls}
+      called signatures := {cd.signatureCalls},
+      formulas := {cd.formulas}
     }"
 
   instance : ToString commandDecl where

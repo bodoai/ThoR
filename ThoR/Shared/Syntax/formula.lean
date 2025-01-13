@@ -727,6 +727,72 @@ namespace Shared
               (te.replaceRelationCalls relationNames replacementNames)
               (forms.map fun f => f.replaceRelationCalls newRelationNames newReplacementNames)
 
+    /--
+    Replaces all occuring names from the List `names`
+    with the replacement name on the corrosponding index in `rNames`
+    in the given formula `f`
+    -/
+    partial def replaceNames
+      (f: formula)
+      (names :List (String))
+      (rNames :List (String))
+      : formula := Id.run do
+        match f with
+          | formula.string s =>
+            if !names.contains s then
+              return f
+
+            else
+              let rIndex := names.indexOf s
+              formula.string
+                (rNames.get! rIndex)
+
+          | formula.pred_with_args n pas =>
+            formula.pred_with_args
+              n
+              (pas.map fun pa =>
+                pa.replaceNames names rNames)
+
+          | formula.unaryRelBoolOperation op e =>
+            formula.unaryRelBoolOperation
+              op
+              (e.replaceNames names rNames)
+
+          | formula.unaryLogicOperation op f =>
+            formula.unaryLogicOperation
+              op
+              (f.replaceNames names rNames)
+
+          | formula.binaryLogicOperation op f1 f2 =>
+            formula.binaryLogicOperation
+              op
+              (f1.replaceNames names rNames)
+              (f2.replaceNames names rNames)
+
+          | formula.tertiaryLogicOperation op f1 f2 f3 =>
+            formula.tertiaryLogicOperation
+              op
+              (f1.replaceNames names rNames)
+              (f2.replaceNames names rNames)
+              (f3.replaceNames names rNames)
+
+          | formula.algebraicComparisonOperation op ae1 ae2 =>
+            formula.algebraicComparisonOperation op ae1 ae2
+
+          | formula.relationComarisonOperation op e1 e2 =>
+            formula.relationComarisonOperation
+              op
+              (e1.replaceNames names rNames)
+              (e2.replaceNames names rNames)
+
+          | formula.quantification q d n te forms =>
+            formula.quantification
+              q
+              d
+              n
+              (te.replaceNames names rNames)
+              (forms.map fun f => f.replaceNames names rNames)
+
   end formula
 
 end Shared

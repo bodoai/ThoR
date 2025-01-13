@@ -418,6 +418,45 @@ namespace Shared
               m2
               (ao2.replaceRelationCalls relationNames replacementNames)
 
+    /--
+    Replaces all occuring names from the List `names`
+    with the replacement name on the corrosponding index in `rNames`
+    in the given arrowOp `ao`
+    -/
+    def replaceNames
+      (ao: arrowOp)
+      (names :List (String))
+      (rNames :List (String))
+      : arrowOp :=
+        match ao with
+          | multArrowOpExpr e1 m1 m2 e2 =>
+            multArrowOpExpr
+              (e1.replaceNames names rNames)
+              m1
+              m2
+              (e2.replaceNames names rNames)
+
+          | multArrowOpExprLeft e m1 m2 ao1 =>
+            multArrowOpExprLeft
+              (e.replaceNames names rNames)
+              m1
+              m2
+              (ao1.replaceNames names rNames)
+
+          | multArrowOpExprRight ao1 m1 m2 e =>
+            multArrowOpExprRight
+              (ao1.replaceNames names rNames)
+              m1
+              m2
+              (e.replaceNames names rNames)
+
+          | multArrowOp ao1 m1 m2 ao2 =>
+            multArrowOp
+              (ao1.replaceNames names rNames)
+              m1
+              m2
+              (ao2.replaceNames names rNames)
+
   end arrowOp
 
 

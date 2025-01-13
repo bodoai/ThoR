@@ -30,7 +30,7 @@ end
 
 end
 
-create x2
+#create x2
 
 ~alloy x3
   sig A {
@@ -114,7 +114,7 @@ open b2.preds
     }
 end
 
-create verwandschaft
+#create verwandschaft
 
 #check verwandschaft.inheritance_facts.FRAU
 #check verwandschaft.inheritance_facts.MANN
@@ -155,7 +155,7 @@ pred main {
 
 end
 
-create buch
+#create buch
 
 #check buch.vars.Buch
 #print buch.preds.WennSequelDannPrequel
@@ -184,11 +184,7 @@ end
   }
 
   fact {
-    some m2/te/a/r
-  }
-
-  fact {
-    some abc/y/x/a/r
+    some this/a
   }
 
 end

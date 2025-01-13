@@ -203,6 +203,28 @@ namespace Shared
             relExpr
               (e.replaceRelationCalls relationNames replacementNames)
 
+    /--
+    Replaces all occuring names from the List `names`
+    with the replacement name on the corrosponding index in `rNames`
+    in the given type expression `te`
+    -/
+    def replaceNames
+      (te: typeExpr)
+      (names :List (String))
+      (rNames :List (String))
+      : typeExpr := Id.run do
+        match te with
+          | arrowExpr ae =>
+            arrowExpr
+              (ae.replaceNames names rNames)
+          | multExpr m e =>
+            multExpr
+              m
+              (e.replaceNames names rNames)
+          | relExpr e =>
+            relExpr
+              (e.replaceNames names rNames)
+
   end typeExpr
 
 end Shared

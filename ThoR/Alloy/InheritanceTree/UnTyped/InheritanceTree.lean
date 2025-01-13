@@ -10,6 +10,8 @@ import ThoR.Alloy.Syntax.AST
 import ThoR.Alloy.Syntax.Signature.Inheritance.sigExt
 import ThoR.Shared.Syntax.typeExpr
 
+import ThoR.Alloy.Syntax.Signature.signatureSeparator
+
 import ThoR.Alloy.InheritanceTree.UnTyped.Node
 
 open Lean Lean.Elab Command Term
@@ -182,9 +184,11 @@ namespace InheritanceTree
   Create commands to create axioms representing the logical propositions that
   follow from the inheritance relationships for signatures in Alloy
   -/
-  def createAxiomsCommand
+  def createInheritanceAxiomCommands
     (it: InheritanceTree)
     (blockName : Name)
+    (signatureNames rSignatureNames : List (String))
+    (openedFrom : String := "this")
     : List (TSyntax `command) := Unhygienic.run do
 
     let mut commands : List (TSyntax `command) := []
@@ -219,14 +223,38 @@ namespace InheritanceTree
 
       for node in it.nodes do
 
-        -- add namespace to parent
-        let parentName := s!"{blockName}.vars.{node.name}"
+        -- replace node name if needed
+        let nodeName :=
+          if signatureNames.contains node.name then
+            rSignatureNames.get! (signatureNames.indexOf node.name)
+          else
+            node.name
 
-        -- add namspaces to children
+        -- add namespace to parent
+        let parentName := s!"{blockName}.vars.{nodeName}"
+
+        -- add namspaces to children && replace name if needed
         let exChildren := node.exChildren.map
-          fun (exChild) => s!"{blockName}.vars.{exChild}"
+          fun (exChild) => Id.run do
+            let exChild :=
+              if signatureNames.contains exChild then
+                rSignatureNames.get! (signatureNames.indexOf exChild)
+
+              else
+                exChild
+
+            s!"{blockName}.vars.{exChild}"
+
         let inChildren := node.inChildren.map
-          fun (inChild) => s!"{blockName}.vars.{inChild}"
+          fun (inChild) => Id.run do
+            let inChild :=
+              if signatureNames.contains inChild then
+                rSignatureNames.get! (signatureNames.indexOf inChild)
+
+              else
+                inChild
+
+            s!"{blockName}.vars.{inChild}"
 
         let allChildren := (exChildren ++ inChildren)
 
@@ -297,11 +325,21 @@ namespace InheritanceTree
 
         if !(termsWithMember.isEmpty) then
 
-          let axiomName := s!"{member.toName.lastComponentAsString}".toName
+          let memberName := member.toName.lastComponentAsString
+
+          let axiomName := memberName.toName
           let joinedTerms := joinTermsWithAnd termsWithMember
           let command ← `(axiom $(mkIdent axiomName) : $(joinedTerms))
 
           commands := commands.concat command
+
+          let openedFrom := (memberName.splitOn signatureSeparator.get).get! 0
+          let aliasname :=
+            s!"{if !memberName.containsSubstr "this" then s!"{openedFrom}." else ""}\
+            {(axiomName.toString.splitOn signatureSeparator.get).getLast!}".toName
+
+          let aliasCommand ← `(alias $(mkIdent aliasname) := $(mkIdent axiomName))
+          commands := commands.concat aliasCommand
 
       --NamespaceEnd
       commands := commands.concat
