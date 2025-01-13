@@ -9,8 +9,7 @@ import ThoR.Alloy.Syntax.Predicate
 import ThoR.Alloy.Syntax.factDecl
 import ThoR.Alloy.Syntax.OpenModule
 
-import ThoR.Alloy.Syntax.IgnoredSyntax.run
-import ThoR.Alloy.Syntax.IgnoredSyntax.check
+import ThoR.Alloy.Syntax.IgnoredSyntax.ignorable
 
 namespace Alloy
   /--
@@ -23,7 +22,6 @@ namespace Alloy
   syntax assertDecl : specification
   syntax openModule : specification
 
-  syntax runSyntax : specification
-  syntax checkSyntax : specification
+  syntax ignorable : specification
 
 end Alloy

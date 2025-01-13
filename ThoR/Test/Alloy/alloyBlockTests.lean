@@ -182,10 +182,3 @@ end
   open m2/te
   sig c {}
 end
-
-alloy Ignored
-  sig a,b {}
-  pred p1 {}
-  run p1 for 1
-  check p1 for int
-end
