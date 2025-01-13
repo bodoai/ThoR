@@ -22,18 +22,18 @@ def unexpDotjoin : Unexpander
 
 @[app_unexpander ThoR.HDotjoin.hDotjoin]
 def unexpHDotjoin : Unexpander
-  | `($_ $a $b:ident) => do
-    let bn :=
-      mkIdent
-        (b.getId.updateLast
-          fun lc =>
-            let lcSplit := lc.splitOn relationSeparator.get
-            if lcSplit.length > 1 then
-              let last := lcSplit.getLast!
-              last
-            else
-              lc
-        )
+  | `($_ $a:ident $b:ident) => do
 
-    `($a . $bn)
+    let new_a := mkIdent (a.getId.updateLast fun s =>
+      let split := s.splitOn relationSeparator.get
+      if split.length > 1 then split.getLast! else s
+    )
+
+    let new_b := mkIdent (b.getId.updateLast fun s =>
+      let split := s.splitOn relationSeparator.get
+      if split.length > 1 then split.getLast! else s
+    )
+
+    `($new_a . $new_b)
+
   | _ => throw Unit.unit
