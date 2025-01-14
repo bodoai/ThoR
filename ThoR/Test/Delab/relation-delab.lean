@@ -27,3 +27,15 @@ end
 
 -- some (r . r) / some (dotjoin_rel_rel.vars.r . dotjoin_rel_rel.vars.r)
 #check dotjoin_rel_rel.facts.f0
+
+alloy union_rel_rel
+  sig a {
+    r : a
+  }
+  fact {
+    some (r+r)
+  }
+end
+#create union_rel_rel
+
+#check union_rel_rel.facts.f0
