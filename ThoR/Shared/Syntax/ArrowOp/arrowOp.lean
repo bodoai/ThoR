@@ -384,42 +384,6 @@ namespace Shared
             (ao1.getRelationCalls relationNames) ++
               (ao2.getRelationCalls relationNames)
 
-    def replaceRelationCalls
-      (ao: arrowOp)
-      (relationNames :List (String))
-      (replacementNames :List (String))
-      : arrowOp :=
-        match ao with
-          | multArrowOpExpr e1 m1 m2 e2 =>
-            multArrowOpExpr
-              (e1.replaceRelationCalls relationNames replacementNames)
-              m1
-              m2
-              (e2.replaceRelationCalls relationNames replacementNames)
-
-          | multArrowOpExprLeft e m1 m2 ao1 =>
-            multArrowOpExprLeft
-              (e.replaceRelationCalls relationNames replacementNames)
-              m1
-              m2
-              (ao1.replaceRelationCalls relationNames replacementNames)
-
-          | multArrowOpExprRight ao1 m1 m2 e =>
-            multArrowOpExprRight
-              (ao1.replaceRelationCalls relationNames replacementNames)
-              m1
-              m2
-              (e.replaceRelationCalls relationNames replacementNames)
-
-          | multArrowOp ao1 m1 m2 ao2 =>
-            multArrowOp
-              (ao1.replaceRelationCalls relationNames replacementNames)
-              m1
-              m2
-              (ao2.replaceRelationCalls relationNames replacementNames)
-
   end arrowOp
-
-
 
 end Shared
