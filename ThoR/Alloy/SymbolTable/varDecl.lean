@@ -58,11 +58,20 @@ namespace Alloy
                     requiredDecls := default
                   }
 
+    def getFullRelationName (vd : varDecl) : String :=
+      s!"{if vd.isOpened then s!"{vd.openedFrom.replace "_" "."}." else ""}\
+      {vd.relationOf}.\
+      {vd.name}"
+
     def getRelationReplacementName (vd : varDecl) : String :=
       s!"{vd.openedFrom}\
       {signatureSeparator.get}\
       {vd.relationOf}\
       {relationSeparator.get}\
+      {vd.name}"
+
+    def getFullSignatureName (vd : varDecl) : String :=
+      s!"{if vd.isOpened then s!"{vd.openedFrom.replace "_" "."}." else ""}\
       {vd.name}"
 
     def getSignatureReplacementName (vd : varDecl) : String :=
