@@ -185,6 +185,8 @@ end
 
   fact {
     some this/a
+    some m2/te/a
+    some m1/a
   }
 
 end
