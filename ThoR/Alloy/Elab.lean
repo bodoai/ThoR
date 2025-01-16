@@ -12,15 +12,17 @@ import ThoR.Relation
 
 import ThoR.Shared.Syntax
 
+import ThoR.Alloy.Config
+
 import ThoR.Alloy.Syntax.AST
 import ThoR.Alloy.SymbolTable
 import ThoR.Alloy.InheritanceTree.UnTyped.InheritanceTree
+
 import ThoR.Alloy.Syntax.SeparatedNamespace
-import ThoR.Shared.Syntax.Relation.relationSeparator
 import ThoR.Alloy.Syntax.alloyData
 import ThoR.Alloy.Syntax.OpenModule.openModuleHelper
 
-open ThoR Shared Alloy
+open ThoR Shared Alloy Config
 open Lean Lean.Elab Command Term
 
 /--
@@ -51,7 +53,7 @@ private def createVariableCommands
       for vd in variableDecls do
         let newName :=
           if vd.isRelation then
-             s!"{vd.relationOf}{relationSeparator.get}{vd.name}".toName
+             s!"{vd.relationOf}relationSeparator}{vd.name}".toName
           else
             s!"{vd.name}".toName
 
@@ -89,7 +91,7 @@ private def createDefOrAxiomCommand
 
     let relationNames := relations.map fun r => r.name
     let replacementNames := relations.map
-      fun r => s!"{r.relationOf}{relationSeparator.get}{r.name}"
+      fun r => s!"{r.relationOf}{relationSeparator}{r.name}"
 
     -- formula evaluation
     -- All formulas (lines) in an Alloy pred or in an Alloy fact are
@@ -312,7 +314,7 @@ private def createRelationAliasCommands
   : List ((TSyntax `command)) := Unhygienic.run do
     let mut commandList : List ((TSyntax `command)) := []
     for relation in relations do
-      let undottetName := s!"{blockName}.vars.{relation.relationOf}{relationSeparator.get}{relation.name}".toName
+      let undottetName := s!"{blockName}.vars.{relation.relationOf}{relationSeparator}{relation.name}".toName
       let dottetName := s!"{blockName}.vars.{relation.relationOf}.{relation.name}".toName
       let command ← `(alias $(mkIdent dottetName) := $(mkIdent undottetName))
       commandList := commandList.concat command

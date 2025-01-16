@@ -11,9 +11,9 @@ import ThoR.Shared.Syntax.Relation.binRelOp
 import ThoR.Shared.Syntax.Relation.dotjoin
 import ThoR.Relation.ElabCallMacro
 import ThoR.Shared.Syntax.baseType
-import ThoR.Shared.Syntax.Relation.relationSeparator
+import ThoR.Alloy.Config
 
-open Lean
+open Lean Config
 
 namespace Shared
 
@@ -359,7 +359,7 @@ namespace Shared
 
           | expr.dotjoin dj e1 e2 =>
             let namesToCheck := replacementNames.map
-              fun rn => (rn.splitOn relationSeparator.get)
+              fun rn => (rn.splitOn relationSeparator)
 
             for index in [0 : (namesToCheck.length)] do
               let name := namesToCheck.get! index

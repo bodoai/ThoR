@@ -7,6 +7,8 @@ Authors: s. file CONTRIBUTORS
 an alloy formula is used as the body of predicates, facts and asserts
 -/
 import ThoR.Relation
+
+import ThoR.Alloy.Config
 import ThoR.Shared.Syntax.Algebra
 import ThoR.Shared.Syntax.Logic
 import ThoR.Shared.Syntax.quant
@@ -14,7 +16,7 @@ import ThoR.Shared.Syntax.baseType
 import ThoR.Shared.Syntax.Relation
 
 open Lean
-open ThoR.Quantification
+open ThoR.Quantification Config
 
 namespace Shared
 
@@ -667,7 +669,7 @@ namespace Shared
               let possibleRelations :=
                 (replacementNames.map
                   fun rm =>
-                    (rm.splitOn relationSeparator.get)).filter
+                    (rm.splitOn relationSeparator)).filter
                       fun rpn => rpn.get! 0 == typeString
               if !possibleRelations.isEmpty then
 
@@ -678,7 +680,7 @@ namespace Shared
                     newRelationNames.concat s!"{name}.{relationName}"
                   newReplacementNames :=
                     newReplacementNames.concat
-                      s!"{typeString}{relationSeparator.get}{relationName}"
+                      s!"{typeString}{relationSeparator}{relationName}"
 
             newRelationNames := newRelationNames ++ relationNames
             newReplacementNames :=
