@@ -65,7 +65,7 @@ private def createVariableCommands
 
       let id : Ident := mkIdent "vars".toName
       let mut variableTypeclass : TSyntax `command ←
-      `(class $id ($baseType.getIdent : Type) [$(mkIdent ``ThoR.TupleSet) $baseType.getIdent] where
+      `(class $id ($baseType.ident : Type) [$(mkIdent ``ThoR.TupleSet) $baseType.ident] where
           $[$variableFields]*
         )
       commandList := commandList.concat variableTypeclass
@@ -152,9 +152,9 @@ private def createDefOrAxiomCommand
       else
         return ← `(
           def $(mkIdent cd.name.toName)
-          ($(baseType.getIdent) : Type)
-          [$(mkIdent ``ThoR.TupleSet) $(baseType.getIdent)]
-          [$(mkIdent s!"{blockName}.vars".toName) $(baseType.getIdent)]
+          ($(baseType.ident) : Type)
+          [$(mkIdent ``ThoR.TupleSet) $(baseType.ident)]
+          [$(mkIdent s!"{blockName}.vars".toName) $(baseType.ident)]
           := True )
     else
     -- axiom command
@@ -163,9 +163,9 @@ private def createDefOrAxiomCommand
       else
         return ← `(
           axiom $(mkIdent cd.name.toName)
-          ($(baseType.getIdent) : Type)
-          [$(mkIdent ``ThoR.TupleSet) $(baseType.getIdent)]
-          [$(mkIdent s!"{blockName}.vars".toName) $(baseType.getIdent)]
+          ($(baseType.ident) : Type)
+          [$(mkIdent ``ThoR.TupleSet) $(baseType.ident)]
+          [$(mkIdent s!"{blockName}.vars".toName) $(baseType.ident)]
           : True )
 
 
@@ -217,9 +217,9 @@ private def createDefsCommandsWithNamespace
 
       --BaseTypeDecl
       let defsBaseType : TSyntax `command ←
-      `(variable {$baseType.getIdent : Type}
-        [$(mkIdent ``ThoR.TupleSet) $baseType.getIdent]
-        [$(mkIdent (s!"{blockName}.vars").toName) $baseType.getIdent])
+      `(variable {$baseType.ident : Type}
+        [$(mkIdent ``ThoR.TupleSet) $baseType.ident]
+        [$(mkIdent (s!"{blockName}.vars").toName) $baseType.ident])
 
       commandList := commandList.concat defsBaseType
 
@@ -285,9 +285,9 @@ private def createAxiomCommands
 
       --BaseTypeDecl
       let defsBaseType : TSyntax `command ←
-      `(variable {$(baseType.getIdent) : Type}
-        [$(mkIdent ``ThoR.TupleSet) $(baseType.getIdent)]
-        [$(mkIdent (s!"{blockName}.vars").toName) $(baseType.getIdent)])
+      `(variable {$(baseType.ident) : Type}
+        [$(mkIdent ``ThoR.TupleSet) $(baseType.ident)]
+        [$(mkIdent (s!"{blockName}.vars").toName) $(baseType.ident)])
 
       commandList := commandList.concat defsBaseType
 

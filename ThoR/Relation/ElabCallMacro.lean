@@ -4,8 +4,9 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 
-import ThoR.Shared.Syntax.baseType
+import ThoR.Alloy.Config
+open Config
 
 namespace ThoR
-  macro "∻" name:ident : term => `((@$name $(baseType.getIdent) _ _))
+  macro "∻" name:ident : term => `((@$name $(baseType.ident) _ _))
 end ThoR

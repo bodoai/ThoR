@@ -7,13 +7,14 @@ import ThoR.Basic
 import ThoR.Relation.Set
 
 import ThoR.Alloy.Syntax.AST
+import ThoR.Alloy.Config
 import ThoR.Alloy.Syntax.Signature.Inheritance.sigExt
 import ThoR.Shared.Syntax.typeExpr
 
 import ThoR.Alloy.InheritanceTree.UnTyped.Node
 
 open Lean Lean.Elab Command Term
-open Shared
+open Shared Config
 
 namespace Alloy
 
@@ -202,9 +203,9 @@ namespace InheritanceTree
 
       --Relation Base
       let defsBaseType : TSyntax `command ←
-        `(variable { $(baseType.getIdent) : Type }
-          [ $(mkIdent ``ThoR.TupleSet) $(baseType.getIdent) ]
-          [ $(mkIdent (s!"{blockName}.vars").toName) $(baseType.getIdent) ]
+        `(variable { $(baseType.ident) : Type }
+          [ $(mkIdent ``ThoR.TupleSet) $(baseType.ident) ]
+          [ $(mkIdent (s!"{blockName}.vars").toName) $(baseType.ident) ]
         )
 
       commands := commands.concat defsBaseType

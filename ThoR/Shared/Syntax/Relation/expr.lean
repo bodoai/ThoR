@@ -178,7 +178,7 @@ namespace Shared
               ))
 
           | expr.string_rb s => do
-            `((@$(mkIdent s.toName) $(baseType.getIdent) _ _))
+            `((@$(mkIdent s.toName) $(baseType.ident) _ _))
 
     /--
     Generates a Lean term corosponding with the type from outside an alloy block

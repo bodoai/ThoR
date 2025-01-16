@@ -7,9 +7,9 @@ import ThoR.Basic
 import ThoR.Shared.Syntax.Algebra.unAlgOp
 import ThoR.Shared.Syntax.Algebra.binAlgOp
 import ThoR.Shared.Syntax.Algebra.cardExpr
-import ThoR.Shared.Syntax.baseType
+import ThoR.Alloy.Config
 
-open Lean
+open Lean Config
 
 namespace Shared
 
@@ -68,7 +68,7 @@ namespace Shared
       match ae with
         | algExpr.number n => `($(Lean.Syntax.mkNumLit s!"{n.natAbs}"):num)
         | algExpr.cardExpr _ =>
-          `((@$(mkIdent ``ThoR.Card.card) $(baseType.getIdent) _))
+          `((@$(mkIdent ``ThoR.Card.card) $(baseType.ident) _))
         | algExpr.unaryAlgebraOperation op ae => `(($(op.toTerm) $(ae.toTerm)))
         | algExpr.binaryAlgebraOperation op ae1 ae2 =>
           `(($(op.toTerm) $(ae1.toTerm) $(ae2.toTerm)))
