@@ -210,7 +210,7 @@ namespace Alloy
 
     This function stops at first error and states which symbol is missing.
     -/
-    private def checkSymbols (st : SymbolTable) : Except String String := do
+    private def checkSymbols (st : SymbolTable) : Except String Unit := do
       let availableSymbols : List (String) :=
         (st.variableDecls.map fun (vd) => vd.name) ++
           (st.axiomDecls.map  fun (ad) => ad.name) ++
@@ -221,8 +221,6 @@ namespace Alloy
         if !(availableSymbols.contains requiredSymbol) then
           throw s!"{requiredSymbol} is not defined"
 
-      return "no error"
-
     /--
     Checks if all reffered Relations are not ambiguous
 
@@ -230,7 +228,7 @@ namespace Alloy
     -/
     private def checkRelationCalls
       (st : SymbolTable)
-      : Except String String := do
+      : Except String Unit := do
         let availableRelations : List (varDecl) :=
           st.variableDecls.filter fun (vd) => vd.isRelation
 
@@ -303,14 +301,12 @@ namespace Alloy
                   under signature {possibleSigName} \
                   in {origin_without_sig}}]"
 
-        return "no error"
-
     /--
     Checks if the called signatures are valid and not ambiguous
     -/
     private def checkSignatureCalls
       (st : SymbolTable)
-      : Except String String := do
+      : Except String Unit := do
 
       let signatures := st.variableDecls.filter fun vd => !vd.isRelation
 
@@ -342,8 +338,6 @@ namespace Alloy
               {possibleSignatures.map
                 fun ps => ps.openedFrom}"
 
-      return "no error"
-
     /--
     Checks if all predicate calls are correct.
 
@@ -356,7 +350,7 @@ namespace Alloy
     private def checkPredCalls
       (st : SymbolTable)
       (ast : AST)
-      : Except String String := do
+      : Except String Unit := do
         let availablePredDecls : List (predDecl) :=
           ast.predDecls
 
@@ -384,8 +378,6 @@ namespace Alloy
               if al != cal then
                 throw s!"Definition {predName} called with {cal} \
                 arguments ({calledArgs}), but expected {al}"
-
-        return "no error"
 
     /--
     Adds the given signature declarations (including the contained signature field
