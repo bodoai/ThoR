@@ -211,7 +211,7 @@ namespace AST
         | `(specification| $om:openModule) =>
           ast := ast.addModuleToOpen (openModule.toType om)
 
-        | _ => unreachable!
+        | _ => continue
 
       return ast
 

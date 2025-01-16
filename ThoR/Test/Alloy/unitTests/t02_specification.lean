@@ -13,6 +13,8 @@ This file tests the alloy section specification
 | <factDecl>
 | <predDecl>
 | <assertDecl>
+| <openModule>
+| <ignorable>
 
 No Terminals to be tested
 
