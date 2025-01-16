@@ -594,26 +594,27 @@ namespace Shared
     partial def getSignatureCalls
       (f : formula)
       (signatureNames : List (String))
+      (moduleName : String := default)
       : List (String) := Id.run do
         match f with
         | formula.pred_with_args _ pa =>
-          (pa.map fun e => e.getSignatureCalls signatureNames).join
-        | formula.unaryRelBoolOperation _ e => e.getSignatureCalls signatureNames
-        | formula.unaryLogicOperation _ f => f.getSignatureCalls signatureNames
+          (pa.map fun e => e.getSignatureCalls signatureNames moduleName).join
+        | formula.unaryRelBoolOperation _ e => e.getSignatureCalls signatureNames moduleName
+        | formula.unaryLogicOperation _ f => f.getSignatureCalls signatureNames moduleName
         | formula.binaryLogicOperation _ f1 f2 =>
-          f1.getSignatureCalls signatureNames ++
-            f2.getSignatureCalls signatureNames
+          f1.getSignatureCalls signatureNames moduleName ++
+            f2.getSignatureCalls signatureNames moduleName
         | formula.tertiaryLogicOperation _ f1 f2 f3 =>
-          f1.getSignatureCalls signatureNames ++
-            f2.getSignatureCalls signatureNames ++
-              f3.getSignatureCalls signatureNames
+          f1.getSignatureCalls signatureNames moduleName ++
+            f2.getSignatureCalls signatureNames moduleName ++
+              f3.getSignatureCalls signatureNames moduleName
         | formula.relationComarisonOperation _ e1 e2 =>
-          e1.getSignatureCalls signatureNames ++
-            e2.getSignatureCalls signatureNames
+          e1.getSignatureCalls signatureNames moduleName ++
+            e2.getSignatureCalls signatureNames moduleName
         | formula.quantification _ _ _ te f =>
-          let typeExprRelCalls := te.getSignatureCalls signatureNames
+          let typeExprRelCalls := te.getSignatureCalls signatureNames moduleName
           let formRelCalls := (f.map fun form =>
-              form.getSignatureCalls signatureNames).join
+              form.getSignatureCalls signatureNames moduleName).join
           return formRelCalls ++ typeExprRelCalls
         | _ => []
 

@@ -168,6 +168,9 @@ open Shared.quant
   sig a {
     r : a
   }
+  fact {
+    some this/a
+  }
 end
 
 #alloy m2/te

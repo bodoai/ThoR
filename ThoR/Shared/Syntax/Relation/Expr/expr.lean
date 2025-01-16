@@ -336,6 +336,7 @@ namespace Shared
     def getSignatureCalls
       (e : expr)
       (signatureNames : List (String))
+      (moduleName : String := default)
       : List (String) := Id.run do
         match e with
           | expr.string s =>
@@ -347,7 +348,13 @@ namespace Shared
             if snsSplit.isEmpty then
               if signatureNames.contains sns then [sns] else []
             else
-              if signatureNames.contains snsSplit.getLast! then [sns] else []
+              if signatureNames.contains snsSplit.getLast! then
+                if (moduleName != default) && (snsSplit.get! 0) == "this" then
+                  [s!"{moduleName}.{snsSplit.getLast!}"]
+                else
+                  [sns]
+              else
+                []
 
           | expr.unaryRelOperation _ e =>
             e.getSignatureCalls signatureNames

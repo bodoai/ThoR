@@ -165,14 +165,15 @@ namespace Shared
     def getSignatureCalls
       (te: typeExpr)
       (signatureNames : List (String))
+      (moduleName : String := default)
       : List (String) := Id.run do
         match te with
           | arrowExpr ae =>
-              (ae.getSignatureCalls signatureNames)
+              (ae.getSignatureCalls signatureNames moduleName)
           | multExpr _ e =>
-              (e.getSignatureCalls signatureNames)
+              (e.getSignatureCalls signatureNames moduleName)
           | relExpr e =>
-              (e.getSignatureCalls signatureNames)
+              (e.getSignatureCalls signatureNames moduleName)
 
     def getRelationCalls
       (te: typeExpr)

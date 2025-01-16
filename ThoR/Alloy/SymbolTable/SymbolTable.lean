@@ -466,8 +466,6 @@ namespace Alloy
 
               -- requirements for sigDecl (no duplicates)
               let localFieldRequirements := fieldRequirements.eraseDups
---              let mut localFieldRequirements : List (String) := []
-
 
             -- add all requirements for fieldDecl to smybol table
             -- (if not already in symbol table)
@@ -526,7 +524,7 @@ namespace Alloy
             relCalls := relCalls.append relationCalls
 
           sigCalls :=
-            sigCalls.append (formula.getSignatureCalls signatureNames)
+            sigCalls.append (formula.getSignatureCalls signatureNames moduleName)
 
         -- get list of referenced signatures and signature fields
         let reqVars : List (String) := predDecl.getReqVariables.eraseDups
@@ -599,7 +597,7 @@ namespace Alloy
             (formula.getRelationCalls relationNames)
 
           sigCalls :=
-            sigCalls.append (formula.getSignatureCalls signatureNames)
+            sigCalls.append (formula.getSignatureCalls signatureNames moduleName)
 
 
         -- get list of the names of the referenced signatures and signature fields
@@ -673,7 +671,7 @@ namespace Alloy
 
           signatureCalls :=
             signatureCalls.append
-              (formula.getSignatureCalls signatureNames)
+              (formula.getSignatureCalls signatureNames moduleName)
 
         -- get list of the names of the referenced signatures and signature fields
         let reqVars : List (String) := assertDecla.getReqVariables.eraseDups
@@ -714,22 +712,22 @@ namespace Alloy
       : SymbolTable := Id.run do
         let mut st := input
 
-        let mut name := ast.name
+        let mut module_name := ast.name
         /-
           dots (.) are not valid to be contained in
-          the name a variable (in a typeclass), thus
+          the name of a variable (in a typeclass), thus
           they are removed here
         -/
-        if name.contains '.' then
-          name := name.replace "." "_"
+        if module_name.contains '.' then
+          module_name := module_name.replace "." "_"
 
         /-
           add all sigs, preds, facts and asserts of the current MAIN module
         -/
-        st := st.addSigs ast.sigDecls name
-        st := st.addPreds ast.predDecls name
-        st := st.addFacts ast.factDecls name
-        st := st.addAsserts ast.assertDecls name
+        st := st.addSigs ast.sigDecls module_name
+        st := st.addPreds ast.predDecls module_name
+        st := st.addFacts ast.factDecls module_name
+        st := st.addAsserts ast.assertDecls module_name
 
         /-
           if there are modules left, they have to be addes as well

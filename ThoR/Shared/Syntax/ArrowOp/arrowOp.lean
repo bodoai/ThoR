@@ -345,23 +345,24 @@ namespace Shared
     def getSignatureCalls
       (ao: arrowOp)
       (signatureNames : List (String))
+      (moduleName : String := default)
       : List (String) := Id.run do
         match ao with
           | multArrowOpExpr e1 _ _ e2 =>
-            (e1.getSignatureCalls signatureNames) ++
-              (e2.getSignatureCalls signatureNames)
+            (e1.getSignatureCalls signatureNames moduleName) ++
+              (e2.getSignatureCalls signatureNames moduleName)
 
           | multArrowOpExprLeft e _ _ ao1 =>
-            (e.getSignatureCalls signatureNames) ++
-              (ao1.getSignatureCalls signatureNames)
+            (e.getSignatureCalls signatureNames moduleName) ++
+              (ao1.getSignatureCalls signatureNames moduleName)
 
           | multArrowOpExprRight ao1 _ _ e =>
-            (ao1.getSignatureCalls signatureNames) ++
-              (e.getSignatureCalls signatureNames)
+            (ao1.getSignatureCalls signatureNames moduleName) ++
+              (e.getSignatureCalls signatureNames moduleName)
 
           | multArrowOp ao1 _ _ ao2 =>
-            (ao1.getSignatureCalls signatureNames) ++
-              (ao2.getSignatureCalls signatureNames)
+            (ao1.getSignatureCalls signatureNames moduleName) ++
+              (ao2.getSignatureCalls signatureNames moduleName)
 
     def getRelationCalls
       (ao: arrowOp)
