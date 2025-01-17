@@ -14,6 +14,8 @@ import ThoR.Alloy.Syntax.AST
 import ThoR.Alloy.SymbolTable.varDecl
 import ThoR.Alloy.SymbolTable.commandDecl
 
+import ThoR.Alloy.Syntax.Signature.signatureSeparator
+
 open Lean
 open Shared
 
@@ -94,7 +96,7 @@ namespace Alloy
         defDecls := {st.defDecls},
         axiomDecls := {st.axiomDecls},
         assertDecls := {st.assertDecls},
-        requiredDecls := {st.requiredDecls}
+        requiredDecls := {st.requiredDecls},
       }"
 
     instance : ToString SymbolTable where
@@ -170,12 +172,45 @@ namespace Alloy
         requiredDecls := st.requiredDecls.append temp
       }
 
+    def getAllFormulas (st : SymbolTable) : List (formula) :=
+      ((
+        (st.axiomDecls.map fun ad => ad.formulas) ++
+        (st.defDecls.map fun dd => dd.formulas) ++
+        (st.assertDecls.map fun ad => ad.formulas)
+        ).join)
+
+    /--
+    Get all defined relations (signature fields) from the symbol table
+    -/
+    def getRelations (st : SymbolTable) : List (varDecl) :=
+      st.variableDecls.filter fun vd => vd.isRelation
+
+    /--
+    Get all defined signatures from the symbol table
+    -/
+    def getSignatures (st : SymbolTable) : List (varDecl) :=
+      st.variableDecls.filter fun vd => !vd.isRelation
+
+    /--
+    Get all signature names from the symbol table
+    -/
+    def getSignatureNames (st : SymbolTable) : List (String) :=
+      (st.variableDecls.filter fun vd => !vd.isRelation).map
+        fun s => s.name
+
+    /--
+    Get all replacement signature names from the symbol table.
+    -/
+    def getSignatureRNames (st : SymbolTable) : List (String) :=
+      (st.variableDecls.filter fun vd => !vd.isRelation).map
+        fun s => s.getSignatureReplacementName
+
     /--
     Checks if all required symbols are present.
 
     This function stops at first error and states which symbol is missing.
     -/
-    private def checkSymbols (st : SymbolTable) : Bool × String := Id.run do
+    private def checkSymbols (st : SymbolTable) : Except String Unit := do
       let availableSymbols : List (String) :=
         (st.variableDecls.map fun (vd) => vd.name) ++
           (st.axiomDecls.map  fun (ad) => ad.name) ++
@@ -184,52 +219,124 @@ namespace Alloy
 
       for requiredSymbol in st.requiredDecls do
         if !(availableSymbols.contains requiredSymbol) then
-          return (false, s!"{requiredSymbol} is not defined")
-
-      return (true, "no error")
+          throw s!"{requiredSymbol} is not defined"
 
     /--
     Checks if all reffered Relations are not ambiguous
 
     This function stops at first error which symbol is ambiguous.
     -/
-    private def checkRelationCalls (st : SymbolTable) : Bool × String := Id.run do
-      let availableRelations : List (varDecl) :=
-        st.variableDecls.filter fun (vd) => vd.isRelation
+    private def checkRelationCalls
+      (st : SymbolTable)
+      : Except String Unit := do
+        let availableRelations : List (varDecl) :=
+          st.variableDecls.filter fun (vd) => vd.isRelation
 
-      let relationNames := availableRelations.map fun r => r.name
+        let relationNames := availableRelations.map fun r => r.name
 
-      let allFormulas :=
-        (((st.axiomDecls.map fun ad => ad.formulas)++
-          (st.defDecls.map fun dd => dd.formulas)).join)
+        let allFormulas := st.getAllFormulas
 
-      let allRelationCalls :=
-        (allFormulas.map
-          fun f => f.getRelationCalls relationNames).join
+        let allRelationCalls :=
+          (allFormulas.map
+            fun f => f.getRelationCalls relationNames).join
 
-      let allowedRelationCalls :=
-        (allFormulas.map
-          fun f => f.getQuantifiedRelationCalls relationNames).join
+        let allowedQuantifiedRelationCalls :=
+          (allFormulas.map
+            fun f => f.getQuantifiedRelationCalls relationNames).join
 
-      let allowedRelationCallsString :=
-        allowedRelationCalls.map fun arc => arc.1
+        let allowedQuantifiedRelationCallsStrings :=
+          allowedQuantifiedRelationCalls.map fun arc => arc.1
 
-      for rc in allRelationCalls do
-        if !(allowedRelationCallsString.contains rc) then
-          if !(rc.contains '.') then
-            let possibleSignatures :=
-              (availableRelations.filter
-                fun vd => vd.name = rc).map
-                  fun vd => s!"{vd.relationOf}"
+        for rc in allRelationCalls do
+          -- is in quantification or not
+          if !(allowedQuantifiedRelationCallsStrings.contains rc) then
+            if !(rc.contains '.') then
+              let possibleSignatures :=
+                (availableRelations.filter
+                  fun vd => vd.name = rc).map
+                    fun vd => s!"{vd.relationOf}"
 
-            if (possibleSignatures.length > 1) then
-            return (false,
-              s!"{rc} is ambiguous. \
-              It could refer to the relation \
-              of the same name in the following \
-              signatures {possibleSignatures}")
+              if (possibleSignatures.length > 1) then
+                throw s!"{rc} is ambiguous. \
+                      It could refer to the relation \
+                      of the same name in the following \
+                      signatures {possibleSignatures}"
 
-      return (true, "no error")
+            else
+              let rcSplit := rc.splitOn "."
+              if rcSplit.isEmpty then
+                throw s!"No relation for {rc} found"
+              else
+                let lastSplit := rcSplit.getLast!
+
+                let complete_origin : String :=
+                  ((rcSplit.drop 1).reverse.drop 1).reverse.foldl
+                    (fun string split => s!"{string}_{split}")
+                    (rcSplit.get! 0)
+
+                let possibleSigName :=
+                  if rcSplit.length > 1 then
+                    rcSplit.get! (rcSplit.length - 2)
+                  else
+                    rcSplit.getLast!
+
+                let origin_without_sig :=
+                  complete_origin.replace s!"_{possibleSigName}" ""
+
+                let possibleRelations :=
+                  (availableRelations.filter
+                    fun ar => (ar.name == lastSplit &&
+                      (ar.openedFrom == complete_origin ||
+                        (possibleSigName == ar.relationOf &&
+                          ar.openedFrom == origin_without_sig
+                        ) ||
+                        (origin_without_sig == possibleSigName)
+                      )
+
+                      ))
+
+                if possibleRelations.isEmpty then
+                  throw s!"No Relation {lastSplit} found \
+                  in module {complete_origin} or \
+                  under signature {possibleSigName} \
+                  in {origin_without_sig}}]"
+
+    /--
+    Checks if the called signatures are valid and not ambiguous
+    -/
+    private def checkSignatureCalls
+      (st : SymbolTable)
+      : Except String Unit := do
+
+      let signatures := st.variableDecls.filter fun vd => !vd.isRelation
+
+      let allCallLocations := st.assertDecls ++ st.axiomDecls ++ st.defDecls
+      for location in allCallLocations do
+        for signatureCall in location.signatureCalls do
+          let possibleSignatures :=
+            signatures.filter
+              fun s => Id.run do
+                let splittedCall := signatureCall.splitOn "."
+                let originNamespace : String :=
+                  ((splittedCall.drop 1).reverse.drop 1).reverse.foldl
+                    (fun string callSplit => s!"{string}_{callSplit}")
+                    (splittedCall.get! 0)
+
+                s.name == signatureCall ||
+                  (
+                    !splittedCall.isEmpty &&
+                    splittedCall.getLast! == s.name &&
+                    s.openedFrom == originNamespace
+                  )
+
+          if possibleSignatures.isEmpty then
+            throw s!"No signature with name {signatureCall} is defined."
+          else
+            if possibleSignatures.length > 1 then
+              throw s!"The call to signature {signatureCall} is \
+              ambiguous. It could refer so the signature of the blocks \
+              {possibleSignatures.map
+                fun ps => ps.openedFrom}"
 
     /--
     Checks if all predicate calls are correct.
@@ -243,7 +350,7 @@ namespace Alloy
     private def checkPredCalls
       (st : SymbolTable)
       (ast : AST)
-      : Bool × String := Id.run do
+      : Except String Unit := do
         let availablePredDecls : List (predDecl) :=
           ast.predDecls
 
@@ -258,7 +365,7 @@ namespace Alloy
 
             let pd? := availablePredDecls.find? fun (apd) => apd.name == predName
             if pd?.isNone then -- check: predicate exists?
-              return (false, s!"Predicate {predName} does not exist")
+              throw s!"Predicate {predName} does not exist"
 
             else -- check: number of arguments
               let pd := pd?.get!
@@ -269,10 +376,8 @@ namespace Alloy
               let cal := calledArgs.length
 
               if al != cal then
-                return (false,
-                  s!"Definition {predName} called with {cal} arguments ({calledArgs}), but expected {al}")
-
-        return (true, "no error")
+                throw s!"Definition {predName} called with {cal} \
+                arguments ({calledArgs}), but expected {al}"
 
     /--
     Adds the given signature declarations (including the contained signature field
@@ -283,6 +388,7 @@ namespace Alloy
     private def addSigs
       (inputST : SymbolTable)
       (sigDecls : List (sigDecl))
+      (moduleName : String := "this")
       : SymbolTable := Id.run do
 
         let mut st : SymbolTable := inputST
@@ -304,8 +410,11 @@ namespace Alloy
 
           -- add Declarations
           for signatureName in sigDecl.names do
+
             st := st.addVarDecl
                     ({  name:= signatureName,
+                        isOpened := moduleName != "this",
+                        openedFrom := moduleName,
                         isRelation := false,
                         relationOf := default,
                         type := (sigDecl.extension.getType sigDecl.mult)
@@ -349,8 +458,6 @@ namespace Alloy
 
               -- requirements for sigDecl (no duplicates)
               let localFieldRequirements := fieldRequirements.eraseDups
---              let mut localFieldRequirements : List (String) := []
-
 
             -- add all requirements for fieldDecl to smybol table
             -- (if not already in symbol table)
@@ -363,6 +470,8 @@ namespace Alloy
 
                 st := st.addVarDecl ({
                       name:= fieldName,
+                      isOpened := moduleName != "this",
+                      openedFrom := moduleName,
                       isRelation := true,
                       relationOf := signatureName,
                       type := completeFieldType,
@@ -378,7 +487,8 @@ namespace Alloy
     private def addPreds
     (inputST : SymbolTable)
     (predDecls : List (predDecl))
-    : SymbolTable := Unhygienic.run do
+    (moduleName : String := default)
+    : SymbolTable := Id.run do
 
       let mut st := inputST
 
@@ -387,9 +497,15 @@ namespace Alloy
           fun vd => vd.isRelation).map
             fun vd => vd.name
 
+      let signatureNames :=
+        (st.variableDecls.filter
+          fun vd => !vd.isRelation).map
+            fun vd => vd.name
+
       for predDecl in predDecls do
         let mut predCalls : List (List (String)) := []
         let mut relCalls : List (String) := []
+        let mut sigCalls : List (String) := []
 
         for formula in predDecl.forms do
           if let Option.some pc := formula.getPredCalls then
@@ -399,20 +515,33 @@ namespace Alloy
           if !(relationCalls.isEmpty) then
             relCalls := relCalls.append relationCalls
 
+          sigCalls :=
+            sigCalls.append (formula.getSignatureCalls signatureNames moduleName)
+
         -- get list of referenced signatures and signature fields
         let reqVars : List (String) := predDecl.getReqVariables.eraseDups
 
         -- get list of referenced preds
         let reqDefs : List (String) := predDecl.getReqDefinitions.eraseDups
 
+        let mut declarationName := predDecl.name
+        /-
+        if a moduleName is given, it is added to the
+        signature name to make it unique
+        -/
+        if moduleName != default then
+          declarationName :=
+            s!"{moduleName}{signatureSeparator.get}{declarationName}"
+
         st := st.addDefDecl
-          {   name := predDecl.name,
+          {   name := declarationName,
               args := predDecl.args,
               formulas := predDecl.forms,
               requiredVars := reqVars,
               requiredDefs := reqDefs,
               predCalls := predCalls,
-              relationCalls := relCalls
+              relationCalls := relCalls,
+              signatureCalls := sigCalls
           }
 
         st :=
@@ -430,7 +559,8 @@ namespace Alloy
     private def addFacts
     (inputST : SymbolTable)
     (factDecls : List (factDecl))
-    : SymbolTable := Unhygienic.run do
+    (moduleName : String := default)
+    : SymbolTable := Id.run do
 
       let mut st := inputST
 
@@ -439,9 +569,15 @@ namespace Alloy
           fun vd => vd.isRelation).map
             fun vd => vd.name
 
+      let signatureNames :=
+        (st.variableDecls.filter
+          fun vd => !vd.isRelation).map
+            fun vd => vd.name
+
       for factDecl in factDecls do
         let mut predCalls : List (List (String)):= []
         let mut relCalls : List (String) := []
+        let mut sigCalls : List (String) := []
 
         -- get list of referenced preds (including arguments)
         for formula in factDecl.formulas do
@@ -449,9 +585,12 @@ namespace Alloy
           if let Option.some pc := formula.getPredCalls then
             predCalls := predCalls.concat pc
 
-          let relationCalls := formula.getRelationCalls relationNames
-          if !(relationCalls.isEmpty) then
-            relCalls := relCalls.append relationCalls
+          relCalls := relCalls.append
+            (formula.getRelationCalls relationNames)
+
+          sigCalls :=
+            sigCalls.append (formula.getSignatureCalls signatureNames moduleName)
+
 
         -- get list of the names of the referenced signatures and signature fields
         let reqVars : List (String) := factDecl.getReqVariables.eraseDups
@@ -459,14 +598,24 @@ namespace Alloy
         -- get list of the names of the referenced preds
         let reqDefs : List (String) := factDecl.getReqDefinitions.eraseDups
 
+        let mut declarationName := factDecl.name
+        /-
+        if a moduleName is given, it is added to the
+        signature name to make it unique
+        -/
+        if moduleName != default then
+          declarationName :=
+            s!"{moduleName}{signatureSeparator.get}{declarationName}"
+
         st := st.addAxiomDecl
-          {   name := factDecl.name,
+          {   name := declarationName,
               args := [],
               formulas := factDecl.formulas,
               requiredVars := reqVars,
               requiredDefs := reqDefs,
               predCalls := predCalls,
-              relationCalls := relCalls
+              relationCalls := relCalls,
+              signatureCalls := sigCalls
           }
 
         st :=
@@ -484,7 +633,8 @@ namespace Alloy
     private def addAsserts
     (inputST : SymbolTable)
     (assertDecls : List (assertDecl))
-    : SymbolTable := Unhygienic.run do
+    (moduleName : String := default)
+    : SymbolTable := Id.run do
 
       let mut st := inputST
 
@@ -493,18 +643,27 @@ namespace Alloy
           fun vd => vd.isRelation).map
             fun vd => vd.name
 
+      let signatureNames :=
+        (st.variableDecls.filter
+          fun vd => !vd.isRelation).map
+            fun vd => vd.name
+
       for assertDecla in assertDecls do
         let mut predCalls : List (List (String)):= []
         let mut relCalls : List (String) := []
+        let mut signatureCalls : List (String) := []
 
         -- get list of referenced preds (including arguments)
         for formula in assertDecla.formulas do
           if let Option.some pc := formula.getPredCalls then
             predCalls := predCalls.concat pc
 
-          let relationCalls := formula.getRelationCalls relationNames
-          if !(relationCalls.isEmpty) then
-            relCalls := relCalls.append relationCalls
+          relCalls := relCalls.append
+            (formula.getRelationCalls relationNames)
+
+          signatureCalls :=
+            signatureCalls.append
+              (formula.getSignatureCalls signatureNames moduleName)
 
         -- get list of the names of the referenced signatures and signature fields
         let reqVars : List (String) := assertDecla.getReqVariables.eraseDups
@@ -512,14 +671,24 @@ namespace Alloy
         -- get list of the names of the referenced preds
         let reqDefs : List (String) := assertDecla.getReqVariables.eraseDups
 
+        let mut declarationName := assertDecla.name
+        /-
+        if a moduleName is given, it is added to the
+        signature name to make it unique
+        -/
+        if moduleName != default then
+          declarationName :=
+            s!"{moduleName}{signatureSeparator.get}{declarationName}"
+
         st := st.addAssertDecl
-          {   name := assertDecla.name,
+          {   name := declarationName,
               args := [],
               formulas := assertDecla.formulas,
               requiredVars := reqVars,
               requiredDefs := reqDefs,
               predCalls := predCalls,
-              relationCalls := relCalls
+              relationCalls := relCalls,
+              signatureCalls := signatureCalls
           }
 
         st :=
@@ -529,48 +698,102 @@ namespace Alloy
 
       return st
 
+    private partial def addModule
+      (input : SymbolTable)
+      (ast : AST)
+      : SymbolTable := Id.run do
+        let mut st := input
+
+        let mut module_name := ast.name
+        /-
+          dots (.) are not valid to be contained in
+          the name of a variable (in a typeclass), thus
+          they are removed here
+        -/
+        if module_name.contains '.' then
+          module_name := module_name.replace "." "_"
+
+        /-
+          add all sigs, preds, facts and asserts of the current MAIN module
+        -/
+        st := st.addSigs ast.sigDecls module_name
+        st := st.addPreds ast.predDecls module_name
+        st := st.addFacts ast.factDecls module_name
+        st := st.addAsserts ast.assertDecls module_name
+
+        /-
+          if there are modules left, they have to be addes as well
+        -/
+        for module in ast.openedModules do
+          st := st.addModule module
+
+        return st
+
+    private def getExtensiveErrorMsg
+      (msg : String)
+      (st : SymbolTable)
+      : String := s!"Error: '{msg}' occured in \n\n {st}"
+
     /--
     Creates a SymbolTable from an AST
     -/
-    def create (ast : AST) : SymbolTable × Bool × String := Id.run do
-      let mut st : SymbolTable :=
-        ({  blockName := ast.name,
-            variableDecls := [],
-            defDecls := [],
-            axiomDecls := [],
-            assertDecls := [],
-            requiredDecls := []
-          } : SymbolTable)
+    def create
+      (ast : AST)
+      (extensive_logging : Bool := false)
+      : Except String SymbolTable := do
+        let mut st : SymbolTable :=
+          ({  blockName := ast.name,
+              variableDecls := [],
+              defDecls := [],
+              axiomDecls := [],
+              assertDecls := [],
+              requiredDecls := []
+            } : SymbolTable)
 
-      -- sigs
-      st := st.addSigs ast.sigDecls
+        -- Add elements from OPENED (imported) modules
+        for openedModuleAST in ast.openedModules do
+          st := st.addModule openedModuleAST
 
-      -- facts
-      st := st.addFacts ast.factDecls
+        -- Add the elements of the CURRENT module (block)
+        -- sigs
+        st := st.addSigs ast.sigDecls
 
-      --preds
-      st := st.addPreds ast.predDecls
+        -- facts
+        st := st.addFacts ast.factDecls
 
-      --asserts
-      st := st.addAsserts ast.assertDecls
+        --preds
+        st := st.addPreds ast.predDecls
 
-      let symbolCheck := st.checkSymbols
-      if symbolCheck.1 then -- symbolCheck OK
+        --asserts
+        st := st.addAsserts ast.assertDecls
 
-        let relationCallCheck := st.checkRelationCalls
-        if relationCallCheck.1 then -- relationCallCheck OK
-
-          let predCallCheck := st.checkPredCalls ast
-          if predCallCheck.1 then -- predCallCheck OK
-            let orderedSt := (st.replaceVarDecls (orderVarDecls st.variableDecls))
-            return (orderedSt, true, predCallCheck.2)
-
+        -- CHECKS
+        if let Except.error msg := st.checkSymbols then
+          if extensive_logging then
+            throw (getExtensiveErrorMsg msg st)
           else
-            return (st, false, predCallCheck.2)
-        else
-          return (st, false, relationCallCheck.2)
-      else
-        return (st, false, symbolCheck.2)
+            throw msg
+
+        if let Except.error msg := st.checkRelationCalls then
+          if extensive_logging then
+            throw (getExtensiveErrorMsg msg st)
+          else
+            throw msg
+
+        if let Except.error msg := st.checkSignatureCalls then
+          if extensive_logging then
+            throw (getExtensiveErrorMsg msg st)
+          else
+            throw msg
+
+        if let Except.error msg := st.checkPredCalls ast then
+          if extensive_logging then
+            throw (getExtensiveErrorMsg msg st)
+          else
+            throw msg
+
+        -- Order the ST
+        return (st.replaceVarDecls (orderVarDecls st.variableDecls))
 
   end SymbolTable
 
