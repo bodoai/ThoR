@@ -5,7 +5,7 @@ Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
 import ThoR.Shared.Syntax.mult
-import ThoR.Shared.Syntax.arrowOp
+import ThoR.Shared.Syntax.ArrowOp.arrowOp
 
 open ThoR
 open Lean
