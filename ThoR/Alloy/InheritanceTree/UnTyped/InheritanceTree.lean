@@ -11,8 +11,6 @@ import ThoR.Alloy.Config
 import ThoR.Alloy.Syntax.Signature.Inheritance.sigExt
 import ThoR.Shared.Syntax.typeExpr
 
-import ThoR.Alloy.Syntax.Signature.signatureSeparator
-
 import ThoR.Alloy.InheritanceTree.UnTyped.Node
 
 open Lean Lean.Elab Command Term
@@ -334,10 +332,10 @@ namespace InheritanceTree
 
           commands := commands.concat command
 
-          let openedFrom := (memberName.splitOn signatureSeparator.get).get! 0
+          let openedFrom := (memberName.splitOn signatureSeparator).get! 0
           let aliasname :=
             s!"{if !memberName.containsSubstr "this" then s!"{openedFrom}." else ""}\
-            {(axiomName.toString.splitOn signatureSeparator.get).getLast!}".toName
+            {(axiomName.toString.splitOn signatureSeparator).getLast!}".toName
 
           let aliasCommand ← `(alias $(mkIdent aliasname) := $(mkIdent axiomName))
           commands := commands.concat aliasCommand

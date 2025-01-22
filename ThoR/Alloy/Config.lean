@@ -13,6 +13,9 @@ namespace Config
 /-- gets the separator used for relations -/
 def relationSeparator : String := "_ξ_"
 
+/-- gets the separator used for relations -/
+def signatureSeparator : String := "_φ_"
+
 /-
   `ThoR.Relation` models the concept "relation" as algebraic structure. i.e.
   there exists a carrier set (resp. carrier type) which has to be

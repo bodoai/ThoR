@@ -4,10 +4,9 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Shared.Syntax
-import ThoR.Shared.Syntax.Relation.relationSeparator
-import ThoR.Alloy.Syntax.Signature.signatureSeparator
+import ThoR.Alloy.Config
 
-open Shared
+open Shared Config
 
 namespace Alloy
 
@@ -65,9 +64,9 @@ namespace Alloy
 
     def getRelationReplacementName (vd : varDecl) : String :=
       s!"{vd.openedFrom}\
-      {signatureSeparator.get}\
+      {signatureSeparator}\
       {vd.relationOf}\
-      {relationSeparator.get}\
+      {relationSeparator}\
       {vd.name}"
 
     def getFullSignatureName (vd : varDecl) : String :=
@@ -76,7 +75,7 @@ namespace Alloy
 
     def getSignatureReplacementName (vd : varDecl) : String :=
       s!"{vd.openedFrom}\
-      {signatureSeparator.get}\
+      {signatureSeparator}\
       {vd.name}"
 
   end varDecl

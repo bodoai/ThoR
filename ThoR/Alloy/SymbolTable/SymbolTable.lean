@@ -13,11 +13,10 @@ import ThoR.Relation
 import ThoR.Alloy.Syntax.AST
 import ThoR.Alloy.SymbolTable.varDecl
 import ThoR.Alloy.SymbolTable.commandDecl
-
-import ThoR.Alloy.Syntax.Signature.signatureSeparator
+import ThoR.Alloy.Config
 
 open Lean
-open Shared
+open Shared Config
 
 namespace Alloy
 
@@ -531,7 +530,7 @@ namespace Alloy
         -/
         if moduleName != default then
           declarationName :=
-            s!"{moduleName}{signatureSeparator.get}{declarationName}"
+            s!"{moduleName}{signatureSeparator}{declarationName}"
 
         st := st.addDefDecl
           {   name := declarationName,
@@ -605,7 +604,7 @@ namespace Alloy
         -/
         if moduleName != default then
           declarationName :=
-            s!"{moduleName}{signatureSeparator.get}{declarationName}"
+            s!"{moduleName}{signatureSeparator}{declarationName}"
 
         st := st.addAxiomDecl
           {   name := declarationName,
@@ -678,7 +677,7 @@ namespace Alloy
         -/
         if moduleName != default then
           declarationName :=
-            s!"{moduleName}{signatureSeparator.get}{declarationName}"
+            s!"{moduleName}{signatureSeparator}{declarationName}"
 
         st := st.addAssertDecl
           {   name := declarationName,
