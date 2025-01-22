@@ -8,8 +8,10 @@ import ThoR.Relation.Rel
 import ThoR.Relation.ElabCallMacro
 
 import ThoR.Shared.Syntax.mult
-import ThoR.Shared.Syntax.arrowOp
-import ThoR.Shared.Syntax.typeExpr
+import ThoR.Shared.Syntax.ArrowOp.arrowOp
+
+import ThoR.Shared.Syntax.TypeExpr.typeExpr
+import ThoR.Shared.Syntax.TypeExpr.typeExprService
 
 open Lean Lean.Elab Command Term
 namespace ThoR

@@ -10,3 +10,4 @@ import ThoR.Shared.Syntax.Relation.relCompareOp
 import ThoR.Shared.Syntax.Relation.unRelOp
 import ThoR.Shared.Syntax.Relation.binRelOp
 import ThoR.Shared.Syntax.Relation.unRelBoolOp
+import ThoR.Shared.Syntax.Relation.Expr.expr

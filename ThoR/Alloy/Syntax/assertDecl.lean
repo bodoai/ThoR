@@ -5,7 +5,6 @@ Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
 import ThoR.Alloy.Syntax.property
-import ThoR.Shared.Syntax.formula
 
 open Lean
 open Shared

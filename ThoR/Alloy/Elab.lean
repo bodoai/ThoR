@@ -22,11 +22,7 @@ import ThoR.Alloy.Syntax.SeparatedNamespace
 import ThoR.Alloy.Syntax.alloyData
 import ThoR.Alloy.Syntax.OpenModule.openModuleHelper
 
-import ThoR.Shared.Syntax.Formula.formula_helper
-import ThoR.Shared.Syntax.TypeExpr.typeExpr_helper
-
-import ThoR.Shared.Syntax.Formula.formula_helper
-import ThoR.Shared.Syntax.TypeExpr.typeExpr_helper
+import ThoR.Shared.Syntax.TypeExpr.typeExprService
 
 open ThoR Shared Alloy Config
 open Lean Lean.Elab Command Term

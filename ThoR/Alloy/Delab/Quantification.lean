@@ -7,7 +7,7 @@ Authors: s. file CONTRIBUTORS
 import ThoR.Relation.Quantification
 import ThoR.Relation.Rel
 
-import ThoR.Shared.Syntax.formula
+import ThoR.Shared.Syntax.Formula.formula
 
 open ThoR
 open ThoR.Quantification

@@ -9,7 +9,8 @@ service functions to manage them.
 -/
 import ThoR.Basic
 
-import ThoR.Shared.Syntax.typeExpr
+import ThoR.Shared.Syntax.TypeExpr.typeExpr
+import ThoR.Shared.Syntax.TypeExpr.typeExprService
 
 import ThoR.Alloy.Syntax.Signature.Inheritance.sigExtExtends
 import ThoR.Alloy.Syntax.Signature.Inheritance.sigExtIn

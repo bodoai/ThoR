@@ -4,7 +4,7 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
-import ThoR.Shared.Syntax.typeExpr
+import ThoR.Shared.Syntax.TypeExpr.typeExpr
 open Shared Lean
 
 namespace Alloy

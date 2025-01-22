@@ -4,7 +4,8 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
-import ThoR.Shared.Syntax.Relation.expr
+import ThoR.Shared.Syntax.Relation.Expr.expr
+import ThoR.Shared.Syntax.Relation.Expr.exprService
 
 open Shared Lean
 
