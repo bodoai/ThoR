@@ -22,6 +22,7 @@ namespace Alloy
           (requiredVars : List (String)) -- only for Lean Infoview
           (predCalls : List (List (String))) -- called predicates
           (relationCalls : List (String)) -- called relations
+          (signatureCalls : List (String)) -- called signatures
   deriving Repr
 
   namespace commandDecl
@@ -29,9 +30,6 @@ namespace Alloy
   /--
   Generates a String representation from the type.
 
-  Note that formulas := {cd.formulas},
-  is not included, since it is irrelevant for the user here
-  but needed to form the commands in Commands.Lean
   -/
   def toString (cd : commandDecl) : String :=
     /-
@@ -42,7 +40,9 @@ namespace Alloy
       required definitions := {cd.requiredDefs},
       required variables := {cd.requiredVars},
       called predicates := {cd.predCalls},
-      called relations := {cd.relationCalls}
+      called relations := {cd.relationCalls},
+      called signatures := {cd.signatureCalls},
+      formulas := {cd.formulas}
     }"
 
   instance : ToString commandDecl where

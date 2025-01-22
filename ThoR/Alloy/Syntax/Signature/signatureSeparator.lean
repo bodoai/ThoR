@@ -4,4 +4,8 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 
-import ThoR.Shared.Syntax.ArrowOp.arrowOp
+namespace Alloy.signatureSeparator
+
+  def get : String := "_φ_"
+
+end Alloy.signatureSeparator

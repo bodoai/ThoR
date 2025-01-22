@@ -4,6 +4,8 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Shared.Syntax
+import ThoR.Shared.Syntax.Relation.relationSeparator
+import ThoR.Alloy.Syntax.Signature.signatureSeparator
 
 open Shared
 
@@ -14,6 +16,8 @@ namespace Alloy
   -/
   structure varDecl where
     mk :: (name : String)
+          (isOpened : Bool) -- imported
+          (openedFrom : String)
           (isRelation : Bool)
           (relationOf : String)
           (type : typeExpr)
@@ -26,6 +30,8 @@ namespace Alloy
     def toString (vd : varDecl) : String :=
       s!"variableDeclaration : \{
         name := {vd.name},
+        isOpenend := {vd.isOpened},
+        openedFrom := {vd.openedFrom},
         isRelationOf := {vd.isRelation},
         relationOf := {vd.relationOf},
         type := {vd.type},
@@ -44,11 +50,34 @@ namespace Alloy
 
     instance : Inhabited varDecl where
       default := {  name:= default,
+                    isOpened := default,
+                    openedFrom := default,
                     isRelation := default,
                     relationOf := default,
                     type := default,
                     requiredDecls := default
                   }
+
+    def getFullRelationName (vd : varDecl) : String :=
+      s!"{if vd.isOpened then s!"{vd.openedFrom.replace "_" "."}." else ""}\
+      {vd.relationOf}.\
+      {vd.name}"
+
+    def getRelationReplacementName (vd : varDecl) : String :=
+      s!"{vd.openedFrom}\
+      {signatureSeparator.get}\
+      {vd.relationOf}\
+      {relationSeparator.get}\
+      {vd.name}"
+
+    def getFullSignatureName (vd : varDecl) : String :=
+      s!"{if vd.isOpened then s!"{vd.openedFrom.replace "_" "."}." else ""}\
+      {vd.name}"
+
+    def getSignatureReplacementName (vd : varDecl) : String :=
+      s!"{vd.openedFrom}\
+      {signatureSeparator.get}\
+      {vd.name}"
 
   end varDecl
 
