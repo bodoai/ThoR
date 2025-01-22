@@ -41,12 +41,12 @@ create brackets
 #check brackets.preds.p
 #check brackets.facts.f0
 
-alloy ifelseUse
+#alloy ifelseUse
 sig a {}
 pred p {}
 fact {if p then p else p}
 end
-create ifelseUse
+#create ifelseUse
 
 #check ifelseUse.preds.p
 #check ifelseUse.facts.f0

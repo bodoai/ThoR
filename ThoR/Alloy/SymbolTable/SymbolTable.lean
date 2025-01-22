@@ -507,8 +507,8 @@ namespace Alloy
         let mut sigCalls : List (String) := []
 
         for formula in predDecl.forms do
-          if let Option.some pc := formula.getPredCalls then
-            predCalls := predCalls.concat pc
+          predCalls := predCalls.append
+            (formula.getPredCalls)
 
           let relationCalls := formula.getRelationCalls relationNames
           if !(relationCalls.isEmpty) then
@@ -581,8 +581,8 @@ namespace Alloy
         -- get list of referenced preds (including arguments)
         for formula in factDecl.formulas do
 
-          if let Option.some pc := formula.getPredCalls then
-            predCalls := predCalls.concat pc
+          predCalls := predCalls.append
+            (formula.getPredCalls)
 
           relCalls := relCalls.append
             (formula.getRelationCalls relationNames)
@@ -654,8 +654,8 @@ namespace Alloy
 
         -- get list of referenced preds (including arguments)
         for formula in assertDecla.formulas do
-          if let Option.some pc := formula.getPredCalls then
-            predCalls := predCalls.concat pc
+          predCalls := predCalls.append
+            (formula.getPredCalls)
 
           relCalls := relCalls.append
             (formula.getRelationCalls relationNames)
