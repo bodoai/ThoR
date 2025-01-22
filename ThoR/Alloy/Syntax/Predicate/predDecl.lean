@@ -5,7 +5,9 @@ Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
 import ThoR.Alloy.Syntax.Predicate.predArg
-import ThoR.Shared.Syntax
+
+import ThoR.Shared.Syntax.Formula.formula
+import ThoR.Shared.Syntax.Formula.formulaService
 
 open Lean
 open Shared

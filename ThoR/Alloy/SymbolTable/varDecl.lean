@@ -3,7 +3,8 @@ Copyright (c) 2024 RheinMain University of Applied Sciences
 Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
-import ThoR.Shared.Syntax
+import ThoR.Shared.Syntax.TypeExpr.typeExpr
+
 import ThoR.Alloy.Config
 
 open Shared Config

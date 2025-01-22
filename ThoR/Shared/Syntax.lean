@@ -7,7 +7,7 @@ Authors: s. file CONTRIBUTORS
 import ThoR.Shared.Syntax.constant
 import ThoR.Shared.Syntax.mult
 import ThoR.Shared.Syntax.quant
-import ThoR.Shared.Syntax.formula
+import ThoR.Shared.Syntax.Formula.formula
 
 import ThoR.Shared.Syntax.Relation
 
@@ -15,4 +15,4 @@ import ThoR.Shared.Syntax.Algebra
 
 import ThoR.Shared.Syntax.Logic
 
-import ThoR.Shared.Syntax.typeExpr
+import ThoR.Shared.Syntax.TypeExpr.typeExpr

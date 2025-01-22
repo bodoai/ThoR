@@ -4,7 +4,8 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
-import ThoR.Shared.Syntax.formula
+import ThoR.Shared.Syntax.Formula.formula
+import ThoR.Shared.Syntax.Formula.formulaService
 
 open Shared
 
