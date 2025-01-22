@@ -1,12 +1,12 @@
 import ThoR
 
-open Lean
+open Lean Config
 
 macro "startTestBlock" blockName:ident : command
   => do
     let varName ← `($(mkIdent s!"{blockName.getId}.vars".toName))
     `(variable
-      ($(baseType.getIdent) : Type)
-      [$(mkIdent `ThoR.TupleSet) $(baseType.getIdent)]
-      [$(mkIdent `self) : $varName $(baseType.getIdent)]
+      ($(baseType.ident) : Type)
+      [$(mkIdent `ThoR.TupleSet) $(baseType.ident)]
+      [$(mkIdent `self) : $varName $(baseType.ident)]
     )

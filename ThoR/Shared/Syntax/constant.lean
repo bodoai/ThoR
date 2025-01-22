@@ -4,10 +4,10 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
-import ThoR.Shared.Syntax.baseType
+import ThoR.Alloy.Config
 import ThoR.Relation.Rel
 
-open ThoR
+open ThoR Config
 open Lean
 namespace Shared
 
@@ -67,11 +67,11 @@ namespace Shared
       : TSyntax `term := Unhygienic.run do
         match c with
           | constant.none =>
-            `($(mkIdent ``Rel.constant.none) $(baseType.getIdent))
+            `($(mkIdent ``Rel.constant.none) $(baseType.ident))
           | constant.univ =>
-            `($(mkIdent ``Rel.constant.univ) $(baseType.getIdent))
+            `($(mkIdent ``Rel.constant.univ) $(baseType.ident))
           | constant.iden =>
-            `($(mkIdent ``Rel.constant.iden) $(baseType.getIdent))
+            `($(mkIdent ``Rel.constant.iden) $(baseType.ident))
 
     /--
     Parses the given syntax to the type

@@ -10,12 +10,10 @@ import ThoR.Shared.Syntax.Relation.unRelOp
 import ThoR.Shared.Syntax.Relation.binRelOp
 import ThoR.Shared.Syntax.Relation.dotjoin
 import ThoR.Relation.ElabCallMacro
-import ThoR.Shared.Syntax.baseType
-import ThoR.Shared.Syntax.Relation.relationSeparator
-import ThoR.Alloy.Syntax.Signature.signatureSeparator
+import ThoR.Alloy.Config
 import ThoR.Alloy.Syntax.SeparatedNamespace
 
-open Lean
+open Lean Config
 
 namespace Shared
 
@@ -194,7 +192,7 @@ namespace Shared
               ))
 
           | expr.string_rb s => do
-            `((@$(mkIdent s.toName) $(baseType.getIdent) _ _))
+            `((@$(mkIdent s.toName) $(baseType.ident) _ _))
 
     /--
     Generates a Lean term corosponding with the type from outside an alloy block

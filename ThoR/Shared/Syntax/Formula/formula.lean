@@ -10,7 +10,6 @@ import ThoR.Relation
 import ThoR.Shared.Syntax.Algebra
 import ThoR.Shared.Syntax.Logic
 import ThoR.Shared.Syntax.quant
-import ThoR.Shared.Syntax.baseType
 import ThoR.Shared.Syntax.Relation
 
 open Lean
