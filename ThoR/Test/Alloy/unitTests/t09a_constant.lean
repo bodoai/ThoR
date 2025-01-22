@@ -37,6 +37,6 @@ end univConst.test
 
 alloy idConst
 sig a {
-  r : id
+  r : iden
 }
 end
