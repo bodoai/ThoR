@@ -21,9 +21,9 @@ namespace Alloy
           (formulas : List (formula)) -- formulas in an Alloy pred or an Alloy fact
           (requiredDefs : List (String)) -- only for Lean Infoview
           (requiredVars : List (String)) -- only for Lean Infoview
-          (predCalls : List (List (String))) -- called predicates
+          (predCalls : List (commandDecl × List (List (varDecl)))) -- called predicates
           (relationCalls : List (varDecl)) -- called relations
-          (signatureCalls : List (commandDecl × List (varDecl))) -- called signatures
+          (signatureCalls : List (varDecl)) -- called signatures
   deriving Repr
   namespace commandDecl
 
@@ -52,17 +52,17 @@ namespace Alloy
   Generates a String representation from the type.
   -/
   partial def toString (cd : commandDecl) : String :=
-    let sigCallsString :=
-      cd.signatureCalls.map fun sc =>
-        s!"({toString sc.1} {sc.2})"
+    let predCallsString :=
+      cd.predCalls.map fun pc =>
+        s!"({toString pc.1} {pc.2})"
     s!"commandDeclaration : \{
       name := {cd.name},
       args := {cd.args},
       required definitions := {cd.requiredDefs},
       required variables := {cd.requiredVars},
-      called predicates := {cd.predCalls},
+      called predicates := {predCallsString},
       called relations := {cd.relationCalls},
-      called signatures := {sigCallsString},
+      called signatures := {cd.signatureCalls},
       formulas := {cd.formulas}
     }"
 

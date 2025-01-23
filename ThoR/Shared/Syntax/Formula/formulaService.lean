@@ -562,16 +562,16 @@ namespace Shared.formula
   and to the `callablePredicates` which only predicades
 
   The result takes the form of a Tuple which on the first position contains the
-  called Variables (as varDecl) and on the second position contains another Tuple
-  which contains called Predicates (as commandDecl) with the given arguments (as varDecl)
+  called Variables (as varDecl) and on the second position contains another List of Tuples
+  which contain called Predicates (as commandDecl) with the given arguments (as varDecl)
   -/
   partial def getCalls
     (f : formula)
     (callableVariables : List (varDecl))
     (callablePredicates : List (commandDecl))
-    : (List (varDecl) × List (commandDecl × List (varDecl))) := Id.run do
+    : (List (varDecl) × List (commandDecl × List (List (varDecl)))) := Id.run do
       let mut calledVariables : List (varDecl) := []
-      let mut calledPredicates :List (commandDecl × List (varDecl)) := []
+      let mut calledPredicates : List (commandDecl × List (List (varDecl))) := []
 
       let callablePredicateNames := callablePredicates.map fun cp => cp.name
 
@@ -588,7 +588,7 @@ namespace Shared.formula
             let calledPredicate := callablePredicates.get! index
 
             let calledArgumentVariables :=
-              (predicate_arguments.map fun e => e.getCalls callableVariables).join
+              (predicate_arguments.map fun e => e.getCalls callableVariables)
 
             calledPredicates :=
               calledPredicates.concat (calledPredicate, calledArgumentVariables)
@@ -621,12 +621,24 @@ namespace Shared.formula
             calledVariables.append
               (e1.getCalls callableVariables) ++ (e2.getCalls callableVariables)
 
-        | formula.quantification _ _ _ te f =>
+        | formula.quantification _ _ names te f =>
           let typeExprRelCalls := te.getCalls callableVariables
           calledVariables := calledVariables.append typeExprRelCalls
 
+          let quantVarDecls :=
+            names.map fun n =>
+              varDecl.mk
+                (name := n)
+                (isQuantor := true)
+                (isOpened := false)
+                (openedFrom := "this")
+                (isRelation := false)
+                (relationOf := default)
+                (type := te)
+                (requiredDecls := [])
+
           let formulaCalls := (f.map fun form =>
-              form.getCalls callableVariables callablePredicates)
+              form.getCalls (callableVariables ++ quantVarDecls) callablePredicates)
           for call in formulaCalls do
             calledVariables := calledVariables.append call.1
             calledPredicates := calledPredicates.append call.2

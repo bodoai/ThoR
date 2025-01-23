@@ -312,24 +312,17 @@ namespace Alloy
       let allCallLocations := st.assertDecls ++ st.axiomDecls ++ st.defDecls
       for location in allCallLocations do
         for signatureCall in location.signatureCalls do
+
+          -- temp quantors are not to be checked here
+          if signatureCall.isQuantor then
+            continue
+
           let possibleSignatures :=
             signatures.filter
-              fun s => Id.run do
-                let splittedCall := signatureCall.splitOn "."
-                let originNamespace : String :=
-                  ((splittedCall.drop 1).reverse.drop 1).reverse.foldl
-                    (fun string callSplit => s!"{string}_{callSplit}")
-                    (splittedCall.get! 0)
-
-                s.name == signatureCall ||
-                  (
-                    !splittedCall.isEmpty &&
-                    splittedCall.getLast! == s.name &&
-                    s.openedFrom == originNamespace
-                  )
+              fun s => s.name == signatureCall.name
 
           if possibleSignatures.isEmpty then
-            throw s!"No signature with name {signatureCall} is defined."
+            throw s!"No signature with name {signatureCall.name} is defined."
           else
             if possibleSignatures.length > 1 then
               throw s!"The call to signature {signatureCall} is \
@@ -353,30 +346,30 @@ namespace Alloy
         let availablePredDecls : List (predDecl) :=
           ast.predDecls
 
-        let mut calledPreds : List (List (String)) :=
+        let avariablePredDeclNames := availablePredDecls.map fun apd => apd.name
+
+        let mut calledPreds :=
           ((st.axiomDecls.map fun (ad) => ad.predCalls).join ++
             ((st.defDecls.map fun (ad) => ad.predCalls).join) ++
               ((st.assertDecls.map fun (ad) => ad.predCalls).join))
 
         for cp in calledPreds do
-          if !cp.isEmpty then
-            let predName := cp.get! 0
+          let calledName := cp.1.name
+          let isDefined := avariablePredDeclNames.contains calledName
+          if !isDefined then
+            throw s!"Predicate {calledName} does not exist"
 
-            let pd? := availablePredDecls.find? fun (apd) => apd.name == predName
-            if pd?.isNone then -- check: predicate exists?
-              throw s!"Predicate {predName} does not exist"
+          let index := avariablePredDeclNames.indexOf calledName
+          let calledPredDecl := availablePredDecls.get! index
+          let calledArguments := cp.2
+          let requiredArgNumber :=
+            (calledPredDecl.args.map fun a => a.names).join.length
+          let calledArgNumber := calledArguments.length
 
-            else -- check: number of arguments
-              let pd := pd?.get!
-              let args := pd.args
-              let calledArgs := cp.drop 1
-
-              let al := (args.map fun (elem) => elem.names).join.length
-              let cal := calledArgs.length
-
-              if al != cal then
-                throw s!"Definition {predName} called with {cal} \
-                arguments ({calledArgs}), but expected {al}"
+          let isCorrectNumberOfArguments := requiredArgNumber == calledArgNumber
+          if !isCorrectNumberOfArguments then
+            throw s!"Definition {calledName} called with {calledArgNumber} \
+            arguments ({calledArguments}), but expected {requiredArgNumber} arguments"
 
     /--
     Adds the given signature declarations (including the contained signature field
@@ -416,6 +409,7 @@ namespace Alloy
                         openedFrom := moduleName,
                         isRelation := false,
                         relationOf := default,
+                        isQuantor := false,
                         type := (sigDecl.extension.getType sigDecl.mult)
                         requiredDecls := localVarRequirements
                       } : varDecl)
@@ -473,6 +467,7 @@ namespace Alloy
                       openedFrom := moduleName,
                       isRelation := true,
                       relationOf := signatureName,
+                      isQuantor := false,
                       type := completeFieldType,
                       requiredDecls := localFieldRequirements} : varDecl)
 
@@ -491,32 +486,7 @@ namespace Alloy
 
       let mut st := inputST
 
-      let relationNames :=
-        (st.variableDecls.filter
-          fun vd => vd.isRelation).map
-            fun vd => vd.name
-
-      let signatureNames :=
-        (st.variableDecls.filter
-          fun vd => !vd.isRelation).map
-            fun vd => vd.name
-
       for predDecl in predDecls do
-        let mut predCalls : List (List (String)) := []
-        let mut relCalls : List (String) := []
-        let mut sigCalls : List (String) := []
-
-        for formula in predDecl.forms do
-          predCalls := predCalls.append
-            (formula.getPredCalls)
-
-          let relationCalls := formula.getRelationCalls relationNames
-          if !(relationCalls.isEmpty) then
-            relCalls := relCalls.append relationCalls
-
-          sigCalls :=
-            sigCalls.append (formula.getSignatureCalls signatureNames moduleName)
-
         -- get list of referenced signatures and signature fields
         let reqVars : List (String) := predDecl.getReqVariables.eraseDups
 
@@ -533,22 +503,50 @@ namespace Alloy
             s!"{moduleName}{signatureSeparator}{declarationName}"
 
         st := st.addDefDecl
-          {   name := declarationName,
-              args := predDecl.args,
-              formulas := predDecl.forms,
-              requiredVars := reqVars,
-              requiredDefs := reqDefs,
-              predCalls := predCalls,
-              relationCalls := relCalls,
-              signatureCalls := sigCalls
-          }
+          (
+            commandDecl.mk (name := declarationName)
+            (args := predDecl.args)
+            (formulas := predDecl.forms)
+            (requiredVars := reqVars)
+            (requiredDefs := reqDefs)
+            (predCalls := [])
+            (relationCalls := [])
+            (signatureCalls := [])
+          )
 
         st :=
           {st with requiredDecls
             := List.eraseDups (st.requiredDecls ++ (reqVars ++ reqDefs))
           }
 
-      return st
+      -- add calls to preds only after all preds are defined
+      let mut newPredDefDecls := []
+      for predDefDecl in st.defDecls do
+        let calls :=
+          predDefDecl.formulas.map
+            fun f =>
+              f.getCalls st.variableDecls st.defDecls
+
+        let mut allVarCalls := []
+        let mut allPredCals := []
+        for call in calls do
+          allVarCalls := allVarCalls.append call.1
+          allPredCals := allPredCals.append call.2
+
+        let newPredDefDecl :=
+          commandDecl.mk
+            (name := predDefDecl.name)
+            (args := predDefDecl.args)
+            (formulas := predDefDecl.formulas)
+            (requiredVars := predDefDecl.requiredVars)
+            (requiredDefs := predDefDecl.requiredDefs)
+            (predCalls := allPredCals)
+            (relationCalls := allVarCalls.filter fun vc => vc.isRelation)
+            (signatureCalls := allVarCalls.filter fun vc => !vc.isRelation)
+
+        newPredDefDecls := newPredDefDecls.concat newPredDefDecl
+
+      return {st with defDecls := newPredDefDecls}
 
     /--
     Adds the given fact declarations in the corosponding form (commandDecl) to the ST
@@ -563,32 +561,25 @@ namespace Alloy
 
       let mut st := inputST
 
-      let relationNames :=
-        (st.variableDecls.filter
-          fun vd => vd.isRelation).map
-            fun vd => vd.name
-
-      let signatureNames :=
-        (st.variableDecls.filter
-          fun vd => !vd.isRelation).map
-            fun vd => vd.name
-
       for factDecl in factDecls do
-        let mut predCalls : List (List (String)):= []
-        let mut relCalls : List (String) := []
-        let mut sigCalls : List (String) := []
+
+        let mut predCalls := []
+        let mut relCalls := []
+        let mut sigCalls := []
 
         -- get list of referenced preds (including arguments)
         for formula in factDecl.formulas do
 
+          let calls := formula.getCalls st.variableDecls st.defDecls
+
           predCalls := predCalls.append
-            (formula.getPredCalls)
+            calls.2
 
           relCalls := relCalls.append
-            (formula.getRelationCalls relationNames)
+            (calls.1.filter fun c => c.isRelation)
 
           sigCalls :=
-            sigCalls.append (formula.getSignatureCalls signatureNames moduleName)
+            (calls.1.filter fun c => !c.isRelation)
 
 
         -- get list of the names of the referenced signatures and signature fields
@@ -607,15 +598,17 @@ namespace Alloy
             s!"{moduleName}{signatureSeparator}{declarationName}"
 
         st := st.addAxiomDecl
-          {   name := declarationName,
-              args := [],
-              formulas := factDecl.formulas,
-              requiredVars := reqVars,
-              requiredDefs := reqDefs,
-              predCalls := predCalls,
-              relationCalls := relCalls,
-              signatureCalls := sigCalls
-          }
+          (
+            commandDecl.mk
+            (name := declarationName)
+            (args := [])
+            (formulas := factDecl.formulas)
+            (requiredVars := reqVars)
+            (requiredDefs := reqDefs)
+            (predCalls := predCalls)
+            (relationCalls := relCalls)
+            (signatureCalls := sigCalls)
+          )
 
         st :=
           {st with requiredDecls
@@ -637,32 +630,24 @@ namespace Alloy
 
       let mut st := inputST
 
-      let relationNames :=
-        (st.variableDecls.filter
-          fun vd => vd.isRelation).map
-            fun vd => vd.name
-
-      let signatureNames :=
-        (st.variableDecls.filter
-          fun vd => !vd.isRelation).map
-            fun vd => vd.name
-
       for assertDecla in assertDecls do
-        let mut predCalls : List (List (String)):= []
-        let mut relCalls : List (String) := []
-        let mut signatureCalls : List (String) := []
+        let mut predCalls := []
+        let mut relCalls := []
+        let mut sigCalls := []
 
         -- get list of referenced preds (including arguments)
         for formula in assertDecla.formulas do
+
+          let calls := formula.getCalls st.variableDecls st.defDecls
+
           predCalls := predCalls.append
-            (formula.getPredCalls)
+            calls.2
 
           relCalls := relCalls.append
-            (formula.getRelationCalls relationNames)
+            (calls.1.filter fun c => c.isRelation)
 
-          signatureCalls :=
-            signatureCalls.append
-              (formula.getSignatureCalls signatureNames moduleName)
+          sigCalls :=
+            (calls.1.filter fun c => !c.isRelation)
 
         -- get list of the names of the referenced signatures and signature fields
         let reqVars : List (String) := assertDecla.getReqVariables.eraseDups
@@ -680,15 +665,17 @@ namespace Alloy
             s!"{moduleName}{signatureSeparator}{declarationName}"
 
         st := st.addAssertDecl
-          {   name := declarationName,
-              args := [],
-              formulas := assertDecla.formulas,
-              requiredVars := reqVars,
-              requiredDefs := reqDefs,
-              predCalls := predCalls,
-              relationCalls := relCalls,
-              signatureCalls := signatureCalls
-          }
+          (
+            commandDecl.mk
+            (name := declarationName)
+            (args := [])
+            (formulas := assertDecla.formulas)
+            (requiredVars := reqVars)
+            (requiredDefs := reqDefs)
+            (predCalls := predCalls)
+            (relationCalls := relCalls)
+            (signatureCalls := sigCalls)
+          )
 
         st :=
           {st with requiredDecls
