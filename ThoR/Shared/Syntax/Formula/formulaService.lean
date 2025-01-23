@@ -5,6 +5,8 @@ Authors: s. file CONTRIBUTORS
 -/
 
 import ThoR.Shared.Syntax.Formula.formula
+import ThoR.Alloy.SymbolTable.commandDecl
+
 import ThoR.Shared.Syntax.Relation.Expr.exprService
 import ThoR.Shared.Syntax.TypeExpr.typeExprService
 import ThoR.Shared.Syntax.Algebra.AlgExpr.algExprService
@@ -554,6 +556,84 @@ namespace Shared.formula
             form.getSignatureCalls signatureNames moduleName).join
         return formRelCalls ++ typeExprRelCalls
       | _ => []
+
+  /--
+  Gets all calls to the `callableVariables` which includes signatures and relations,
+  and to the `callablePredicates` which only predicades
+
+  The result takes the form of a Tuple which on the first position contains the
+  called Variables (as varDecl) and on the second position contains another Tuple
+  which contains called Predicates (as commandDecl) with the given arguments (as varDecl)
+  -/
+  partial def getCalls
+    (f : formula)
+    (callableVariables : List (varDecl))
+    (callablePredicates : List (commandDecl))
+    : (List (varDecl) × List (commandDecl × List (varDecl))) := Id.run do
+      let mut calledVariables : List (varDecl) := []
+      let mut calledPredicates :List (commandDecl × List (varDecl)) := []
+
+      let callablePredicateNames := callablePredicates.map fun cp => cp.name
+
+      match f with
+        | formula.string s =>
+          if callablePredicateNames.contains s then
+            let index := callablePredicateNames.indexOf s
+            let calledPredicate := callablePredicates.get! index
+            calledPredicates := calledPredicates.concat (calledPredicate, [])
+
+        | formula.pred_with_args predicate_name predicate_arguments =>
+          if callablePredicateNames.contains predicate_name then
+            let index := callablePredicateNames.indexOf predicate_name
+            let calledPredicate := callablePredicates.get! index
+
+            let calledArgumentVariables :=
+              (predicate_arguments.map fun e => e.getCalls callableVariables).join
+
+            calledPredicates :=
+              calledPredicates.concat (calledPredicate, calledArgumentVariables)
+
+        | formula.unaryRelBoolOperation _ e =>
+          calledVariables := calledVariables.append (e.getCalls callableVariables)
+
+        | formula.unaryLogicOperation _ f =>
+          let result := f.getCalls callableVariables callablePredicates
+          calledVariables := calledVariables.append result.1
+          calledPredicates := calledPredicates.append result.2
+
+        | formula.binaryLogicOperation _ f1 f2 =>
+          let result1 := f1.getCalls callableVariables callablePredicates
+          let result2 := f2.getCalls callableVariables callablePredicates
+          calledVariables := calledVariables.append (result1.1 ++ result2.1)
+          calledPredicates := calledPredicates.append (result1.2 ++ result2.2)
+
+        | formula.tertiaryLogicOperation _ f1 f2 f3 =>
+          let result1 := f1.getCalls callableVariables callablePredicates
+          let result2 := f2.getCalls callableVariables callablePredicates
+          let result3 := f3.getCalls callableVariables callablePredicates
+          calledVariables :=
+            calledVariables.append (result1.1 ++ result2.1 ++ result3.1)
+          calledPredicates :=
+            calledPredicates.append (result1.2 ++ result2.2 ++ result3.2)
+
+        | formula.relationComarisonOperation _ e1 e2 =>
+          calledVariables :=
+            calledVariables.append
+              (e1.getCalls callableVariables) ++ (e2.getCalls callableVariables)
+
+        | formula.quantification _ _ _ te f =>
+          let typeExprRelCalls := te.getCalls callableVariables
+          calledVariables := calledVariables.append typeExprRelCalls
+
+          let formulaCalls := (f.map fun form =>
+              form.getCalls callableVariables callablePredicates)
+          for call in formulaCalls do
+            calledVariables := calledVariables.append call.1
+            calledPredicates := calledPredicates.append call.2
+
+        | formula.algebraicComparisonOperation _ _ _ => default
+
+      return (calledVariables, calledPredicates)
 
   partial def getRelationCalls
     (f : formula)

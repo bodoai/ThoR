@@ -163,4 +163,21 @@ namespace Shared.typeExpr
         | relExpr e =>
             (e.getRelationCalls relationNames)
 
+  /--
+  Gets all calls to the `callableVariables` which includes signatures and relations
+
+  The result is a list of all called variables
+  -/
+  def getCalls
+    (te : typeExpr)
+    (callableVariables : List (varDecl))
+    : List (varDecl) :=
+      match te with
+        | arrowExpr ae =>
+          (ae.getCalls callableVariables)
+        | multExpr _ e =>
+          (e.getCalls callableVariables)
+        | relExpr e =>
+          (e.getCalls callableVariables)
+
 end Shared.typeExpr

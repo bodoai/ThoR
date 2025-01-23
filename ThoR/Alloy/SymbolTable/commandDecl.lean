@@ -3,8 +3,8 @@ Copyright (c) 2024 RheinMain University of Applied Sciences
 Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
-import ThoR.Shared.Syntax
-import ThoR.Alloy.Syntax.Predicate
+import ThoR.Shared.Syntax.Formula.formula
+import ThoR.Alloy.Syntax.Predicate.PredArg.predArg
 
 open Shared
 
@@ -24,6 +24,18 @@ namespace Alloy
           (relationCalls : List (String)) -- called relations
           (signatureCalls : List (String)) -- called signatures
   deriving Repr
+
+  instance : Inhabited commandDecl where
+    default := {
+      name := default,
+      args := default,
+      formulas := default,
+      requiredDefs := default,
+      requiredVars := default,
+      predCalls := default,
+      relationCalls := default,
+      signatureCalls := default
+    }
 
   namespace commandDecl
 
