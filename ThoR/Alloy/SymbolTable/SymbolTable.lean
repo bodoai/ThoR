@@ -319,7 +319,11 @@ namespace Alloy
 
           let possibleSignatures :=
             signatures.filter
-              fun s => s.name == signatureCall.name
+              fun s =>
+                s.name == signatureCall.name &&
+                s.isOpened == signatureCall.isOpened &&
+                s.openedFrom == signatureCall.openedFrom
+
 
           if possibleSignatures.isEmpty then
             throw s!"No signature with name {signatureCall.name} is defined."
