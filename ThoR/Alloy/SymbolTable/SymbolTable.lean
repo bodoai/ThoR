@@ -510,6 +510,7 @@ namespace Alloy
           (
             commandDecl.mk (name := declarationName)
             (args := predDecl.args)
+            (isPredicate := true)
             (formulas := predDecl.forms)
             (requiredVars := reqVars)
             (requiredDefs := reqDefs)
@@ -540,6 +541,7 @@ namespace Alloy
         let newPredDefDecl :=
           commandDecl.mk
             (name := predDefDecl.name)
+            (isPredicate := predDefDecl.isPredicate)
             (args := predDefDecl.args)
             (formulas := predDefDecl.formulas)
             (requiredVars := predDefDecl.requiredVars)
