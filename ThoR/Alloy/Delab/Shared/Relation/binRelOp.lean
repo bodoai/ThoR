@@ -6,7 +6,7 @@ Authors: s. file CONTRIBUTORS
 
 import Lean
 import ThoR.Relation.Set
-import ThoR.Shared.Syntax.Relation.relationSeparator
+import ThoR.Alloy.Delab.DelaborationService
 
 open Lean PrettyPrinter Delaborator SubExpr Expr
 
@@ -15,24 +15,21 @@ open Lean PrettyPrinter Delaborator SubExpr Expr
 --      - root
 --      - ThoR
 --      Nach getroffener Entscheidung: einheitlich handhaben.
+set_option linter.cdot false in
 @[app_unexpander ThoR.Dotjoin.dotjoin]
 def unexpDotjoin : Unexpander
   | `($_ $a $b) => `($a . $b)
   | _ => throw Unit.unit
 
+set_option linter.cdot false in
 @[app_unexpander ThoR.HDotjoin.hDotjoin]
 def unexpHDotjoin : Unexpander
   | `($_ $a:ident $b:ident) => do
 
-    let new_a := mkIdent (a.getId.updateLast fun s =>
-      let split := s.splitOn relationSeparator.get
-      if split.length > 1 then split.getLast! else s
-    )
-
-    let new_b := mkIdent (b.getId.updateLast fun s =>
-      let split := s.splitOn relationSeparator.get
-      if split.length > 1 then split.getLast! else s
-    )
+    let new_a :=
+      delaborationService.switch_thoR_representation_to_alloy_representation a
+    let new_b :=
+      delaborationService.switch_thoR_representation_to_alloy_representation b
 
     `($new_a . $new_b)
 
