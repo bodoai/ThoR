@@ -223,55 +223,32 @@ namespace Shared.formula
   These are returned as a List of Lists. The inner lists contain the
   name of the pred followed by the arguments.
   -/
-  partial def getPredCalls (f : formula) : Option (List (String)) :=
-    match f with
-      | formula.string s => (Option.some [s])
-      | formula.pred_with_args p pa =>
-        (Option.some ([p].append (pa.map fun (e) => e.toString)))
-      | formula.unaryLogicOperation _ f => f.getPredCalls
-      | formula.binaryLogicOperation _ f1 f2 => do
-        let f1pc := f1.getPredCalls
-        let f2pc := f2.getPredCalls
+  partial def getPredCalls (f : formula) :
+    (List (List (String))) := Id.run do
+      match f with
+        | formula.string s => return [[s]]
+        | formula.pred_with_args p pa =>
+          return [[p].append (pa.map fun (e) => e.toString)]
+        | formula.unaryLogicOperation _ f => f.getPredCalls
+        | formula.binaryLogicOperation _ f1 f2 => do
+          let f1pc := f1.getPredCalls
+          let f2pc := f2.getPredCalls
+          return (f1pc ++ f2pc)
 
-        match f1pc, f2pc with
-          | Option.some f1pcs, Option.some f2pcs =>
-            return (f1pcs ++ f2pcs)
-          | Option.some f1pcs, Option.none =>
-            return f1pcs
-          | Option.none , Option.some f2pcs =>
-            return f2pcs
-          | _, _ => Option.none
+        | formula.tertiaryLogicOperation _ f1 f2 f3 =>
+          let f1pc := f1.getPredCalls
+          let f2pc := f2.getPredCalls
+          let f3pc := f3.getPredCalls
+          return (f1pc ++ f2pc ++ f3pc)
 
-      | formula.tertiaryLogicOperation _ f1 f2 f3 =>
-        let f1pc := f1.getPredCalls
-        let f2pc := f2.getPredCalls
-        let f3pc := f3.getPredCalls
-
-        match f1pc, f2pc, f3pc with
-          | Option.some f1pcs, Option.some f2pcs, Option.some f3pcs =>
-            return (f1pcs ++ f2pcs ++ f3pcs)
-          | Option.some f1pcs, Option.some f2pcs, Option.none =>
-            return (f1pcs ++ f2pcs)
-          | Option.some f1pcs, Option.none , Option.none =>
-            return f1pcs
-          | Option.some f1pcs, Option.none , Option.some f3pcs =>
-            return (f1pcs ++ f3pcs)
-          | Option.none, Option.some f2pcs, Option.some f3pcs =>
-            return (f2pcs ++ f3pcs)
-          | _, _, _ => Option.none
-
-      | formula.quantification _ _ _ _ f => do
-        let mut result : List String := []
-        for form in f do
-          let opc := form.getPredCalls
-          if opc.isSome then
-            result := result.append opc.get!
-        if result.isEmpty then
-          Option.none
-        else
+        | formula.quantification _ _ _ _ f => do
+          let mut result : List (List String) := []
+          for form in f do
+            let opc := form.getPredCalls
+            result := result.append opc
           return result
 
-      | _ => Option.none
+        | _ => []
 
   /--
   Parses the given syntax to the type
