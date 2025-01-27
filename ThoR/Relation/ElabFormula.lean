@@ -5,7 +5,7 @@ Authors: s. file CONTRIBUTORS
 -/
 
 import ThoR.Shared.Syntax.baseType
-import ThoR.Shared.Syntax.formula
+import ThoR.Shared.Syntax.Formula.formula
 
 open Shared
 -- namespace ThoR

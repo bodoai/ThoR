@@ -5,7 +5,7 @@ Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
 
-import ThoR.Shared.Syntax.typeExpr
+import ThoR.Shared.Syntax.TypeExpr.typeExpr
 
 open Shared Lean
 

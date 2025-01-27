@@ -114,7 +114,7 @@ open b2.preds
     }
 end
 
-create verwandschaft
+#create verwandschaft
 
 #check verwandschaft.inheritance_facts.FRAU
 #check verwandschaft.inheritance_facts.MANN
@@ -129,13 +129,9 @@ abstract sig Buch {
 
 sig Seite {}
 
-pred test {
-  lone x : Buch | some y, z : Seite | x.prequel = z.sequel and
-    one disj a : Buch | y = z and z = a
-}
-
 fact keineDopplungInReihe{
-  lone b:Buch | not (b in b.^prequel and b in b.^sequel)
+  lone b:Buch | some z:Buch | not (b in b.^prequel and b in b.^sequel) and
+    not z in z.prequel
 }
 
 pred EntwederPrequelOderSequel{
@@ -159,7 +155,7 @@ pred main {
 
 end
 
-create buch
+#create buch
 
 #check buch.vars.Buch
 #print buch.preds.WennSequelDannPrequel
@@ -167,18 +163,35 @@ create buch
 #check buch.vars.Buch.prequel
 #print buch.preds.EntwederPrequelOderSequel
 open Shared.quant
-#print buch.preds.test
 
-alloy module m1
-  sig a {}
+#alloy module m1
+  sig a {
+    r : a
+  }
+  fact {
+    some this/a
+  }
 end
 
 #alloy m2/te
   open m1
-  sig b {}
+  sig a {
+    r : a
+  }
 end
 
 #alloy m3
   open m2/te
-  sig c {}
+  sig a {
+    r : a
+  }
+
+  fact {
+    some this/a
+    some m2/te/a
+    some m1/a
+  }
+
 end
+
+#create m3

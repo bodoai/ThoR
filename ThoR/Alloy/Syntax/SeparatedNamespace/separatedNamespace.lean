@@ -34,6 +34,9 @@ namespace Alloy
   instance : Inhabited separatedNamespace where
     default := {representedNamespace := default}
 
+  instance : BEq separatedNamespace where
+    beq (sn1 sn2 : separatedNamespace) :=
+      sn1.representedNamespace == sn2.representedNamespace
   namespace separatedNamespace
 
     /-- Generates a String representation from the type -/
@@ -66,6 +69,27 @@ namespace Alloy
       (sn : separatedNamespace)
       : TSyntax `term := Unhygienic.run do
         return ← `(term| $(sn.representedNamespace))
+
+    def toSyntax
+      (sn : separatedNamespace)
+      : TSyntax `separatedNamespace := Unhygienic.run do
+        let comps := sn.representedNamespace.getId.components
+        let fc := comps.get! 0
+
+
+        let mut extensions : TSyntaxArray `separatedNamespaceExtension := #[]
+
+        for extension in comps.drop 1 do
+          let snExtension ← `(separatedNamespaceExtension| / $(extendedIdent.mkEIdent extension))
+          extensions := extensions.push snExtension
+
+        let result ←
+          `(separatedNamespace|
+            $(extendedIdent.mkEIdent fc):extendedIdent
+            $(extensions):separatedNamespaceExtension*
+          )
+
+        return result
 
   end separatedNamespace
 

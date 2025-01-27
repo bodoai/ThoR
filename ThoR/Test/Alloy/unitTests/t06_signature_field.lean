@@ -55,3 +55,20 @@ startTestBlock sigFields2
   #check (a.r2 : ∷ a set → one a)
 
 end sigFields2.test
+
+namespace sigFieldsoverload.test
+alloy sigFieldsoverload
+sig a {
+  r : a
+}
+sig b {
+  r : b
+}
+end
+create sigFieldsoverload
+
+startTestBlock sigFieldsoverload
+  #check (a.r : ∷ a set → one a)
+  #check (b.r : ∷ b set → one b)
+
+end sigFieldsoverload.test
