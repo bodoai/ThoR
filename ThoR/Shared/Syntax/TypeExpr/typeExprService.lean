@@ -168,16 +168,16 @@ namespace Shared.typeExpr
 
   The result is a list of all called variables
   -/
-  def getCalls
+  def getCalledVariables
     (te : typeExpr)
     (callableVariables : List (varDecl))
     : List (varDecl) :=
       match te with
         | arrowExpr ae =>
-          (ae.getCalls callableVariables)
+          (ae.getCalledVariables callableVariables)
         | multExpr _ e =>
-          (e.getCalls callableVariables)
+          (e.getCalledVariables callableVariables)
         | relExpr e =>
-          (e.getCalls callableVariables)
+          (e.getCalledVariables callableVariables)
 
 end Shared.typeExpr

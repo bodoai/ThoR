@@ -281,26 +281,26 @@ namespace Shared.arrowOp
 
   The result is a list of all called variables
   -/
-  def getCalls
+  def getCalledVariables
     (ao : arrowOp)
     (callableVariables : List (varDecl))
     : List (varDecl) :=
       match ao with
         | multArrowOpExpr e1 _ _ e2 =>
-          (e1.getCalls callableVariables) ++
-            (e2.getCalls callableVariables)
+          (e1.getCalledVariables callableVariables) ++
+            (e2.getCalledVariables callableVariables)
 
         | multArrowOpExprLeft e _ _ ao1 =>
-          (e.getCalls callableVariables) ++
-            (ao1.getCalls callableVariables)
+          (e.getCalledVariables callableVariables) ++
+            (ao1.getCalledVariables callableVariables)
 
         | multArrowOpExprRight ao1 _ _ e =>
-          (ao1.getCalls callableVariables) ++
-            (e.getCalls callableVariables)
+          (ao1.getCalledVariables callableVariables) ++
+            (e.getCalledVariables callableVariables)
 
         | multArrowOp ao1 _ _ ao2 =>
-          (ao1.getCalls callableVariables) ++
-            (ao2.getCalls callableVariables)
+          (ao1.getCalledVariables callableVariables) ++
+            (ao2.getCalledVariables callableVariables)
 
   /--
   changes a string expr in the arrowOp to a string rb expression

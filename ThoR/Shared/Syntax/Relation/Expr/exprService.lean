@@ -415,80 +415,80 @@ namespace Shared.expr
 
   The result is a list of all called variables
   -/
-  def getCalls
+  def getCalledVariables
     (e : expr)
     (callableVariables : List (varDecl))
     : (List (varDecl)) :=
       let callableVariableNames := (callableVariables.map fun cv => cv.name)
 
-       match e with
-        | expr.string s =>
-          let isCallable := callableVariableNames.contains s
-          if isCallable then
-            let index := callableVariableNames.indexOf s
-            let calledVariable := callableVariables.get! index
-            [calledVariable]
-          else
-            []
+      match e with
+      | expr.string s =>
+        let isCallable := callableVariableNames.contains s
+        if isCallable then
+          let index := callableVariableNames.indexOf s
+          let calledVariable := callableVariables.get! index
+          [calledVariable]
+        else
+          []
 
-        | expr.callFromOpen sn =>
-          /-
-          note that lastComponentAsString gets the full name as String since
-          the name is enclosed in << >>
-          -/
-          let fullName := sn.representedNamespace.getId.lastComponentAsString
-          let components := fullName.splitOn "."
+      | expr.callFromOpen sn =>
+        /-
+        note that lastComponentAsString gets the full name as String since
+        the name is enclosed in << >>
+        -/
+        let fullName := sn.representedNamespace.getId.lastComponentAsString
+        let components := fullName.splitOn "."
 
-          let calledVariableName := components.getLast!
+        let calledVariableName := components.getLast!
 
-          let possibleCalledVariables :=
-            callableVariables.filter
-              fun cv =>
-                cv.name == calledVariableName
+        let possibleCalledVariables :=
+          callableVariables.filter
+            fun cv =>
+              cv.name == calledVariableName
 
-          if possibleCalledVariables.length == 1 then
-            possibleCalledVariables
-          else
-            -- namespace if the called Variable is a signature
-            let sigNamespace :=
-              ((components.take (components.length - 1)).drop 1).foldl
-                (fun result current => s!"{result}_{current}")
-                (components.get! 0)
+        if possibleCalledVariables.length == 1 then
+          possibleCalledVariables
+        else
+          -- namespace if the called Variable is a signature
+          let sigNamespace :=
+            ((components.take (components.length - 1)).drop 1).foldl
+              (fun result current => s!"{result}_{current}")
+              (components.get! 0)
 
-            -- the signature name if it is a relation
-            let possibleSignatureName := components.get! (components.length - 2)
-            -- the namespace with the last element removed (assumend to be a sig name)
-            let relNamespace :=
-              ((components.take (components.length - 2)).drop 1).foldl
-                (fun result current => s!"{result}_{current}")
-                (components.get! 0)
+          -- the signature name if it is a relation
+          let possibleSignatureName := components.get! (components.length - 2)
+          -- the namespace with the last element removed (assumend to be a sig name)
+          let relNamespace :=
+            ((components.take (components.length - 2)).drop 1).foldl
+              (fun result current => s!"{result}_{current}")
+              (components.get! 0)
 
-            possibleCalledVariables.filter
-              fun pcv =>
-                -- is either relation with correct sig name and namespace
-                (
-                  pcv.isRelation &&
-                  pcv.relationOf == possibleSignatureName &&
-                  (if pcv.isOpened then pcv.openedFrom == relNamespace else true)
-                ) ||
-                -- or signature with correct namespace
-                (
-                  !pcv.isRelation &&
-                  (if pcv.isOpened then pcv.openedFrom == sigNamespace else true)
-                )
+          possibleCalledVariables.filter
+            fun pcv =>
+              -- is either relation with correct sig name and namespace
+              (
+                pcv.isRelation &&
+                pcv.relationOf == possibleSignatureName &&
+                (if pcv.isOpened then pcv.openedFrom == relNamespace else true)
+              ) ||
+              -- or signature with correct namespace
+              (
+                !pcv.isRelation &&
+                (if pcv.isOpened then pcv.openedFrom == sigNamespace else true)
+              )
 
-        | expr.unaryRelOperation _ e =>
-          e.getCalls callableVariables
+      | expr.unaryRelOperation _ e =>
+        e.getCalledVariables callableVariables
 
-        | expr.binaryRelOperation _ e1 e2 =>
-          (e1.getCalls callableVariables) ++
-            (e2.getCalls callableVariables)
+      | expr.binaryRelOperation _ e1 e2 =>
+        (e1.getCalledVariables callableVariables) ++
+          (e2.getCalledVariables callableVariables)
 
-        | expr.dotjoin _ e1 e2 =>
-          (e1.getCalls callableVariables) ++
-            (e2.getCalls callableVariables)
+      | expr.dotjoin _ e1 e2 =>
+        (e1.getCalledVariables callableVariables) ++
+          (e2.getCalledVariables callableVariables)
 
-        | _ => []
+      | _ => []
 
   def getRelationCalls
     (e : expr)
