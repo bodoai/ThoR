@@ -34,3 +34,16 @@ def unexpHDotjoin : Unexpander
     `($new_a . $new_b)
 
   | _ => throw Unit.unit
+
+@[app_unexpander HAdd.hAdd]
+def unexpHAdd : Unexpander
+  | `($_ $a:ident $b:ident) => do
+
+    let new_a :=
+      delaborationService.switch_thoR_representation_to_alloy_representation a
+    let new_b :=
+      delaborationService.switch_thoR_representation_to_alloy_representation b
+
+    `($new_a + $new_b)
+
+  | _ => throw Unit.unit
