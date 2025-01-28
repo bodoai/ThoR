@@ -6,6 +6,7 @@ Authors: s. file CONTRIBUTORS
 
 import ThoR.Shared.Syntax.Formula.formula
 import ThoR.Alloy.SymbolTable.commandDecl
+import ThoR.Alloy.SymbolTable.calledPredicate
 
 import ThoR.Shared.Syntax.Relation.Expr.exprService
 import ThoR.Shared.Syntax.TypeExpr.typeExprService
@@ -558,96 +559,6 @@ namespace Shared.formula
       | _ => []
 
   /--
-  Gets all calls to the `callableVariables` which includes signatures and relations,
-  and to the `callablePredicates` which only predicades
-
-  The result takes the form of a Tuple which on the first position contains the
-  called Variables (as varDecl) and on the second position contains another List of Tuples
-  which contain called Predicates (as commandDecl) with the given arguments (as varDecl)
-  -/
-  partial def getCalls
-    (f : formula)
-    (callableVariables : List (varDecl))
-    (callablePredicates : List (commandDecl))
-    : (List (varDecl) × List (commandDecl × List (List (varDecl)))) := Id.run do
-      let mut calledVariables : List (varDecl) := []
-      let mut calledPredicates : List (commandDecl × List (List (varDecl))) := []
-
-      let callablePredicateNames := callablePredicates.map fun cp => cp.name
-
-      match f with
-        | formula.string s =>
-          if callablePredicateNames.contains s then
-            let index := callablePredicateNames.indexOf s
-            let calledPredicate := callablePredicates.get! index
-            calledPredicates := calledPredicates.concat (calledPredicate, [])
-
-        | formula.pred_with_args predicate_name predicate_arguments =>
-          if callablePredicateNames.contains predicate_name then
-            let index := callablePredicateNames.indexOf predicate_name
-            let calledPredicate := callablePredicates.get! index
-
-            let calledArgumentVariables :=
-              (predicate_arguments.map fun e => e.getCalledVariables callableVariables)
-
-            calledPredicates :=
-              calledPredicates.concat (calledPredicate, calledArgumentVariables)
-
-        | formula.unaryRelBoolOperation _ e =>
-          calledVariables := calledVariables.append (e.getCalledVariables callableVariables)
-
-        | formula.unaryLogicOperation _ f =>
-          let result := f.getCalls callableVariables callablePredicates
-          calledVariables := calledVariables.append result.1
-          calledPredicates := calledPredicates.append result.2
-
-        | formula.binaryLogicOperation _ f1 f2 =>
-          let result1 := f1.getCalls callableVariables callablePredicates
-          let result2 := f2.getCalls callableVariables callablePredicates
-          calledVariables := calledVariables.append (result1.1 ++ result2.1)
-          calledPredicates := calledPredicates.append (result1.2 ++ result2.2)
-
-        | formula.tertiaryLogicOperation _ f1 f2 f3 =>
-          let result1 := f1.getCalls callableVariables callablePredicates
-          let result2 := f2.getCalls callableVariables callablePredicates
-          let result3 := f3.getCalls callableVariables callablePredicates
-          calledVariables :=
-            calledVariables.append (result1.1 ++ result2.1 ++ result3.1)
-          calledPredicates :=
-            calledPredicates.append (result1.2 ++ result2.2 ++ result3.2)
-
-        | formula.relationComarisonOperation _ e1 e2 =>
-          calledVariables :=
-            calledVariables.append
-              (e1.getCalledVariables callableVariables) ++ (e2.getCalledVariables callableVariables)
-
-        | formula.quantification _ _ names te f =>
-          let typeExprRelCalls := te.getCalledVariables callableVariables
-          calledVariables := calledVariables.append typeExprRelCalls
-
-          let quantVarDecls :=
-            names.map fun n =>
-              varDecl.mk
-                (name := n)
-                (isQuantor := true)
-                (isOpened := false)
-                (openedFrom := "this")
-                (isRelation := false)
-                (relationOf := default)
-                (type := te)
-                (requiredDecls := [])
-
-          let formulaCalls := (f.map fun form =>
-              form.getCalls (callableVariables ++ quantVarDecls) callablePredicates)
-          for call in formulaCalls do
-            calledVariables := calledVariables.append call.1
-            calledPredicates := calledPredicates.append call.2
-
-        | formula.algebraicComparisonOperation _ _ _ => default
-
-      return (calledVariables, calledPredicates)
-
-  /--
   Gets all calls to the `callablePredicates`
 
   The result takes the form of a List of Tuples which contain called Predicates
@@ -657,7 +568,7 @@ namespace Shared.formula
     (f : formula)
     (callablePredicates : List (commandDecl))
     (callableVariables : List (varDecl))
-    : (List (commandDecl × List (List (varDecl)))) := Id.run do
+    : (List (calledPredicate)) := Id.run do
       let callablePredicateNames := callablePredicates.map fun cp => cp.name
 
       match f with
@@ -665,7 +576,7 @@ namespace Shared.formula
           if callablePredicateNames.contains s then
             let index := callablePredicateNames.indexOf s
             let calledPredicate := callablePredicates.get! index
-            [(calledPredicate, [])]
+            [{calledPredicate := calledPredicate, arguments := []}]
           else
             []
 
@@ -674,8 +585,11 @@ namespace Shared.formula
             let index := callablePredicateNames.indexOf predicate_name
             let calledPredicate := callablePredicates.get! index
             let calledArgumentVariables :=
-              (predicate_arguments.map fun e => e.getCalledVariables callableVariables)
-            [(calledPredicate, calledArgumentVariables)]
+              (predicate_arguments.map
+                fun e => e.getCalledVariables callableVariables
+              ).join
+
+            [{calledPredicate := calledPredicate, arguments := calledArgumentVariables}]
           else
             []
 
