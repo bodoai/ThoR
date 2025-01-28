@@ -11,6 +11,6 @@ namespace Alloy
 
   structure calledPredicate where
     mk :: (calledPredicate : commandDecl)
-          (arguments : List (varDecl))
+          (arguments : List (List (varDecl)))
 
 end Alloy

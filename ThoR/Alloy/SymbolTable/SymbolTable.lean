@@ -20,7 +20,7 @@ namespace Alloy
   A structure representation of the symbol table (ST).
   -/
   structure SymbolTable where
-    mk :: (blockName : String)
+    mk :: (name : String) -- name of the module
           (variableDecls : List (varDecl))
           (defDecls : List (commandDecl))
           (axiomDecls : List (commandDecl))
@@ -35,7 +35,7 @@ namespace Alloy
     -/
     def toString (st : SymbolTable) : String :=
       s!"ST : \{
-        blockName := {st.blockName},
+        blockName := {st.name},
         varDecls := {st.variableDecls},
         defDecls := {st.defDecls},
         axiomDecls := {st.axiomDecls},
@@ -48,7 +48,7 @@ namespace Alloy
 
     instance : Inhabited SymbolTable where
       default := {
-        blockName := default,
+        name := default,
         variableDecls := default,
         defDecls := default,
         axiomDecls := default,

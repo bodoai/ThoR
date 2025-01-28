@@ -179,20 +179,30 @@ to be better digestible for further computation and transformation into Lean.
       for location in allCallLocations do
         for signatureCall in location.signatureCalls do
 
+          if signatureCall.isEmpty then
+            continue
+
+          if signatureCall.length > 1 then
+            throw s!"The calls for signature {location.name} to \
+            {(signatureCall.get! 0).name} are ambiguous. \
+            Could be any of {signatureCall}"
+
+          let calledSignature := signatureCall.get! 0
+
           -- temp quantors are not to be checked here
-          if signatureCall.isQuantor then
+          if calledSignature.isQuantor then
             continue
 
           let possibleSignatures :=
             signatures.filter
               fun s =>
-                s.name == signatureCall.name &&
-                s.isOpened == signatureCall.isOpened &&
-                s.openedFrom == signatureCall.openedFrom
+                s.name == calledSignature.name &&
+                s.isOpened == calledSignature.isOpened &&
+                s.openedFrom == calledSignature.openedFrom
 
 
           if possibleSignatures.isEmpty then
-            throw s!"No signature with name {signatureCall.name} is defined."
+            throw s!"No signature with name {calledSignature.name} is defined."
           else
             if possibleSignatures.length > 1 then
               throw s!"The call to signature {signatureCall} is \
@@ -363,8 +373,16 @@ to be better digestible for further computation and transformation into Lean.
         -- get list of referenced preds
         let reqDefs : List (String) := predDecl.getReqDefinitions.eraseDups
 
-        let calledVariables : List (varDecl) :=
+        let calledVariables : List (List (varDecl)) :=
           (predDecl.forms.map fun f => f.getCalledVariables st.variableDecls).join
+
+        let calledRelations : List (List (varDecl)) :=
+          calledVariables.map fun elem =>
+            elem.filter fun elem => elem.isRelation
+
+        let calledSignatures : List (List (varDecl)) :=
+          calledVariables.map fun elem =>
+            elem.filter fun elem => !elem.isRelation
 
         let mut declarationName := predDecl.name
         /-
@@ -384,8 +402,8 @@ to be better digestible for further computation and transformation into Lean.
             (requiredVars := reqVars)
             (requiredDefs := reqDefs)
             (predCalls := [])
-            (relationCalls := calledVariables.filter fun cv => cv.isRelation)
-            (signatureCalls := calledVariables.filter fun cv => !cv.isRelation)
+            (relationCalls := calledRelations)
+            (signatureCalls := calledSignatures)
           )
 
         st :=
@@ -439,15 +457,18 @@ to be better digestible for further computation and transformation into Lean.
                 st.variableDecls
           ).join
 
-        let variableCalls :=
-          (factDecl.formulas.map
-            fun f =>
-              f.getCalledVariables
-                st.variableDecls
+        let calledVariables : List (List (varDecl)) :=
+          (factDecl.formulas.map fun f =>
+            f.getCalledVariables st.variableDecls
           ).join
 
-        let relationCalls := variableCalls.filter fun vc => vc.isRelation
-        let signatureCalls := variableCalls.filter fun vc => !vc.isRelation
+        let calledRelations : List (List (varDecl)) :=
+          calledVariables.map fun elem =>
+            elem.filter fun elem => elem.isRelation
+
+        let calledSignatures : List (List (varDecl)) :=
+          calledVariables.map fun elem =>
+            elem.filter fun elem => !elem.isRelation
 
         -- get list of the names of the referenced signatures and signature fields
         let reqVars : List (String) := factDecl.getReqVariables.eraseDups
@@ -473,8 +494,8 @@ to be better digestible for further computation and transformation into Lean.
             (requiredVars := reqVars)
             (requiredDefs := reqDefs)
             (predCalls := predicateCalls)
-            (relationCalls := relationCalls)
-            (signatureCalls := signatureCalls)
+            (relationCalls := calledRelations)
+            (signatureCalls := calledSignatures)
           )
 
         st :=
@@ -507,15 +528,18 @@ to be better digestible for further computation and transformation into Lean.
                 st.variableDecls
           ).join
 
-        let variableCalls :=
-          (assertDecla.formulas.map
-            fun f =>
-              f.getCalledVariables
-                st.variableDecls
+        let calledVariables : List (List (varDecl)) :=
+          (assertDecla.formulas.map fun f =>
+            f.getCalledVariables st.variableDecls
           ).join
 
-        let relationCalls := variableCalls.filter fun vc => vc.isRelation
-        let signatureCalls := variableCalls.filter fun vc => !vc.isRelation
+        let calledRelations : List (List (varDecl)) :=
+          calledVariables.map fun elem =>
+            elem.filter fun elem => elem.isRelation
+
+        let calledSignatures : List (List (varDecl)) :=
+          calledVariables.map fun elem =>
+            elem.filter fun elem => !elem.isRelation
 
         -- get list of the names of the referenced signatures and signature fields
         let reqVars : List (String) := assertDecla.getReqVariables.eraseDups
@@ -541,8 +565,8 @@ to be better digestible for further computation and transformation into Lean.
             (requiredVars := reqVars)
             (requiredDefs := reqDefs)
             (predCalls := predicateCalls)
-            (relationCalls := relationCalls)
-            (signatureCalls := signatureCalls)
+            (relationCalls := calledRelations)
+            (signatureCalls := calledSignatures)
           )
 
         st :=
@@ -596,7 +620,7 @@ to be better digestible for further computation and transformation into Lean.
       (extensive_logging : Bool := false)
       : Except String SymbolTable := do
         let mut st : SymbolTable :=
-          ({  blockName := ast.name,
+          ({  name := ast.name,
               variableDecls := [],
               defDecls := [],
               axiomDecls := [],

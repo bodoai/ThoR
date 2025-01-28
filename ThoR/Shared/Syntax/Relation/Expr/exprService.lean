@@ -563,7 +563,7 @@ namespace Shared.expr
             -- or signature with correct namespace
             (
               !pcv.isRelation &&
-              (if pcv.isOpened then pcv.openedFrom == sigNamespace else true)
+              pcv.openedFrom == sigNamespace
             )
 
         return [calledVariables]
