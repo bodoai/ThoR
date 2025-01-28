@@ -171,7 +171,7 @@ namespace Shared.typeExpr
   def getCalledVariables
     (te : typeExpr)
     (callableVariables : List (varDecl))
-    : List (varDecl) :=
+    : List (List (varDecl)) :=
       match te with
         | arrowExpr ae =>
           (ae.getCalledVariables callableVariables)

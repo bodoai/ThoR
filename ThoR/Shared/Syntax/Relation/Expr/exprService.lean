@@ -413,23 +413,111 @@ namespace Shared.expr
   /--
   Gets all calls to the `callableVariables` which includes signatures and relations
 
-  The result is a list of all called variables
+  The result is a list of Lists of called variables. If the inner List contains more
+  than one varDecl, called variable is ambiguous and could be either.
   -/
   def getCalledVariables
     (e : expr)
     (callableVariables : List (varDecl))
-    : (List (varDecl)) :=
+    /-
+    If a relation is called from the right side of a dotjoin
+    and the left side is a signature which contains the name
+    of the relation, then you dont habe to specify the full name
+    of the relation and it can become only a expr.string. To handle
+    this case the following two parameters are needed
+    -/
+    (right_side_dotjoin : Bool := false)
+    (left_side_dotjoin_variable : varDecl := default)
+    : (List (List (varDecl))) := Id.run do
       let callableVariableNames := (callableVariables.map fun cv => cv.name)
 
       match e with
       | expr.string s =>
+
+        -- the name does not corrospond to ANY callable variable
         let isCallable := callableVariableNames.contains s
-        if isCallable then
-          let index := callableVariableNames.indexOf s
-          let calledVariable := callableVariables.get! index
-          [calledVariable]
-        else
+        if !isCallable then return []
+
+        let indices := callableVariableNames.indexesOf s
+
+        -- there is only one variable with the give name
+        if indices.length == 1 then
+          let calledVariable := callableVariables.get! (indices.get! 0)
+          return [[calledVariable]]
+
+        -- get possible variables
+        let possibleCalledVariables := indices.foldl
+          (fun result index => result.concat (callableVariables.get! index))
           []
+
+        /-
+        if there is not special dotjoin case, then return all possible
+        variables. (The called variable is ambiguous)
+        -/
+        if !right_side_dotjoin then return [possibleCalledVariables]
+
+        /-
+        Left side must not be a relation
+        -/
+        if left_side_dotjoin_variable.isRelation then return [possibleCalledVariables]
+
+        /-
+        If the left side is a quantor, the type has to be atomic
+        -/
+        if left_side_dotjoin_variable.isQuantor then
+          let type := left_side_dotjoin_variable.type
+          let isAtomic := match type with
+            | typeExpr.arrowExpr _ => false
+            | _ => true
+
+          if !isAtomic then return [possibleCalledVariables]
+
+          let possibleSignatures :=
+            callableVariables.filter
+              fun cv =>
+                -- has to be a signature
+                !cv.isRelation &&
+                -- need the same type as the quantor
+                cv.type == type &&
+                -- must not be a quantor
+                !cv.isQuantor
+
+          -- only one must remain
+          if
+            possibleSignatures.isEmpty ||
+            possibleSignatures.length > 1
+          then
+            return [possibleCalledVariables]
+
+          let signature := (possibleSignatures.get! 0)
+
+          let calledVariable :=
+            callableVariables.filter fun cv =>
+           -- has to be a relation
+            cv.isRelation &&
+
+            -- has to be a relation of the quantorType
+            cv.relationOf == signature.relationOf &&
+
+            (cv.isOpened == signature.isOpened &&
+            cv.openedFrom == signature.openedFrom)
+
+          return [calledVariable]
+
+        -- if left side is signature (not quantor)
+        else
+          let calledVariable :=
+            callableVariables.filter fun cv =>
+           -- has to be a relation
+            cv.isRelation &&
+
+            -- has to be a relation of the quantorType
+            cv.relationOf == left_side_dotjoin_variable.relationOf &&
+
+            (cv.isOpened == left_side_dotjoin_variable.isOpened &&
+            cv.openedFrom == left_side_dotjoin_variable.openedFrom)
+
+          return [calledVariable]
 
       | expr.callFromOpen sn =>
         /-
@@ -446,36 +534,39 @@ namespace Shared.expr
             fun cv =>
               cv.name == calledVariableName
 
-        if possibleCalledVariables.length == 1 then
-          possibleCalledVariables
-        else
-          -- namespace if the called Variable is a signature
-          let sigNamespace :=
-            ((components.take (components.length - 1)).drop 1).foldl
-              (fun result current => s!"{result}_{current}")
-              (components.get! 0)
+        -- if there is only one possible value
+        if possibleCalledVariables.length == 1 then return [possibleCalledVariables]
 
-          -- the signature name if it is a relation
-          let possibleSignatureName := components.get! (components.length - 2)
-          -- the namespace with the last element removed (assumend to be a sig name)
-          let relNamespace :=
-            ((components.take (components.length - 2)).drop 1).foldl
-              (fun result current => s!"{result}_{current}")
-              (components.get! 0)
+        -- namespace if the called Variable is a signature
+        let sigNamespace :=
+          ((components.take (components.length - 1)).drop 1).foldl
+            (fun result current => s!"{result}_{current}")
+            (components.get! 0)
 
-          possibleCalledVariables.filter
-            fun pcv =>
-              -- is either relation with correct sig name and namespace
-              (
-                pcv.isRelation &&
-                pcv.relationOf == possibleSignatureName &&
-                (if pcv.isOpened then pcv.openedFrom == relNamespace else true)
-              ) ||
-              -- or signature with correct namespace
-              (
-                !pcv.isRelation &&
-                (if pcv.isOpened then pcv.openedFrom == sigNamespace else true)
-              )
+        -- the signature name if it is a relation
+        let possibleSignatureName := components.get! (components.length - 2)
+
+        -- the namespace with the last element removed (assumend to be a sig name)
+        let relNamespace :=
+          ((components.take (components.length - 2)).drop 1).foldl
+            (fun result current => s!"{result}_{current}")
+            (components.get! 0)
+
+        let calledVariables := possibleCalledVariables.filter
+          fun pcv =>
+            -- is either relation with correct sig name and namespace
+            (
+              pcv.isRelation &&
+              pcv.relationOf == possibleSignatureName &&
+              (if pcv.isOpened then pcv.openedFrom == relNamespace else true)
+            ) ||
+            -- or signature with correct namespace
+            (
+              !pcv.isRelation &&
+              (if pcv.isOpened then pcv.openedFrom == sigNamespace else true)
+            )
+
+        return [calledVariables]
 
       | expr.unaryRelOperation _ e =>
         e.getCalledVariables callableVariables
@@ -485,8 +576,15 @@ namespace Shared.expr
           (e2.getCalledVariables callableVariables)
 
       | expr.dotjoin _ e1 e2 =>
+        /-TODO: As soons as it is possible to get the type of exprs then get it here-/
+        /-Take the last possible expression -/
+        let leftSideVarDecl := (e1.getCalledVariables callableVariables).getLast!.getLast!
+
         (e1.getCalledVariables callableVariables) ++
-          (e2.getCalledVariables callableVariables)
+          (e2.getCalledVariables
+            (right_side_dotjoin := true)
+            (left_side_dotjoin_variable := leftSideVarDecl)
+            callableVariables)
 
       | _ => []
 

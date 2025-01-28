@@ -284,7 +284,7 @@ namespace Shared.arrowOp
   def getCalledVariables
     (ao : arrowOp)
     (callableVariables : List (varDecl))
-    : List (varDecl) :=
+    : List (List (varDecl)) :=
       match ao with
         | multArrowOpExpr e1 _ _ e2 =>
           (e1.getCalledVariables callableVariables) ++

@@ -619,7 +619,7 @@ namespace Shared.formula
   partial def getCalledVariables
     (f : formula)
     (callableVariables : List (varDecl))
-    : List (varDecl) := Id.run do
+    : List (List (varDecl)) := Id.run do
 
       match f with
         | formula.pred_with_args _ predicate_arguments =>
