@@ -27,9 +27,9 @@ def unexpHDotjoin : Unexpander
   | `($_ $a:ident $b:ident) => do
 
     let new_a :=
-      delaborationService.switch_thoR_representation_to_alloy_representation a
+      delaborationService.switch_thoR_representation_to_lean_representation a
     let new_b :=
-      delaborationService.switch_thoR_representation_to_alloy_representation b
+      delaborationService.switch_thoR_representation_to_lean_representation b
 
     `($new_a . $new_b)
 
