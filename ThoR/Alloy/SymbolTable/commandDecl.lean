@@ -22,7 +22,17 @@ namespace Alloy
           (formulas : List (formula)) -- formulas in an Alloy pred or an Alloy fact
           (requiredDefs : List (String)) -- only for Lean Infoview
           (requiredVars : List (String)) -- only for Lean Infoview
-          (predCalls : List (commandDecl × List (List (varDecl)))) -- called predicates
+          /-
+          a list of called predicates, contains the called predicate and
+          a list of the calls in the given arguments. Note that there can
+          be multiple calls in one argumen e.g. t - t => t is called two times
+          the innermost list can contain multiple varDecls IF the call is
+          ambigous.
+
+          Possible improvement on clarity:
+          Make a Structure that conveys the meaning better?
+          -/
+          (predCalls : List (commandDecl × List (List (List (varDecl)))))
           (relationCalls : List (List (varDecl))) -- called relations
           (signatureCalls : List (List (varDecl))) -- called signatures
   deriving Repr

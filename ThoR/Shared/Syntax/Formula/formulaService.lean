@@ -567,7 +567,7 @@ namespace Shared.formula
     (f : formula)
     (callablePredicates : List (commandDecl))
     (callableVariables : List (varDecl))
-    : (List (commandDecl × List (List varDecl))) := Id.run do
+    : (List (commandDecl × List (List (List (varDecl))))) := Id.run do
       let callablePredicateNames := callablePredicates.map fun cp => cp.name
 
       match f with
@@ -585,8 +585,8 @@ namespace Shared.formula
             let calledPredicate := callablePredicates.get! index
             let calledArgumentVariables :=
               (predicate_arguments.map
-                fun e => e.getCalledVariables callableVariables
-              ).join
+                fun argument => argument.getCalledVariables callableVariables
+              )
 
             [(calledPredicate, calledArgumentVariables)]
           else
