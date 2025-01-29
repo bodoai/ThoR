@@ -33,6 +33,14 @@ startTestBlock empty_signatures
   #check (empty_signatures.vars.a : ∷ set univ)
   #check (empty_signatures.vars.b : ∷ set univ)
 
+alloy empty_signatures_extendedIdent_names
+  sig alloy,def {}
+end
+create empty_signatures_extendedIdent_names
+startTestBlock empty_signatures_extendedIdent_names
+  #check (empty_signatures_extendedIdent_names.vars.alloy : ∷ set univ)
+  #check (empty_signatures_extendedIdent_names.vars.def : ∷ set univ)
+
 --does not work in alloy but in ThoR atm
 ~alloy emptySetSig
   set sig a {}
