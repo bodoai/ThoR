@@ -6,7 +6,6 @@ Authors: s. file CONTRIBUTORS
 
 import ThoR.Shared.Syntax.Formula.formula
 import ThoR.Alloy.SymbolTable.commandDecl
-import ThoR.Alloy.SymbolTable.calledPredicate
 
 import ThoR.Shared.Syntax.Relation.Expr.exprService
 import ThoR.Shared.Syntax.TypeExpr.typeExprService
