@@ -20,7 +20,7 @@ namespace Alloy
 
   declare_syntax_cat runSyntaxFors
   syntax num : runSyntaxFors
-  syntax runSyntaxButs,* : runSyntaxFors
+  syntax runSyntaxButs,+ : runSyntaxFors
 
   declare_syntax_cat runSyntax
   syntax "run" runSyntaxIdents : runSyntax

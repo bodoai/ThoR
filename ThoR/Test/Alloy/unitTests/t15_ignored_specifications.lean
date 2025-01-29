@@ -100,3 +100,8 @@ alloy ignore_run_subtype_scope_1
   pred p1 {}
   run {} for 4 Plant, exactly 2 Tree
 end
+
+alloy gp4exp
+  sig a {}
+  check NoSelfGrandpa for 4 Person
+end
