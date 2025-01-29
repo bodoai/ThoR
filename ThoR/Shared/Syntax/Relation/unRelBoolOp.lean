@@ -17,7 +17,7 @@ namespace Shared
     | lone
     | one
     | no
-  deriving Repr
+  deriving Repr, BEq
 
   /--
   This syntax represents unary operations for a relation

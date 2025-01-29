@@ -40,6 +40,12 @@ namespace Alloy
         expression := expr.const (constant.none)
       }
 
+  instance : BEq predArg where
+    beq (predArg1 predArg2 : predArg) :=
+      predArg1.names == predArg2.names &&
+      predArg1.disjunction == predArg2.disjunction &&
+      predArg1.expression == predArg2.expression
+
   namespace predArg
 
     /--

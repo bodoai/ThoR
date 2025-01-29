@@ -13,7 +13,7 @@ namespace Shared
   -/
   inductive terLogOp
     | ifelse
-  deriving Repr
+  deriving Repr, BEq
 
   -- the syntax is to be found in formula beacause of the special syntax
 

@@ -12,7 +12,7 @@ namespace Shared
   -/
   inductive cardExpr
     | cardExpression : (expression : expr) → cardExpr
-  deriving Repr
+  deriving Repr, BEq
 
   /--
   This syntax represents an cardinal expression

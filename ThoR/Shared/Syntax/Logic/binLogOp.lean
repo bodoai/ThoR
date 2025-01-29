@@ -17,7 +17,7 @@ namespace Shared
     | and -- &&
     | equivalent -- <=>
     | implication -- =>
-  deriving Repr
+  deriving Repr, BEq
 
   /--
   This syntax represents binary logic operations

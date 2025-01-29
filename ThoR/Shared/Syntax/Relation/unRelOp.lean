@@ -21,7 +21,7 @@ namespace Shared
     | transitive_closure -- ^
     | reflexive_closure -- *
     | transposition -- ~
-  deriving Repr
+  deriving Repr, BEq
 
   /--
   This syntax represents unary operations for a relation

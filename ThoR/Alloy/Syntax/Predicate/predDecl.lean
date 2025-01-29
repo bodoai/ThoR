@@ -23,7 +23,7 @@ namespace Alloy
     mk :: (name : String)
           (args : List (predArg))
           (forms : List (formula))
-  deriving Repr
+  deriving Repr, BEq
 
   /--
   This syntax represents an Alloy predicate declaration

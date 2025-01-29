@@ -18,7 +18,7 @@ namespace Shared
     | mult -- * mul
     | div -- / div
     | rem -- rem
-  deriving Repr
+  deriving Repr, BEq
 
   /--
   This syntax represents an binary operation between algebra expressions
