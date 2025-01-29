@@ -110,9 +110,11 @@ namespace Alloy
         for field in fields.getElems do
           match field with
           -- only one case
-          | `(fieldDecl | $relNames:ident,* : $te:typeExpr) => do
+          | `(fieldDecl | $relNames:extendedIdent,* : $te:typeExpr) => do
             let stringNames : List (String) :=
-              (relNames.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+              ( relNames.getElems.map fun (elem) =>
+                (extendedIdent.toName elem).lastComponentAsString
+              ).toList
 
             let type := typeExpr.toType te
 

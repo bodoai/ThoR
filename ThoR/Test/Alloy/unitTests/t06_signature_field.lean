@@ -27,6 +27,19 @@ startTestBlock sigField
 
 end sigField.test
 
+namespace sigField_extIdentname.test
+alloy sigField_extIdentname
+sig a {
+  alloy : a
+}
+end
+create sigField_extIdentname
+
+startTestBlock sigField_extIdentname
+  #check (a.alloy : ∷ a set → one a)
+
+end sigField_extIdentname.test
+
 namespace sigFields.test
 alloy sigFields
 sig a {
