@@ -22,3 +22,13 @@ create emptyPred
 
 #check a
 #check b
+
+alloy extendedIdentPred
+sig a {}
+pred alloy {}
+pred def {}
+end
+create extendedIdentPred
+
+#check extendedIdentPred.preds.alloy
+#check extendedIdentPred.preds.def
