@@ -43,7 +43,7 @@ namespace Alloy
         match fd with
             | `(signatureFactDecl| $p:property) =>
                   property.toType
-                    (mkIdent defaultName.toName)
+                    defaultName.toName
                     p
                     signatureName
                     signatureRelationNames

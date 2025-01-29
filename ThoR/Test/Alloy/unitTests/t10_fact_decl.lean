@@ -28,3 +28,11 @@ end
 create emptyFact
 
 #check emptyFact.facts.factName
+
+alloy emptyFact_extIdentName
+sig a {}
+fact alloy {}
+end
+create emptyFact_extIdentName
+
+#check emptyFact_extIdentName.facts.alloy

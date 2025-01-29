@@ -7,6 +7,8 @@ import ThoR.Basic
 
 import ThoR.Alloy.Syntax.assertDecl
 
+import ThoR.Alloy.Syntax.SeparatedNamespace.extendedIdent
+
 open Lean
 
 namespace Alloy
@@ -25,7 +27,7 @@ namespace Alloy
   A syntax repreaentation of an fact declaration.
   -/
   declare_syntax_cat factDecl
-  syntax "fact " (ident)? property : factDecl
+  syntax "fact " (extendedIdent)? property : factDecl
 
   instance : ToString factDecl where
     toString (fd : factDecl) : String :=
@@ -39,12 +41,12 @@ namespace Alloy
     def toType (defaultName : String) (fd: TSyntax `factDecl) : factDecl :=
       match fd with
           --with name
-        | `(factDecl| fact $name:ident $p:property) =>
-              property.toType name p
+        | `(factDecl| fact $name:extendedIdent $p:property) =>
+              property.toType (extendedIdent.toName name) p
 
           -- without name
           | `(factDecl| fact $p:property) =>
-                property.toType (mkIdent defaultName.toName) p
+                property.toType defaultName.toName p
 
           | _ => default
 

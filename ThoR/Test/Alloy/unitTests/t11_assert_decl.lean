@@ -20,3 +20,11 @@ end
 create emptyAssert
 
 #check emptyAssert.asserts.a1
+
+alloy emptyAssert_extIdentName
+sig a {}
+assert alloy {}
+end
+create emptyAssert_extIdentName
+
+#check emptyAssert_extIdentName.asserts.alloy

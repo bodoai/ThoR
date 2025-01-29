@@ -6,6 +6,8 @@ Authors: s. file CONTRIBUTORS
 import ThoR.Basic
 import ThoR.Alloy.Syntax.property
 
+import ThoR.Alloy.Syntax.SeparatedNamespace.extendedIdent
+
 open Lean
 open Shared
 
@@ -25,7 +27,7 @@ namespace Alloy
   A syntax repreaentation of an assert declaration.
   -/
   declare_syntax_cat assertDecl
-  syntax "assert " ident property : assertDecl
+  syntax "assert " extendedIdent property : assertDecl
 
   instance : ToString assertDecl where
     toString (ad : assertDecl) : String :=
@@ -39,8 +41,8 @@ namespace Alloy
     /-- Generates a type representation from the TSyntax -/
     def toType (ad : TSyntax `assertDecl) : assertDecl :=
       match ad with
-        | `(assertDecl| assert $name:ident $p:property) =>
-           property.toType name p
+        | `(assertDecl| assert $name:extendedIdent $p:property) =>
+           property.toType (extendedIdent.toName name) p
 
         | _ => default
 
