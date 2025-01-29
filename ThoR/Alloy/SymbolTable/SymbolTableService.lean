@@ -215,9 +215,7 @@ to be better digestible for further computation and transformation into Lean.
 
     Currently checks if the predicate exists and if the number of arguments are correct.
 
-    TODO type checking of parameters
-
-    This function stops at first error and states which symbol is missing.
+    TODO: type checking of parameters
     -/
     private def checkPredCalls
       (st : SymbolTable)
@@ -226,29 +224,34 @@ to be better digestible for further computation and transformation into Lean.
         let availablePredDecls : List (predDecl) :=
           ast.predDecls
 
-        let avariablePredDeclNames := availablePredDecls.map fun apd => apd.name
+        let availablePredNames := availablePredDecls.map fun apd => apd.name
 
         let mut calledPreds :=
           ((st.axiomDecls.map fun (ad) => ad.predCalls).join ++
             ((st.defDecls.map fun (ad) => ad.predCalls).join) ++
               ((st.assertDecls.map fun (ad) => ad.predCalls).join))
 
-        for cp in calledPreds do
-          let calledName := cp.1.name
-          let isDefined := avariablePredDeclNames.contains calledName
-          if !isDefined then
-            throw s!"Predicate {calledName} does not exist"
+        for calledPred in calledPreds do
+          let calledPredCommandDecl := calledPred.1
+          let calledPredName := calledPredCommandDecl.name
 
-          let index := avariablePredDeclNames.indexOf calledName
+          let isDefined := availablePredNames.contains calledPredName
+          if !isDefined then
+            throw s!"Predicate {calledPredName} does not exist"
+
+          let index := availablePredNames.indexOf calledPredName
+
           let calledPredDecl := availablePredDecls.get! index
-          let calledArguments := cp.2
+          let calledArguments := calledPred.2
+
           let requiredArgNumber :=
             (calledPredDecl.args.map fun a => a.names).join.length
+
           let calledArgNumber := calledArguments.length
 
           let isCorrectNumberOfArguments := requiredArgNumber == calledArgNumber
           if !isCorrectNumberOfArguments then
-            throw s!"Definition {calledName} called with {calledArgNumber} \
+            throw s!"Definition {calledPredName} called with {calledArgNumber} \
             arguments ({calledArguments}), but expected {requiredArgNumber} arguments"
 
     /--
