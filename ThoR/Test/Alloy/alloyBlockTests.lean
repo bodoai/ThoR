@@ -32,6 +32,7 @@ end
 
 #create x2
 
+
 ~alloy x3
   sig A {
     r: A
@@ -130,8 +131,7 @@ abstract sig Buch {
 sig Seite {}
 
 fact keineDopplungInReihe{
-  lone b:Buch | some z:Buch | not (b in b.^prequel and b in b.^sequel) and
-    not z in z.prequel
+  lone b:Buch | not (b in b.^prequel and b in b.^sequel)
 }
 
 pred EntwederPrequelOderSequel{

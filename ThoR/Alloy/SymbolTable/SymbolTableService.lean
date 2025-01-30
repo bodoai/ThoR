@@ -86,85 +86,26 @@ to be better digestible for further computation and transformation into Lean.
         if !(availableSymbols.contains requiredSymbol) then
           throw s!"{requiredSymbol} is not defined"
 
-    /--
-    Checks if all reffered Relations are not ambiguous
-
-    This function stops at first error which symbol is ambiguous.
-    -/
     private def checkRelationCalls
       (st : SymbolTable)
       : Except String Unit := do
-        let availableRelations : List (varDecl) :=
-          st.variableDecls.filter fun (vd) => vd.isRelation
 
-        let relationNames := availableRelations.map fun r => r.name
+        let formulas := st.getAllFormulas
 
-        let allFormulas := st.getAllFormulas
+        let calls := (formulas.map
+            fun f => f.getCalledVariables st.variableDecls).join
 
-        let allRelationCalls :=
-          (allFormulas.map
-            fun f => f.getRelationCalls relationNames).join
+        let relCalls := calls.map fun f => f.filter fun i => i.isRelation
 
-        let allowedQuantifiedRelationCalls :=
-          (allFormulas.map
-            fun f => f.getQuantifiedRelationCalls relationNames).join
+        for call in relCalls do
 
-        let allowedQuantifiedRelationCallsStrings :=
-          allowedQuantifiedRelationCalls.map fun arc => arc.1
+          if call.isEmpty then
+            continue
 
-        for rc in allRelationCalls do
-          -- is in quantification or not
-          if !(allowedQuantifiedRelationCallsStrings.contains rc) then
-            if !(rc.contains '.') then
-              let possibleSignatures :=
-                (availableRelations.filter
-                  fun vd => vd.name = rc).map
-                    fun vd => s!"{vd.relationOf}"
-
-              if (possibleSignatures.length > 1) then
-                throw s!"{rc} is ambiguous. \
-                      It could refer to the relation \
-                      of the same name in the following \
-                      signatures {possibleSignatures}"
-
-            else
-              let rcSplit := rc.splitOn "."
-              if rcSplit.isEmpty then
-                throw s!"No relation for {rc} found"
-              else
-                let lastSplit := rcSplit.getLast!
-
-                let complete_origin : String :=
-                  ((rcSplit.drop 1).reverse.drop 1).reverse.foldl
-                    (fun string split => s!"{string}_{split}")
-                    (rcSplit.get! 0)
-
-                let possibleSigName :=
-                  if rcSplit.length > 1 then
-                    rcSplit.get! (rcSplit.length - 2)
-                  else
-                    rcSplit.getLast!
-
-                let origin_without_sig :=
-                  complete_origin.replace s!"_{possibleSigName}" ""
-
-                let possibleRelations :=
-                  (availableRelations.filter
-                    fun ar => (ar.name == lastSplit &&
-                      (ar.openedFrom == complete_origin ||
-                        (possibleSigName == ar.relationOf &&
-                          ar.openedFrom == origin_without_sig
-                        ) ||
-                        (origin_without_sig == possibleSigName)
-                      )
-
-                      ))
-
-                if possibleRelations.isEmpty then
-                  throw s!"No Relation {lastSplit} found \
-                  in module {complete_origin} or \
-                  under signature {possibleSigName} \
-                  in {origin_without_sig}}]"
+          if call.length > 1 then
+            throw s!"The call to {(call.get! 0).name} is ambiguous. \
+            Could be the relation from any of \
+            {call.map fun c => s!"{c.openedFrom}/{c.relationOf}/{c.name}"}"
 
     /--
     Checks if the called signatures are valid and not ambiguous
