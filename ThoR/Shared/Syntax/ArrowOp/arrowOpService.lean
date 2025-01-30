@@ -227,56 +227,6 @@ namespace Shared.arrowOp
       | arrowOp.multArrowOp ae1 _ _ ae2 => ae1.getReqVariables ++ ae2.getReqVariables
 
   /--
-  returns all signatures that are called and also are in the
-  given name list (signature names).
-
-  note that giving the names is required, since you can't decide
-  on syntax alone if something is a signature or a relation
-  -/
-  def getSignatureCalls
-    (ao: arrowOp)
-    (signatureNames : List (String))
-    (moduleName : String := default)
-    : List (String) := Id.run do
-      match ao with
-        | multArrowOpExpr e1 _ _ e2 =>
-          (e1.getSignatureCalls signatureNames moduleName) ++
-            (e2.getSignatureCalls signatureNames moduleName)
-
-        | multArrowOpExprLeft e _ _ ao1 =>
-          (e.getSignatureCalls signatureNames moduleName) ++
-            (ao1.getSignatureCalls signatureNames moduleName)
-
-        | multArrowOpExprRight ao1 _ _ e =>
-          (ao1.getSignatureCalls signatureNames moduleName) ++
-            (e.getSignatureCalls signatureNames moduleName)
-
-        | multArrowOp ao1 _ _ ao2 =>
-          (ao1.getSignatureCalls signatureNames moduleName) ++
-            (ao2.getSignatureCalls signatureNames moduleName)
-
-  def getRelationCalls
-    (ao: arrowOp)
-    (relationNames : List (String))
-    : List (String) := Id.run do
-      match ao with
-        | multArrowOpExpr e1 _ _ e2 =>
-          (e1.getRelationCalls relationNames) ++
-            (e2.getRelationCalls relationNames)
-
-        | multArrowOpExprLeft e _ _ ao1 =>
-          (e.getRelationCalls relationNames) ++
-            (ao1.getRelationCalls relationNames)
-
-        | multArrowOpExprRight ao1 _ _ e =>
-          (ao1.getRelationCalls relationNames) ++
-            (e.getRelationCalls relationNames)
-
-        | multArrowOp ao1 _ _ ao2 =>
-          (ao1.getRelationCalls relationNames) ++
-            (ao2.getRelationCalls relationNames)
-
-  /--
   Gets all calls to the `callableVariables` which includes signatures and relations
 
   The result is a list of all called variables

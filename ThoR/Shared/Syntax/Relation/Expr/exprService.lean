@@ -368,49 +368,6 @@ namespace Shared.expr
       | _ => default
 
   /--
-  returns all signatures that are called and also are in the
-  given name list (signature names).
-
-  note that giving the names is required, since you can't decide
-  on syntax alone if something is a signature or a relation
-  -/
-  def getSignatureCalls
-    (e : expr)
-    (signatureNames : List (String))
-    (moduleName : String := default)
-    : List (String) := Id.run do
-      match e with
-        | expr.string s =>
-          if signatureNames.contains s then [s] else []
-
-        | expr.callFromOpen sn =>
-          let sns := sn.representedNamespace.getId.lastComponentAsString
-          let snsSplit := sns.splitOn "."
-          if snsSplit.isEmpty then
-            if signatureNames.contains sns then [sns] else []
-          else
-            if signatureNames.contains snsSplit.getLast! then
-              if (moduleName != default) && (snsSplit.get! 0) == "this" then
-                [s!"{moduleName}.{snsSplit.getLast!}"]
-              else
-                [sns]
-            else
-              []
-
-        | expr.unaryRelOperation _ e =>
-          e.getSignatureCalls signatureNames
-
-        | expr.binaryRelOperation _ e1 e2 =>
-          (e1.getSignatureCalls signatureNames) ++
-            (e2.getSignatureCalls signatureNames)
-
-        | expr.dotjoin _ e1 e2 =>
-          (e1.getSignatureCalls signatureNames) ++
-            (e2.getSignatureCalls signatureNames)
-
-        | _ => [] -- unreachable
-
-  /--
   Gets all calls to the `callableVariables` which includes signatures and relations
 
   The result is a list of Lists of called variables. If the inner List contains more
@@ -587,47 +544,5 @@ namespace Shared.expr
             callableVariables)
 
       | _ => []
-
-  def getRelationCalls
-    (e : expr)
-    (relationNames : List (String))
-    : List (String) := Id.run do
-      match e with
-        | expr.string s =>
-          if relationNames.contains s then
-            return [s]
-          else
-            return []
-
-        | expr.callFromOpen sn =>
-          let sns := sn.representedNamespace.getId.lastComponentAsString
-          let snsSplit := sns.splitOn "."
-          if snsSplit.isEmpty then
-            if relationNames.contains sns then [sns] else []
-          else
-            if relationNames.contains snsSplit.getLast! then [sns] else []
-
-        | expr.unaryRelOperation _ e =>
-          e.getRelationCalls relationNames
-
-        | expr.binaryRelOperation _ e1 e2 =>
-          (e1.getRelationCalls relationNames) ++
-            (e2.getRelationCalls relationNames)
-
-        | expr.dotjoin _ e1 e2 =>
-          let e1eval := (e1.getRelationCalls relationNames)
-          let e2eval := (e2.getRelationCalls relationNames)
-          if (e1eval.length == 0) && (e2eval.length == 1) then
-            match e1 with
-              | expr.string s =>
-                let e2value := e2eval.get! 0
-                return [s!"{s}.{e2value}"]
-
-              | _ => return e1eval ++ e2eval
-
-          else
-            return e1eval ++ e2eval
-
-        | _ => []
 
 end Shared.expr

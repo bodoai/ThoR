@@ -132,38 +132,6 @@ namespace Shared.typeExpr
       | typeExpr.arrowExpr _ => default
 
   /--
-  returns all signatures that are called and also are in the
-  given name list (signature names).
-
-  note that giving the names is required, since you can't decide
-  on syntax alone if something is a signature or a relation
-  -/
-  def getSignatureCalls
-    (te: typeExpr)
-    (signatureNames : List (String))
-    (moduleName : String := default)
-    : List (String) := Id.run do
-      match te with
-        | arrowExpr ae =>
-            (ae.getSignatureCalls signatureNames moduleName)
-        | multExpr _ e =>
-            (e.getSignatureCalls signatureNames moduleName)
-        | relExpr e =>
-            (e.getSignatureCalls signatureNames moduleName)
-
-  def getRelationCalls
-    (te: typeExpr)
-    (relationNames : List (String))
-    : List (String) := Id.run do
-      match te with
-        | arrowExpr ae =>
-            (ae.getRelationCalls relationNames)
-        | multExpr _ e =>
-            (e.getRelationCalls relationNames)
-        | relExpr e =>
-            (e.getRelationCalls relationNames)
-
-  /--
   Gets all calls to the `callableVariables` which includes signatures and relations
 
   The result is a list of all called variables
