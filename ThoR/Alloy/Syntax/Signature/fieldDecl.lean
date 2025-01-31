@@ -5,6 +5,8 @@ Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Shared.Syntax.TypeExpr.typeExpr
 
+import ThoR.Alloy.Syntax.SeparatedNamespace.extendedIdent
+
 open Shared
 
 namespace Alloy
@@ -21,7 +23,7 @@ namespace Alloy
   This syntax represents a field in a Alloy signature
   -/
   declare_syntax_cat fieldDecl
-  syntax ident,+ " : " typeExpr : fieldDecl
+  syntax extendedIdent,+ " : " typeExpr : fieldDecl
 
   instance : ToString fieldDecl where
     toString (fd : fieldDecl) : String :=
