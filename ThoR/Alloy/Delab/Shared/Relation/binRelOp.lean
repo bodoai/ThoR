@@ -7,6 +7,7 @@ Authors: s. file CONTRIBUTORS
 import Lean
 import ThoR.Relation.Set
 import ThoR.Alloy.Delab.DelaborationService
+import ThoR.Alloy.Syntax.SeparatedNamespace.separatedNamespace
 
 open Lean PrettyPrinter Delaborator SubExpr Expr
 
@@ -31,7 +32,11 @@ def unexpHDotjoin : Unexpander
     let new_b :=
       delaborationService.switch_thoR_representation_to_lean_representation b
 
-    `($new_a . $new_b)
+    let x ← `(extendedIdent| $(Alloy.extendedIdent.mkEIdent `a))
+    let y ← `(extendedIdent| $(Alloy.extendedIdent.mkEIdent `x))
+    let z ← `(separatedNamespace| $x:extendedIdent / $y:extendedIdent)
+
+    `(term |   $z )
 
   | _ => throw Unit.unit
 

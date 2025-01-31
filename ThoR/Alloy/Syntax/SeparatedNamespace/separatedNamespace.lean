@@ -27,6 +27,9 @@ namespace Alloy
   syntax "/" extendedIdent : separatedNamespaceExtension
   syntax extendedIdent (separatedNamespaceExtension)*: separatedNamespace
 
+
+  syntax  " "separatedNamespace: term
+
   instance : ToString separatedNamespace where
     toString (sn : separatedNamespace) : String :=
       s!"separatedNamespace : {sn.representedNamespace.getId}"
