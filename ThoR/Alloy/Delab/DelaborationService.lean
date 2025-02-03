@@ -21,26 +21,27 @@ def switch_thoR_representation_to_alloy_representation
 
     let name := input.getId
 
-    let components := name.components.map fun c => c.toString
+    let componentStrings := name.components.map fun c => c.toString
 
-    if components.isEmpty then
-      return Syntax.mkStrLit "Error delaborating"
+    if componentStrings.isEmpty then
+      return Syntax.mkStrLit "Error delaborating: Empty components"
 
-    let components_without_object := (components.take (components.length - 1))
-    let objectName := components.getLast!
+    let componentsWithoutLast :=
+      (componentStrings.take (componentStrings.length - 1))
 
-    let object_relation_split := objectName.splitOn relationSeparator
-    let object_signaure_split := object_relation_split.map fun r => r.splitOn signatureSeparator
+    let lastComponentString := componentStrings.getLast!
 
-    let objectComponents := (object_signaure_split.join).filter fun oc => oc != "this"
+    let split1 := lastComponentString.splitOn relationSeparator
+    let split2 := split1.map fun r => r.splitOn signatureSeparator
+    let filteredSplit := (split2.join).filter fun oc => oc != "this"
 
-    let new_components := components_without_object ++ objectComponents
+    let newComponents := componentsWithoutLast ++ filteredSplit
 
-    let result : String := (new_components.drop 1).foldl
+    let componentResultString : String := (newComponents.drop 1).foldl
       (fun res c => s!"{res}/{c}")
-      (new_components.get! 0)
+      (newComponents.get! 0)
 
-    return Syntax.mkStrLit result
+    return Syntax.mkStrLit componentResultString
 
   /--
   Turns an thoR representation of an ident to a lean represetation
@@ -63,11 +64,11 @@ def switch_thoR_representation_to_alloy_representation
 
       let newComponents : List (Name) := filteredSplit.map fun s => s.toName
 
-      let final :=
+      let oldPlusNewComponents :=
         (components.take (components.length - 1)).append newComponents
 
-      let newName := Name.fromComponents final
+      let componentResultName := Name.fromComponents oldPlusNewComponents
 
-      return mkIdent newName
+      return mkIdent componentResultName
 
 end delaborationService
