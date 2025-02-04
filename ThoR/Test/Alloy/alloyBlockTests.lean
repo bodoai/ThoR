@@ -166,6 +166,20 @@ end
 #print buch.preds.EntwederPrequelOderSequel
 open Shared.quant
 
+alloy m1/mx
+  sig a {}
+end
+alloy m2/mx
+  sig a {}
+end
+~alloy m3/mx
+  open m1/mx
+  open m2/mx
+  fact {
+    some mx/a
+  }
+end
+
 #alloy module m1
   sig a {
     r : a

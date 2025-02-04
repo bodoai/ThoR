@@ -20,7 +20,7 @@ namespace Alloy
   A structure representation of the symbol table (ST).
   -/
   structure SymbolTable where
-    mk :: (name : String) -- name of the module
+    mk :: (name : Name) -- name of the module
           (variableDecls : List (varDecl))
           (defDecls : List (commandDecl))
           (axiomDecls : List (commandDecl))

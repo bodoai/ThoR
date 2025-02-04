@@ -23,7 +23,7 @@ namespace Alloy
 A structure representation of the abstract syntax tree (AST) of Alloy.
 -/
 inductive AST
-  | mk  (name : String)
+  | mk  (name : Name)
         (sigDecls : List (sigDecl))
         (factDecls : List (factDecl))
         (assertDecls : List (assertDecl))
@@ -75,7 +75,7 @@ namespace AST
   /--
   Updates the name of the AST to the given value
   -/
-  def updateName (name : String)
+  def updateName (name : Name)
     | mk _ sigDecls factDecls assertDecls
       predDecls modulesToOpen openendModules =>
         AST.mk name sigDecls factDecls assertDecls
@@ -154,7 +154,7 @@ namespace AST
     : AST := Id.run do
 
       let mut ast : AST := (default)
-      ast := ast.updateName name.getId.toString
+      ast := ast.updateName name.getId
 
       -- used for default fact name
       let mut factCount := 0

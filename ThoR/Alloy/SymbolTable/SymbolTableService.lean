@@ -86,6 +86,33 @@ to be better digestible for further computation and transformation into Lean.
         if !(availableSymbols.contains requiredSymbol) then
           throw s!"{requiredSymbol} is not defined"
 
+    /-
+    The duplication of module names is checked here.
+    This has the advantage that you only get an error if you use the
+    faulty module.
+    -/
+    private def checkModuleImports (st : SymbolTable) : Except String Unit := do
+      let importedVariableDeclarations :=
+        st.variableDecls.filter fun vd => vd.isOpened
+
+      let importedModuleNames :=
+        (importedVariableDeclarations.map fun vd => vd.openedFrom).eraseDups
+
+      let alloyLikeModuleNames :=
+        importedModuleNames.map fun name => (name.splitOn "_").getLast!
+
+      let mut lookedAtNames := []
+      for index in [:(alloyLikeModuleNames.length)] do
+        let alloyName := alloyLikeModuleNames.get! index
+        let realName := importedModuleNames.get! index
+        if lookedAtNames.contains alloyName then
+          let indeces := alloyLikeModuleNames.indexesOf alloyName
+          let doubleNamedModules := indeces.map fun i => importedModuleNames.get! i
+          throw s!"The name of module {realName} is ambiguos \
+          since multiple modules end with {alloyName} ({doubleNamedModules})"
+
+        lookedAtNames := lookedAtNames.concat alloyName
+
     private def checkRelationCalls
       (st : SymbolTable)
       : Except String Unit := do
@@ -526,7 +553,7 @@ to be better digestible for further computation and transformation into Lean.
       : SymbolTable := Id.run do
         let mut st := input
 
-        let mut module_name := ast.name
+        let mut module_name := ast.name.toString
         /-
           dots (.) are not valid to be contained in
           the name of a variable (in a typeclass), thus
@@ -591,6 +618,12 @@ to be better digestible for further computation and transformation into Lean.
 
         -- CHECKS
         if let Except.error msg := st.checkSymbols then
+          if extensive_logging then
+            throw (getExtensiveErrorMsg msg st)
+          else
+            throw msg
+
+        if let Except.error msg := st.checkModuleImports then
           if extensive_logging then
             throw (getExtensiveErrorMsg msg st)
           else

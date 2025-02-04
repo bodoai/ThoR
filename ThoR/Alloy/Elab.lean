@@ -328,7 +328,7 @@ private def createVariableAliasCommands
       contains undesireable symbols like the relation separator.
       -/
       let mut undottetComponents :=
-        [blockName, "vars".toName]
+        blockName.components.concat "vars".toName
 
       /-
       Get the correct replacement name
@@ -347,7 +347,8 @@ private def createVariableAliasCommands
       /-
       The "dottet" name has the undesired symbols replaced by dots.
       -/
-      let mut dottetComponents := [blockName, "vars".toName]
+      let mut dottetComponents :=
+        blockName.components.concat "vars".toName
 
       /-
       the alloy "dottet" name provides alloy like module access.
@@ -394,28 +395,6 @@ private def createVariableAliasCommands
     return commandList
 
 /--
-Creates commands to create Lean aliases for relations names.
-
-These are intendet to offer a natural (alloy-like) way to acces these relations
--/
-private def createRelationAliasCommands
-  (blockName : Name)
-  (relations : List (varDecl))
-  : List ((TSyntax `command)) := Unhygienic.run do
-    return createVariableAliasCommands blockName relations
-
-/--
-Creates commands to create Lean aliases for signature names.
-
-These are intendet to offer a natural (alloy-like) way to acces these signatures
--/
-private def createSignatureAliasCommands
-  (blockName : Name)
-  (signatures : List (varDecl))
-  : List ((TSyntax `command)) := Unhygienic.run do
-    return createVariableAliasCommands blockName signatures
-
-/--
 Creates commands to create all variables, definitions and axioms in Lean.
 
 The created commands are encapsulated in a namespaces, which are opened as the last command.
@@ -423,7 +402,7 @@ The created commands are encapsulated in a namespaces, which are opened as the l
 private def createCommands (st : SymbolTable)
   : List ((TSyntax `command)) := Unhygienic.run do
 
-    let blockName : Name := st.name.toName
+    let blockName : Name := st.name
     let mut namespacesToOpen : Array (Ident) := #[]
 
     --variables
