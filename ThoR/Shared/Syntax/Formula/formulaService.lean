@@ -5,6 +5,8 @@ Authors: s. file CONTRIBUTORS
 -/
 
 import ThoR.Shared.Syntax.Formula.formula
+import ThoR.Alloy.SymbolTable.commandDecl
+
 import ThoR.Shared.Syntax.Relation.Expr.exprService
 import ThoR.Shared.Syntax.TypeExpr.typeExprService
 import ThoR.Shared.Syntax.Algebra.AlgExpr.algExprService
@@ -218,39 +220,6 @@ namespace Shared.formula
           return formulaGroup
 
   /--
-  Returns all calls of predicats in the given formula.
-
-  These are returned as a List of Lists. The inner lists contain the
-  name of the pred followed by the arguments.
-  -/
-  partial def getPredCalls (f : formula) :
-    (List (List (String))) := Id.run do
-      match f with
-        | formula.string s => return [[s]]
-        | formula.pred_with_args p pa =>
-          return [[p].append (pa.map fun (e) => e.toString)]
-        | formula.unaryLogicOperation _ f => f.getPredCalls
-        | formula.binaryLogicOperation _ f1 f2 => do
-          let f1pc := f1.getPredCalls
-          let f2pc := f2.getPredCalls
-          return (f1pc ++ f2pc)
-
-        | formula.tertiaryLogicOperation _ f1 f2 f3 =>
-          let f1pc := f1.getPredCalls
-          let f2pc := f2.getPredCalls
-          let f3pc := f3.getPredCalls
-          return (f1pc ++ f2pc ++ f3pc)
-
-        | formula.quantification _ _ _ _ f => do
-          let mut result : List (List String) := []
-          for form in f do
-            let opc := form.getPredCalls
-            result := result.append opc
-          return result
-
-        | _ => []
-
-  /--
   Parses the given syntax to the type
   -/
   partial def toType
@@ -408,178 +377,112 @@ namespace Shared.formula
             ++ e.getReqVariables).filter
             fun (elem) => !(n.contains elem) -- quantor vars are not required
 
-  private def filterRelevantRelationCalls
-    (rcs : List String)
-    (quantifications : List (typeExpr × List (String)))
-    : List (String × List (typeExpr × List (String))) := Id.run do
-      let mut result :
-        List (String × List (typeExpr × List (String)))
-          := []
+  /--
+  Gets all calls to the `callablePredicates`
 
-      for rc in rcs do
-        if rc.contains '.' then
-          let data := rc.splitOn "."
-          let possibleQuantorName := data.get! 0
+  The result takes the form of a List of Tuples which contain called Predicates
+  (as commandDecl) with the given arguments (as varDecl)
+  -/
+  partial def getCalledPredicates
+    (f : formula)
+    (callablePredicates : List (commandDecl))
+    (callableVariables : List (varDecl))
+    : (List (commandDecl × List (List (List (varDecl))))) := Id.run do
+      let callablePredicateNames := callablePredicates.map fun cp => cp.name
 
-          for quantification in quantifications do
-            let quantNames := quantification.2
-
-            if quantNames.contains possibleQuantorName then
-                result := result.concat (rc, quantifications)
-
-      return result
-
-  partial def getQuantifiedRelationCalls
-    (f:formula)
-    (relationNames : List (String))
-    (inside : Bool := false)
-    (currentQuantifications : List (typeExpr × List (String)) := [])
-    (result : List (String × List (typeExpr × List (String))) := [])
-    : List (String × List (typeExpr × List (String))) := Id.run do
       match f with
-        | formula.string _ => result
-        | formula.pred_with_args _ pa =>
-          if !inside then
-            result
+        | formula.string s =>
+          if callablePredicateNames.contains s then
+            let index := callablePredicateNames.indexOf s
+            let calledPredicate := callablePredicates.get! index
+            [(calledPredicate, [])]
           else
-            let rcs :=
-              (pa.map fun e =>
-                e.getRelationCalls
-                  relationNames).join
+            []
 
-            result ++
-              filterRelevantRelationCalls
-                rcs currentQuantifications
+        | formula.pred_with_args predicate_name predicate_arguments =>
+          if callablePredicateNames.contains predicate_name then
+            let index := callablePredicateNames.indexOf predicate_name
+            let calledPredicate := callablePredicates.get! index
+            let calledArgumentVariables :=
+              (predicate_arguments.map
+                fun argument => argument.getCalledVariables callableVariables
+              )
 
-        | formula.unaryRelBoolOperation _ e =>
-          if !inside then
-              result
+            [(calledPredicate, calledArgumentVariables)]
           else
-            let rcs := e.getRelationCalls relationNames
-
-            result ++
-              filterRelevantRelationCalls
-                rcs currentQuantifications
+            []
 
         | formula.unaryLogicOperation _ f =>
-          f.getQuantifiedRelationCalls
-            relationNames inside currentQuantifications result
+          f.getCalledPredicates callablePredicates callableVariables
 
         | formula.binaryLogicOperation _ f1 f2 =>
-          let newResult := f1.getQuantifiedRelationCalls
-            relationNames inside currentQuantifications result
-          f2.getQuantifiedRelationCalls
-            relationNames inside currentQuantifications newResult
+          (f1.getCalledPredicates callablePredicates callableVariables) ++
+          (f2.getCalledPredicates callablePredicates callableVariables)
 
         | formula.tertiaryLogicOperation _ f1 f2 f3 =>
-          let newResult1 := f1.getQuantifiedRelationCalls
-            relationNames inside currentQuantifications result
-          let newResult2 := f2.getQuantifiedRelationCalls
-            relationNames inside currentQuantifications newResult1
-          f3.getQuantifiedRelationCalls
-            relationNames inside currentQuantifications newResult2
+          (f1.getCalledPredicates callablePredicates callableVariables) ++
+          (f2.getCalledPredicates callablePredicates callableVariables) ++
+          (f3.getCalledPredicates callablePredicates callableVariables)
 
-        | formula.algebraicComparisonOperation _ _ _ => result
+        | formula.quantification _ _ _ _ f =>
+           (f.map fun form =>
+              form.getCalledPredicates callablePredicates callableVariables).join
 
-        | formula.relationComarisonOperation _ e1 e2 =>
-          if !inside then
-              result
-          else
-            let rcs1 := e1.getRelationCalls relationNames
-            let rcs2 := e2.getRelationCalls relationNames
-
-            result ++
-              filterRelevantRelationCalls
-                rcs1 currentQuantifications ++
-                  filterRelevantRelationCalls
-                    rcs2 currentQuantifications
-
-        | formula.quantification _ _ names te f => do
-
-
-          let tes := te.getStringExpr
-
-          --only single name types (e.g. x:A or x: one A)
-          let insideRelevantQuant := tes != ""
-
-          let mut newQuants := currentQuantifications
-          if insideRelevantQuant then
-            newQuants := newQuants.concat (te, names)
-
-          let rcs := te.getRelationCalls relationNames
-
-          let newResult :=
-            filterRelevantRelationCalls
-                rcs newQuants
-
-          let formRelCalls := (f.map fun form =>
-              form.getQuantifiedRelationCalls
-                relationNames
-                true
-                newQuants
-                newResult).join
-
-          formRelCalls
+        | _ => []
 
   /--
-  returns all signatures that are called and also are in the
-  given name list (signature names).
+  Gets all calls to the `callableVariables` which includes signatures and relations.
 
-  note that giving the names is required, since you can't decide
-  on syntax alone if something is a signature or a relation
+  Returns a list of the called Variables
   -/
-  partial def getSignatureCalls
+  partial def getCalledVariables
     (f : formula)
-    (signatureNames : List (String))
-    (moduleName : String := default)
-    : List (String) := Id.run do
-      match f with
-      | formula.pred_with_args _ pa =>
-        (pa.map fun e => e.getSignatureCalls signatureNames moduleName).join
-      | formula.unaryRelBoolOperation _ e => e.getSignatureCalls signatureNames moduleName
-      | formula.unaryLogicOperation _ f => f.getSignatureCalls signatureNames moduleName
-      | formula.binaryLogicOperation _ f1 f2 =>
-        f1.getSignatureCalls signatureNames moduleName ++
-          f2.getSignatureCalls signatureNames moduleName
-      | formula.tertiaryLogicOperation _ f1 f2 f3 =>
-        f1.getSignatureCalls signatureNames moduleName ++
-          f2.getSignatureCalls signatureNames moduleName ++
-            f3.getSignatureCalls signatureNames moduleName
-      | formula.relationComarisonOperation _ e1 e2 =>
-        e1.getSignatureCalls signatureNames moduleName ++
-          e2.getSignatureCalls signatureNames moduleName
-      | formula.quantification _ _ _ te f =>
-        let typeExprRelCalls := te.getSignatureCalls signatureNames moduleName
-        let formRelCalls := (f.map fun form =>
-            form.getSignatureCalls signatureNames moduleName).join
-        return formRelCalls ++ typeExprRelCalls
-      | _ => []
+    (callableVariables : List (varDecl))
+    : List (List (varDecl)) := Id.run do
 
-  partial def getRelationCalls
-    (f : formula)
-    (relationNames : List (String))
-    : List (String) := Id.run do
-    match f with
-      | formula.string _ => []
-      | formula.pred_with_args _ pa =>
-        (pa.map fun e => e.getRelationCalls relationNames).join
-      | formula.unaryRelBoolOperation _ e => e.getRelationCalls relationNames
-      | formula.unaryLogicOperation _ f => f.getRelationCalls relationNames
-      | formula.binaryLogicOperation _ f1 f2 =>
-        f1.getRelationCalls relationNames ++
-          f2.getRelationCalls relationNames
-      | formula.tertiaryLogicOperation _ f1 f2 f3 =>
-        f1.getRelationCalls relationNames ++
-          f2.getRelationCalls relationNames ++
-            f3.getRelationCalls relationNames
-      | formula.algebraicComparisonOperation _ _ _ => []
-      | formula.relationComarisonOperation _ e1 e2 =>
-        e1.getRelationCalls relationNames ++
-          e2.getRelationCalls relationNames
-      | formula.quantification _ _ _ te f =>
-        let typeExprRelCalls := te.getRelationCalls relationNames
-        let formRelCalls := (f.map fun form =>
-            form.getRelationCalls relationNames).join
-        return formRelCalls ++ typeExprRelCalls
+      match f with
+        | formula.pred_with_args _ predicate_arguments =>
+          (predicate_arguments.map
+            fun pa => pa.getCalledVariables callableVariables).join
+
+        | formula.unaryRelBoolOperation _ e =>
+          (e.getCalledVariables callableVariables)
+
+        | formula.unaryLogicOperation _ f =>
+          (f.getCalledVariables callableVariables)
+
+        | formula.binaryLogicOperation _ f1 f2 =>
+          (f1.getCalledVariables callableVariables) ++
+          (f2.getCalledVariables callableVariables)
+
+        | formula.tertiaryLogicOperation _ f1 f2 f3 =>
+          (f1.getCalledVariables callableVariables) ++
+          (f2.getCalledVariables callableVariables) ++
+          (f3.getCalledVariables callableVariables)
+
+        | formula.relationComarisonOperation _ e1 e2 =>
+          (e1.getCalledVariables callableVariables) ++
+          (e2.getCalledVariables callableVariables)
+
+        | formula.quantification _ _ names te f =>
+          let typeExprRelCalls := te.getCalledVariables callableVariables
+
+          let quantVarDecls :=
+            names.map fun n =>
+              varDecl.mk
+                (name := n)
+                (isQuantor := true)
+                (isOpened := false)
+                (openedFrom := "this")
+                (isRelation := false)
+                (relationOf := default)
+                (type := te)
+                (requiredDecls := [])
+
+          typeExprRelCalls ++
+          (f.map fun form =>
+              form.getCalledVariables (callableVariables ++ quantVarDecls)).join
+
+        | _ => []
 
 end Shared.formula

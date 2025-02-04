@@ -25,7 +25,7 @@ namespace Shared
       (algExpr1 : algExpr) →
       (algExpr2 : algExpr) →
       algExpr
-  deriving Repr
+  deriving Repr, BEq
 
   /--
   This syntax represents an algebra expression

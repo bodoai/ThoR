@@ -20,6 +20,7 @@ namespace Alloy
           (openedFrom : String)
           (isRelation : Bool)
           (relationOf : String)
+          (isQuantor : Bool) -- if it is a temp quantor declaration
           (type : typeExpr)
           (requiredDecls : List (String))
   deriving Repr
@@ -34,6 +35,7 @@ namespace Alloy
         openedFrom := {vd.openedFrom},
         isRelationOf := {vd.isRelation},
         relationOf := {vd.relationOf},
+        isQuantor := {vd.isQuantor}
         type := {vd.type},
         requiredDeclarations := {vd.requiredDecls}
       }"
@@ -54,6 +56,7 @@ namespace Alloy
                     openedFrom := default,
                     isRelation := default,
                     relationOf := default,
+                    isQuantor := false,
                     type := default,
                     requiredDecls := default
                   }

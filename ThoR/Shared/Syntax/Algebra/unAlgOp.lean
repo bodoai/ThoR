@@ -15,7 +15,7 @@ namespace Shared
   inductive unAlgOp
     | negation
 
-  deriving Repr
+  deriving Repr, BEq
 
   /--
   This syntax represents an unary algebra operator

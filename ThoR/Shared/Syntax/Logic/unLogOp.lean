@@ -14,7 +14,7 @@ namespace Shared
   -/
   inductive unLogOp
     | not
-  deriving Repr
+  deriving Repr, BEq
 
   /--
   This syntax represents unary logic operations

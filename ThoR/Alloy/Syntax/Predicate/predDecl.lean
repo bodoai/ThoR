@@ -4,7 +4,9 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
-import ThoR.Alloy.Syntax.Predicate.predArg
+
+import ThoR.Alloy.Syntax.Predicate.PredArg.predArg
+import ThoR.Alloy.Syntax.Predicate.PredArg.predArgService
 
 import ThoR.Shared.Syntax.Formula.formula
 import ThoR.Shared.Syntax.Formula.formulaService
@@ -23,7 +25,7 @@ namespace Alloy
     mk :: (name : String)
           (args : List (predArg))
           (forms : List (formula))
-  deriving Repr
+  deriving Repr, BEq
 
   /--
   This syntax represents an Alloy predicate declaration

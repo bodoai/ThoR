@@ -19,7 +19,7 @@ namespace Shared
     | in -- in
     | eq -- =
     | neq -- !=
-  deriving Repr
+  deriving Repr, BEq
 
   /--
   This syntax represents compare operations between relations

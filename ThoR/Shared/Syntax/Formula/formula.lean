@@ -118,6 +118,63 @@ namespace Shared
     instance : ToString formula where
       toString := toString
 
+    partial def compare (formula1 formula2 : formula) : Bool :=
+      match formula1, formula2 with
+        | formula.string s1, formula.string s2 =>
+          s1 == s2
+
+        | formula.pred_with_args p1 pa1,
+          formula.pred_with_args p2 pa2 =>
+          p1 == p2 && pa1 == pa2
+
+        | formula.unaryRelBoolOperation op1 e1,
+          formula.unaryRelBoolOperation op2 e2 =>
+          op1 == op2 && e1 == e2
+
+        | formula.unaryLogicOperation op1 f1,
+          formula.unaryLogicOperation op2 f2 =>
+          op1 == op2 &&
+          compare f1 f2
+
+        | formula.binaryLogicOperation op1 fa1 fa2,
+          formula.binaryLogicOperation op2 fb1 fb2 =>
+          op1 == op2 &&
+          compare fa1 fb1 &&
+          compare fa2 fb2
+
+        | formula.tertiaryLogicOperation op1 fa1 fa2 fa3,
+          formula.tertiaryLogicOperation op2 fb1 fb2 fb3 =>
+          op1 == op2 &&
+          compare fa1 fb1 &&
+          compare fa2 fb2 &&
+          compare fa3 fb3
+
+        | formula.algebraicComparisonOperation op1 algExprA1 algExprA2,
+          formula.algebraicComparisonOperation op2 algExprB1 algExprB2 =>
+          op1 == op2 &&
+          algExprA1 == algExprA2 &&
+          algExprB1 == algExprB2
+
+        | formula.relationComarisonOperation op1 ea1 ea2,
+          formula.relationComarisonOperation op2 eb1 eb2 =>
+          op1 == op2 &&
+          ea1 == eb1 &&
+          ea2 == eb2
+
+        | formula.quantification q1 d1 n1 te1 f1,
+          formula.quantification q2 d2 n2 te2 f2 =>
+          let fx := f1.zip f2
+          q1 == q2 &&
+          d1 == d2 &&
+          n1 == n2 &&
+          te1 == te2 &&
+          fx.all fun f => compare f.1 f.2
+
+        | _ , _ => false
+
+    instance : BEq formula where
+      beq := compare
+
   end formula
 
 end Shared

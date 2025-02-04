@@ -18,7 +18,7 @@ namespace Shared
     | lone
     | one
     | no
-  deriving Repr
+  deriving Repr, BEq
 
   /--
   This syntax represents an alloy quantifier

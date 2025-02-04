@@ -18,7 +18,7 @@ namespace Shared
     | eq -- =
     | leq -- =< or <=
     | geq -- >= or =>
-  deriving Repr
+  deriving Repr, BEq
 
   /--
   This syntax represents compare operations between algebra expression

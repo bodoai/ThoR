@@ -15,7 +15,8 @@ import ThoR.Shared.Syntax
 import ThoR.Alloy.Config
 
 import ThoR.Alloy.Syntax.AST
-import ThoR.Alloy.SymbolTable
+import ThoR.Alloy.SymbolTable.SymbolTable
+import ThoR.Alloy.SymbolTable.SymbolTableService
 import ThoR.Alloy.InheritanceTree.UnTyped.InheritanceTree
 
 import ThoR.Alloy.Syntax.SeparatedNamespace
@@ -362,7 +363,7 @@ The created commands are encapsulated in a namespaces, which are opened as the l
 private def createCommands (st : SymbolTable)
   : List ((TSyntax `command)) := Unhygienic.run do
 
-    let blockName : Name := st.blockName.toName
+    let blockName : Name := st.name.toName
     let mut namespacesToOpen : Array (Ident) := #[]
     let relations := st.getRelations
     let signatures := st.getSignatures
