@@ -11,6 +11,8 @@ import ThoR.Alloy.Syntax.Predicate.PredArg.predArgService
 import ThoR.Shared.Syntax.Formula.formula
 import ThoR.Shared.Syntax.Formula.formulaService
 
+import ThoR.Alloy.Syntax.SeparatedNamespace.extendedIdent
+
 open Lean
 open Shared
 
@@ -29,10 +31,10 @@ namespace Alloy
   This syntax represents an Alloy predicate declaration
   -/
   declare_syntax_cat predDecl
-  syntax "pred " ident ("("predArg,*")")? "{"
+  syntax "pred " extendedIdent ("("predArg,*")")? "{"
     formula*
   "}": predDecl
-  syntax "pred " ident ("["predArg,*"]")? "{"
+  syntax "pred " extendedIdent ("["predArg,*"]")? "{"
     formula*
   "}": predDecl
 
@@ -68,7 +70,7 @@ namespace Alloy
     Creates a predicate declaration with arguments
     -/
     def createWithArgs
-      (name : TSyntax `ident)
+      (name : Name)
       (args : Syntax.TSepArray `predArg ",")
       (forms : TSyntaxArray `formula)
       : predDecl := Id.run do
@@ -80,7 +82,7 @@ namespace Alloy
         (forms.map fun (f) => (formula.toType f)).toList
 
       {
-        name := name.getId.lastComponentAsString
+        name := name.lastComponentAsString
         args := args
         forms := forms
       }
@@ -89,7 +91,7 @@ namespace Alloy
     Creates a predicate declaration without arguments
     -/
     def createWithoutArgs
-      (name : TSyntax `ident)
+      (name : Name)
       (forms : TSyntaxArray `formula)
       : predDecl := Id.run do
 
@@ -97,7 +99,7 @@ namespace Alloy
         (forms.map fun (f) => (formula.toType f)).toList
 
       {
-        name := name.getId.lastComponentAsString
+        name := name.lastComponentAsString
         args := []
         forms := forms
       }
@@ -108,21 +110,21 @@ namespace Alloy
     def toType (pd : TSyntax `predDecl) : predDecl :=
       match pd with
         -- pred declaration with args
-        | `(predDecl| pred $name:ident ($args:predArg,*) {
+        | `(predDecl| pred $name:extendedIdent ($args:predArg,*) {
             $forms:formula*
           }) =>
-            predDecl.createWithArgs name args forms
+            predDecl.createWithArgs (extendedIdent.toName name) args forms
 
-        | `(predDecl| pred $name:ident [$args:predArg,*] {
+        | `(predDecl| pred $name:extendedIdent [$args:predArg,*] {
             $forms:formula*
           }) =>
-            predDecl.createWithArgs name args forms
+            predDecl.createWithArgs (extendedIdent.toName name) args forms
 
         -- pred declaration without args
-        | `(predDecl| pred $name:ident {
+        | `(predDecl| pred $name:extendedIdent {
             $forms:formula*
           }) =>
-            predDecl.createWithoutArgs name forms
+            predDecl.createWithoutArgs (extendedIdent.toName name) forms
 
         | _ => {name := "PANIC!", args := [], forms := []}
 

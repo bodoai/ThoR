@@ -10,6 +10,8 @@ import ThoR.Shared.Syntax.mult
 import ThoR.Alloy.Syntax.Signature.fieldDecl
 import ThoR.Alloy.Syntax.Signature.Inheritance
 
+import ThoR.Alloy.Syntax.SeparatedNamespace.extendedIdent
+
 open Shared Lean
 
 namespace Alloy
@@ -31,20 +33,20 @@ namespace Alloy
   declare_syntax_cat sigDecl
   syntax
     (mult)?
-    "sig" ident,+
+    "sig" extendedIdent,+
     (sigExtExtends <|> sigExtIn)? "{"
     fieldDecl,*
   "}" : sigDecl
   syntax
     ("abstract")?
-    "sig" ident,+
+    "sig" extendedIdent,+
     (sigExtExtends <|> sigExtIn)? "{"
     fieldDecl,*
   "}" : sigDecl
   syntax
     "abstract"
     mult
-    "sig" ident,+
+    "sig" extendedIdent,+
     (sigExtExtends <|> sigExtIn)? "{"
     fieldDecl,*
   "}" : sigDecl
@@ -85,15 +87,17 @@ namespace Alloy
     Creates a signature declaration from the parameters
     -/
     def create
-      (names : Syntax.TSepArray `ident ",")
+      (names : Syntax.TSepArray `extendedIdent ",")
       (mult : Shared.mult)
       (abstr : Bool)
       (extension : sigExt)
       (fields : Syntax.TSepArray `fieldDecl ",")
       : sigDecl := Id.run do
-        --Identifier to String
+        --Extended Identifier to String
         let stringNames : List (String) :=
-          (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+          ( names.getElems.map fun (elem) =>
+            (extendedIdent.toName elem).lastComponentAsString
+          ).toList
 
         let mut newSigDecl : sigDecl := {
             abs := abstr,
@@ -106,9 +110,11 @@ namespace Alloy
         for field in fields.getElems do
           match field with
           -- only one case
-          | `(fieldDecl | $relNames:ident,* : $te:typeExpr) => do
+          | `(fieldDecl | $relNames:extendedIdent,* : $te:typeExpr) => do
             let stringNames : List (String) :=
-              (relNames.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+              ( relNames.getElems.map fun (elem) =>
+                (extendedIdent.toName elem).lastComponentAsString
+              ).toList
 
             let type := typeExpr.toType te
 
@@ -128,7 +134,7 @@ namespace Alloy
       match sd with
         -- signature with opt mult, extends, fields
         | `(sigDecl|
-            $m:mult sig $sigNames:ident,*
+            $m:mult sig $sigNames:extendedIdent,*
             $[extends $extensionName]?
               { $fields:fieldDecl,* }
           ) =>
@@ -138,7 +144,7 @@ namespace Alloy
         -- abstract signature, extends, fields
         | `(sigDecl|
             abstract
-            sig $sigNames:ident,*
+            sig $sigNames:extendedIdent,*
             $[extends $extensionName]?
               { $fields:fieldDecl,* }
           ) =>
@@ -147,7 +153,7 @@ namespace Alloy
 
         -- abstract signature with mult, extends, fields
         | `(sigDecl|
-            abstract $m:mult sig $sigNames:ident,*
+            abstract $m:mult sig $sigNames:extendedIdent,*
             $[extends $extensionName]?
               { $fields:fieldDecl,* }
           ) =>
@@ -156,7 +162,7 @@ namespace Alloy
 
         -- simple sig with extends
         | `(sigDecl|
-            sig $sigNames:ident,*
+            sig $sigNames:extendedIdent,*
             $[extends $extensionName]?
               { $fields:fieldDecl,* }
           ) =>
@@ -165,7 +171,7 @@ namespace Alloy
 
         -- signature with opt mult, in, fields
         | `(sigDecl|
-            $m:mult sig $sigNames:ident,*
+            $m:mult sig $sigNames:extendedIdent,*
             $[in $extensionName $typeExtensions*]?
               { $fields:fieldDecl,* }
           ) =>
@@ -175,7 +181,7 @@ namespace Alloy
         -- abstract signature with in, fields
         | `(sigDecl|
             abstract
-            sig $sigNames:ident,*
+            sig $sigNames:extendedIdent,*
             $[in $extensionName $typeExtensions*]?
               { $fields:fieldDecl,* }
           ) =>
@@ -184,7 +190,7 @@ namespace Alloy
 
         -- abstract signature with mult in, fields
         | `(sigDecl|
-            abstract $m:mult sig $sigNames:ident,*
+            abstract $m:mult sig $sigNames:extendedIdent,*
             $[in $extensionName $typeExtensions*]?
               { $fields:fieldDecl,* }
           ) =>
@@ -193,7 +199,7 @@ namespace Alloy
 
         -- simple sig with in
         | `(sigDecl|
-            sig $sigNames:ident,*
+            sig $sigNames:extendedIdent,*
             $[in $extensionName $typeExtensions*]?
               { $fields:fieldDecl,* }
           ) =>

@@ -15,14 +15,16 @@ namespace Alloy
   syntax "{" formula* "}" : checkSyntaxIdents
 
   declare_syntax_cat checkSyntaxButs
-  syntax num ident : checkSyntaxButs
+  syntax ("exactly")? num ident : checkSyntaxButs
 
-  declare_syntax_cat checkSyntaxButsExactly
-  syntax "exactly" num ident : checkSyntaxButsExactly
+  declare_syntax_cat checkSyntaxFors
+  syntax num : checkSyntaxFors
+  syntax ident : checkSyntaxFors
+  syntax checkSyntaxButs,+ : checkSyntaxFors
 
   declare_syntax_cat checkSyntax
   syntax "check" checkSyntaxIdents : checkSyntax
-  syntax "check" checkSyntaxIdents "for" checkSyntaxIdents: checkSyntax
-  syntax "check" checkSyntaxIdents "for" checkSyntaxIdents "but" (checkSyntaxButs <|> checkSyntaxButsExactly): checkSyntax
+  syntax "check" checkSyntaxIdents "for" checkSyntaxFors: checkSyntax
+  syntax "check" checkSyntaxIdents "for" checkSyntaxFors "but" checkSyntaxButs : checkSyntax
 
 end Alloy

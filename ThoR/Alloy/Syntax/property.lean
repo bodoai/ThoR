@@ -44,7 +44,7 @@ namespace Alloy
 
     /-- Creates a property from a name and formulas -/
     private def create
-      (name : TSyntax `ident)
+      (name : Name)
       (formulas : TSyntaxArray `formula)
       (signatureName : String := "")
       (signatureRelationNames : List String := [])
@@ -59,7 +59,7 @@ namespace Alloy
             !(formulas.isEmpty) then
 
         return {
-          name:= name.getId.lastComponentAsString,
+          name:= name.lastComponentAsString,
           formulas := [
             formula.quantification
               (quantifier := quant.all)
@@ -72,13 +72,13 @@ namespace Alloy
         }
       else
         return {
-          name:= name.getId.lastComponentAsString,
+          name:= name.lastComponentAsString,
           formulas := formulas
         }
 
     /-- Creates a type representation from syntax and a name-/
     def toType
-      (name: TSyntax `ident)
+      (name: Name)
       (p:TSyntax `property)
       (signatureName : String := "")
       (signatureRelationNames : List String := [])
