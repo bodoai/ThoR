@@ -16,14 +16,18 @@ namespace Alloy
   -/
   structure varDecl where
     mk :: (name : String)
-          (isOpened : Bool) -- imported
+          (isOpened : Bool) -- imported from another module
+          /-
+          the FULL name of the other module
+          e.g. m1/te is m1_te
+          -/
           (openedFrom : String)
           (isRelation : Bool)
           (relationOf : String)
           (isQuantor : Bool) -- if it is a temp quantor declaration
           (type : typeExpr)
           (requiredDecls : List (String))
-  deriving Repr
+  deriving Repr, BEq
 
   namespace varDecl
 
@@ -43,20 +47,13 @@ namespace Alloy
     instance : ToString varDecl where
       toString := toString
 
-    instance : BEq varDecl where
-      beq : varDecl -> varDecl -> Bool
-        | vd1, vd2 => (vd1.name == vd2.name) &&
-                        (vd1.type == vd2.type) &&
-                          (vd1.isRelation == vd2.isRelation) &&
-                            (vd1.requiredDecls == vd2.requiredDecls)
-
     instance : Inhabited varDecl where
       default := {  name:= default,
                     isOpened := default,
                     openedFrom := default,
                     isRelation := default,
                     relationOf := default,
-                    isQuantor := false,
+                    isQuantor := default,
                     type := default,
                     requiredDecls := default
                   }

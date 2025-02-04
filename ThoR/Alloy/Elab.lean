@@ -312,7 +312,89 @@ private def createAxiomCommands
       return commandList
 
 /--
-Creates commands to create Lean aliases for signature relation names.
+Creates commands to create Lean aliases for variable declarations
+
+These are intendet to offer a natural (alloy-like) way to acces these variables
+-/
+private def createVariableAliasCommands
+  (blockName : Name)
+  (variableDeclarations : List (varDecl))
+  : List ((TSyntax `command)) := Unhygienic.run do
+    let mut commandList : List ((TSyntax `command)) := []
+    for variableDeclaration in variableDeclarations do
+
+      /-
+      The "undottet" name is the name created by the definition. It
+      contains undesireable symbols like the relation separator.
+      -/
+      let mut undottetComponents :=
+        [blockName, "vars".toName]
+
+      /-
+      Get the correct replacement name
+      -/
+      if variableDeclaration.isRelation then
+        undottetComponents :=
+          undottetComponents.concat
+            variableDeclaration.getRelationReplacementName.toName
+      else
+        undottetComponents :=
+          undottetComponents.concat
+            variableDeclaration.getSignatureReplacementName.toName
+
+      let undottetName := Name.fromComponents undottetComponents
+
+      /-
+      The "dottet" name has the undesired symbols replaced by dots.
+      -/
+      let mut dottetComponents := [blockName, "vars".toName]
+
+      /-
+      the alloy "dottet" name provides alloy like module access.
+      this works by creating another alias which contains only
+      the last element of the module name.
+
+      (this is only created if it differs from the regual dotted name)
+      -/
+      let mut alloyDottedComponents := dottetComponents
+
+      if variableDeclaration.isOpened then
+        let openedFromSplit := variableDeclaration.openedFrom.splitOn "_"
+        for element in openedFromSplit do
+          dottetComponents :=
+            (dottetComponents.concat element.toName)
+
+        alloyDottedComponents :=
+          (alloyDottedComponents.concat openedFromSplit.getLast!.toName)
+
+      let mut nameComponents := []
+      if variableDeclaration.isRelation then
+        nameComponents :=
+          nameComponents.concat variableDeclaration.relationOf.toName
+      nameComponents := nameComponents.concat variableDeclaration.name.toName
+
+      dottetComponents :=
+        dottetComponents.append
+          nameComponents
+
+      alloyDottedComponents :=
+        alloyDottedComponents.append
+          nameComponents
+
+      let dottetName := Name.fromComponents dottetComponents
+      let alloyDottetName := Name.fromComponents alloyDottedComponents
+
+      let command ← `(alias $(mkIdent dottetName) := $(mkIdent undottetName))
+      commandList := commandList.concat command
+
+      if dottetName != alloyDottetName then
+        let command ← `(alias $(mkIdent alloyDottetName) := $(mkIdent undottetName))
+        commandList := commandList.concat command
+
+    return commandList
+
+/--
+Creates commands to create Lean aliases for relations names.
 
 These are intendet to offer a natural (alloy-like) way to acces these relations
 -/
@@ -320,16 +402,7 @@ private def createRelationAliasCommands
   (blockName : Name)
   (relations : List (varDecl))
   : List ((TSyntax `command)) := Unhygienic.run do
-    let mut commandList : List ((TSyntax `command)) := []
-    for relation in relations do
-      let undottetString := s!"{blockName}.vars.{relation.getRelationReplacementName}"
-      let undottetName := undottetString.toName
-      let dottetName := s!"{blockName}.vars.{if relation.isOpened then s!"{relation.openedFrom}." else ""}{relation.relationOf}.{relation.name}".toName
-
-      let command ← `(alias $(mkIdent dottetName) := $(mkIdent undottetName))
-      commandList := commandList.concat command
-
-    return commandList
+    return createVariableAliasCommands blockName relations
 
 /--
 Creates commands to create Lean aliases for signature names.
@@ -340,20 +413,7 @@ private def createSignatureAliasCommands
   (blockName : Name)
   (signatures : List (varDecl))
   : List ((TSyntax `command)) := Unhygienic.run do
-    let mut commandList : List ((TSyntax `command)) := []
-    for signature in signatures do
-      let undottetString := s!"{blockName}.vars.{signature.getSignatureReplacementName}"
-      let undottetName := undottetString.toName
-
-      -- change to natural Name && remove this from module name
-      let dottetString := s!"{blockName}.vars.{if signature.isOpened then s!"{signature.openedFrom.replace "_" "."}." else ""}{signature.name}"
-
-      let dottetName := dottetString.toName
-
-      let command ← `(alias $(mkIdent dottetName) := $(mkIdent undottetName))
-      commandList := commandList.concat command
-
-    return commandList
+    return createVariableAliasCommands blockName signatures
 
 /--
 Creates commands to create all variables, definitions and axioms in Lean.
@@ -365,8 +425,6 @@ private def createCommands (st : SymbolTable)
 
     let blockName : Name := st.name.toName
     let mut namespacesToOpen : Array (Ident) := #[]
-    let relations := st.getRelations
-    let signatures := st.getSignatures
 
     --variables
     let mut commandList : List ((TSyntax `command)) := []
@@ -376,12 +434,9 @@ private def createCommands (st : SymbolTable)
     if !(varCommands.isEmpty) then
       namespacesToOpen := namespacesToOpen.push (mkIdent s!"{blockName}.vars".toName)
 
-    let signatureAliasCommands := createSignatureAliasCommands blockName signatures
-    commandList := commandList.append signatureAliasCommands
-
-    -- create Relation aliases
-    let relationAliasCommands := createRelationAliasCommands blockName relations
-    commandList := commandList.append relationAliasCommands
+    -- creating aliases
+    let aliasCommands := createVariableAliasCommands blockName st.variableDecls
+    commandList := commandList.append aliasCommands
 
     -- defs
     let defCommands := createPredDefsCommands blockName st.defDecls st.variableDecls
