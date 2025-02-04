@@ -52,7 +52,7 @@ namespace Shared.expr
           return e
 
         | expr.callFromOpen sn =>
-          let ns := sn.representedNamespace.getId.lastComponentAsString
+          let ns := sn.representedNamespace.getId.toString
           let nsSplit := ns.splitOn "."
 
           /-
@@ -303,7 +303,7 @@ namespace Shared.expr
 
             if parsedName.isAtomic then
 
-              let exprStringName := name.getId.lastComponentAsString
+              let exprStringName := name.getId.toString
 
               -- If the string (name) of the expr is a sigField in a sigFact
               if (signatureRelationNames.contains exprStringName) then
@@ -351,7 +351,7 @@ namespace Shared.expr
         | expr.string s => [s]
         | expr.callFromOpen sn => Id.run do
           -- this String can be something like m1.A
-          let sns := sn.representedNamespace.getId.lastComponentAsString
+          let sns := sn.representedNamespace.getId.toString
           let snsSplit := sns.splitOn "."
           if snsSplit.isEmpty then
             return [sns]
@@ -477,11 +477,7 @@ namespace Shared.expr
           return [calledVariable]
 
       | expr.callFromOpen sn =>
-        /-
-        note that lastComponentAsString gets the full name as String since
-        the name is enclosed in << >>
-        -/
-        let fullName := sn.representedNamespace.getId.lastComponentAsString
+        let fullName := sn.representedNamespace.getId.toString
         let components := fullName.splitOn "."
 
         let calledVariableName := components.getLast!

@@ -47,6 +47,7 @@ end
 end
 
 
+
 #alloy b2
   sig A extends B{
     r: B
@@ -114,6 +115,7 @@ open b2.preds
         p != p' implies p in p'.^(hatVater + hatMutter)
     }
 end
+
 
 #create verwandschaft
 
@@ -189,6 +191,7 @@ end
   fact {
     some this/a
     some m2/te/a
+    some te/a
     some m1/a
   }
 

@@ -53,15 +53,15 @@ namespace Alloy
 
           | `(separatedNamespace|
                 $ei:extendedIdent $eie:separatedNamespaceExtension*) =>
-            let finalName :=
+            let components :=
               eie.foldl (fun result elem =>
                 match elem with
-                  | `(separatedNamespaceExtension| / $ei:extendedIdent) =>
-                    result.appendAfter s!".{extendedIdent.toName ei}"
+                  | `(separatedNamespaceExtension| / $nei:extendedIdent) =>
+                    result.concat (extendedIdent.toName nei)
                   | _ => result
-              ) (extendedIdent.toName ei)
+              ) [(extendedIdent.toName ei)]
 
-            return {representedNamespace := (mkIdent finalName)}
+            return {representedNamespace := (mkIdent (Name.fromComponents components))}
 
           | _ => default
 

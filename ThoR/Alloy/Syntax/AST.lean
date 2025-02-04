@@ -154,7 +154,7 @@ namespace AST
     : AST := Id.run do
 
       let mut ast : AST := (default)
-      ast := ast.updateName name.getId.lastComponentAsString
+      ast := ast.updateName name.getId.toString
 
       -- used for default fact name
       let mut factCount := 0

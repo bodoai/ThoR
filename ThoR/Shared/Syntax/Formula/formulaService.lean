@@ -230,10 +230,10 @@ namespace Shared.formula
         | `(formula| ( $f:formula )) => toType f
 
         | `(formula| $name:ident) =>
-          formula.string name.getId.lastComponentAsString
+          formula.string name.getId.toString
 
         | `(formula| $predName:ident [$predargs,*]) =>
-          formula.pred_with_args predName.getId.lastComponentAsString
+          formula.pred_with_args predName.getId.toString
             (predargs.getElems.map fun (elem) =>
               expr.toType elem signatureFactSigNames).toList
 
@@ -281,7 +281,7 @@ namespace Shared.formula
           formula.quantification
           (quant.toType q)
           true
-          (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+          (names.getElems.map fun (elem) => elem.getId.toString).toList
           (typeExpr.toType typeExpression)
           ([toType form])
 
@@ -295,7 +295,7 @@ namespace Shared.formula
           formula.quantification
           (quant.toType q)
           true
-          (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+          (names.getElems.map fun (elem) => elem.getId.toString).toList
           (typeExpr.toType typeExpression)
           (form.map fun f => toType f).toList
 
@@ -308,7 +308,7 @@ namespace Shared.formula
           formula.quantification
           (quant.toType q)
           false
-          (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+          (names.getElems.map fun (elem) => elem.getId.toString).toList
           (typeExpr.toType typeExpression)
           ([toType form])
 
@@ -321,7 +321,7 @@ namespace Shared.formula
           formula.quantification
           (quant.toType q)
           false
-          (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+          (names.getElems.map fun (elem) => elem.getId.toString).toList
           (typeExpr.toType typeExpression)
           (form.map fun f => toType f).toList
 

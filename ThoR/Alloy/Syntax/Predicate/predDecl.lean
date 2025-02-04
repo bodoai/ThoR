@@ -82,7 +82,7 @@ namespace Alloy
         (forms.map fun (f) => (formula.toType f)).toList
 
       {
-        name := name.lastComponentAsString
+        name := name.toString
         args := args
         forms := forms
       }
@@ -99,7 +99,7 @@ namespace Alloy
         (forms.map fun (f) => (formula.toType f)).toList
 
       {
-        name := name.lastComponentAsString
+        name := name.toString
         args := []
         forms := forms
       }

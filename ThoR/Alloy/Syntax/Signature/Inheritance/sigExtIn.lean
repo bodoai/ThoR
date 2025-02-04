@@ -51,7 +51,7 @@ namespace Alloy
       (typeExtensions : TSyntaxArray `sigExtInType)
       : sigExtIn := Id.run do
 
-        let name := name.getId.lastComponentAsString
+        let name := name.getId.toString
 
         let mut type : typeExpr := (typeExpr.multExpr mult.set (expr.string name))
         if !(typeExtensions.isEmpty) then
@@ -60,7 +60,7 @@ namespace Alloy
           for te in typeExtensions do
             match te with
               | `(sigExtInType| + $extender) =>
-                tes := tes.append [(expr.string extender.getId.lastComponentAsString)]
+                tes := tes.append [(expr.string extender.getId.toString)]
               | _ => unreachable!
 
           type := (typeExpr.multExpr mult.set (createUnion (expr.string name) (tes)))

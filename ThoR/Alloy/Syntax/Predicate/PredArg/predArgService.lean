@@ -20,7 +20,7 @@ namespace Alloy.predArg
     (e: TSyntax `expr)
     : predArg := Id.run do
 
-    let names := (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+    let names := (names.getElems.map fun (elem) => elem.getId.toString).toList
     let e := (expr.toType e)
 
     return {
