@@ -207,6 +207,7 @@ end
     some m2/te/a
     some te/a
     some m1/a
+    some m2/te/a<:r
   }
 
 end

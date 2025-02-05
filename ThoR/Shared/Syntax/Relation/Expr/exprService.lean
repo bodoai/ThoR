@@ -255,6 +255,26 @@ namespace Shared.expr
     (quantorNames : List (String) := []) :=
       toTerm e true blockName quantorNames
 
+  private def isCallFromOpen (e : expr) : Bool :=
+    match e with
+      | expr.callFromOpen _ => true
+      | _ => false
+
+  private def getCalledFromOpenData (e : expr) : separatedNamespace :=
+    match e with
+      | expr.callFromOpen data => data
+      | _ => panic! s!"Tried to get callFromOpenData from expr {e}"
+
+  private def isString (e : expr) : Bool :=
+    match e with
+      | expr.string _ => true
+      | _ => false
+
+  private def getStringData (e : expr) : String :=
+    match e with
+      | expr.string data => data
+      | _ => panic! s!"Tried to get String data from expr {e}"
+
   /--
   Parses the given syntax to the type
   -/
@@ -274,11 +294,32 @@ namespace Shared.expr
         | `(expr |
             $subExpr1:expr
             $op:binRelOp
-            $subExpr2:expr) =>
-            expr.binaryRelOperation
-            (binRelOp.toType op)
-            (expr.toType subExpr1)
-            (expr.toType subExpr2)
+            $subExpr2:expr) => Id.run do
+            /-
+            there could be a relation call hidden here
+            e.g. m1/a<:r
+            -/
+            let operator := binRelOp.toType op
+            let leftSide := expr.toType subExpr1
+            let rightSide := expr.toType subExpr2
+
+            if
+              operator.isDomainRestriction &&
+              leftSide.isCallFromOpen &&
+              rightSide.isString
+            then
+              let leftSideData := leftSide.getCalledFromOpenData
+              let rightSideData := rightSide.getStringData
+
+              let oldComponents := leftSideData.representedNamespace.getId.components
+              let newComponents := oldComponents.concat rightSideData.toName
+
+              let newName := Name.fromComponents newComponents
+              let newIdent := mkIdent newName
+
+              return expr.callFromOpen (Alloy.separatedNamespace.mk newIdent)
+
+            return expr.binaryRelOperation operator leftSide rightSide
 
         | `(expr |
             $subExpr1:expr
@@ -295,8 +336,18 @@ namespace Shared.expr
         | `(expr | @$name:ident) => Id.run do
             expr.string_rb name.getId.toString
 
-        | `(expr | $sn:separatedNamespace) =>
-          expr.callFromOpen (Alloy.separatedNamespace.toType sn)
+        | `(expr | $sn:separatedNamespace) => Id.run do
+          let sn := Alloy.separatedNamespace.toType sn
+          let components := sn.representedNamespace.getId.components
+          let lastComponent := components.getLast!
+          let lastComponentString := lastComponent.toString
+
+          let split := lastComponentString.splitOn "<:"
+          let splitNames := split.map fun c => c.toName
+          let newComponents := (components.take (components.length - 1)) ++ splitNames
+          let newName := Name.fromComponents newComponents
+          let newIdent := mkIdent newName
+          return expr.callFromOpen (Alloy.separatedNamespace.mk newIdent)
 
         | `(expr | $name:ident) => Id.run do
             let parsedName := name.getId
@@ -511,7 +562,7 @@ namespace Shared.expr
             (
               pcv.isRelation &&
               pcv.relationOf == possibleSignatureName &&
-              (if pcv.isOpened then pcv.openedFrom == relNamespace else true)
+              pcv.openedFrom == relNamespace
             ) ||
             -- or signature with correct namespace
             (
