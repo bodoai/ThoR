@@ -56,6 +56,7 @@ def switch_thoR_representation_to_alloy_representation
     let newName := Name.fromComponents newComponents
     let sn := separatedNamespace.mk (mkIdent newName)
 
+    -- CAUTION the space (\quad) in the following line is a mandatory part of the syntax
     return ← `(term|  $(sn.toSyntax):separatedNamespace)
 
 /--
