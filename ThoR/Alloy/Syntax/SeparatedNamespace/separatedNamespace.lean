@@ -76,7 +76,6 @@ namespace Alloy
         let comps := sn.representedNamespace.getId.components
         let fc := comps.get! 0
 
-
         let mut extensions : TSyntaxArray `separatedNamespaceExtension := #[]
 
         for extension in comps.drop 1 do
