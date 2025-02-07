@@ -88,13 +88,13 @@ ThoR.RelType.rangerestr : {R : Type} → [inst : TupleSet R] → {n : ℕ} → R
 
   -- computational subtype
   /-- The typeclass behind the notation `a ≺≺ b` -/
-  class CSubtype (α : Type u) where
+  class CSubtype (α β : Type u) where
     /-- `a ≺≺ b` -/
-    isCSubtype : α → α → Bool
+    isCSubtype : α → β → Bool
   infixl:63 " ≺≺ "   => CSubtype.isCSubtype
 
-  instance {R : Type} [TupleSet R] : CSubtype (RelType R arity) where
-    isCSubtype  (t1 t2 : RelType R arity) := ComputationalSubtype.isCSubtype t1 t2
+  instance {R : Type} [TupleSet R] : CSubtype (RelType R arity1) (RelType R arity2) where
+    isCSubtype  (t1 : RelType R arity1) (t2 : RelType R arity2)  := ComputationalSubtype.isCSubtype t1 t2
 
   theorem CSubtype_implies_PSubtype {R : Type} [TupleSet R] (arity : ℕ) (t1 t2 : RelType R arity):
       t1 ≺≺ t2 → t1 ≺ t2 := by sorry
@@ -121,16 +121,20 @@ ThoR.RelType.rangerestr : {R : Type} → [inst : TupleSet R] → {n : ℕ} → R
 
     def toSupertype {R : Type} [TupleSet R] {arity : ℕ} {t1 t2 : RelType R arity} (r : Rel t1) (h : t1 ⊏ t2) : Rel t2:=
           Rel.mk r.relation (r.isOfSupertype h)
+
+    def cast {R : Type} [TupleSet R] {arity : ℕ} {t1 t2 : RelType R arity} (r : Rel t1) (h : t1 ≺≺ t2) : Rel t2:=
+          Rel.mk r.relation (r.isOfSupertype (CSubtype_implies_Subtype _ _ _ h))
   end Rel
 
   -- instance (R : Type) [TupleSet R] (arity : ℕ) (type : RelType R arity) (r : (Rel type)):
   --   CoeDep (Rel type) r (RelType R arity) where
   --   coe := r.getType
 
+  @[simp]
   lemma isSubtype {R : Type} [TupleSet R] {arity : ℕ} (t1 t2 : RelType R arity) : t1 ⊏ t2 := by sorry
 
   def mkSupertype {R : Type} [TupleSet R] {arity : ℕ} (t1 t2 : RelType R arity)
-    (r : (Rel t1)) : (Rel t2) := r.toSupertype (isSubtype t1 t2)
+    (r : (Rel t1)) : (Rel t2) := r.toSupertype (by simp)
 
   instance {R : Type} [TupleSet R] {arity : ℕ} (t1 t2 : RelType R arity) (r : (Rel t1)):
     CoeDep (Rel t1) r (Rel t2) where
