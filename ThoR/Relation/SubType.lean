@@ -42,14 +42,18 @@ namespace ThoR
   infixl:63 " ≺ "   => PSubtype.isPSubtype
 
   namespace PropositionalSubtype
+    @[aesop safe [constructors, cases]]
     inductive isPSubtype {R : Type} [TupleSet R] : {arity : ℕ} → RelType R arity →  RelType R arity → Prop where
     | refl (t : RelType R arity) : isPSubtype t t
     | trans (t1 t2 t3 : RelType R arity) : isPSubtype t1 t2 → isPSubtype t2 t3 → isPSubtype t1 t3
+
   end PropositionalSubtype
 
   instance {R : Type} [TupleSet R] : PSubtype (RelType R arity) where
     isPSubtype  (t1 t2 : RelType R arity) := PropositionalSubtype.isPSubtype t1 t2
 
+  @[simp]
+  lemma isPsubtype_refl {R : Type} [TupleSet R] {arity : ℕ} (t : RelType R arity) : t ≺ t := by constructor
 
   theorem PSubtype_implies_Subtype {R : Type} [TupleSet R] (arity : ℕ) (t1 t2 : RelType R arity):
     t1 ≺ t2 → t1 ⊏ t2 := by
@@ -122,9 +126,16 @@ ThoR.RelType.rangerestr : {R : Type} → [inst : TupleSet R] → {n : ℕ} → R
     def toSupertype {R : Type} [TupleSet R] {arity : ℕ} {t1 t2 : RelType R arity} (r : Rel t1) (h : t1 ⊏ t2) : Rel t2:=
           Rel.mk r.relation (r.isOfSupertype h)
 
-    def cast {R : Type} [TupleSet R] {arity : ℕ} {t1 t2 : RelType R arity} (r : Rel t1) (h : t1 ≺≺ t2) : Rel t2:=
-          Rel.mk r.relation (r.isOfSupertype (CSubtype_implies_Subtype _ _ _ h))
+    def cast {R : Type} [TupleSet R] {arity : ℕ} {t1 t2 : RelType R arity} (r : Rel t1) (h : t1 ≺ t2) : Rel t2:=
+          Rel.mk r.relation (r.isOfSupertype (PSubtype_implies_Subtype _ _ _ h))
   end Rel
+
+  section test_cast
+    variable {R : Type} [TupleSet R] {arity : ℕ} {t1 t2 t3 : RelType R arity} (r : Rel t1)
+
+    set_option trace.aesop true in
+    def r2 : Rel t1 := r.cast (by aesop)
+  end test_cast
 
   -- instance (R : Type) [TupleSet R] (arity : ℕ) (type : RelType R arity) (r : (Rel type)):
   --   CoeDep (Rel type) r (RelType R arity) where
@@ -134,7 +145,7 @@ ThoR.RelType.rangerestr : {R : Type} → [inst : TupleSet R] → {n : ℕ} → R
   lemma isSubtype {R : Type} [TupleSet R] {arity : ℕ} (t1 t2 : RelType R arity) : t1 ⊏ t2 := by sorry
 
   def mkSupertype {R : Type} [TupleSet R] {arity : ℕ} (t1 t2 : RelType R arity)
-    (r : (Rel t1)) : (Rel t2) := r.toSupertype (by simp)
+    (r : (Rel t1)) : (Rel t2) := r.toSupertype (by aesop)
 
   instance {R : Type} [TupleSet R] {arity : ℕ} (t1 t2 : RelType R arity) (r : (Rel t1)):
     CoeDep (Rel t1) r (Rel t2) where
