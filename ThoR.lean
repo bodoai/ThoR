@@ -3,3 +3,4 @@
 import «ThoR».Basic
 import «ThoR».Relation
 import «ThoR».Alloy
+import «ThoR».Tactics
