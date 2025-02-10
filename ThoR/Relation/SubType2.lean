@@ -119,7 +119,7 @@ section test_cast
   :=
     Subtype.cast
       m -- to be cast relation
-      (by dsimp[Subtype.subtypeC]) -- castability proof
+      (by dsimp[Subtype.subtypeC,Subtype.RelType_arity_cast,Subtype.subtypeC_same_arity]) -- castability proof
 
   #check m
   #check m_cast
@@ -130,7 +130,7 @@ section test_cast
   :=
     Subtype.cast
       n -- to be cast relation
-      (by dsimp[Subtype.subtypeC]) -- castability proof
+      (by dsimp[Subtype.subtypeC,Subtype.RelType_arity_cast,Subtype.subtypeC_same_arity]) -- castability proof
   #check n
   #check n_cast
 
