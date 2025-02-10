@@ -28,6 +28,7 @@ namespace ThoR
 
 
 -- subtype predicate
+/- TODO : has to be completed -/
   inductive subtypeP : RelType R arity →  RelType R arity → Prop
   where
     | refl (t : RelType R arity) : subtypeP t t
@@ -46,13 +47,17 @@ namespace ThoR
 
   namespace Subtype
 -- computational subtype
+/- has to be completed -/
   variable {R : Type} [TupleSet R]
+  @[simp]
   def subtypeC_same_arity  {arity : ℕ} (t1 t2 : RelType R arity)
   := true
 
+  @[simp]
   def RelType_arity_cast (arity1 arity2 : ℕ) (t : RelType R arity1) (p : arity1 = arity2): (RelType R arity2) :=
     p ▸ t
 
+  @[simp]
   def subtypeC (t1 : RelType R arity1) {arity2 : ℕ} (t2 : RelType R arity2)
   :=
     if h : arity1 = arity2
@@ -61,29 +66,25 @@ namespace ThoR
       (RelType_arity_cast arity2 arity1 t2 (symm h))
     else false
 
+  /- TODO proof -/
   @[simp]
   theorem subtypeC_subtypeP (t1 t2 : RelType R arity):
       subtypeC t1 t2 → subtypeP t1 t2
   := by sorry
 
+  @[simp]
   theorem subtypeC_subtype (t1 t2 : RelType R arity):
       subtypeC t1 t2 → subtype t1 t2
   := by aesop
 
-  @[simp]
-  lemma castable' (r : R) (t1 t2 : RelType R arity):
-    r ∷ t1 → subtypeC t1 t2 → r ∷ t2 :=
-  by
-    intro h1 h2
-    apply subtypeC_subtype at h2
-    aesop
-
   lemma castable {t1 : RelType R arity} (r : Rel t1) (t2 : RelType R arity):
     subtypeC t1 t2 → r.relation ∷ t2 :=
   by
-    apply castable'
-    cases r with
-    | mk relation type_pf => aesop
+    intro h1
+    apply subtypeC_subtype at h1
+    dsimp [subtype] at h1
+    apply h1
+    cases r with | mk relation type_pf => apply type_pf
 
   def cast {t1 : RelType R arity} (r : Rel t1) {t2 : RelType R arity} (subtype_pf : subtypeC t1 t2)
   : (Rel t2)
@@ -92,49 +93,46 @@ namespace ThoR
     (castable r t2 subtype_pf)
 end Subtype
 
-namespace RelType
-  variable {R : Type} [TupleSet R]
-  structure dummy {arity : ℕ} (t : RelType R arity) where
-    type : Type
-    p : type = Rel t
-
-  def getRelType {arity : ℕ} {t : RelType R arity} (_ : dummy t) := t
-  #check Subtype
-end RelType
-
 section test_cast
   variable (ThoR_TupleSet : Type) [TupleSet ThoR_TupleSet]
-
-  #check ∷ some univ
-  def st := RelType.dummy.mk (∷ some univ) (by rfl)
-  #check st ThoR_TupleSet
-  #check RelType.getRelType (st ThoR_TupleSet)
-  #check RelType.getRelType ((RelType.dummy.mk (∷ some univ) (by rfl)))
 
   variable (PERSON : ∷ some univ)
   variable (m : ∷ lone PERSON)
 
-  def m_cast :
-    (∷ some univ) -- target type for cast
-  :=
-    Subtype.cast
-      m -- to be cast relation
-      (by dsimp[Subtype.subtypeC,Subtype.RelType_arity_cast,Subtype.subtypeC_same_arity]) -- castability proof
+  macro "cast" varName:ident : term
+    => do `(Subtype.cast $(varName) (by simp))
 
-  #check m
-  #check m_cast
+  /-
+  ThoR_TupleSet : Type
+  inst✝ : TupleSet ThoR_TupleSet
+  PERSON : some univ
+  m : lone PERSON
+  ⊢ some univ
+  -/
+  def m' := (cast m : (∷ some univ))
+  /-
+  m' ThoR_TupleSet ?m.6020 : lone ?m.6020 → some univ
+  -/
+  #check ∻ m'
+  /-
+  m' ThoR_TupleSet PERSON m : some univ
+  -/
+  #check m' ThoR_TupleSet PERSON m
 
   variable (n : ∷ univ lone → some univ)
-  def n_cast :
-    (∷ univ set → set univ) -- target type for cast
-  :=
-    Subtype.cast
-      n -- to be cast relation
-      (by dsimp[Subtype.subtypeC,Subtype.RelType_arity_cast,Subtype.subtypeC_same_arity]) -- castability proof
-  #check n
-  #check n_cast
-
-/- TODO: Rel.Elab-Macro that works similar to '∷ typeExpr`, but does create the corresponding RelType and not the corresponding Type value. -/
+  /-
+  ThoR_TupleSet : Type
+  inst✝ : TupleSet ThoR_TupleSet
+  PERSON : some univ
+  m : lone PERSON
+  n : univ lone → some univ
+  ⊢ univ set → set univ
+  -/
+  def n' := (cast n : ∷ univ set → set univ)
+  /-
+  n' ThoR_TupleSet ?m.6290 : univ set → set univ
+  -/
+  #check ∻ n'
 
 /- TODO inheritance tree → type hierarchy that can be read by cast function (macro) -/
 end test_cast
