@@ -112,8 +112,10 @@ to be better digestible for further computation and transformation into Lean.
         if lookedAtNames.contains alloyName then
           let indeces := alloyLikeModuleNames.indexesOf alloyName
           let doubleNamedModules := indeces.map fun i => importedModuleNames.get! i
-          throw s!"The name of module {realName} is ambiguos \
-          since multiple modules end with {alloyName} ({doubleNamedModules})"
+          throw s!"Cannot import module '{realName}' \
+          without alias (keyword 'as'), as the name '{alloyName}' \
+          is ambiguous. Multiple modules end with {alloyName}: \
+          ({doubleNamedModules})."
 
         lookedAtNames := lookedAtNames.concat alloyName
 
