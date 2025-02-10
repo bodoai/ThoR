@@ -148,4 +148,24 @@ namespace Shared.typeExpr
         | relExpr e =>
           (e.getCalledVariables callableVariables)
 
+  /--
+  If possible replace domain restrictions with relations.
+
+  This is only possible, if the relation is restricted from the
+  signature it is defined in.
+
+  E.g. m1/a<:r gets simplified to the relation r IF r is a relation of a
+  -/
+  def simplifyDomainRestrictions
+    (te : typeExpr)
+    (st : SymbolTable)
+    : typeExpr :=
+      match te with
+        | arrowExpr ae =>
+          arrowExpr (ae.simplifyDomainRestrictions st)
+        | multExpr m e =>
+          multExpr m (e.simplifyDomainRestrictions st)
+        | relExpr e =>
+          relExpr (e.simplifyDomainRestrictions st)
+
 end Shared.typeExpr

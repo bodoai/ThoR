@@ -46,4 +46,13 @@ namespace Alloy.predArg
           names:= ["panic"]
         } -- unreachable
 
+  def simplifyDomainRestrictions
+    (pa : predArg)
+    (st : SymbolTable)
+    : predArg :=
+      predArg.mk
+        (names := pa.names)
+        (disjunction := pa.disjunction)
+        (expression := pa.expression.simplifyDomainRestrictions st)
+
 end Alloy.predArg

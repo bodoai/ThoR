@@ -8,6 +8,7 @@ import ThoR.Relation
 import ThoR.Alloy.Syntax.AST
 import ThoR.Alloy.Config
 import ThoR.Alloy.SymbolTable.SymbolTable
+import ThoR.Alloy.SymbolTable.CommandDecl.commandDeclService
 
 open Shared Config
 
@@ -221,6 +222,43 @@ to be better digestible for further computation and transformation into Lean.
           if !isCorrectNumberOfArguments then
             throw s!"Definition {calledPredName} called with {calledArgNumber} \
             arguments ({calledArguments}), but expected {requiredArgNumber} arguments"
+
+    /--
+    If possible replace domain restrictions with relations.
+
+    This is only possible, if the relation is restricted from the
+    signature it is defined in.
+
+    E.g. m1/a<:r gets simplified to the relation r IF r is a relation of a
+    -/
+    private def simplifyDomainRestrictions
+      (input : SymbolTable)
+      : SymbolTable := Id.run do
+
+      let mut st := input
+
+      -- simplify the varDecls
+      st :=
+        st.updateVarDecls
+          (st.variableDecls.map fun vd =>
+            vd.simplifyDomainRestrictions st)
+
+      st :=
+        st.updateDefDecls
+          (st.defDecls.map fun dd =>
+            dd.simplifyDomainRestrictions st)
+
+      st :=
+        st.updateAxiomDecls
+          (st.axiomDecls.map fun ad =>
+            ad.simplifyDomainRestrictions st)
+
+      st :=
+        st.updateAssertDecls
+          (st.assertDecls.map fun ad =>
+            ad.simplifyDomainRestrictions st)
+
+      return st
 
     /--
     Adds the given signature declarations (including the contained signature field
@@ -616,6 +654,9 @@ to be better digestible for further computation and transformation into Lean.
         --asserts
         st := st.addAsserts ast.assertDecls
 
+        -- simplification of domain restriction
+        st := st.simplifyDomainRestrictions
+
         -- CHECKS
         if let Except.error msg := st.checkSymbols then
           if extensive_logging then
@@ -648,6 +689,6 @@ to be better digestible for further computation and transformation into Lean.
             throw msg
 
         -- Order the ST
-        return (st.replaceVarDecls (orderVarDecls st.variableDecls))
+        return (st.updateVarDecls (orderVarDecls st.variableDecls))
 
   end Alloy.SymbolTable

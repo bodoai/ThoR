@@ -4,7 +4,8 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 
-import ThoR.Alloy.SymbolTable.varDecl
+import ThoR.Alloy.SymbolTable.VarDecl.varDecl
+import ThoR.Alloy.SymbolTable.SymbolTable
 import ThoR.Alloy.Config
 
 open Alloy Config
@@ -255,25 +256,109 @@ namespace Shared.expr
     (quantorNames : List (String) := []) :=
       toTerm e true blockName quantorNames
 
-  private def isCallFromOpen (e : expr) : Bool :=
+  def isCallFromOpen (e : expr) : Bool :=
     match e with
       | expr.callFromOpen _ => true
       | _ => false
 
-  private def getCalledFromOpenData (e : expr) : separatedNamespace :=
+  def getCalledFromOpenData (e : expr) : separatedNamespace :=
     match e with
       | expr.callFromOpen data => data
       | _ => panic! s!"Tried to get callFromOpenData from expr {e}"
 
-  private def isString (e : expr) : Bool :=
+  def isString (e : expr) : Bool :=
     match e with
       | expr.string _ => true
       | _ => false
 
-  private def getStringData (e : expr) : String :=
+  def getStringData (e : expr) : String :=
     match e with
       | expr.string data => data
       | _ => panic! s!"Tried to get String data from expr {e}"
+
+  /--
+  If possible replace domain restrictions with relations.
+
+  This is only possible, if the relation is restricted from the
+  signature it is defined in.
+
+  E.g. m1/a<:r gets simplified to the relation r IF r is a relation of a
+  -/
+  def simplifyDomainRestrictions
+    (e : expr)
+    (st : SymbolTable)
+    : expr := Id.run do
+    match e with
+      | expr.binaryRelOperation operator leftSide rightSide =>
+        -- needs to be domain restriction
+        if !operator.isDomainRestriction then return e
+
+        -- the right side needs to be a string for simplification
+        if !rightSide.isString then return e
+
+        let rightSideData := rightSide.getStringData
+        let possibleRelations :=
+          st.variableDecls.filter
+            fun vd => vd.isRelation && vd.name == rightSideData
+
+        /-
+        if left and right sides are strings then it could be a call
+        to a LOCAL relation
+        -/
+        if leftSide.isString then
+          let leftSideData := leftSide.getStringData
+          let matchingRelations :=
+            possibleRelations.filter
+              fun pr =>
+                pr.relationOf == leftSideData &&
+                !pr.isOpened
+
+          -- if there is one matching relation use it
+          if
+            !matchingRelations.isEmpty &&
+            !matchingRelations.length > 1
+          then
+            let components := [`this, rightSideData.toName]
+            let ident := mkIdent (Name.fromComponents components)
+            return expr.callFromOpen (Alloy.separatedNamespace.mk ident)
+
+        /-
+        if the left side is a call to another module, then it has to
+        be a relation from this module
+        -/
+        if leftSide.isCallFromOpen then
+          let leftSideData := leftSide.getCalledFromOpenData
+
+          let leftSideComponents :=
+            leftSideData.representedNamespace.getId.components
+
+          let moduleNameComponents :=
+            leftSideComponents.take (leftSideComponents.length - 1)
+          let moduleName :=
+            (moduleNameComponents.drop 1).foldl
+            (fun result component => s!"{result}_{component.toString}")
+            (moduleNameComponents.get! 0).toString
+
+          let signatureName := leftSideComponents.getLast!
+
+          let matchingRelations :=
+            possibleRelations.filter
+              fun pr =>
+                pr.relationOf == signatureName.toString &&
+                pr.isOpened &&
+                pr.openedFrom == moduleName
+
+          if
+            !matchingRelations.isEmpty &&
+            !matchingRelations.length > 1
+          then
+            let components := leftSideComponents.concat rightSideData.toName
+            let ident := mkIdent (Name.fromComponents components)
+            return expr.callFromOpen (Alloy.separatedNamespace.mk ident)
+
+        return e
+
+      | _ => e
 
   /--
   Parses the given syntax to the type
@@ -294,32 +379,11 @@ namespace Shared.expr
         | `(expr |
             $subExpr1:expr
             $op:binRelOp
-            $subExpr2:expr) => Id.run do
-            /-
-            there could be a relation call hidden here
-            e.g. m1/a<:r
-            -/
-            let operator := binRelOp.toType op
-            let leftSide := expr.toType subExpr1
-            let rightSide := expr.toType subExpr2
-
-            if
-              operator.isDomainRestriction &&
-              leftSide.isCallFromOpen &&
-              rightSide.isString
-            then
-              let leftSideData := leftSide.getCalledFromOpenData
-              let rightSideData := rightSide.getStringData
-
-              let oldComponents := leftSideData.representedNamespace.getId.components
-              let newComponents := oldComponents.concat rightSideData.toName
-
-              let newName := Name.fromComponents newComponents
-              let newIdent := mkIdent newName
-
-              return expr.callFromOpen (Alloy.separatedNamespace.mk newIdent)
-
-            return expr.binaryRelOperation operator leftSide rightSide
+            $subExpr2:expr) =>
+            expr.binaryRelOperation
+              (binRelOp.toType op)
+              (expr.toType subExpr1)
+              (expr.toType subExpr2)
 
         | `(expr |
             $subExpr1:expr

@@ -269,4 +269,41 @@ namespace Shared.arrowOp
       | arrowOp.multArrowOp ae1 m1 m2 ae2 =>
         arrowOp.multArrowOp (ae1.toStringRb) m1 m2 (ae2.toStringRb)
 
+  /--
+  If possible replace domain restrictions with relations.
+
+  This is only possible, if the relation is restricted from the
+  signature it is defined in.
+
+  E.g. m1/a<:r gets simplified to the relation r IF r is a relation of a
+  -/
+  def simplifyDomainRestrictions
+    (ao : arrowOp)
+    (st : SymbolTable)
+    : arrowOp :=
+      match ao with
+        | arrowOp.multArrowOpExpr e1 m1 m2 e2 =>
+          arrowOp.multArrowOpExpr
+            (e1.simplifyDomainRestrictions st)
+            m1 m2
+            (e2.simplifyDomainRestrictions st)
+
+        | arrowOp.multArrowOpExprLeft e1 m1 m2 ae2 =>
+          arrowOp.multArrowOpExprLeft
+            (e1.simplifyDomainRestrictions st)
+            m1 m2
+            (ae2.simplifyDomainRestrictions st)
+
+        | arrowOp.multArrowOpExprRight ae1 m1 m2 e2 =>
+          arrowOp.multArrowOpExprRight
+            (ae1.simplifyDomainRestrictions st)
+            m1 m2
+            (e2.simplifyDomainRestrictions st)
+
+        | arrowOp.multArrowOp ae1 m1 m2 ae2 =>
+          arrowOp.multArrowOp
+            (ae1.simplifyDomainRestrictions st)
+            m1 m2
+            (ae2.simplifyDomainRestrictions st)
+
 end Shared.arrowOp

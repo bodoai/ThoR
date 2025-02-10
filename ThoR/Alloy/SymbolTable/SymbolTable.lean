@@ -8,8 +8,8 @@ This file is used for semantic analysis of the AST and transforming its contents
 to be better digestible for further computation and transformation into Lean.
 -/
 
-import ThoR.Alloy.SymbolTable.varDecl
-import ThoR.Alloy.SymbolTable.commandDecl
+import ThoR.Alloy.SymbolTable.VarDecl.varDecl
+import ThoR.Alloy.SymbolTable.CommandDecl.commandDecl
 import ThoR.Shared.Syntax.Formula.formula
 
 open Lean Shared
@@ -65,9 +65,9 @@ namespace Alloy
       }
 
     /--
-    Replaces the varDecls of the ST with the given ones
+    Updates the varDecls of the ST with the given ones
     -/
-    def replaceVarDecls (st : SymbolTable) (vds : List (varDecl)) : SymbolTable :=
+    def updateVarDecls (st : SymbolTable) (vds : List (varDecl)) : SymbolTable :=
       {st with
         variableDecls := vds
       }
@@ -81,6 +81,15 @@ namespace Alloy
       }
 
     /--
+    Updates the defDecls of the ST with the given ones
+    -/
+    def updateDefDecls
+      (st : SymbolTable)
+      (dds : List (commandDecl))
+      : SymbolTable :=
+        {st with defDecls := dds}
+
+    /--
     Adds a single (Lean) axiom declaration to the ST
     -/
     def addAxiomDecl (st : SymbolTable) (ad : commandDecl) : SymbolTable :=
@@ -89,12 +98,30 @@ namespace Alloy
       }
 
     /--
+    Updates the axiomDecls of the ST with the given ones
+    -/
+    def updateAxiomDecls
+      (st : SymbolTable)
+      (ads : List (commandDecl))
+      : SymbolTable :=
+        {st with axiomDecls := ads}
+
+    /--
     Adds a single (Lean) def declaration to the ST (cossosponding to an Assert)
     -/
     def addAssertDecl (st : SymbolTable) (ad : commandDecl) : SymbolTable :=
       {st with
         assertDecls := st.assertDecls.concat ad
       }
+
+    /--
+    Updates the assertDecls of the ST with the given ones
+    -/
+    def updateAssertDecls
+      (st : SymbolTable)
+      (ads : List (commandDecl))
+      : SymbolTable :=
+        {st with assertDecls := ads}
 
     /--
     Adds a single required declaration to the ST
