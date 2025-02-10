@@ -4,8 +4,7 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 
-import ThoR
-
+import ThoR.Relation
 
 namespace ThoR
   namespace Subtype
@@ -34,7 +33,6 @@ namespace ThoR
     | refl (t : RelType R arity) : subtypeP t t
     | trans (t1 t2 t3 : RelType R arity) : subtypeP t1 t2 → subtypeP t2 t3 → subtypeP t1 t3
 
-  @[simp]
   theorem subtypeP_subtype (t1 t2 : RelType R arity):
     subtypeP t1 t2 → subtype t1 t2
   := by
@@ -52,16 +50,16 @@ namespace ThoR
     - inheritance tree → type hierarchy -/
   variable {R : Type} [TupleSet R]
 
-  @[simp]
   def subtypeC_same_arity  {arity : ℕ} (t1 t2 : RelType R arity)
   := match t1 with
-    | _ => true
+    | RelType.sig m h => true
+    | RelType.unary_rel m r h1 h2 => true
+    | RelType.rel r h => true
+    |_ => false
 
-  @[simp]
   def RelType_arity_cast (arity1 arity2 : ℕ) (t : RelType R arity1) (p : arity1 = arity2): (RelType R arity2) :=
     p ▸ t
 
-  @[simp]
   def subtypeC (t1 : RelType R arity1) {arity2 : ℕ} (t2 : RelType R arity2)
   :=
     if h : arity1 = arity2
@@ -71,15 +69,17 @@ namespace ThoR
     else false
 
   /- TODO proof -/
-  @[simp]
   theorem subtypeC_subtypeP (t1 t2 : RelType R arity):
       subtypeC t1 t2 → subtypeP t1 t2
   := by sorry
 
-  @[simp]
   theorem subtypeC_subtype (t1 t2 : RelType R arity):
       subtypeC t1 t2 → subtype t1 t2
-  := by aesop
+  := by
+    intro h1
+    apply subtypeP_subtype
+    apply subtypeC_subtypeP
+    apply h1
 
   lemma castable {t1 : RelType R arity} (r : Rel t1) (t2 : RelType R arity):
     subtypeC t1 t2 → r.relation ∷ t2 :=
@@ -97,17 +97,61 @@ namespace ThoR
     (castable r t2 subtype_pf)
 
   macro "cast" varName:ident : term
-    => do `((Subtype.cast $(varName) (by simp)))
+    => do `((Subtype.cast $(varName) (by dsimp[subtypeC,RelType_arity_cast,subtypeC_same_arity])))
 
   macro "cast" varName:ident "∷" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) (by simp) : ∷ $(typeName)))
+    => do `((Subtype.cast $(varName) (by dsimp[subtypeC,RelType_arity_cast,subtypeC_same_arity]) : ∷ $(typeName)))
 end Subtype
 
 section test_cast
   variable (ThoR_TupleSet : Type) [TupleSet ThoR_TupleSet]
 
-  variable (PERSON : ∷ some univ)
+  variable (PERSON : ∷ set univ)
+  variable (MANN : ∷ set PERSON)
+  variable (FRAU : ∷ set PERSON)
   variable (m : ∷ lone PERSON)
+
+
+example : (Subtype.subtypeC (MANN).getType (PERSON).getType) = true
+:= by
+    dsimp[
+      Subtype.subtypeC,
+      Subtype.RelType_arity_cast,
+      Subtype.subtypeC_same_arity,
+      Rel.getType,
+      RelType.mk.unary_rel,
+      RelType.mk.rel]
+
+
+
+#check PERSON.getType
+#check m.getType
+  lemma l1 : Subtype.subtypeC (MANN).getType (PERSON).getType := by
+    dsimp[Rel.getType]
+    dsimp[
+      Subtype.subtypeC,
+      Subtype.RelType_arity_cast,
+      Subtype.subtypeC_same_arity,
+      Rel.getType,
+      RelType.mk.unary_rel,
+      RelType.mk.rel]
+
+
+
+
+
+
+
+
+
+  def m_cast :=
+    (Subtype.cast
+      m
+      (by
+        dsimp[Subtype.subtypeC,Subtype.RelType_arity_cast,Subtype.subtypeC_same_arity])
+      : ∷ some univ
+    )
+
 
   /-
   ThoR_TupleSet : Type

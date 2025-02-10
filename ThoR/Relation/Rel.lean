@@ -231,7 +231,7 @@ namespace RelType
     variable {R : Type} [TupleSet R]
     -- (r : Rel unary_rel) → (∷ r)
     def unary_rel {t : RelType R 1} (m : Shared.mult) (r : Rel t) :=
-      RelType.unary_rel m r.relation 1 (Eq.refl 1) (Rel.arity r)
+      RelType.unary_rel m r.relation (Eq.refl 1) (Rel.arity r)
     -- (r : Rel TupleSet) → (∷ r)
     def rel {n : ℕ} {t : RelType R n} (r : Rel t) :=
       RelType.rel r.relation (Rel.arity r)
