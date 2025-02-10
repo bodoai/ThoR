@@ -18,8 +18,8 @@ namespace ThoR
 --      test stub: true -> t1 = t2
 
 inductive RelType (R : Type) [TupleSet R]: ℕ -> Type :=
-  | sig (m : Shared.mult): RelType R 1
-  | unary_rel (m : Shared.mult) (r : R): HasArity.hasArity r 1 -> RelType R 1
+  | sig (m : Shared.mult) (n : ℕ): n = 1 → RelType R n
+  | unary_rel (m : Shared.mult) (r : R) (n : ℕ): n = 1 → HasArity.hasArity r 1 -> RelType R 1
   | rel (r : R): HasArity.hasArity r n → RelType R n
   | constant (c : R) : HasArity.hasArity c n → RelType R n
   | complex

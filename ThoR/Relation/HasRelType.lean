@@ -23,11 +23,11 @@ inductive hasType {R: Type} [TupleSet R]:
   -- subset : m univ
   | sig (m : Shared.mult):
     ∀ (subset : R), subset ⊂ RelConstants.univ → mult_to_pred m subset
-    → hasType subset (RelType.sig m)
+    → hasType subset (RelType.sig m 1 (Eq.refl 1))
   -- subet : m superset
   | unary_rel (m : Shared.mult) (superset : R) (h : superset ⊂ RelConstants.univ):
     ∀ (subset : R), subset ⊂ superset → mult_to_pred m subset
-    → hasType subset (RelType.unary_rel m superset (TupleSet₀.arity_1 superset h))
+    → hasType subset (RelType.unary_rel m superset 1 (Eq.refl 1) (TupleSet₀.arity_1 superset h))
   -- subrel : subrel
   | TupleSet (superrel : R) (h: HasArity.hasArity superrel n):
     ∀ (subrel : R), subrel ⊂ superrel
@@ -170,13 +170,13 @@ namespace HasRelType
   variable (R : Type) [TupleSet R]
   namespace sig
     lemma isUnary (a : R) (m : Shared.mult):
-      a ∷ RelType.sig m → HasArity.hasArity a 1
+      a ∷ RelType.sig m 1 (Eq.refl 1) → HasArity.hasArity a 1
     := by sorry
   end sig
   namespace TupleSet
     lemma refl (R : Type) [TupleSet R] (a : R) (m : Shared.mult):
       (h1 : HasArity.hasArity a 1) → mult_to_pred m a
-      → a ∷ RelType.unary_rel m a h1 := by
+      → a ∷ RelType.unary_rel m a 1 (Eq.refl 1) h1 := by
       -- intro h1 h2
       -- constructor <;> try simp
       -- TODO inversion properties for arity axioms in TupleSet

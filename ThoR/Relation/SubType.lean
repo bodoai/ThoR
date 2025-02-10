@@ -4,188 +4,157 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 
-import ThoR.Relation.Rel
+import ThoR
 
--- subtype relation: ⊏
-
-#check Subtype
 
 namespace ThoR
-#print Reflexive
+  namespace Subtype
 
-  namespace SetbasedSubtype
-    variable {R : Type} [TupleSet R] {arity : ℕ}
-    def isSubtype (t1 t2 : RelType R arity) := ∀ (r : R), r ∷ t1 → r ∷ t2
-    lemma refl : Reflexive (@isSubtype R _ arity) := by simp [SetbasedSubtype.isSubtype, Reflexive]
-    lemma trans : Transitive (@isSubtype R _ arity) := by
-      dsimp [Transitive]
-      intro t1 t2 t3 h1 h2 r h0
-      aesop
-  end SetbasedSubtype
+  variable {R : Type} [TupleSet R] {arity : ℕ}
 
-  /-- The typeclass behind the notation `a ⊏ b` -/
-  class Subtype (α : Type u) where
-    /-- `a ⊏ b` -/
-    isSubtype : α → α → Prop
-    refl : Reflexive isSubtype -- ∀ (t : α), isSubtype t t
-    trans : Transitive isSubtype --∀ (t1 t2 t3 : α), isSubtype t1 t2 → isSubtype t2 t3 → isSubtype t1 t3
-  infixl:63 " ⊏ "   => Subtype.isSubtype
+-- subtype relation
+  def subtype (t1 t2 : RelType R arity)
+    := ∀ (r : R), r ∷ t1 → r ∷ t2
 
-  instance {R : Type} [TupleSet R] : Subtype (RelType R arity) where
-    isSubtype  (t1 t2 : RelType R arity) := SetbasedSubtype.isSubtype t1 t2
-    refl := SetbasedSubtype.refl
-    trans := SetbasedSubtype.trans
+  namespace subtype
+    lemma refl : Reflexive (@subtype R _ arity)
+      := by simp [subtype, Reflexive]
+    lemma trans : Transitive (@subtype R _ arity)
+      := by
+        dsimp [Transitive]
+        intro t1 t2 t3 h1 h2 r h0
+        aesop
+  end subtype
 
-  @[simp]
-  lemma unfoldSubtype {R : Type} [TupleSet R] (t1 t2 : RelType R arity) :
-    t1 ⊏ t2 ↔ SetbasedSubtype.isSubtype t1 t2 := by aesop
 
-  -- propositional subtype
-  /-- The typeclass behind the notation `a ≺ b` -/
-  class PSubtype (α : Type u) where
-    /-- `a ≺ b` -/
-    isPSubtype : α → α → Prop
-  infixl:63 " ≺ "   => PSubtype.isPSubtype
-
-  namespace PropositionalSubtype
-    @[aesop safe [constructors, cases]]
-    inductive isPSubtype {R : Type} [TupleSet R] : {arity : ℕ} → RelType R arity →  RelType R arity → Prop where
-    | refl (t : RelType R arity) : isPSubtype t t
-    | trans (t1 t2 t3 : RelType R arity) : isPSubtype t1 t2 → isPSubtype t2 t3 → isPSubtype t1 t3
-  end PropositionalSubtype
+-- subtype predicate
+/- TODO : has to be completed -/
+  inductive subtypeP : RelType R arity →  RelType R arity → Prop
+  where
+    | refl (t : RelType R arity) : subtypeP t t
+    | trans (t1 t2 t3 : RelType R arity) : subtypeP t1 t2 → subtypeP t2 t3 → subtypeP t1 t3
 
   @[simp]
-  instance {R : Type} [TupleSet R] : PSubtype (RelType R arity) where
-    isPSubtype  (t1 t2 : RelType R arity) := PropositionalSubtype.isPSubtype t1 t2
-
-  @[simp]
-  lemma isPsubtype_refl {R : Type} [TupleSet R] {arity : ℕ} (t : RelType R arity) : t ≺ t := by constructor
-
-  theorem PSubtype_implies_SetbasedSubtype {R : Type} [TupleSet R] (arity : ℕ) (t1 t2 : RelType R arity):
-    PropositionalSubtype.isPSubtype t1 t2 → SetbasedSubtype.isSubtype t1 t2 := by
+  theorem subtypeP_subtype (t1 t2 : RelType R arity):
+    subtypeP t1 t2 → subtype t1 t2
+  := by
     intro h
     induction h with
-    | refl t => apply SetbasedSubtype.refl
+    | refl t => apply subtype.refl
     | trans t1 t2 t3 _ _ ih1 ih2 =>
-      apply Subtype.trans ih1 ih2
+      apply subtype.trans ih1 ih2
+  end Subtype
+
+  namespace Subtype
+-- computational subtype
+/- TODO : function subtypeC has to be completed
+    - all cases from RelType/hasRelType
+    - inheritance tree → type hierarchy -/
+  variable {R : Type} [TupleSet R]
 
   @[simp]
-  theorem PSubtype_implies_Subtype {R : Type} [TupleSet R] (arity : ℕ) (t1 t2 : RelType R arity):
-    t1 ≺ t2 → t1 ⊏ t2 := by
-    intro h
-    induction h with
-    | refl t => apply Subtype.refl
-    | trans t1 t2 t3 _ _ ih1 ih2 =>
-      apply Subtype.trans ih1 ih2
+  def subtypeC_same_arity  {arity : ℕ} (t1 t2 : RelType R arity)
+  := match t1 with
+    | _ => true
 
-  namespace ComputationalSubtype
-    def isCSubtype {R : Type} [TupleSet R] {arity1 : ℕ} (t1 : RelType R arity1) {arity2 : ℕ} (t2 : RelType R arity2):=
-    if (arity1 ≠ arity2) then false else true
-
-/-
-ThoR.RelType.unary_rel : {R : Type} → [inst : TupleSet R] → Shared.mult → (r : R) → HasArity.hasArity r 1 → RelType R 1
-ThoR.RelType.rel : {R : Type} → [inst : TupleSet R] → {n : ℕ} → (r : R) → HasArity.hasArity r n → RelType R n
-ThoR.RelType.constant : {R : Type} → [inst : TupleSet R] → {n : ℕ} → (c : R) → HasArity.hasArity c n → RelType R n
-ThoR.RelType.complex : {R : Type} →
-  [inst : TupleSet R] → {n1 n2 : ℕ} → RelType R n1 → Shared.mult → Shared.mult → RelType R n2 → RelType R (n1 + n2)
-ThoR.RelType.intersect : {R : Type} → [inst : TupleSet R] → {n : ℕ} → RelType R n → RelType R n → RelType R n
-ThoR.RelType.add : {R : Type} → [inst : TupleSet R] → {n : ℕ} → RelType R n → RelType R n → RelType R n
-ThoR.RelType.sub : {R : Type} → [inst : TupleSet R] → {n : ℕ} → RelType R n → RelType R n → RelType R n
-ThoR.RelType.append : {R : Type} → [inst : TupleSet R] → {n : ℕ} → RelType R n → RelType R n → RelType R n
-ThoR.RelType.cartprod : {R : Type} →
-  [inst : TupleSet R] → {n1 n2 : ℕ} → RelType R n1 → RelType R n2 → RelType R (n1 + n2)
-ThoR.RelType.dotjoin : {R : Type} →
-  [inst : TupleSet R] → {n1 n2 : ℕ} → RelType R (n1 + 1) → RelType R (n2 + 1) → RelType R (n1 + n2)
-ThoR.RelType.transclos : {R : Type} → [inst : TupleSet R] → RelType R 2 → RelType R 2
-ThoR.RelType.reftransclos : {R : Type} → [inst : TupleSet R] → RelType R 2 → RelType R 2
-ThoR.RelType.transpose : {R : Type} → [inst : TupleSet R] → RelType R 2 → RelType R 2
-ThoR.RelType.domrestr : {R : Type} → [inst : TupleSet R] → {n : ℕ} → RelType R 1 → RelType R n → RelType R n
-ThoR.RelType.rangerestr : {R : Type} → [inst : TupleSet R] → {n : ℕ} → RelType R n → RelType R 1 → RelType R n */  end ComputationalSubtype
--/
-
-  end ComputationalSubtype
-
-  -- computational subtype
-  /-- The typeclass behind the notation `a ≺≺ b` -/
-  class CSubtype (α β : Type u) where
-    /-- `a ≺≺ b` -/
-    isCSubtype : α → β → Bool
-  infixl:63 " ≺≺ "   => CSubtype.isCSubtype
   @[simp]
+  def RelType_arity_cast (arity1 arity2 : ℕ) (t : RelType R arity1) (p : arity1 = arity2): (RelType R arity2) :=
+    p ▸ t
 
-  instance {R : Type} [TupleSet R] : CSubtype (RelType R arity1) (RelType R arity2) where
-    isCSubtype  (t1 : RelType R arity1) (t2 : RelType R arity2)  := ComputationalSubtype.isCSubtype t1 t2
+  @[simp]
+  def subtypeC (t1 : RelType R arity1) {arity2 : ℕ} (t2 : RelType R arity2)
+  :=
+    if h : arity1 = arity2
+    then subtypeC_same_arity
+      t1
+      (RelType_arity_cast arity2 arity1 t2 (symm h))
+    else false
 
-  theorem CSubtype_implies_PSubtype {R : Type} [TupleSet R] (arity : ℕ) (t1 t2 : RelType R arity):
-      t1 ≺≺ t2 → t1 ≺ t2 := by sorry
+  /- TODO proof -/
+  @[simp]
+  theorem subtypeC_subtypeP (t1 t2 : RelType R arity):
+      subtypeC t1 t2 → subtypeP t1 t2
+  := by sorry
 
-  theorem CSubtype_implies_Subtype {R : Type} [TupleSet R] (arity : ℕ) (t1 t2 : RelType R arity):
-      t1 ≺≺ t2 → t1 ⊏ t2 := by
-      intro h
-      apply PSubtype_implies_Subtype
-      apply CSubtype_implies_PSubtype
-      apply h
+  @[simp]
+  theorem subtypeC_subtype (t1 t2 : RelType R arity):
+      subtypeC t1 t2 → subtype t1 t2
+  := by aesop
 
+  lemma castable {t1 : RelType R arity} (r : Rel t1) (t2 : RelType R arity):
+    subtypeC t1 t2 → r.relation ∷ t2 :=
+  by
+    intro h1
+    apply subtypeC_subtype at h1
+    dsimp [subtype] at h1
+    apply h1
+    cases r with | mk relation type_pf => apply type_pf
 
-  namespace Rel
-    @[simp]
-    lemma isOfSupertype {R : Type} [TupleSet R] {arity : ℕ} (r : R) (t1 t2 : RelType R arity): r ∷ t1 → t1 ⊏ t2 → r ∷ t2 :=
-    by aesop
+  def cast {t1 : RelType R arity} (r : Rel t1) {t2 : RelType R arity} (subtype_pf : subtypeC t1 t2)
+  : (Rel t2)
+  := Rel.mk
+    (r.relation)
+    (castable r t2 subtype_pf)
 
-    lemma isOfSupertype' {R : Type} [TupleSet R] {arity : ℕ} {t1 t2 : RelType R arity}
-      (r : Rel t1): t1 ⊏ t2 → r.relation ∷ t2 :=
-    by
-      dsimp [Subtype.isSubtype]
-      intro h
-      cases r with
-      | mk relation proof =>
-        dsimp
-        apply h
-        apply proof
+  macro "cast" varName:ident : term
+    => do `((Subtype.cast $(varName) (by simp)))
 
-    def toSupertype {R : Type} [TupleSet R] {arity : ℕ} {t1 t2 : RelType R arity} (r : Rel t1) (h : t1 ⊏ t2) : Rel t2:=
-          Rel.mk r.relation (r.isOfSupertype' h)
+  macro "cast" varName:ident "∷" typeName:typeExpr: term
+    => do `((Subtype.cast $(varName) (by simp) : ∷ $(typeName)))
+end Subtype
 
-    def cast {R : Type} [TupleSet R] {arity : ℕ} {t1 t2 : RelType R arity} (r : Rel t1) (h : t1 ≺ t2) : Rel t2:=
-          Rel.mk r.relation (r.isOfSupertype' (PSubtype_implies_Subtype _ _ _ h))
-  end Rel
+section test_cast
+  variable (ThoR_TupleSet : Type) [TupleSet ThoR_TupleSet]
 
-  open PropositionalSubtype
-  section test_cast
-    variable {R : Type} [TupleSet R] {arity : ℕ} {t1 t2 t3 : RelType R arity} (r : Rel t1)
-    variable (h1 : t1 ≺ t2) (h2 : t2 ≺ t3)
+  variable (PERSON : ∷ some univ)
+  variable (m : ∷ lone PERSON)
 
-    set_option trace.aesop true in
-    -- set_option trace.aesop.tree true in
-    lemma l1 : PropositionalSubtype.isPSubtype t1 t3 := by aesop
-      -- apply PropositionalSubtype.isPSubtype.trans
-      -- <;> aesop?
+  /-
+  ThoR_TupleSet : Type
+  inst✝ : TupleSet ThoR_TupleSet
+  PERSON : some univ
+  m : lone PERSON
+  ⊢ some univ
+  -/
+  def m' := (cast m ∷ some univ)
+  def m'' := (cast m : ∷ some univ)
+  /-
+  m' ThoR_TupleSet ?m.6020 : lone ?m.6020 → some univ
+  -/
+  #check ∻ m'
+  #check ∻ m''
+  /-
+  m' ThoR_TupleSet PERSON m : some univ
+  -/
+  #check m' ThoR_TupleSet PERSON m
 
-    lemma l2 : t1 ≺ t3 := by aesop
+  variable (n : ∷ univ lone → some univ)
+  /-
+  ThoR_TupleSet : Type
+  inst✝ : TupleSet ThoR_TupleSet
+  PERSON : some univ
+  m : lone PERSON
+  n : univ lone → some univ
+  ⊢ univ set → set univ
+  -/
+  def n' := (cast n ∷ univ set → set univ)
+  /-
+  n' ThoR_TupleSet ?m.6290 : univ set → set univ
+  -/
+  #check ∻ n'
 
-    set_option trace.aesop true in
-    lemma l3 : t1 ⊏ t3 := by aesop
+end test_cast
 
---    set_option trace.aesop true in
-    def r2 : Rel t1 := r.cast (by aesop)
-
-    def r3 : Rel t3 := r.cast (by aesop)
-  end test_cast
-
-  -- instance (R : Type) [TupleSet R] (arity : ℕ) (type : RelType R arity) (r : (Rel type)):
-  --   CoeDep (Rel type) r (RelType R arity) where
-  --   coe := r.getType
-
-  -- @[simp]
-  -- lemma isSubtype {R : Type} [TupleSet R] {arity : ℕ} (t1 t2 : RelType R arity) : t1 ≺ t2 → t1 ⊏ t2 := by sorry
-
-  set_option trace.aesop true in
-  def mkSupertype {R : Type} [TupleSet R] {arity : ℕ} (t1 t2 : RelType R arity)
-    (r : (Rel t1)) : (Rel t2) := r.toSupertype (by aesop)
 
   instance {R : Type} [TupleSet R] {arity : ℕ} (t1 t2 : RelType R arity) (r : (Rel t1)):
     CoeDep (Rel t1) r (Rel t2) where
 --    coe := mkSupertype t1 t2 r
-    coe := Rel.mk r.relation (Rel.isOfSupertype r.relation t1 t2 r.type_pf (by aesop))
+    coe := Rel.mk r.relation (@Subtype.castable R _ arity t1 r t2 (by simp))
 
-end ThoR
+section test_coercion
+  variable (ThoR_TupleSet : Type) [TupleSet ThoR_TupleSet]
+  variable (PERSON : ∷ some univ)
+  #check (PERSON : ∷ PERSON - PERSON)
+  def v : ∷ PERSON + PERSON := PERSON
+  #check v
+end test_coercion
