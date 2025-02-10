@@ -5,8 +5,8 @@ Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
 
-import ThoR.Alloy.Syntax.factDecl
-import ThoR.Alloy.Syntax.assertDecl
+import ThoR.Alloy.Syntax.FactDecl.factDecl
+import ThoR.Alloy.Syntax.AssertDecl.assertDecl
 
 open Lean
 

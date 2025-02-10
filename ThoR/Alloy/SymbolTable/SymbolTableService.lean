@@ -9,6 +9,9 @@ import ThoR.Alloy.Syntax.AST
 import ThoR.Alloy.Config
 import ThoR.Alloy.SymbolTable.SymbolTable
 import ThoR.Alloy.SymbolTable.CommandDecl.commandDeclService
+import ThoR.Alloy.Syntax.Predicate.PredDecl.predDeclService
+import ThoR.Alloy.Syntax.FactDecl.factDeclService
+import ThoR.Alloy.Syntax.AssertDecl.assertDeclService
 
 open Shared Config
 
@@ -376,6 +379,10 @@ to be better digestible for further computation and transformation into Lean.
       let mut st := inputST
 
       for predDecl in predDecls do
+
+        -- first simplyfiy the domain restrictions
+        let predDecl := predDecl.simplifyDomainRestrictions st
+
         -- get list of referenced signatures and signature fields
         let reqVars : List (String) := predDecl.getReqVariables.eraseDups
 
@@ -458,6 +465,8 @@ to be better digestible for further computation and transformation into Lean.
 
       for factDecl in factDecls do
 
+        let factDecl := factDecl.simplifyDomainRestrictions st
+
         let predicateCalls :=
           (factDecl.formulas.map
             fun f =>
@@ -528,6 +537,8 @@ to be better digestible for further computation and transformation into Lean.
       let mut st := inputST
 
       for assertDecla in assertDecls do
+
+        let assertDecla := assertDecla.simplifyDomainRestrictions st
 
         let predicateCalls :=
           (assertDecla.formulas.map
@@ -653,9 +664,6 @@ to be better digestible for further computation and transformation into Lean.
 
         --asserts
         st := st.addAsserts ast.assertDecls
-
-        -- simplification of domain restriction
-        st := st.simplifyDomainRestrictions
 
         -- CHECKS
         if let Except.error msg := st.checkSymbols then
