@@ -201,6 +201,7 @@ end
   sig a {
     r : a
   }
+  sig b {}
 
   fact {
     some this/a
@@ -208,6 +209,8 @@ end
     some te/a
     some m1/a
     some m2/te/a<:r
+    some a<:r
+    some b<:a/r
   }
 
 end
