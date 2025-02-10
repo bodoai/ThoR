@@ -318,7 +318,7 @@ namespace Shared.expr
             !matchingRelations.isEmpty &&
             !matchingRelations.length > 1
           then
-            let components := [`this, rightSideData.toName]
+            let components := [`this, leftSideData.toName, rightSideData.toName]
             let ident := mkIdent (Name.fromComponents components)
             return expr.callFromOpen (Alloy.separatedNamespace.mk ident)
 
