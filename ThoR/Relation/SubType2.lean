@@ -47,7 +47,9 @@ namespace ThoR
 
   namespace Subtype
 -- computational subtype
-/- has to be completed -/
+/- TODO : function subtypeC has to be completed
+    - all cases from RelType/hasRelType
+    - inheritance tree → type hierarchy -/
   variable {R : Type} [TupleSet R]
   @[simp]
   def subtypeC_same_arity  {arity : ℕ} (t1 t2 : RelType R arity)
@@ -91,6 +93,9 @@ namespace ThoR
   := Rel.mk
     (r.relation)
     (castable r t2 subtype_pf)
+
+  macro "cast" varName:ident : term
+    => do `(Subtype.cast $(varName) (by simp))
 end Subtype
 
 section test_cast
@@ -98,9 +103,6 @@ section test_cast
 
   variable (PERSON : ∷ some univ)
   variable (m : ∷ lone PERSON)
-
-  macro "cast" varName:ident : term
-    => do `(Subtype.cast $(varName) (by simp))
 
   /-
   ThoR_TupleSet : Type
@@ -134,5 +136,4 @@ section test_cast
   -/
   #check ∻ n'
 
-/- TODO inheritance tree → type hierarchy that can be read by cast function (macro) -/
 end test_cast
