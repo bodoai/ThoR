@@ -95,7 +95,10 @@ namespace ThoR
     (castable r t2 subtype_pf)
 
   macro "cast" varName:ident : term
-    => do `(Subtype.cast $(varName) (by simp))
+    => do `((Subtype.cast $(varName) (by simp)))
+
+  macro "cast" varName:ident "∷" typeName:typeExpr: term
+    => do `((Subtype.cast $(varName) (by simp) : ∷ $(typeName)))
 end Subtype
 
 section test_cast
@@ -111,11 +114,13 @@ section test_cast
   m : lone PERSON
   ⊢ some univ
   -/
-  def m' := (cast m : (∷ some univ))
+  def m' := (cast m ∷ some univ)
+  def m'' := (cast m : ∷ some univ)
   /-
   m' ThoR_TupleSet ?m.6020 : lone ?m.6020 → some univ
   -/
   #check ∻ m'
+  #check ∻ m''
   /-
   m' ThoR_TupleSet PERSON m : some univ
   -/
@@ -130,7 +135,7 @@ section test_cast
   n : univ lone → some univ
   ⊢ univ set → set univ
   -/
-  def n' := (cast n : ∷ univ set → set univ)
+  def n' := (cast n ∷ univ set → set univ)
   /-
   n' ThoR_TupleSet ?m.6290 : univ set → set univ
   -/
