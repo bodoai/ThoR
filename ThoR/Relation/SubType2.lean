@@ -50,13 +50,16 @@ namespace ThoR
   def subtypeC_same_arity  {arity : ℕ} (t1 t2 : RelType R arity)
   := true
 
-  def RelType_arity_cast (arity1 arity2 : ℕ) (t : RelType R arity1) (p : arity1 = arity2): (RelType R arity2) := p ▸ t
+  def RelType_arity_cast (arity1 arity2 : ℕ) (t : RelType R arity1) (p : arity1 = arity2): (RelType R arity2) :=
+    p ▸ t
 
   def subtypeC (t1 : RelType R arity1) {arity2 : ℕ} (t2 : RelType R arity2)
   :=
-    if (p : arity1 = arity2)
-    then false
-    else true -- subtypeC_same_arity t1 t2
+    if h : arity1 = arity2
+    then subtypeC_same_arity
+      t1
+      (RelType_arity_cast arity2 arity1 t2 (symm h))
+    else false
 
   @[simp]
   theorem subtypeC_subtypeP (t1 t2 : RelType R arity):
@@ -89,15 +92,28 @@ namespace ThoR
     (castable r t2 subtype_pf)
 end Subtype
 
+namespace RelType
+  variable {R : Type} [TupleSet R]
+  structure dummy {arity : ℕ} (t : RelType R arity) where
+    type : Type
+    p : type = Rel t
+
+  def getRelType {arity : ℕ} {t : RelType R arity} (_ : dummy t) := t
+  #check Subtype
+end RelType
+
 section test_cast
   variable (ThoR_TupleSet : Type) [TupleSet ThoR_TupleSet]
+
+  #check ∷ some univ
+  def st := RelType.dummy.mk (∷ some univ) (by rfl)
+  #check st ThoR_TupleSet
+  #check RelType.getRelType (st ThoR_TupleSet)
+  #check RelType.getRelType ((RelType.dummy.mk (∷ some univ) (by rfl)))
 
   variable (PERSON : ∷ some univ)
   variable (m : ∷ lone PERSON)
 
-  #check ∷ some univ
-
-  #check (∷ lone univ)
   def m_cast :
     (∷ some univ) -- target type for cast
   :=
