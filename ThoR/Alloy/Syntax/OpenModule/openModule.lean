@@ -17,16 +17,26 @@ namespace Alloy
 
 structure openModule where
   moduleToOpen : Name
+  moduleAlias : Name
 deriving Repr
 
 declare_syntax_cat openModule
 syntax "open" separatedNamespace : openModule
+syntax "open" separatedNamespace "as" ident : openModule
 
 instance : Inhabited openModule where
-  default := {moduleToOpen := default}
+  default :=
+    {
+      moduleToOpen := default,
+      moduleAlias := default
+    }
 
 instance : ToString openModule where
-  toString (om : openModule) := s!"OpenModule: \{ name := {om.moduleToOpen} }"
+  toString (om : openModule) :=
+    s!"OpenModule: \{
+        name := {om.moduleToOpen},
+        alias := {om.moduleAlias}
+      }"
 
 namespace openModule
 
@@ -38,8 +48,21 @@ namespace openModule
     : openModule := Id.run do
       match om with
         | `(openModule| open $sn:separatedNamespace) =>
-          let name := (separatedNamespace.toType sn).representedNamespace.getId
-          {moduleToOpen := name}
+          let name :=
+            (separatedNamespace.toType sn).representedNamespace.getId
+          {
+            moduleToOpen := name,
+            moduleAlias := default
+          }
+
+        | `(openModule | open $sn:separatedNamespace as $mAlias:ident) =>
+          let name :=
+            (separatedNamespace.toType sn).representedNamespace.getId
+          let aliasName := (mAlias.getId)
+          {
+            moduleToOpen := name,
+            moduleAlias := aliasName
+          }
 
         | _ => default
 
