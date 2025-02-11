@@ -6,7 +6,7 @@ Authors: s. file CONTRIBUTORS
 
 import ThoR
 
-alloy dotjoin_sig_rel
+alloy trans_close
   sig a {
     r : a
   }
@@ -15,5 +15,5 @@ alloy dotjoin_sig_rel
   }
 end
 
-create dotjoin_sig_rel
-#check dotjoin_sig_rel.facts.f0
+create trans_close
+#check trans_close.facts.f0
