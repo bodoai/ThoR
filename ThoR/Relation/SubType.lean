@@ -27,23 +27,84 @@ namespace ThoR
   end subtype
 
 
+end Subtype
+
+namespace Subtype
 -- subtype predicate
 /- TODO : has to be completed -/
-  inductive subtypeP : RelType R arity →  RelType R arity → Prop
+  variable {R : Type} [TupleSet R]
+  inductive subtypeP : {arity : ℕ} → RelType R arity →  RelType R arity → Prop
   where
-    | refl (t : RelType R arity) : subtypeP t t
-    | trans (t1 t2 t3 : RelType R arity) : subtypeP t1 t2 → subtypeP t2 t3 → subtypeP t1 t3
+    | refl (t : RelType R arity) :
+      subtypeP t t
+    | trans (t1 t2 t3 : RelType R arity) :
+      subtypeP t1 t2 → subtypeP t2 t3 → subtypeP t1 t3
+    | unary_rel (t : RelType R 1) (r : Rel t2) (m : Shared.mult):
+      subtypeP (RelType.mk.unary_rel m r) t
+    | subset (t1 t2 : RelType R arity) (r1 : Rel t1) (r2 : Rel t2):
+      r1 ⊂ r2 → subtypeP (r1).getType (r2).getType
 
-  theorem subtypeP_subtype (t1 t2 : RelType R arity):
+  lemma subset_add_r {arity : ℕ} (t1 t2 : RelType R arity) (r1 : Rel t1) (r2 : Rel t2) : r1 ⊂ (r1 + r2) := by sorry
+
+  lemma subset_add_l {arity : ℕ} (t1 t2 : RelType R arity) (r1 : Rel t1) (r2 : Rel t2) : r1 ⊂ (r2 + r1) := by sorry
+
+  lemma subset_sub {arity : ℕ} (t1 t2 : RelType R arity) (r1 : Rel t1) (r2 : Rel t2) : (r1 -r2) ⊂ r1 := by sorry
+end Subtype
+
+namespace Subtype
+
+  variable {R : Type} [TupleSet R]
+
+  theorem subtypeP_subtype {arity : ℕ} (t1 t2 : RelType R arity):
     subtypeP t1 t2 → subtype t1 t2
-  := by
-    intro h
-    induction h with
-    | refl t => apply subtype.refl
-    | trans t1 t2 t3 _ _ ih1 ih2 =>
-      apply subtype.trans ih1 ih2
-  end Subtype
+  := by sorry
+end Subtype
 
+section test_subtype
+  variable (ThoR_TupleSet : Type) [TupleSet ThoR_TupleSet]
+
+  variable (PERSON : ∷ set univ)
+  variable (MANN : ∷ set PERSON)
+  variable (FRAU : ∷ set PERSON)
+  variable (MANN' : ∷ set MANN)
+  variable (m : ∷ lone PERSON)
+
+example : (Subtype.subtypeP MANN.getType PERSON.getType)
+:= by
+    apply Subtype.subtypeP.unary_rel
+
+example : (Subtype.subtypeP MANN'.getType PERSON.getType)
+:= by
+    apply Subtype.subtypeP.trans MANN'.getType MANN.getType PERSON.getType
+    apply Subtype.subtypeP.unary_rel
+    apply Subtype.subtypeP.unary_rel
+
+example : (Subtype.subtypeP (PERSON - MANN).getType PERSON.getType)
+:= by
+    apply Subtype.subtypeP.subset
+    apply Subtype.subset_sub
+
+
+example : (Subtype.subtypeP (MANN).getType (MANN + FRAU).getType)
+:= by
+    apply Subtype.subtypeP.subset
+    apply Subtype.subset_add_r
+
+example : (Subtype.subtypeP (MANN).getType (FRAU + MANN).getType)
+:= by
+    apply Subtype.subtypeP.subset
+    apply Subtype.subset_add_l
+
+example (r1 : ∷ some MANN) : (Subtype.subtypeP r1.getType (MANN + (FRAU - (MANN' & PERSON))).getType)
+:= by
+    apply Subtype.subtypeP.trans r1.getType MANN.getType (MANN + (FRAU - (MANN' & PERSON))).getType
+    apply Subtype.subtypeP.unary_rel
+    apply Subtype.subtypeP.subset
+    apply Subtype.subset_add_r
+
+
+
+end test_subtype
   namespace Subtype
 -- computational subtype
 /- TODO : function subtypeC has to be completed
