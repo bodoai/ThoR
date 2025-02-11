@@ -474,7 +474,7 @@ private partial def openModules
 
           -- if an alias is defined, use it as name for the module
           if moduleToOpen.moduleAlias != default then
-            newAst := newAst.updateName moduleToOpen.moduleAlias.toString
+            newAst := newAst.updateName moduleToOpen.moduleAlias
 
           if !newAst.modulesToOpen.isEmpty then
             let additionalModules := (openModules newAst env)
