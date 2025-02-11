@@ -40,7 +40,7 @@ namespace Alloy
     def create (name : TSyntax `ident) : sigExtExtends :=
         {type:=
           (typeExpr.multExpr mult.set
-            (expr.string name.getId.lastComponentAsString)
+            (expr.string name.getId.toString)
           )
         }
 

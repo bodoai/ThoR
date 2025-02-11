@@ -8,6 +8,10 @@ import ThoR.Relation
 import ThoR.Alloy.Syntax.AST
 import ThoR.Alloy.Config
 import ThoR.Alloy.SymbolTable.SymbolTable
+import ThoR.Alloy.SymbolTable.CommandDecl.commandDeclService
+import ThoR.Alloy.Syntax.Predicate.PredDecl.predDeclService
+import ThoR.Alloy.Syntax.FactDecl.factDeclService
+import ThoR.Alloy.Syntax.AssertDecl.assertDeclService
 
 open Shared Config
 
@@ -85,6 +89,35 @@ to be better digestible for further computation and transformation into Lean.
       for requiredSymbol in st.requiredDecls do
         if !(availableSymbols.contains requiredSymbol) then
           throw s!"{requiredSymbol} is not defined"
+
+    /-
+    The duplication of module names is checked here.
+    This has the advantage that you only get an error if you use the
+    faulty module.
+    -/
+    private def checkModuleImports (st : SymbolTable) : Except String Unit := do
+      let importedVariableDeclarations :=
+        st.variableDecls.filter fun vd => vd.isOpened
+
+      let importedModuleNames :=
+        (importedVariableDeclarations.map fun vd => vd.openedFrom).eraseDups
+
+      let alloyLikeModuleNames :=
+        importedModuleNames.map fun name => (name.splitOn "_").getLast!
+
+      let mut lookedAtNames := []
+      for index in [:(alloyLikeModuleNames.length)] do
+        let alloyName := alloyLikeModuleNames.get! index
+        let realName := importedModuleNames.get! index
+        if lookedAtNames.contains alloyName then
+          let indeces := alloyLikeModuleNames.indexesOf alloyName
+          let doubleNamedModules := indeces.map fun i => importedModuleNames.get! i
+          throw s!"Cannot import module '{realName}' \
+          without alias (keyword 'as'), as the name '{alloyName}' \
+          is ambiguous. Multiple modules end with {alloyName}: \
+          ({doubleNamedModules})."
+
+        lookedAtNames := lookedAtNames.concat alloyName
 
     private def checkRelationCalls
       (st : SymbolTable)
@@ -194,6 +227,43 @@ to be better digestible for further computation and transformation into Lean.
           if !isCorrectNumberOfArguments then
             throw s!"Definition {calledPredName} called with {calledArgNumber} \
             arguments ({calledArguments}), but expected {requiredArgNumber} arguments"
+
+    /--
+    If possible replace domain restrictions with relations.
+
+    This is only possible, if the relation is restricted from the
+    signature it is defined in.
+
+    E.g. m1/a<:r gets simplified to the relation r IF r is a relation of a
+    -/
+    private def simplifyDomainRestrictions
+      (input : SymbolTable)
+      : SymbolTable := Id.run do
+
+      let mut st := input
+
+      -- simplify the varDecls
+      st :=
+        st.updateVarDecls
+          (st.variableDecls.map fun vd =>
+            vd.simplifyDomainRestrictions st)
+
+      st :=
+        st.updateDefDecls
+          (st.defDecls.map fun dd =>
+            dd.simplifyDomainRestrictions st)
+
+      st :=
+        st.updateAxiomDecls
+          (st.axiomDecls.map fun ad =>
+            ad.simplifyDomainRestrictions st)
+
+      st :=
+        st.updateAssertDecls
+          (st.assertDecls.map fun ad =>
+            ad.simplifyDomainRestrictions st)
+
+      return st
 
     /--
     Adds the given signature declarations (including the contained signature field
@@ -311,6 +381,10 @@ to be better digestible for further computation and transformation into Lean.
       let mut st := inputST
 
       for predDecl in predDecls do
+
+        -- first simplyfiy the domain restrictions
+        let predDecl := predDecl.simplifyDomainRestrictions st
+
         -- get list of referenced signatures and signature fields
         let reqVars : List (String) := predDecl.getReqVariables.eraseDups
 
@@ -393,6 +467,8 @@ to be better digestible for further computation and transformation into Lean.
 
       for factDecl in factDecls do
 
+        let factDecl := factDecl.simplifyDomainRestrictions st
+
         let predicateCalls :=
           (factDecl.formulas.map
             fun f =>
@@ -464,6 +540,8 @@ to be better digestible for further computation and transformation into Lean.
 
       for assertDecla in assertDecls do
 
+        let assertDecla := assertDecla.simplifyDomainRestrictions st
+
         let predicateCalls :=
           (assertDecla.formulas.map
             fun f =>
@@ -526,7 +604,7 @@ to be better digestible for further computation and transformation into Lean.
       : SymbolTable := Id.run do
         let mut st := input
 
-        let mut module_name := ast.name
+        let mut module_name := ast.name.toString
         /-
           dots (.) are not valid to be contained in
           the name of a variable (in a typeclass), thus
@@ -596,6 +674,12 @@ to be better digestible for further computation and transformation into Lean.
           else
             throw msg
 
+        if let Except.error msg := st.checkModuleImports then
+          if extensive_logging then
+            throw (getExtensiveErrorMsg msg st)
+          else
+            throw msg
+
         if let Except.error msg := st.checkRelationCalls then
           if extensive_logging then
             throw (getExtensiveErrorMsg msg st)
@@ -615,6 +699,6 @@ to be better digestible for further computation and transformation into Lean.
             throw msg
 
         -- Order the ST
-        return (st.replaceVarDecls (orderVarDecls st.variableDecls))
+        return (st.updateVarDecls (orderVarDecls st.variableDecls))
 
   end Alloy.SymbolTable

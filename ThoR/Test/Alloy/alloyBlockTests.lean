@@ -47,6 +47,7 @@ end
 end
 
 
+
 #alloy b2
   sig A extends B{
     r: B
@@ -115,6 +116,7 @@ open b2.preds
     }
 end
 
+
 #create verwandschaft
 
 #check verwandschaft.inheritance_facts.FRAU
@@ -163,35 +165,3 @@ end
 #check buch.vars.Buch.prequel
 #print buch.preds.EntwederPrequelOderSequel
 open Shared.quant
-
-#alloy module m1
-  sig a {
-    r : a
-  }
-  fact {
-    some this/a
-  }
-end
-
-#alloy m2/te
-  open m1
-  sig a {
-    r : a
-  }
-end
-
-#alloy m3
-  open m2/te
-  sig a {
-    r : a
-  }
-
-  fact {
-    some this/a
-    some m2/te/a
-    some m1/a
-  }
-
-end
-
-#create m3

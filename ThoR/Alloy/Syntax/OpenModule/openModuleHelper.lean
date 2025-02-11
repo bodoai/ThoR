@@ -23,7 +23,7 @@ namespace openModule
     (env : Environment)
     : Except String alloyData := do
       let alloyDataState := getAlloyData env
-      let key := s!"{om.moduleToOpen.lastComponentAsString}_Data".toName
+      let key := s!"{om.moduleToOpen.toString}_Data".toName
       let moduleExists : Bool := alloyDataState.contains key
       if moduleExists then
         return alloyDataState.find! key
