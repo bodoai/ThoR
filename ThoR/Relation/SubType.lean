@@ -33,21 +33,45 @@ namespace Subtype
 -- subtype predicate
 /- TODO : has to be completed -/
   variable {R : Type} [TupleSet R]
+  @[aesop unsafe [constructors]]
   inductive subtypeP : {arity : ℕ} → RelType R arity →  RelType R arity → Prop
   where
     | refl (t : RelType R arity) :
       subtypeP t t
     | trans (t1 t2 t3 : RelType R arity) :
       subtypeP t1 t2 → subtypeP t2 t3 → subtypeP t1 t3
-    | unary_rel (t : RelType R 1) (r : Rel t2) (m : Shared.mult):
-      subtypeP (RelType.mk.unary_rel m r) t
+    | unary_rel_toSet (t : RelType R 1) (r : Rel t) (m : Shared.mult):
+      subtypeP (RelType.mk.unary_rel m r) (RelType.mk.unary_rel Shared.mult.set r)
+    | unary_rel (t : RelType R 1) (r : Rel t) (m : Shared.mult):
+      subtypeP (RelType.mk.unary_rel m r) r.getType
     | subset (t1 t2 : RelType R arity) (r1 : Rel t1) (r2 : Rel t2):
       r1 ⊂ r2 → subtypeP (r1).getType (r2).getType
+    | complex_toSet_l {arity1 arity2 : ℕ} (t1 : RelType R arity1) (t2 : RelType R arity2) (m1 m2 : Shared.mult) :
+      subtypeP (RelType.complex t1 m1 m2 t2) (RelType.complex t1 Shared.mult.set m2 t2)
+    | complex_toSome_l {arity1 arity2 : ℕ} (t1 : RelType R arity1) (t2 : RelType R arity2) (m2 : Shared.mult) :
+      subtypeP (RelType.complex t1 Shared.mult.one m2 t2) (RelType.complex t1 Shared.mult.some m2 t2)
+    | complex_toLone_l {arity1 arity2 : ℕ} (t1 : RelType R arity1) (t2 : RelType R arity2) (m2 : Shared.mult) :
+      subtypeP (RelType.complex t1 Shared.mult.one m2 t2) (RelType.complex t1 Shared.mult.lone m2 t2)
+    | complex_toSet_r {arity1 arity2 : ℕ} (t1 : RelType R arity1) (t2 : RelType R arity2) (m1 m2 : Shared.mult) :
+      subtypeP (RelType.complex t1 m1 m2 t2) (RelType.complex t1 m1 Shared.mult.set t2)
+    | complex_toSome_r {arity1 arity2 : ℕ} (t1 : RelType R arity1) (t2 : RelType R arity2) (m1 : Shared.mult) :
+      subtypeP (RelType.complex t1 m1 Shared.mult.one t2) (RelType.complex t1 m1 Shared.mult.some t2)
+    | complex_toLone_r {arity1 arity2 : ℕ} (t1 : RelType R arity1) (t2 : RelType R arity2) (m1 : Shared.mult) :
+      subtypeP (RelType.complex t1 m1 Shared.mult.one t2) (RelType.complex t1 m1 Shared.mult.lone t2)
+    | complex_subtype_l {arity1 arity2 : ℕ} (t1 t1' : RelType R arity1) (t2 : RelType R arity2) (m1 m2 : Shared.mult) :
+      subtypeP t1 t1' →
+      subtypeP (RelType.complex t1 m1 m2 t2) (RelType.complex t1' m1 m2 t2)
+    | complex_subtype_r {arity1 arity2 : ℕ} (t1 : RelType R arity1) (t2 t2': RelType R arity2) (m1 m2 : Shared.mult) :
+      subtypeP t2 t2' →
+      subtypeP (RelType.complex t1 m1 m2 t2) (RelType.complex t1 m1 m2 t2')
 
+  @[simp]
   lemma subset_add_r {arity : ℕ} (t1 t2 : RelType R arity) (r1 : Rel t1) (r2 : Rel t2) : r1 ⊂ (r1 + r2) := by sorry
 
+  @[simp]
   lemma subset_add_l {arity : ℕ} (t1 t2 : RelType R arity) (r1 : Rel t1) (r2 : Rel t2) : r1 ⊂ (r2 + r1) := by sorry
 
+  @[simp]
   lemma subset_sub {arity : ℕ} (t1 t2 : RelType R arity) (r1 : Rel t1) (r2 : Rel t2) : (r1 -r2) ⊂ r1 := by sorry
 end Subtype
 
@@ -70,39 +94,43 @@ section test_subtype
   variable (m : ∷ lone PERSON)
 
 example : (Subtype.subtypeP MANN.getType PERSON.getType)
-:= by
-    apply Subtype.subtypeP.unary_rel
+:= by aesop
 
 example : (Subtype.subtypeP MANN'.getType PERSON.getType)
-:= by
-    apply Subtype.subtypeP.trans MANN'.getType MANN.getType PERSON.getType
-    apply Subtype.subtypeP.unary_rel
-    apply Subtype.subtypeP.unary_rel
+:= by aesop
 
 example : (Subtype.subtypeP (PERSON - MANN).getType PERSON.getType)
-:= by
-    apply Subtype.subtypeP.subset
-    apply Subtype.subset_sub
-
+:= by aesop
 
 example : (Subtype.subtypeP (MANN).getType (MANN + FRAU).getType)
-:= by
-    apply Subtype.subtypeP.subset
-    apply Subtype.subset_add_r
+:= by aesop
 
 example : (Subtype.subtypeP (MANN).getType (FRAU + MANN).getType)
-:= by
-    apply Subtype.subtypeP.subset
-    apply Subtype.subset_add_l
+:= by aesop
 
 example (r1 : ∷ some MANN) : (Subtype.subtypeP r1.getType (MANN + (FRAU - (MANN' & PERSON))).getType)
+:= by aesop
+
+variable (C1 : ∷ univ one → some univ)
+variable (C2 : ∷ univ set → set univ)
+example : Subtype.subtypeP C1.getType C2.getType
+:= by aesop
+
+variable (D1 : ∷ MANN one → some FRAU)
+variable (D2 : ∷ PERSON some → set PERSON)
+
+example : Subtype.subtypeP D1.getType D2.getType
 := by
-    apply Subtype.subtypeP.trans r1.getType MANN.getType (MANN + (FRAU - (MANN' & PERSON))).getType
-    apply Subtype.subtypeP.unary_rel
-    apply Subtype.subtypeP.subset
-    apply Subtype.subset_add_r
-
-
+  -- aesop (config := { maxRuleApplications := 200 })
+  apply Subtype.subtypeP.trans
+  apply Subtype.subtypeP.complex_toSome_l
+  apply Subtype.subtypeP.trans
+  apply Subtype.subtypeP.complex_toSet_r
+  apply Subtype.subtypeP.trans
+  apply Subtype.subtypeP.complex_subtype_l
+  apply Subtype.subtypeP.unary_rel
+  apply Subtype.subtypeP.complex_subtype_r
+  apply Subtype.subtypeP.unary_rel
 
 end test_subtype
   namespace Subtype
@@ -128,10 +156,10 @@ end test_subtype
     (castable r t2 subtype_pf)
 
   macro "cast" varName:ident : term
-    => do `((Subtype.cast $(varName) (by sorry)))
+    => do `((Subtype.cast $(varName) (by aesop)))
 
   macro "cast" varName:ident "∷" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) (by sorry) : ∷ $(typeName)))
+    => do `((Subtype.cast $(varName) (by aesop) : ∷ $(typeName)))
 end Subtype
 
 section test_cast
@@ -143,14 +171,13 @@ section test_cast
   variable (m : ∷ lone PERSON)
 
 example : (Subtype.subtypeP MANN.getType PERSON.getType)
-:= by
-    dsimp[Rel.getType]
+:= by aesop
 
   def m_cast :=
     (Subtype.cast
       m
-      (by sorry)
-      : ∷ some univ
+      (by aesop)
+      : ∷ set univ
     )
 
 
@@ -161,8 +188,8 @@ example : (Subtype.subtypeP MANN.getType PERSON.getType)
   m : lone PERSON
   ⊢ some univ
   -/
-  def m' := (cast m ∷ some univ)
-  def m'' := (cast m : ∷ some univ)
+  def m' := (cast m ∷ set univ)
+  def m'' := (cast m : ∷ set univ)
   /-
   m' ThoR_TupleSet ?m.6020 : lone ?m.6020 → some univ
   -/
