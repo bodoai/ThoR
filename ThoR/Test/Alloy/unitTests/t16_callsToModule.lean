@@ -62,3 +62,27 @@ alloy m3
 end
 
 #create m3
+
+/-
+Import module with alias
+-/
+alloy m1/wewa
+  sig a {
+    r : a
+  }
+end
+
+alloy m2/w/a
+  open m1/wewa as wowo
+  sig a {
+    r : a
+  }
+  fact {
+    some wowo/a
+  }
+end
+
+#create m2/w/a
+#check m2.w.a.vars.wowo.a
+#check m2.w.a.vars.wowo.a.r
+#check m2.w.a.facts.f0
