@@ -6,6 +6,7 @@ Authors: s. file CONTRIBUTORS
 
 -- import ThoR
 import ThoR.Relation
+import ThoR.Relation.Elab
 
 namespace ThoR
   namespace Subtype
@@ -119,16 +120,21 @@ namespace ThoR
     variable (MANN'' : ∷ PERSON) -- !!! RelType.rel
     variable (m : ∷ lone PERSON)
 
-    example : MANN.getType ≺ PERSON.getType
-      := by aesop
-    example : MANN.getType ≺ PERSON.getType
-      := by aesop
-    example : MANN'.getType ≺ PERSON.getType
-      := by aesop
+
+    example : ◃∷ set PERSON ≺ ◃∷ set univ := by aesop
+    example : ◃∷ set MANN ≺ ◃∷ set univ  := by aesop
+
     example : (PERSON - MANN).getType ≺ PERSON.getType
       := by aesop
-    example : (MANN).getType ≺ (MANN + FRAU).getType
-      := by aesop
+    /- FIXME : aesop -/
+    example : (PERSON - MANN).getType ≺ ◃∷ set univ
+      := by
+        apply Subtype.subtypeP.trans
+          _ PERSON.getType
+        <;> aesop
+
+    -- example : ◃∷ set PERSON ≺ (MANN + FRAU).getType
+    --   := by aesop
     example : (MANN).getType ≺ (FRAU + MANN).getType
       := by aesop
     example (r1 : ∷ some MANN) :
@@ -211,7 +217,7 @@ end Subtype
 
     variable {ThoR_TupleSet : Type} [TupleSet ThoR_TupleSet] [vars ThoR_TupleSet]
     namespace preds
-  /- FIXME : predicate does not depend on vars -> missing typeclass dependency
+  /- FIXME : if predicate does not depend on vars, then typeclass dependency is missing
       see example predicate p1:
       p1 does not depend on any of the above vars. Correspondingly, the dependency on the typeclass vars [vars ThoR_TupleSet] is not part of the typeclass dependencies. However, this dependency has to be present to make the ∻-macro work.
       Otherwise, the application (∻ p1) will bind x with PERSON and there is no variable left to bind, i.e. (∻ p1) <something> will lead to an error.
