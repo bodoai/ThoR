@@ -29,7 +29,7 @@ inductive hasType {R: Type} [TupleSet R]:
     ∀ (subset : R), subset ⊂ superset → mult_to_pred m subset
     → hasType subset (RelType.unary_rel m superset (Eq.refl 1) (TupleSet₀.arity_1 superset h))
   -- subrel : subrel
-  | TupleSet (superrel : R) (h: HasArity.hasArity superrel n):
+  | rel (superrel : R) (h: HasArity.hasArity superrel n):
     ∀ (subrel : R), subrel ⊂ superrel
     → hasType subset (RelType.rel superrel h)
   -- none ∷ constant none, univ ∷ constant univ, id ∷ constant id
