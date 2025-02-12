@@ -537,8 +537,6 @@ private partial def openModules
                 (newAst.predDecls.map
                   fun dd => dd.insertModuleVariables variablesOnModule variablesOnOpen)
 
-            newAst := newAst.clearModuleVariables
-
           if !newAst.modulesToOpen.isEmpty then
             let additionalModules := (openModules newAst env)
             match additionalModules with
