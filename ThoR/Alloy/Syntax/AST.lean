@@ -24,6 +24,7 @@ A structure representation of the abstract syntax tree (AST) of Alloy.
 -/
 inductive AST
   | mk  (name : Name)
+        (modulVariables : List (String))
         (sigDecls : List (sigDecl))
         (factDecls : List (factDecl))
         (assertDecls : List (assertDecl))
@@ -34,18 +35,20 @@ deriving Repr
 
 namespace AST
 
-  def name | mk name _ _ _ _ _ _ => name
-  def sigDecls | mk _ sigDecls _ _ _ _ _ => sigDecls
-  def factDecls | mk _ _ factDecls _ _ _ _ => factDecls
-  def assertDecls | mk _ _ _ assertDecls _ _ _ => assertDecls
-  def predDecls | mk _ _ _ _ predDecls _ _ => predDecls
-  def modulesToOpen | mk _ _ _ _ _ modulesToOpen _ => modulesToOpen
-  def openedModules | mk _ _ _ _ _ _ openedModules => openedModules
+  def name | mk name _ _ _ _ _ _ _ => name
+  def modulVariables | mk _ modulVariables _ _ _ _ _ _ => modulVariables
+  def sigDecls | mk _ _ sigDecls _ _ _ _ _ => sigDecls
+  def factDecls | mk _ _ _ factDecls _ _ _ _ => factDecls
+  def assertDecls | mk _ _ _ _ assertDecls _ _ _ => assertDecls
+  def predDecls | mk _ _ _ _ _ predDecls _ _ => predDecls
+  def modulesToOpen | mk _ _ _ _ _ _ modulesToOpen _ => modulesToOpen
+  def openedModules | mk _ _ _ _ _ _ _ openedModules => openedModules
 
   instance : Inhabited AST where
     default :=
       AST.mk
         (name := default)
+        (modulVariables := default)
         (sigDecls := default)
         (factDecls := default)
         (assertDecls := default)
@@ -76,63 +79,72 @@ namespace AST
   Updates the name of the AST to the given value
   -/
   def updateName (name : Name)
-    | mk _ sigDecls factDecls assertDecls
+    | mk _ modulVariables sigDecls factDecls assertDecls
       predDecls modulesToOpen openendModules =>
-        AST.mk name sigDecls factDecls assertDecls
+        AST.mk name modulVariables sigDecls factDecls assertDecls
+        predDecls modulesToOpen openendModules
+
+  /--
+  Updates the name of the AST to the given value
+  -/
+  def updateModuleVariables (modulVariables : List (String))
+    | mk name _ sigDecls factDecls assertDecls
+      predDecls modulesToOpen openendModules =>
+        AST.mk name modulVariables sigDecls factDecls assertDecls
         predDecls modulesToOpen openendModules
 
   /--
   Clears the modules to open from the AST
   -/
   def clearModulesToOpen
-    | mk name sigDecls factDecls assertDecls
+    | mk name modulVariables sigDecls factDecls assertDecls
       predDecls _ openendModules =>
-        AST.mk name sigDecls factDecls assertDecls
+        AST.mk name modulVariables sigDecls factDecls assertDecls
         predDecls default openendModules
 
   /--
   Adds a single `sigDecl` to the AST
   -/
   def addSigDecl (sd : sigDecl)
-    | mk name sigDecls factDecls assertDecls
+    | mk name modulVariables sigDecls factDecls assertDecls
       predDecls modulesToOpen openendModules =>
-        AST.mk name (sigDecls.concat sd) factDecls assertDecls
+        AST.mk name modulVariables (sigDecls.concat sd) factDecls assertDecls
         predDecls modulesToOpen openendModules
 
   /--
   Adds a single `factDecl` to the AST
   -/
   def addFactDecl (fd : factDecl)
-    | mk name sigDecls factDecls assertDecls
+    | mk name modulVariables sigDecls factDecls assertDecls
       predDecls modulesToOpen openendModules =>
-        AST.mk name sigDecls (factDecls.concat fd) assertDecls
+        AST.mk name modulVariables sigDecls (factDecls.concat fd) assertDecls
         predDecls modulesToOpen openendModules
 
   /--
   Adds a single `assertDecl` to the AST
   -/
   def addAssertDecl (ad : assertDecl)
-    | mk name sigDecls factDecls assertDecls
+    | mk name modulVariables sigDecls factDecls assertDecls
       predDecls modulesToOpen openendModules =>
-        AST.mk name sigDecls factDecls (assertDecls.concat ad)
+        AST.mk name modulVariables sigDecls factDecls (assertDecls.concat ad)
         predDecls modulesToOpen openendModules
 
   /--
   Adds a single `predDecl` to the AST
   -/
   def addPredDecl (pd : predDecl)
-    | mk name sigDecls factDecls assertDecls
+    | mk name modulVariables sigDecls factDecls assertDecls
       predDecls modulesToOpen openendModules =>
-        AST.mk name sigDecls factDecls assertDecls
+        AST.mk name modulVariables sigDecls factDecls assertDecls
         (predDecls.concat pd) modulesToOpen openendModules
 
   /--
   Adds a single module to open (`openModule`) to the AST
   -/
   def addModuleToOpen (om : openModule)
-    | mk name sigDecls factDecls assertDecls
+    | mk name modulVariables sigDecls factDecls assertDecls
       predDecls modulesToOpen openendModules =>
-        AST.mk name sigDecls factDecls assertDecls
+        AST.mk name modulVariables sigDecls factDecls assertDecls
         predDecls (modulesToOpen.concat om) openendModules
 
   /--
@@ -140,9 +152,9 @@ namespace AST
   -/
   def addOpenedModule (ast : AST) (om : AST) : AST :=
     match ast with
-      | mk name sigDecls factDecls assertDecls
+      | mk name modulVariables sigDecls factDecls assertDecls
         predDecls modulesToOpen openendModules =>
-          AST.mk name sigDecls factDecls assertDecls
+          AST.mk name modulVariables sigDecls factDecls assertDecls
           predDecls modulesToOpen (openendModules.concat om)
 
   /--
@@ -151,10 +163,13 @@ namespace AST
   def create
     (name : Ident)
     (specifications : Array (TSyntax `specification))
+    (moduleVariables : List (String))
     : AST := Id.run do
 
       let mut ast : AST := (default)
       ast := ast.updateName name.getId
+
+      ast := ast.updateModuleVariables moduleVariables
 
       -- used for default fact name
       let mut factCount := 0
@@ -221,12 +236,13 @@ namespace AST
   -/
   def concat (ast1 ast2 : AST) : AST :=
     match ast1, ast2 with
-      | mk name1 sigDecls1 factDecls1 assertDecls1
+      | mk name1 moduleVariables1 sigDecls1 factDecls1 assertDecls1
         predDecls1 modulesToOpen1 openendModules1,
-        mk _ sigDecls2 factDecls2 assertDecls2
+        mk _ moduleVariables2 sigDecls2 factDecls2 assertDecls2
         predDecls2 modulesToOpen2 openendModules2
         =>
         mk name1
+          (moduleVariables1.append moduleVariables2)
           (sigDecls1.append sigDecls2)
           (factDecls1.append factDecls2)
           (assertDecls1.append assertDecls2)

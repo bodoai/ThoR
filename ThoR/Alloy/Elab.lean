@@ -444,6 +444,16 @@ private def createCommands (st : SymbolTable)
 
     return commandList
 
+declare_syntax_cat moduleVar
+syntax ("exactly" ident) : moduleVar
+
+private def moduleVar.getIdent
+  (mv : Lean.TSyntax `moduleVar)
+  : Ident :=
+    match mv with
+      | `(moduleVar | exactly $i) => i
+      | _ => unreachable!
+
 /--
 Represents the syntax for the alloy block.
 
@@ -452,7 +462,12 @@ Options:
 - To succeed on failure (with the exception of syntax errors): ~alloy
 -/
 syntax (name := alloyBlock)
-  ("#" <|> "~")? "alloy " (("module")? separatedNamespace)? specification* " end" : command
+  ("#" <|> "~")?
+  "alloy"
+  (("module")? separatedNamespace ("[" moduleVar+ "]")?)?
+  specification*
+  "end"
+  : command
 
 /--
 This function tries to recursivly open all modules.
@@ -493,13 +508,14 @@ Evaluates the alloy block syntax.
 private def evalAlloyBlock
   (name : Ident)
   (specifications : Array (TSyntax `specification))
-  (logging: Bool)
+  (moduleVariables : List (String) := default)
+  (logging: Bool := false)
   : CommandElabM Unit := do
 
     let monadeState ← get
     let monadeEnv := monadeState.env
 
-    let mut ast := AST.create name specifications
+    let mut ast := AST.create name specifications moduleVariables
     if logging then
       logInfo
         s!"AST without opened Modules: \n
@@ -587,54 +603,159 @@ private def alloyBlockImpl : CommandElab := fun stx => do
     match stx with
       | `(alloy $blockName:separatedNamespace
             $specifications:specification* end) =>
+
           let blockName :=
             (separatedNamespace.toType blockName).representedNamespace
-          evalAlloyBlock blockName specifications false
+
+          evalAlloyBlock blockName specifications
+
+      | `(alloy $blockName:separatedNamespace [$mvs:moduleVar*]
+            $specifications:specification* end) =>
+
+          let blockName :=
+            (separatedNamespace.toType blockName).representedNamespace
+
+          let moduleVariables :=
+            (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+
+          evalAlloyBlock
+            (moduleVariables := moduleVariables)
+            blockName
+            specifications
 
       | `(alloy module $blockName:separatedNamespace
             $specifications:specification* end) =>
+
           let blockName :=
             (separatedNamespace.toType blockName).representedNamespace
-          evalAlloyBlock blockName specifications false
+
+          evalAlloyBlock blockName specifications
+
+      | `(alloy module $blockName:separatedNamespace [$mvs:moduleVar*]
+            $specifications:specification* end) =>
+
+          let blockName :=
+            (separatedNamespace.toType blockName).representedNamespace
+
+          let moduleVariables :=
+            (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+
+          evalAlloyBlock
+            (moduleVariables := moduleVariables)
+            blockName
+            specifications
 
       | `(alloy $specifications:specification* end) =>
           let defaultBlockName := mkIdent (findDefaultName (← get).env)
-          evalAlloyBlock defaultBlockName  specifications false
+          evalAlloyBlock defaultBlockName specifications
 
       | `(#alloy $blockName:separatedNamespace
             $specifications:specification* end) =>
+
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
-            evalAlloyBlock blockName specifications true
+
+            evalAlloyBlock
+              (logging := true)
+              blockName
+              specifications
+
+      | `(#alloy $blockName:separatedNamespace [$mvs:moduleVar*]
+            $specifications:specification* end) =>
+
+            let blockName :=
+              (separatedNamespace.toType blockName).representedNamespace
+
+            let moduleVariables :=
+              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+
+            evalAlloyBlock
+              (logging := true)
+              (moduleVariables := moduleVariables)
+              blockName
+              specifications
 
       | `(#alloy module $blockName:separatedNamespace
             $specifications:specification* end) =>
+
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
-            evalAlloyBlock blockName specifications true
+
+            evalAlloyBlock
+              (logging := true)
+              blockName
+              specifications
+
+      | `(#alloy module $blockName:separatedNamespace [$mvs:moduleVar*]
+            $specifications:specification* end) =>
+
+            let blockName :=
+              (separatedNamespace.toType blockName).representedNamespace
+
+            let moduleVariables :=
+              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+
+            evalAlloyBlock
+              (logging := true)
+              (moduleVariables := moduleVariables)
+              blockName
+              specifications
 
       | `(#alloy $specifications:specification* end) =>
             let defaultBlockName := mkIdent (findDefaultName (← get).env)
-            evalAlloyBlock defaultBlockName specifications true
+            evalAlloyBlock
+              (logging := true)
+              defaultBlockName
+              specifications
 
       | `(~alloy $blockName:separatedNamespace
             $specifications:specification* end) =>
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
             Lean.Elab.Command.failIfSucceeds
-              (evalAlloyBlock blockName specifications false)
+              (evalAlloyBlock blockName specifications)
+
+      | `(~alloy $blockName:separatedNamespace [$mvs:moduleVar*]
+            $specifications:specification* end) =>
+
+            let blockName :=
+              (separatedNamespace.toType blockName).representedNamespace
+
+            let moduleVariables :=
+              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+
+            Lean.Elab.Command.failIfSucceeds
+              (evalAlloyBlock
+                (moduleVariables := moduleVariables)
+                blockName
+                specifications )
 
       | `(~alloy module $blockName:separatedNamespace
             $specifications:specification* end) =>
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
             Lean.Elab.Command.failIfSucceeds
-              (evalAlloyBlock blockName specifications false)
+              (evalAlloyBlock blockName specifications)
+
+      | `(~alloy module $blockName:separatedNamespace [$mvs:moduleVar*]
+            $specifications:specification* end) =>
+
+            let blockName :=
+              (separatedNamespace.toType blockName).representedNamespace
+
+            let moduleVariables :=
+              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+
+            Lean.Elab.Command.failIfSucceeds
+              (evalAlloyBlock
+                (moduleVariables := moduleVariables)
+                blockName
+                specifications)
 
       | `(~alloy $specifications:specification* end) =>
           let defaultBlockName := mkIdent (findDefaultName (← get).env)
           Lean.Elab.Command.failIfSucceeds
-            (evalAlloyBlock defaultBlockName specifications false)
+            (evalAlloyBlock defaultBlockName specifications)
 
 
       | _ => return -- if you enter # it might try to match and end here => do nothing
