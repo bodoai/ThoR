@@ -5,7 +5,7 @@ Authors: s. file CONTRIBUTORS
 -/
 
 import ThoR
-import ThoR.Relation.SubType
+-- import ThoR.Relation.SubType
 
 alloy empty
 end

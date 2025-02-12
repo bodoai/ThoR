@@ -160,66 +160,63 @@ end test_subtype
 
   macro "cast" varName:ident "∷" typeName:typeExpr: term
     => do `((Subtype.cast $(varName) (by aesop) : ∷ $(typeName)))
+
+  macro "cast" "(" varName:term ")" : term
+    => do `((Subtype.cast $(varName) (by aesop)))
+
+  macro "cast" "(" varName:term ")" ":" type:typeExpr : term
+    => do `((Subtype.cast $(varName) (by aesop) : ∷ $(type)))
+
+  macro "cast" "(" varName:term ")" "∷" typeName:typeExpr: term
+    => do `((Subtype.cast $(varName) (by aesop) : ∷ $(typeName)))
 end Subtype
 
 section test_cast
-  variable (ThoR_TupleSet : Type) [TupleSet ThoR_TupleSet]
+  class  vars  (ThoR_TupleSet  :  Type)  [ThoR.TupleSet  ThoR_TupleSet] where
+    PERSON : ∷ set univ
+    MANN : ∷ set PERSON
+    MANN' : ∷ set MANN
+    FRAU : ∷ set PERSON
+    m1 : ∷ lone PERSON
+    m2 : ∷ lone MANN
+    m3 : ∷ lone MANN'
 
-  variable (PERSON : ∷ set univ)
-  variable (MANN : ∷ set PERSON)
-  variable (FRAU : ∷ set PERSON)
-  variable (m : ∷ lone PERSON)
+  variable {ThoR_TupleSet : Type} [TupleSet ThoR_TupleSet] [vars ThoR_TupleSet]
+  namespace preds
+/- FIXME : predicate does not depend on vars -> missing typeclass dependency
+    see example predicate p1:
+    p1 does not depend on any of the above vars. Correspondingly, the dependency on the typeclass vars [vars ThoR_TupleSet] is not part of the typeclass dependencies. However, this dependency has to be present to make the ∻-macro work.
+    Otherwise, the application (∻ p1) will bind x with PERSON and there is no variable left to bind, i.e. (∻ p1) <something> will lead to an error.
 
-example : (Subtype.subtypeP MANN.getType PERSON.getType)
-:= by aesop
+    Easiest fix seems to be to explicitly add all typeclass dependencies [TupleSet ThoR_TupleSet] [vars ThoR_TupleSet] explicitly to all predicate definitions.
+-/
+    def p1 {ThoR_TupleSet : Type} [TupleSet ThoR_TupleSet] [vars ThoR_TupleSet]
+      (x : ∷ set univ) := (x - x) ≡ x
+    def p2 {ThoR_TupleSet : Type} [TupleSet ThoR_TupleSet] [vars ThoR_TupleSet]
+      (x : ∷ set @ vars.PERSON) := x - x ≡ x
+    def p3 {ThoR_TupleSet : Type} [TupleSet ThoR_TupleSet] [vars ThoR_TupleSet]
+      (x : ∷ set @ vars.MANN) := x - x ≡ x
+    def p4 {ThoR_TupleSet : Type} [TupleSet ThoR_TupleSet] [vars ThoR_TupleSet]
+      (x : ∷ set @ vars.MANN') := x - x ≡ x
+  end preds
 
-  def m_cast :=
-    (Subtype.cast
-      m
-      (by aesop)
-      : ∷ set univ
-    )
+  variable {ThoR_TupleSet : Type} [TupleSet ThoR_TupleSet] [vars ThoR_TupleSet]
 
+  #check (∻ preds.p1) vars.PERSON
+  #check (∻ preds.p1) (cast vars.MANN : ∷ set univ)
+  #check (∻ preds.p1) (cast vars.MANN : _)
+  #check (∻ preds.p2) (cast vars.MANN : ∷ set @ vars.PERSON)
+  #check (∻ preds.p2) (cast vars.MANN ∷ set @ vars.PERSON)
+  #check (∻ preds.p2) (cast vars.MANN : _)
+  #check (∻ preds.p2) (cast vars.MANN' : ∷ set @ vars.PERSON)
+  #check (∻ preds.p2)
+    (cast (cast vars.MANN' ∷ set @ vars.MANN) ∷ set @ vars.PERSON)
+  #check (∻ preds.p3) vars.MANN'
 
-  /-
-  ThoR_TupleSet : Type
-  inst✝ : TupleSet ThoR_TupleSet
-  PERSON : some univ
-  m : lone PERSON
-  ⊢ some univ
-  -/
-  def m' := (cast m ∷ set univ)
-  def m'' := (cast m : ∷ set univ)
-  /-
-  m' ThoR_TupleSet ?m.6020 : lone ?m.6020 → some univ
-  -/
-  #check ∻ m'
-  #check ∻ m''
-  /-
-  m' ThoR_TupleSet PERSON m : some univ
-  -/
-  #check m' ThoR_TupleSet PERSON m
+/- FIXME : cast macro syntax problem when chaining casts in the following syntax:
 
-  variable (n : ∷ univ lone → some univ)
-  /-
-  ThoR_TupleSet : Type
-  inst✝ : TupleSet ThoR_TupleSet
-  PERSON : some univ
-  m : lone PERSON
-  n : univ lone → some univ
-  ⊢ univ set → set univ
-  -/
-  def n' := (cast n ∷ univ set → set univ)
-  /-
-  n' ThoR_TupleSet ?m.6290 : univ set → set univ
-  -/
-  #check ∻ n'
-
-  def p (t : ∷ set PERSON) := t - t
-  #check (∻ p) (cast m : _)
-  #check (∻ p) (cast m : ∷ set PERSON)
-  #check (∻ p) (cast m ∷ set PERSON)
-
+    #check (cast (cast vars.MANN' : ∷ set @ vars.MANN) : ∷ set @ vars.MANN)
+-/
 end test_cast
 
 
