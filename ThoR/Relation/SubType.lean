@@ -215,6 +215,11 @@ example : (Subtype.subtypeP MANN.getType PERSON.getType)
   -/
   #check ∻ n'
 
+  def p (t : ∷ set PERSON) := t - t
+  #check (∻ p) (cast m : _)
+  #check (∻ p) (cast m : ∷ set PERSON)
+  #check (∻ p) (cast m ∷ set PERSON)
+
 end test_cast
 
 
