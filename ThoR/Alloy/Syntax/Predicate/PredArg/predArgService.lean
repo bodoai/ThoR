@@ -50,9 +50,13 @@ namespace Alloy.predArg
     (pa : predArg)
     (st : SymbolTable)
     : predArg :=
-      predArg.mk
-        (names := pa.names)
-        (disjunction := pa.disjunction)
-        (expression := pa.expression.simplifyDomainRestrictions st)
+      {pa with expression := pa.expression.simplifyDomainRestrictions st}
+
+  def insertModuleVariables
+    (pa : predArg)
+    (moduleVariables openVariables : List (String))
+    : predArg :=
+    {pa with expression :=
+      pa.expression.insertModuleVariables moduleVariables openVariables}
 
 end Alloy.predArg
