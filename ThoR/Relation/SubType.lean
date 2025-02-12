@@ -59,8 +59,8 @@ namespace ThoR
         subtypeP (RelType.mk.unary_rel Shared.mult.set r) (RelType.mk.rel r)
       | rel_to_unary_rel (t : RelType R 1) (r : Rel t):
         subtypeP (RelType.mk.rel r) (RelType.mk.unary_rel Shared.mult.set r)
-      | subset (t1 t2 : RelType R arity) (r1 : Rel t1) (r2 : Rel t2):
-        r1 ⊂ r2 → subtypeP (r1).getType (r2).getType
+      | subset (t1 t2 : RelType R arity) (r2 : Rel t2):
+          (∀ (r1 : Rel t1), r1 ⊂ r2) → subtypeP t1 (r2).getType
       | complex_toSet_l {arity1 arity2 : ℕ} (t1 : RelType R arity1) (t2 : RelType R arity2) (m1 m2 : Shared.mult) :
         subtypeP (RelType.complex t1 m1 m2 t2) (RelType.complex t1 Shared.mult.set m2 t2)
       | complex_toSome_l {arity1 arity2 : ℕ} (t1 : RelType R arity1) (t2 : RelType R arity2) (m2 : Shared.mult) :
@@ -79,7 +79,10 @@ namespace ThoR
       | complex_subtype_r {arity1 arity2 : ℕ} (t1 : RelType R arity1) (t2 t2': RelType R arity2) (m1 m2 : Shared.mult) :
         subtypeP t2 t2' →
         subtypeP (RelType.complex t1 m1 m2 t2) (RelType.complex t1 m1 m2 t2')
+  end Subtype
 
+  namespace Subtype
+    variable {R : Type} [TupleSet R]
     @[simp]
     lemma subset_add_r {arity : ℕ} (t1 t2 : RelType R arity) (r1 : Rel t1) (r2 : Rel t2) : r1 ⊂ (r1 + r2) := by sorry
 
@@ -88,6 +91,27 @@ namespace ThoR
 
     @[simp]
     lemma subset_sub {arity : ℕ} (t1 t2 : RelType R arity) (r1 : Rel t1) (r2 : Rel t2) : (r1 -r2) ⊂ r1 := by sorry
+
+    lemma instance_is_subset_unary_rel' {t2 : RelType R 1} {r2 : Rel t2} {m : Shared.mult} {r1 : R} : r1 ∷ (RelType.mk.unary_rel m r2) → r1 ⊂ r2.relation := by
+      intro h
+      cases h with
+      | unary_rel _ _ _ _ h => apply h
+
+    lemma instance_is_subset_unary_rel {t2 : RelType R 1} {r2 : Rel t2} {m : Shared.mult} {r1 : Rel (RelType.mk.unary_rel m r2)} : r1 ⊂ r2 := by
+      cases r1 with
+      | mk r p =>
+        dsimp[HSubset.hSubset,Rel.subset]
+        apply instance_is_subset_unary_rel'
+        apply p
+
+    lemma instance_is_subset_rel {t2 : RelType R arity} {r2 : Rel t2} {r1 : Rel (RelType.mk.rel r2)} : r1 ⊂ r2 := by
+      cases r1 with
+      | mk r p =>
+        cases p with
+        | rel _ h_arity subrel h =>
+          dsimp[HSubset.hSubset,Rel.subset]
+          apply h
+
   end Subtype
 
   -- propositional subtype
@@ -124,22 +148,50 @@ namespace ThoR
     example : ◃∷ set PERSON ≺ ◃∷ set univ := by aesop
     example : ◃∷ set MANN ≺ ◃∷ set univ  := by aesop
 
-    example : (PERSON - MANN).getType ≺ PERSON.getType
-      := by aesop
+
+    lemma ex1 : (PERSON - MANN).getType ≺ PERSON.getType
+      := by
+        apply Subtype.subtypeP.subset
+        intro r1
+        cases r1 with
+        | mk r p =>
+          dsimp[HSubset.hSubset,Rel.subset]
+          cases p
+
     /- FIXME : aesop -/
     example : (PERSON - MANN).getType ≺ ◃∷ set univ
       := by
         apply Subtype.subtypeP.trans
           _ PERSON.getType
-        <;> aesop
+        apply ex1
+        aesop
 
-    -- example : ◃∷ set PERSON ≺ (MANN + FRAU).getType
-    --   := by aesop
+    axiom a1 : PERSON ⊂ (MANN + FRAU)
+    /- TODO : apply knowledge from inheritance tree, i.e. add inheritance tree axiom with PERSON = MANN + FRAU -/
+    example : ◃∷ set PERSON ≺ (MANN + FRAU).getType
+      := by
+        -- apply Subtype.subtypeP.subset (t1 := RelType.mk.unary_rel Shared.mult.set PERSON)
+        /- CAUTION : t1 := MANN.getType looks funny, but is a correct way of rephrasing ∷ set PERSON, as MANN.getType indeed equals ∷ set PERSON -/
+        apply Subtype.subtypeP.subset (t1 := MANN.getType)
+        /- the following application would be a more understable way of specifying the correct type for t1 -/
+--        apply Subtype.subtypeP.subset (t1 := ◃∷ set PERSON)
+        intro r1
+        cases r1 with
+        | mk r p =>
+          dsimp[HSubset.hSubset,Rel.subset]
+          cases p with
+          | unary_rel _ _ _ _ h _ =>
+            apply Set.subset_trans r PERSON.relation
+            · apply h
+            · have h : PERSON ⊂ (MANN + FRAU) := by apply a1
+              dsimp[HSubset.hSubset,Rel.subset] at h
+              apply h
+
     example : (MANN).getType ≺ (FRAU + MANN).getType
-      := by aesop
+      := by sorry
     example (r1 : ∷ some MANN) :
       r1.getType ≺ (MANN + (FRAU - (MANN' & PERSON))).getType
-      := by aesop
+      := by sorry
 
     -- unary_rel set r ≺ rel r
     example : MANN.getType ≺ MANN''.getType
@@ -148,16 +200,11 @@ namespace ThoR
     example : MANN''.getType ≺ MANN.getType
       := by aesop
 
-    variable (C1 : ∷ univ one → some univ)
-    variable (C2 : ∷ univ set → set univ)
-    example : C1.getType ≺ C2.getType
+    example : ◃∷ univ one → some univ ≺ ◃∷ univ set → set univ
     := by aesop
 
-    variable (D1 : ∷ MANN one → some FRAU)
-    variable (D2 : ∷ PERSON some → set PERSON)
-
     /- TODO : aesop is not able to automate the proof for this subtype proposition-/
-    example : D1.getType ≺ D2.getType
+    example : ◃∷ MANN one → some FRAU ≺ ◃∷ PERSON some → set PERSON
     := by
       -- aesop (config := { maxRuleApplications := 200 })
       apply Subtype.subtypeP.trans

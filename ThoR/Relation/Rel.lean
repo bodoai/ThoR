@@ -20,6 +20,8 @@ structure Rel {R : Type} [TupleSet R]
 namespace Rel
   def getType {R : Type} [TupleSet R] {arity : ℕ} {type : RelType R arity}
       (_ : (Rel type)) := type
+
+  lemma getType_type {R : Type} [TupleSet R] {arity : ℕ} {type : RelType R arity} {r : Rel type}: r.getType = type := by dsimp[getType]
   -- instance (R : Type) [TupleSet R] (arity : ℕ) (type : RelType R arity) (r : (Rel type)):
   --   CoeDep (Rel type) r (RelType R arity) where
   --   coe := r.getType
@@ -229,7 +231,7 @@ namespace RelType
   end mk
   namespace mk
     variable {R : Type} [TupleSet R]
-    -- (r : Rel unary_rel) → (∷ r)
+    -- (r : Rel unary_rel) → (∷ mult r)
     def unary_rel {t : RelType R 1} (m : Shared.mult) (r : Rel t) :=
       RelType.unary_rel m r.relation (Eq.refl 1) (Rel.arity r)
     -- (r : Rel TupleSet) → (∷ r)
