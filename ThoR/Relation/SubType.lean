@@ -79,6 +79,17 @@ namespace Subtype
   lemma subset_sub {arity : ℕ} (t1 t2 : RelType R arity) (r1 : Rel t1) (r2 : Rel t2) : (r1 -r2) ⊂ r1 := by sorry
 end Subtype
 
+  -- propositional subtype
+  /-- The typeclass behind the notation `a ≺ b` -/
+  class PSubtype (α : Type u) where
+    /-- `a ≺ b` -/
+    isPSubtype : α → α → Prop
+  infixl:63 " ≺ "   => PSubtype.isPSubtype
+
+  @[simp]
+  instance {R : Type} [TupleSet R] : PSubtype (RelType R arity) where
+    isPSubtype  (t1 t2 : RelType R arity) := Subtype.subtypeP t1 t2
+
 namespace Subtype
 
   variable {R : Type} [TupleSet R]
@@ -98,35 +109,39 @@ section test_subtype
   variable (MANN'' : ∷ PERSON) -- !!! RelType.rel
   variable (m : ∷ lone PERSON)
 
-example : (Subtype.subtypeP MANN.getType PERSON.getType)
+example : MANN.getType ≺ PERSON.getType
   := by aesop
-example : (Subtype.subtypeP MANN'.getType PERSON.getType)
+example : MANN.getType ≺ PERSON.getType
   := by aesop
-example : (Subtype.subtypeP (PERSON - MANN).getType PERSON.getType)
+example : MANN'.getType ≺ PERSON.getType
   := by aesop
-example : (Subtype.subtypeP (MANN).getType (MANN + FRAU).getType)
+example : (PERSON - MANN).getType ≺ PERSON.getType
   := by aesop
-example : (Subtype.subtypeP (MANN).getType (FRAU + MANN).getType)
+example : (MANN).getType ≺ (MANN + FRAU).getType
   := by aesop
-example (r1 : ∷ some MANN) : (Subtype.subtypeP r1.getType (MANN + (FRAU - (MANN' & PERSON))).getType)
+example : (MANN).getType ≺ (FRAU + MANN).getType
+  := by aesop
+example (r1 : ∷ some MANN) :
+  r1.getType ≺ (MANN + (FRAU - (MANN' & PERSON))).getType
   := by aesop
 
 -- unary_rel set r ≺ rel r
-example : Subtype.subtypeP MANN.getType MANN''.getType
+example : MANN.getType ≺ MANN''.getType
   := by aesop
 -- rel r ≺ unary_rel set r
-example : Subtype.subtypeP MANN''.getType MANN.getType
+example : MANN''.getType ≺ MANN.getType
   := by aesop
 
 variable (C1 : ∷ univ one → some univ)
 variable (C2 : ∷ univ set → set univ)
-example : Subtype.subtypeP C1.getType C2.getType
+example : C1.getType ≺ C2.getType
 := by aesop
 
 variable (D1 : ∷ MANN one → some FRAU)
 variable (D2 : ∷ PERSON some → set PERSON)
 
-example : Subtype.subtypeP D1.getType D2.getType
+/- TODO : aesop is not able to automate the proof for this subtype proposition-/
+example : D1.getType ≺ D2.getType
 := by
   -- aesop (config := { maxRuleApplications := 200 })
   apply Subtype.subtypeP.trans
@@ -141,14 +156,10 @@ example : Subtype.subtypeP D1.getType D2.getType
 
 end test_subtype
   namespace Subtype
--- computational subtype
-/- TODO : function subtypeC has to be completed
-    - all cases from RelType/hasRelType
-    - inheritance tree → type hierarchy -/
   variable {R : Type} [TupleSet R]
 
   lemma castable {t1 : RelType R arity} (r : Rel t1) (t2 : RelType R arity):
-    subtypeP t1 t2 → r.relation ∷ t2 :=
+    t1 ≺ t2 → r.relation ∷ t2 :=
   by
     intro h1
     apply subtypeP_subtype at h1
@@ -156,7 +167,7 @@ end test_subtype
     apply h1
     cases r with | mk relation type_pf => apply type_pf
 
-  def cast {t1 : RelType R arity} (r : Rel t1) {t2 : RelType R arity} (subtype_pf : subtypeP t1 t2)
+  def cast {t1 : RelType R arity} (r : Rel t1) {t2 : RelType R arity} (subtype_pf : t1 ≺ t2)
   : (Rel t2)
   := Rel.mk
     (r.relation)
@@ -227,10 +238,13 @@ section test_cast
 end test_cast
 
 
-  instance {R : Type} [TupleSet R] {arity : ℕ} (t1 t2 : RelType R arity) (r : (Rel t1)):
-    CoeDep (Rel t1) r (Rel t2) where
+/- TODO : (by aesop) should be lazily evaluated in coercion
+    Otherwise, (by aesop) in the coercion definition does not make sense, as the concrete types t1 and t2 are not known before the coercion has been applied.
+-/
+instance {R : Type} [TupleSet R] {arity : ℕ} (t1 t2 : RelType R arity) (r : (Rel t1)):
+  CoeDep (Rel t1) r (Rel t2) where
 --    coe := mkSupertype t1 t2 r
-    coe := Rel.mk r.relation (@Subtype.castable R _ arity t1 r t2 (by sorry))
+  coe := Rel.mk r.relation (@Subtype.castable R _ arity t1 r t2 (by sorry))
 
 section test_coercion
   variable (ThoR_TupleSet : Type) [TupleSet ThoR_TupleSet]
