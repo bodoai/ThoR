@@ -85,11 +85,47 @@ namespace AST
         predDecls modulesToOpen openendModules
 
   /--
-  Updates the name of the AST to the given value
+  Updates the moduleVariables of the AST to the given value
   -/
   def updateModuleVariables (modulVariables : List (String))
     | mk name _ sigDecls factDecls assertDecls
       predDecls modulesToOpen openendModules =>
+        AST.mk name modulVariables sigDecls factDecls assertDecls
+        predDecls modulesToOpen openendModules
+
+  /--
+  Updates the sigDecls of the AST to the given value
+  -/
+  def updateSigDecls (sigDecls : List (sigDecl))
+    | mk name modulVariables _ factDecls assertDecls
+      predDecls modulesToOpen openendModules =>
+        AST.mk name modulVariables sigDecls factDecls assertDecls
+        predDecls modulesToOpen openendModules
+
+  /--
+  Updates the factDecls of the AST to the given value
+  -/
+  def updateFactDecls (factDecls : List (factDecl))
+    | mk name modulVariables sigDecls _ assertDecls
+      predDecls modulesToOpen openendModules =>
+        AST.mk name modulVariables sigDecls factDecls assertDecls
+        predDecls modulesToOpen openendModules
+
+  /--
+  Updates the factDecls of the AST to the given value
+  -/
+  def updateAssertDecls (assertDecls : List (assertDecl))
+    | mk name modulVariables sigDecls factDecls _
+      predDecls modulesToOpen openendModules =>
+        AST.mk name modulVariables sigDecls factDecls assertDecls
+        predDecls modulesToOpen openendModules
+
+  /--
+  Updates the factDecls of the AST to the given value
+  -/
+  def updatePredDecls (predDecls : List (predDecl))
+    | mk name modulVariables sigDecls factDecls assertDecls
+      _ modulesToOpen openendModules =>
         AST.mk name modulVariables sigDecls factDecls assertDecls
         predDecls modulesToOpen openendModules
 
@@ -101,6 +137,15 @@ namespace AST
       predDecls _ openendModules =>
         AST.mk name modulVariables sigDecls factDecls assertDecls
         predDecls default openendModules
+
+  /--
+  Clears the moduleVariables from the AST
+  -/
+  def clearModuleVariables
+    |  mk name _ sigDecls factDecls assertDecls
+      predDecls modulesToOpen openendModules =>
+        AST.mk name default sigDecls factDecls assertDecls
+        predDecls modulesToOpen openendModules
 
   /--
   Adds a single `sigDecl` to the AST

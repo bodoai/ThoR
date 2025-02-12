@@ -491,6 +491,47 @@ private partial def openModules
           if moduleToOpen.moduleAlias != default then
             newAst := newAst.updateName moduleToOpen.moduleAlias
 
+          let variablesOnOpen := moduleToOpen.moduleVariables
+          let numberOfVariablesOnOpen := variablesOnOpen.length
+
+          let variablesOnModule := newAst.modulVariables
+          let numberOfVariablesOnModule := variablesOnModule.length
+
+          /-
+          the open and the module need to have
+          the same number of arguments
+          -/
+          if
+            !(numberOfVariablesOnOpen ==
+            numberOfVariablesOnModule)
+          then
+            throw s!"The module {newAst.name} was openend \
+            with {numberOfVariablesOnOpen} arguments ({variablesOnOpen}) \
+            , but the expected number of arguments is {numberOfVariablesOnModule}"
+
+          /-
+          if the module has Variables (and passed previous check)
+          then the variables are to be replaced
+          -/
+          if !variablesOnOpen.isEmpty then
+
+            newAst :=
+              newAst.updateFactDecls
+                (newAst.factDecls.map
+                  fun fd => fd.insertModuleVariables variablesOnModule variablesOnOpen)
+
+            newAst :=
+              newAst.updateAssertDecls
+                (newAst.assertDecls.map
+                  fun ad => ad.insertModuleVariables variablesOnModule variablesOnOpen)
+
+            newAst :=
+              newAst.updatePredDecls
+                (newAst.predDecls.map
+                  fun dd => dd.insertModuleVariables variablesOnModule variablesOnOpen)
+
+            newAst := newAst.clearModuleVariables
+
           if !newAst.modulesToOpen.isEmpty then
             let additionalModules := (openModules newAst env)
             match additionalModules with
