@@ -44,6 +44,10 @@ namespace Subtype
       subtypeP (RelType.mk.unary_rel m r) (RelType.mk.unary_rel Shared.mult.set r)
     | unary_rel (t : RelType R 1) (r : Rel t) (m : Shared.mult):
       subtypeP (RelType.mk.unary_rel m r) r.getType
+    | unary_rel_to_rel (t : RelType R 1) (r : Rel t):
+      subtypeP (RelType.mk.unary_rel Shared.mult.set r) (RelType.mk.rel r)
+    | rel_to_unary_rel (t : RelType R 1) (r : Rel t):
+      subtypeP (RelType.mk.rel r) (RelType.mk.unary_rel Shared.mult.set r)
     | subset (t1 t2 : RelType R arity) (r1 : Rel t1) (r2 : Rel t2):
       r1 ⊂ r2 → subtypeP (r1).getType (r2).getType
     | complex_toSet_l {arity1 arity2 : ℕ} (t1 : RelType R arity1) (t2 : RelType R arity2) (m1 m2 : Shared.mult) :
@@ -88,28 +92,31 @@ section test_subtype
   variable (ThoR_TupleSet : Type) [TupleSet ThoR_TupleSet]
 
   variable (PERSON : ∷ set univ)
-  variable (MANN : ∷ set PERSON)
+  variable (MANN : ∷ set PERSON) -- !!! RelType.unary_rel
   variable (FRAU : ∷ set PERSON)
   variable (MANN' : ∷ set MANN)
+  variable (MANN'' : ∷ PERSON) -- !!! RelType.rel
   variable (m : ∷ lone PERSON)
 
 example : (Subtype.subtypeP MANN.getType PERSON.getType)
-:= by aesop
-
+  := by aesop
 example : (Subtype.subtypeP MANN'.getType PERSON.getType)
-:= by aesop
-
+  := by aesop
 example : (Subtype.subtypeP (PERSON - MANN).getType PERSON.getType)
-:= by aesop
-
+  := by aesop
 example : (Subtype.subtypeP (MANN).getType (MANN + FRAU).getType)
-:= by aesop
-
+  := by aesop
 example : (Subtype.subtypeP (MANN).getType (FRAU + MANN).getType)
-:= by aesop
-
+  := by aesop
 example (r1 : ∷ some MANN) : (Subtype.subtypeP r1.getType (MANN + (FRAU - (MANN' & PERSON))).getType)
-:= by aesop
+  := by aesop
+
+-- unary_rel set r ≺ rel r
+example : Subtype.subtypeP MANN.getType MANN''.getType
+  := by aesop
+-- rel r ≺ unary_rel set r
+example : Subtype.subtypeP MANN''.getType MANN.getType
+  := by aesop
 
 variable (C1 : ∷ univ one → some univ)
 variable (C2 : ∷ univ set → set univ)
