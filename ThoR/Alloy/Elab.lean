@@ -19,6 +19,8 @@ import ThoR.Alloy.SymbolTable.SymbolTable
 import ThoR.Alloy.SymbolTable.SymbolTableService
 import ThoR.Alloy.InheritanceTree.UnTyped.InheritanceTree
 
+import ThoR.Alloy.Syntax.Signature.SigDecl.sigDeclService
+
 import ThoR.Alloy.Syntax.SeparatedNamespace
 import ThoR.Alloy.Syntax.alloyData
 import ThoR.Alloy.Syntax.OpenModule.openModuleHelper
@@ -514,6 +516,11 @@ private partial def openModules
           then the variables are to be replaced
           -/
           if !variablesOnOpen.isEmpty then
+
+            newAst :=
+              newAst.updateSigDecls
+                (newAst.sigDecls.map
+                  fun sd => sd.insertModuleVariables variablesOnModule variablesOnOpen)
 
             newAst :=
               newAst.updateFactDecls
