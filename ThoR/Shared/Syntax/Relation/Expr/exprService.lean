@@ -656,4 +656,33 @@ namespace Shared.expr
 
       | _ => []
 
+  def insertModuleVariables
+    (e : expr)
+    (moduleVariables openVariables : List (String))
+    : expr := Id.run do
+      match e with
+        | expr.string s =>
+          if !moduleVariables.contains s then return e
+
+          let index := moduleVariables.indexOf s
+          let replacer := openVariables.get! index
+          return expr.string replacer
+
+        | expr.unaryRelOperation op e =>
+          expr.unaryRelOperation
+            op
+            (e.insertModuleVariables moduleVariables openVariables)
+        | expr.binaryRelOperation op e1 e2 =>
+          expr.binaryRelOperation
+            op
+            (e1.insertModuleVariables moduleVariables openVariables)
+            (e2.insertModuleVariables moduleVariables openVariables)
+        | expr.dotjoin dj e1 e2 =>
+          expr.dotjoin
+            dj
+            (e1.insertModuleVariables moduleVariables openVariables)
+            (e2.insertModuleVariables moduleVariables openVariables)
+
+        | _ => e
+
 end Shared.expr

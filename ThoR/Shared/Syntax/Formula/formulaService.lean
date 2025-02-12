@@ -507,9 +507,6 @@ namespace Shared.formula
         (f1.simplifyDomainRestrictions st)
         (f2.simplifyDomainRestrictions st)
         (f3.simplifyDomainRestrictions st)
-      | formula.string _ => f
-      | formula.algebraicComparisonOperation _ _ _ => f
-      | formula.relationComarisonOperation _ _ _ => f
       | formula.quantification q d n t f =>
         formula.quantification
         q
@@ -517,5 +514,45 @@ namespace Shared.formula
         n
         (t.simplifyDomainRestrictions st)
         (f.map fun f => f.simplifyDomainRestrictions st)
+      | _ => f
+
+  partial def insertModuleVariables
+    (f : formula)
+    (moduleVariables openVariables : List (String))
+    : formula :=
+    match f with
+      | formula.pred_with_args p args =>
+        pred_with_args
+          p
+          (args.map fun arg =>
+            arg.insertModuleVariables moduleVariables openVariables)
+      | formula.unaryRelBoolOperation op e =>
+        formula.unaryRelBoolOperation
+          op
+          (e.insertModuleVariables moduleVariables openVariables)
+      | formula.unaryLogicOperation op f =>
+        formula.unaryLogicOperation
+          op
+          (f.insertModuleVariables moduleVariables openVariables)
+      | formula.binaryLogicOperation op f1 f2 =>
+        formula.binaryLogicOperation
+          op
+          (f1.insertModuleVariables moduleVariables openVariables)
+          (f2.insertModuleVariables moduleVariables openVariables)
+      | formula.tertiaryLogicOperation op f1 f2 f3 =>
+        formula.tertiaryLogicOperation
+        op
+        (f1.insertModuleVariables moduleVariables openVariables)
+        (f2.insertModuleVariables moduleVariables openVariables)
+        (f3.insertModuleVariables moduleVariables openVariables)
+      | formula.quantification q d n t f =>
+        formula.quantification
+        q
+        d
+        n
+        (t.insertModuleVariables moduleVariables openVariables)
+        (f.map fun f =>
+          f.insertModuleVariables moduleVariables openVariables)
+      | _ => f
 
 end Shared.formula

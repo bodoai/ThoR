@@ -306,4 +306,33 @@ namespace Shared.arrowOp
             m1 m2
             (ae2.simplifyDomainRestrictions st)
 
+  def insertModuleVariables
+    (ao : arrowOp)
+    (moduleVariables openVariables : List (String))
+    : arrowOp :=
+    match ao with
+      | arrowOp.multArrowOpExpr e1 m1 m2 e2 =>
+        arrowOp.multArrowOpExpr
+          (e1.insertModuleVariables moduleVariables openVariables)
+          m1 m2
+          (e2.insertModuleVariables moduleVariables openVariables)
+
+      | arrowOp.multArrowOpExprLeft e1 m1 m2 ae2 =>
+        arrowOp.multArrowOpExprLeft
+          (e1.insertModuleVariables moduleVariables openVariables)
+          m1 m2
+          (ae2.insertModuleVariables moduleVariables openVariables)
+
+      | arrowOp.multArrowOpExprRight ae1 m1 m2 e2 =>
+        arrowOp.multArrowOpExprRight
+          (ae1.insertModuleVariables moduleVariables openVariables)
+          m1 m2
+          (e2.insertModuleVariables moduleVariables openVariables)
+
+      | arrowOp.multArrowOp ae1 m1 m2 ae2 =>
+        arrowOp.multArrowOp
+          (ae1.insertModuleVariables moduleVariables openVariables)
+          m1 m2
+          (ae2.insertModuleVariables moduleVariables openVariables)
+
 end Shared.arrowOp
