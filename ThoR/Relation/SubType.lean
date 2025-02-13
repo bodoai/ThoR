@@ -100,6 +100,8 @@ namespace ThoR
         dsimp[RelType.mk.unary_rel] at ht
 /- TODO : show with contradiction that RelType.unary_rel ≠ <proof> ▸ RelType.complex -/
         sorry
+      | cartprod => sorry
+      | dotjoin => sorry
 
     lemma instance_is_subset_unary_rel {t2 : RelType R 1} {r2 : Rel t2} {m : Shared.mult} {r1 : Rel (RelType.mk.unary_rel m r2)} : r1 ⊂ r2 := by
       cases r1 with
@@ -116,6 +118,8 @@ namespace ThoR
           dsimp[HSubset.hSubset,Rel.subset]
           apply h
         | complex => sorry
+        | cartprod => sorry
+        | dotjoin => sorry
 
   end Subtype
 
@@ -192,6 +196,8 @@ namespace ThoR
               dsimp[HSubset.hSubset,Rel.subset] at h
               apply h
           | complex => sorry
+          | cartprod => sorry
+          | dotjoin => sorry
 
     example : (MANN).getType ≺ (FRAU + MANN).getType
       := by sorry

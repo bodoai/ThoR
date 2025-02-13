@@ -67,57 +67,55 @@ inductive hasType {R: Type} [TupleSet R]:
       )
        →
       hasType r' t
-
---   -- r1' & r2' : t1 & t2
---   | intersect (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
---     ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
---     → hasType (r1' & r2') (RelType.intersect t1 t2)
---   -- r1' + r2' : t1 + t2
---   | add (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
---     ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
---     → hasType (r1' + r2') (t1 + t2)
---   -- r1' - r2' : t1 - t2
---   | sub (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
---     ∀ (r1' r2' : R),
---     hasType r1' t1 → hasType r2' t2
---     → hasType (r1' - r2') (t1 - t2)
---   -- r1' ++ r2' : t1 ++ t2
---   | append (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
---     ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
---     → hasType (r1' ++ r2') (t1 ++ t2)
---   -- TODO cartprod redundant to complex
---   -- r1' ⟶ r2' : t1 ⟶ t2
---   | cartprod (n1 n2 : ℕ) (t1 : RelType R n1) (t2 : RelType R n2):
---     ∀ (r1' r2' : R),
---       hasType r1' t1 → hasType r2' t2 →
---       ∀ (r' : R),
---         (r' ⊂ r1' ⟶ r2')
---       → hasType r' ((RelType.cartprod t1 t2))
---   -- r1' ⋈ r2' : t1 ⋈ t2
---   | dotjoin (n1 n2 : ℕ) (t1 : RelType R (n1+1)) (t2 : RelType R (n2+1)):
---     ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
---     → hasType (r1' ⋈ r2') (t1 ⋈ t2)
---   -- ^r' : ^t
---   | transclos (t : RelType R 2):
---     ∀ (r' : R), hasType r' t
---     → hasType (^r') (^t)
---   -- *r' : *t
---   | reftransclos (t : RelType R 2):
---     ∀ (r' : R), hasType r' t
---     → hasType (*r') (*t)
---   -- ~r' : ~t
---   | transpose (t : RelType R 2):
---     ∀ (r' : R), hasType r' t
---     → hasType (~ r') (~ t)
---   -- r1' <: r2' : t1 <: t2
---   | domrestr (n : ℕ) (t1 : RelType R 1) (t2 : RelType R n):
---     ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
---     → hasType (r1' <: r2') (RelType.domrestr t1 t2)
---   -- r1' :> r2' : t1 :> t2
---   | rangerestr (n : ℕ) (t1 : RelType R n) (t2 : RelType R 1):
---     ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
---     → hasType (r1' :> r2') (RelType.rangerestr t1 t2)
--- -- TODO r1' --> r2'
+  -- r1' & r2' : t1 & t2
+  | intersect (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
+    ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
+    → hasType (r1' & r2') (RelType.intersect t1 t2)
+  -- r1' + r2' : t1 + t2
+  | add (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
+    ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
+    → hasType (r1' + r2') (t1 + t2)
+  -- r1' - r2' : t1 - t2
+  | sub (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
+    ∀ (r1' r2' : R),
+    hasType r1' t1 → hasType r2' t2
+    → hasType (r1' - r2') (t1 - t2)
+  -- r1' ++ r2' : t1 ++ t2
+  | append (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
+    ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
+    → hasType (r1' ++ r2') (t1 ++ t2)
+  -- TODO cartprod redundant to complex
+  -- r1' ⟶ r2' : t1 ⟶ t2
+  | cartprod (n1 n2 : ℕ) (ha : n=n1+n2) (t1 : RelType R n1) (t2 : RelType R n2) (ht : t=ha ▸ ((RelType.cartprod t1 t2))):
+    ∀ (r1' r2' : R),
+      hasType r1' t1 → hasType r2' t2 →
+      ∀ (r' : R),
+        (r' ⊂ r1' ⟶ r2')
+      → hasType r' t
+  -- r1' ⋈ r2' : t1 ⋈ t2
+  | dotjoin (n1 n2 : ℕ) (ha: n=n1+n2) (t1 : RelType R (n1+1)) (t2 : RelType R (n2+1)) (ht: t=ha ▸ (t1 ⋈ t2)):
+    ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
+    → hasType (r1' ⋈ r2') t
+  -- ^r' : ^t
+  | transclos (t : RelType R 2):
+    ∀ (r' : R), hasType r' t
+    → hasType (^r') (^t)
+  -- *r' : *t
+  | reftransclos (t : RelType R 2):
+    ∀ (r' : R), hasType r' t
+    → hasType (*r') (*t)
+  -- ~r' : ~t
+  | transpose (t : RelType R 2):
+    ∀ (r' : R), hasType r' t
+    → hasType (~ r') (~ t)
+  -- r1' <: r2' : t1 <: t2
+  | domrestr (n : ℕ) (t1 : RelType R 1) (t2 : RelType R n):
+    ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
+    → hasType (r1' <: r2') (RelType.domrestr t1 t2)
+  -- r1' :> r2' : t1 :> t2
+  | rangerestr (n : ℕ) (t1 : RelType R n) (t2 : RelType R 1):
+    ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
+    → hasType (r1' :> r2') (RelType.rangerestr t1 t2)
 
 infixl:63 " ∷ " => hasType
 
