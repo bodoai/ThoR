@@ -36,24 +36,38 @@ inductive hasType {R: Type} [TupleSet R]:
   | constant (c : R) (h : HasArity.hasArity c n):
     ∀ (c' : R), c' = c
     → hasType c' (RelType.constant c h)
---   -- r1' ∷ t1 , r2' ∷ t2 → t1 m1 ⟶ m2 t2
---   -- TODO replace ⋈ by correct operator "⋈*" (left/right)
---   | complex
---     (n1 n2 : ℕ)
---     (t1 : RelType R n1) (m1 m2 : Shared.mult) (t2 : RelType R n2):
---     ∀ (r1' r2' : R),
---       hasType r1' t1 → hasType r2' t2 →
---       ∀ (r' : R),
---         (r' ⊂ r1' ⟶ r2') →
---         (∀ (r1'' : R),
---           r1'' ⊂ r1' → SetMultPredicates.one r1'' → (mult_to_pred m2 (r1'' ⋈ r'))) ->
---         (∀ (r1'' : R),
---           r1'' ⊂ r1' → SetMultPredicates.one r1'' → (hasType (r1'' ⋈ r') t2)) ->
---         (∀ (r2'' : R),
---           r2'' ⊂ r2' → SetMultPredicates.one r2'' → (mult_to_pred m1 (r' ⋈ r2''))) ->
---         (∀ (r2'' : R),
---           r2'' ⊂ r2' → SetMultPredicates.one r2'' → (hasType (r' ⋈ r2'') t1))
---       -> hasType r' ((RelType.complex t1 m1 m2 t2))
+  -- r1' ∷ t1 , r2' ∷ t2 → t1 m1 ⟶ m2 t2
+  -- TODO replace ⋈ by correct operator "⋈*" (left/right)
+  | complex
+    (n1 n2 : ℕ) (ha : n=n1+n2)
+    (r : R) (ha': HasArity.hasArity r n)
+    (t1 : RelType R n1) (m1 m2 : Shared.mult) (t2 : RelType R n2)
+    (ht : t = ha ▸ (RelType.complex t1 m1 m2 t2)) :
+    ∀ (r1' r2' : R),
+      hasType r1' t1 → hasType r2' t2 →
+      ∀ (r' : R),
+        (r' ⊂ r1' ⟶ r2') →
+      (
+        (∀ (r1'' : R),
+          r1'' ⊂ r1' → SetMultPredicates.one r1'' → (mult_to_pred m2 (r1'' ⋈ r')))
+      ) →
+      (
+        (∀ (r1'' : R),
+          r1'' ⊂ r1' → SetMultPredicates.one r1'' → (hasType (r1'' ⋈ r') t2))
+      )
+        →
+      (
+        (∀ (r2'' : R),
+          r2'' ⊂ r2' → SetMultPredicates.one r2'' → (mult_to_pred m1 (r' ⋈ r2'')))
+      )
+        →
+      (
+        (∀ (r2'' : R),
+          r2'' ⊂ r2' → SetMultPredicates.one r2'' → (hasType (r' ⋈ r2'') t1))
+      )
+       →
+      hasType r' t
+
 --   -- r1' & r2' : t1 & t2
 --   | intersect (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
 --     ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2

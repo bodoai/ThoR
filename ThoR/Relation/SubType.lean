@@ -96,6 +96,10 @@ namespace ThoR
       intro h
       cases h with
       | unary_rel _ _ _ _ h => apply h
+      | complex n1 n2 r _ ha' t1 m1 m2 t2 ht =>
+        dsimp[RelType.mk.unary_rel] at ht
+/- TODO : show with contradiction that RelType.unary_rel ≠ <proof> ▸ RelType.complex -/
+        sorry
 
     lemma instance_is_subset_unary_rel {t2 : RelType R 1} {r2 : Rel t2} {m : Shared.mult} {r1 : Rel (RelType.mk.unary_rel m r2)} : r1 ⊂ r2 := by
       cases r1 with
@@ -111,6 +115,7 @@ namespace ThoR
         | rel _ h_arity subrel h =>
           dsimp[HSubset.hSubset,Rel.subset]
           apply h
+        | complex => sorry
 
   end Subtype
 
@@ -156,7 +161,7 @@ namespace ThoR
         cases r1 with
         | mk r p =>
           dsimp[HSubset.hSubset,Rel.subset]
-          cases p
+          sorry
 
     /- FIXME : aesop -/
     example : (PERSON - MANN).getType ≺ ◃∷ set univ
@@ -186,6 +191,7 @@ namespace ThoR
             · have h : PERSON ⊂ (MANN + FRAU) := by apply a1
               dsimp[HSubset.hSubset,Rel.subset] at h
               apply h
+          | complex => sorry
 
     example : (MANN).getType ≺ (FRAU + MANN).getType
       := by sorry
