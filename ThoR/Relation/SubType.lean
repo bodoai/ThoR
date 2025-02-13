@@ -262,6 +262,13 @@ namespace ThoR
 
   macro "cast" "(" varName:term ")" "∷" typeName:typeExpr: term
     => do `((Subtype.cast $(varName) (by aesop) : ∷ $(typeName)))
+
+  macro varName:ident "▹" typeName:typeExpr: term
+    => do `((Subtype.cast $(varName) (by aesop) : ∷ $(typeName)))
+  macro "(" varName:ident ")" "▹" typeName:typeExpr: term
+    => do `((Subtype.cast $(varName) (by aesop) : ∷ $(typeName)))
+
+
 end Subtype
 
   section test_cast
@@ -298,17 +305,21 @@ end Subtype
     #check (∻ preds.p1) vars.PERSON
     #check (∻ preds.p1) (cast vars.MANN : ∷ set univ)
     #check (∻ preds.p1) (cast vars.MANN : _)
+    #check (∻ preds.p1) (vars.MANN ▹ set univ)
     #check (∻ preds.p2) (cast vars.MANN : ∷ set @ vars.PERSON)
     #check (∻ preds.p2) (cast vars.MANN ∷ set @ vars.PERSON)
     #check (∻ preds.p2) (cast vars.MANN : _)
     #check (∻ preds.p2) (cast vars.MANN' : ∷ set @ vars.PERSON)
+    #check (∻ preds.p2) (vars.MANN ▹ set @ vars.PERSON)
     #check (∻ preds.p2)
       (cast (cast vars.MANN' ∷ set @ vars.MANN) ∷ set @ vars.PERSON)
     #check (∻ preds.p3) vars.MANN'
 
-  /- FIXME : cast macro syntax problem when chaining casts in the following syntax:
+  /- FIXME : cast macro syntax problem when chaining casts in the following syntaxes:
 
       #check (cast (cast vars.MANN' : ∷ set @ vars.MANN) : ∷ set @ vars.MANN)
+      #check (∻ preds.p2) ((vars.MANN' ▹ set @ vars.MANN) ▹ set @ vars.PERSON)
+      #check vars.MANN' ▹ set @ vars.MANN ▹ set @ vars.PERSON
   -/
   end test_cast
 
