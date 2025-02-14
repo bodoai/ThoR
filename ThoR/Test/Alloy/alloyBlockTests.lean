@@ -77,16 +77,16 @@ end
       variable (  r2  :  ∷  @  b2.vars.this_φ_A_ξ_r  )
 
       lemma l1 : ThoR.Subtype.subtypeP (r1 - r2).getType r1.getType := by aesop
-      #check ThoR.Subtype.cast (r1-r2) r1.getType
+      #check ThoR.Subtype.cast (r1-r2) r1.getType (by aesop)
 
       lemma l2 : ThoR.Subtype.subtypeP (r1 - r2).getType (◃∷  @  b2.vars.this_φ_A_ξ_r) := by aesop
-      #check ThoR.Subtype.cast (r1-r2) (◃∷  @  b2.vars.this_φ_A_ξ_r)
+      #check ThoR.Subtype.cast (r1-r2) (◃∷  @  b2.vars.this_φ_A_ξ_r) (by aesop)
 
       lemma l3 : ThoR.Subtype.subtypeP (r1 - r1).getType (◃∷  @  b2.vars.this_φ_A_ξ_r) := by aesop
-      #check ThoR.Subtype.cast (r1-r1) (◃∷  @  b2.vars.this_φ_A_ξ_r)
+      #check ThoR.Subtype.cast (r1-r1) (◃∷  @  b2.vars.this_φ_A_ξ_r) (by aesop)
 
       lemma l4 : ThoR.Subtype.subtypeP r1.getType (r1 + r2).getType := by aesop
-      #check ThoR.Subtype.cast r1 (r1 + r2).getType
+      #check ThoR.Subtype.cast r1 (r1 + r2).getType (by aesop)
     end cast_examples
 
     def  xte  :=
@@ -101,6 +101,29 @@ end
         t  ))
       )
 
+    def  xte'  :=
+    (  ThoR.Quantification.Formula.var  Shared.quant.all  )
+    (  fun  (  t  :  ∷  @  b2.vars.this_φ_A_ξ_r  )  =>
+      (  ThoR.Quantification.Formula.prop  (  (  ∻  b2.preds.x  )
+
+
+      (ThoR.Subtype.cast (  HSub.hSub  t  t  ) (t.getType) (by aesop))
+
+
+        t  ))
+      )
+
+    def  xte''  :=
+    (  ThoR.Quantification.Formula.var  Shared.quant.all  )
+    (  fun  (  t  :  ∷  @  b2.vars.this_φ_A_ξ_r  )  =>
+      (  ThoR.Quantification.Formula.prop  (  (  ∻  b2.preds.x  )
+
+
+      (ThoR.Subtype.cast (  HSub.hSub  t  t  ) (◃∷  @  b2.vars.this_φ_A_ξ_r) (by aesop))
+
+
+        t  ))
+      )
     end  b2.preds
 
     namespace  b2.facts
