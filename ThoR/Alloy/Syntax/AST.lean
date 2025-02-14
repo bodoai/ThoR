@@ -12,6 +12,8 @@ import ThoR.Alloy.Syntax.Signature
 import ThoR.Alloy.Syntax.Predicate
 import ThoR.Alloy.Syntax.AssertDecl.assertDecl
 import ThoR.Alloy.Syntax.FactDecl.factDecl
+import ThoR.Alloy.Syntax.AssertDecl.assertDecl
+import ThoR.Alloy.Syntax.FactDecl.factDecl
 import ThoR.Alloy.Syntax.specification
 
 open Lean

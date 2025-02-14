@@ -817,6 +817,7 @@ private def evaluateCreationCommand
     let monadeState ← get
 
     let dataName : Name := s!"{ident.getId.toString}_Data".toName
+    let dataName : Name := s!"{ident.getId.toString}_Data".toName
     let ads := getAlloyData monadeState.env
 
     if let Option.some (ad : alloyData) := ads.find? dataName then
