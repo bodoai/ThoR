@@ -6,4 +6,4 @@ Authors: s. file CONTRIBUTORS
 /-
 This file bundels all imports from the directory Predicate
 -/
-import ThoR.Alloy.Syntax.Predicate.predDecl
+import ThoR.Alloy.Syntax.Predicate.PredDecl.predDecl
