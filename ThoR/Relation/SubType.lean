@@ -79,6 +79,7 @@ namespace ThoR
       | complex_subtype_r {arity1 arity2 : ℕ} (t1 : RelType R arity1) (t2 t2': RelType R arity2) (m1 m2 : Shared.mult) :
         subtypeP t2 t2' →
         subtypeP (RelType.complex t1 m1 m2 t2) (RelType.complex t1 m1 m2 t2')
+      | sub ( t : RelType R arity) : subtypeP (t - t) t
   end Subtype
 
   namespace Subtype

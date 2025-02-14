@@ -29,9 +29,14 @@ end
     all t: B | some t + B.r
   }
 
+  pred p2 {
+
+  }
+
 end
 
 #create x2
+#check x2.preds.p1
 
 
 ~alloy x3
@@ -46,6 +51,40 @@ end
   }
 
 end
+
+ namespace  b2
+
+  class  vars  (  ThoR_TupleSet  :  Type  )  [  ThoR.TupleSet  ThoR_TupleSet  ]  where  (  this_φ_B  :  ∷  set  univ  )  (  this_φ_A  :  ∷  set  this_φ_B  )  (  this_φ_A_ξ_r  :  ∷  this_φ_A  set  →  one  this_φ_B  )
+
+  end  b2
+
+  alias  b2.vars.B  :=  b2.vars.this_φ_B
+
+  alias  b2.vars.A  :=  b2.vars.this_φ_A
+
+  alias  b2.vars.A.r  :=  b2.vars.this_φ_A_ξ_r
+
+  namespace  b2.preds
+
+  variable  {  ThoR_TupleSet  :  Type  }  [  ThoR.TupleSet  ThoR_TupleSet  ]  [  b2.vars  ThoR_TupleSet  ]
+
+  def  x  (  a1  a2  :  ∷  @  b2.vars.this_φ_A_ξ_r  )  :=  (  ThoR.SetMultPredicates.some  (  ∻  b2.vars.this_φ_B  )  )
+
+  variable (  t  :  ∷  @  b2.vars.this_φ_A_ξ_r  )
+  #check (cast (  HSub.hSub  t  t  ) :  ∷  this_φ_A set  →  one this_φ_B )
+  def  xte  :=  (  ThoR.Quantification.Formula.var  Shared.quant.all  )  (  fun  (  t  :  ∷  @  b2.vars.this_φ_A_ξ_r  )  =>  (  ThoR.Quantification.Formula.prop  (  (  ∻  b2.preds.x  )  (cast (  HSub.hSub  t  t  ) :  ∷  this_φ_A set  →  one this_φ_B )  t  ))  )
+
+  end  b2.preds
+
+  namespace  b2.facts
+
+  variable  {  ThoR_TupleSet  :  Type  }  [  ThoR.TupleSet  ThoR_TupleSet  ]  [  b2.vars  ThoR_TupleSet  ]
+
+  axiom  f0  :  (  ∻  b2.preds.xte  )
+
+  end  b2.facts
+
+  open  b2.vars  b2.preds  b2.facts
 
 
 #alloy b2
