@@ -15,4 +15,12 @@ namespace Alloy.factDecl
     let formulas := fd.formulas.map fun f => f.simplifyDomainRestrictions st
     {fd with formulas := formulas}
 
+  def insertModuleVariables
+    (fd : factDecl)
+    (moduleVariables openVariables : List (String))
+    : factDecl :=
+    let formulas :=
+      fd.formulas.map fun f => f.insertModuleVariables moduleVariables openVariables
+    {fd with formulas := formulas}
+
 end Alloy.factDecl

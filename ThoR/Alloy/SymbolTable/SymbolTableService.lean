@@ -79,16 +79,21 @@ to be better digestible for further computation and transformation into Lean.
 
     This function stops at first error and states which symbol is missing.
     -/
-    private def checkSymbols (st : SymbolTable) : Except String Unit := do
-      let availableSymbols : List (String) :=
-        (st.variableDecls.map fun (vd) => vd.name) ++
+    private def checkSymbols
+      (st : SymbolTable)
+      (ast : AST)
+      : Except String Unit := do
+        let availableSymbols : List (String) :=
+          (ast.modulVariables) ++
+          (st.variableDecls.map fun (vd) => vd.name) ++
           (st.axiomDecls.map  fun (ad) => ad.name) ++
-            (st.defDecls.map  fun (dd) => dd.name) ++
-            (st.defDecls.map  fun (dd) => (dd.args.map fun (arg) => arg.names).join).join
+          (st.defDecls.map  fun (dd) => dd.name) ++
+          (st.defDecls.map  fun (dd) =>
+            (dd.args.map fun (arg) => arg.names).join).join
 
-      for requiredSymbol in st.requiredDecls do
-        if !(availableSymbols.contains requiredSymbol) then
-          throw s!"{requiredSymbol} is not defined"
+        for requiredSymbol in st.requiredDecls do
+          if !(availableSymbols.contains requiredSymbol) then
+            throw s!"{requiredSymbol} is not defined"
 
     /-
     The duplication of module names is checked here.
@@ -668,7 +673,13 @@ to be better digestible for further computation and transformation into Lean.
         st := st.addAsserts ast.assertDecls
 
         -- CHECKS
-        if let Except.error msg := st.checkSymbols then
+        if let Except.error msg := st.checkSymbols ast then
+          if extensive_logging then
+            throw (getExtensiveErrorMsg msg st)
+          else
+            throw msg
+
+        if let Except.error msg := st.checkModuleImports then
           if extensive_logging then
             throw (getExtensiveErrorMsg msg st)
           else

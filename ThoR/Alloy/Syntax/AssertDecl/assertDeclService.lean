@@ -15,4 +15,12 @@ namespace Alloy.assertDecl
     let formulas := ad.formulas.map fun f => f.simplifyDomainRestrictions st
     {ad with formulas := formulas}
 
+  def insertModuleVariables
+    (ad : assertDecl)
+    (moduleVariables openVariables : List (String))
+    : assertDecl :=
+    let formulas := ad.formulas.map
+      fun f => f.insertModuleVariables moduleVariables openVariables
+    {ad with formulas := formulas}
+
 end Alloy.assertDecl

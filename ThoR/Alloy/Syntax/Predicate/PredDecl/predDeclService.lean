@@ -17,4 +17,14 @@ namespace Alloy.predDecl
     let forms := pd.forms.map fun f => f.simplifyDomainRestrictions st
     { pd with args := args, forms := forms}
 
+  def insertModuleVariables
+    (pd : predDecl)
+    (moduleVariables openVariables : List (String))
+    : predDecl :=
+    let args := pd.args.map fun arg =>
+      arg.insertModuleVariables moduleVariables openVariables
+    let forms :=
+      pd.forms.map fun f => f.insertModuleVariables moduleVariables openVariables
+    { pd with args := args, forms := forms}
+
 end Alloy.predDecl
