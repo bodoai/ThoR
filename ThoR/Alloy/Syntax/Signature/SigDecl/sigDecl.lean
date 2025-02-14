@@ -97,7 +97,6 @@ namespace Alloy
         let stringNames : List (String) :=
           ( names.getElems.map fun (elem) =>
             (extendedIdent.toName elem).toString
-            (extendedIdent.toName elem).toString
           ).toList
 
         let mut newSigDecl : sigDecl := {
@@ -114,7 +113,6 @@ namespace Alloy
           | `(fieldDecl | $relNames:extendedIdent,* : $te:typeExpr) => do
             let stringNames : List (String) :=
               ( relNames.getElems.map fun (elem) =>
-                (extendedIdent.toName elem).toString
                 (extendedIdent.toName elem).toString
               ).toList
 

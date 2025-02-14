@@ -124,35 +124,6 @@ to be better digestible for further computation and transformation into Lean.
 
         lookedAtNames := lookedAtNames.concat alloyName
 
-    /-
-    The duplication of module names is checked here.
-    This has the advantage that you only get an error if you use the
-    faulty module.
-    -/
-    private def checkModuleImports (st : SymbolTable) : Except String Unit := do
-      let importedVariableDeclarations :=
-        st.variableDecls.filter fun vd => vd.isOpened
-
-      let importedModuleNames :=
-        (importedVariableDeclarations.map fun vd => vd.openedFrom).eraseDups
-
-      let alloyLikeModuleNames :=
-        importedModuleNames.map fun name => (name.splitOn "_").getLast!
-
-      let mut lookedAtNames := []
-      for index in [:(alloyLikeModuleNames.length)] do
-        let alloyName := alloyLikeModuleNames.get! index
-        let realName := importedModuleNames.get! index
-        if lookedAtNames.contains alloyName then
-          let indeces := alloyLikeModuleNames.indexesOf alloyName
-          let doubleNamedModules := indeces.map fun i => importedModuleNames.get! i
-          throw s!"Cannot import module '{realName}' \
-          without alias (keyword 'as'), as the name '{alloyName}' \
-          is ambiguous. Multiple modules end with {alloyName}: \
-          ({doubleNamedModules})."
-
-        lookedAtNames := lookedAtNames.concat alloyName
-
     private def checkRelationCalls
       (st : SymbolTable)
       : Except String Unit := do

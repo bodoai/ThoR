@@ -42,11 +42,6 @@ instance : ToString openModule where
         name := {om.moduleToOpen},
         alias := {om.moduleAlias}
       }"
-  toString (om : openModule) :=
-    s!"OpenModule: \{
-        name := {om.moduleToOpen},
-        alias := {om.moduleAlias}
-      }"
 
 namespace openModule
 
