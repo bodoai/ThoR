@@ -18,11 +18,6 @@ import ThoR.Alloy.Delab.DelaborationService
 
 open Lean PrettyPrinter Delaborator SubExpr
 
--- TODO In welchem Namespace sollen die ThoR-spezifischen
---      Typklassen definiert werden?
---      - root
---      - ThoR
---      Nach getroffener Entscheidung: einheitlich handhaben.
 set_option linter.cdot false in -- supress warning for use of .
 @[app_unexpander ThoR.Dotjoin.dotjoin]
 def unexpDotjoin : Unexpander
@@ -35,6 +30,12 @@ def unexpDotjoin : Unexpander
 
     `($new_a . $new_b)
 
+  | `($_ $a:ident $b:term) => do
+
+    let new_a :=
+      delaborationService.switch_thoR_representation_to_alloy_representation a
+
+    `($new_a . $b)
   | _ => throw Unit.unit
 
 set_option linter.cdot false in -- supress warning for use of .
@@ -48,6 +49,13 @@ def unexpHDotjoin : Unexpander
       delaborationService.switch_thoR_representation_to_alloy_representation b
 
     `($new_a . $new_b)
+
+  | `($_ $a:ident $b:term) => do
+
+    let new_a :=
+      delaborationService.switch_thoR_representation_to_alloy_representation a
+
+    `($new_a . $b)
 
   | _ => throw Unit.unit
 
