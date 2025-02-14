@@ -471,6 +471,11 @@ private partial def openModules
           throw msg
         | Except.ok data =>
           let mut newAst := data.ast
+
+          -- if an alias is defined, use it as name for the module
+          if moduleToOpen.moduleAlias != default then
+            newAst := newAst.updateName moduleToOpen.moduleAlias
+
           if !newAst.modulesToOpen.isEmpty then
             let additionalModules := (openModules newAst env)
             match additionalModules with
