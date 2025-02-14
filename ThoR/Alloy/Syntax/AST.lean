@@ -277,26 +277,6 @@ namespace AST
 
       return ast
 
-  /--
-  Concatenates two abstact syntax trees.
-  The resulting AST takes the name of the first given AST.
-  -/
-  def concat (ast1 ast2 : AST) : AST :=
-    match ast1, ast2 with
-      | mk name1 moduleVariables1 sigDecls1 factDecls1 assertDecls1
-        predDecls1 modulesToOpen1 openendModules1,
-        mk _ moduleVariables2 sigDecls2 factDecls2 assertDecls2
-        predDecls2 modulesToOpen2 openendModules2
-        =>
-        mk name1
-          (moduleVariables1.append moduleVariables2)
-          (sigDecls1.append sigDecls2)
-          (factDecls1.append factDecls2)
-          (assertDecls1.append assertDecls2)
-          (predDecls1.append predDecls2)
-          (modulesToOpen1.append modulesToOpen2)
-          (openendModules1.append openendModules2)
-
 end AST
 
 end Alloy
