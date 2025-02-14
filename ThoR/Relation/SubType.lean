@@ -79,7 +79,9 @@ namespace ThoR
       | complex_subtype_r {arity1 arity2 : ℕ} (t1 : RelType R arity1) (t2 t2': RelType R arity2) (m1 m2 : Shared.mult) :
         subtypeP t2 t2' →
         subtypeP (RelType.complex t1 m1 m2 t2) (RelType.complex t1 m1 m2 t2')
-      | sub ( t : RelType R arity) : subtypeP (t - t) t
+      | sub (t1 t2 : RelType R arity) : subtypeP (t1 - t2) t1
+      | add_r (t1 t2 : RelType R arity) : subtypeP t1 (t1 + t2)
+      | add_l (t1 t2 : RelType R arity) : subtypeP t1 (t2 + t1)
   end Subtype
 
   namespace Subtype
@@ -243,31 +245,31 @@ namespace ThoR
     apply h1
     cases r with | mk relation type_pf => apply type_pf
 
-  def cast {t1 : RelType R arity} (r : Rel t1) {t2 : RelType R arity} (subtype_pf : t1 ≺ t2)
+  def cast {t1 : RelType R arity} (r : Rel t1) (t2 : RelType R arity) (subtype_pf : t1 ≺ t2)
   : (Rel t2)
   := Rel.mk
     (r.relation)
     (castable r t2 subtype_pf)
 
   macro "cast" varName:ident : term
-    => do `((Subtype.cast $(varName) (by aesop)))
+    => do `((Subtype.cast $(varName) _ (by aesop)))
 
   macro "cast" varName:ident "∷" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) (by aesop) : ∷ $(typeName)))
+    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(typeName)))
 
   macro "cast" "(" varName:term ")" : term
-    => do `((Subtype.cast $(varName) (by aesop)))
+    => do `((Subtype.cast $(varName) _ (by aesop)))
 
   macro "cast" "(" varName:term ")" ":" type:typeExpr : term
-    => do `((Subtype.cast $(varName) (by aesop) : ∷ $(type)))
+    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(type)))
 
   macro "cast" "(" varName:term ")" "∷" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) (by aesop) : ∷ $(typeName)))
+    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(typeName)))
 
   macro varName:ident "▹" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) (by aesop) : ∷ $(typeName)))
+    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(typeName)))
   macro "(" varName:ident ")" "▹" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) (by aesop) : ∷ $(typeName)))
+    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(typeName)))
 
 
 end Subtype
@@ -325,20 +327,20 @@ end Subtype
   end test_cast
 
 
-  /- TODO : (by aesop) should be lazily evaluated in coercion
-      Otherwise, (by aesop) in the coercion definition does not make sense, as the concrete types t1 and t2 are not known before the coercion has been applied.
-  -/
-  instance {R : Type} [TupleSet R] {arity : ℕ} (t1 t2 : RelType R arity) (r : (Rel t1)):
-    CoeDep (Rel t1) r (Rel t2) where
-  --    coe := mkSupertype t1 t2 r
-    coe := Rel.mk r.relation (@Subtype.castable R _ arity t1 r t2 (by sorry))
+  -- /- TODO : (by aesop) should be lazily evaluated in coercion
+  --     Otherwise, (by aesop) in the coercion definition does not make sense, as the concrete types t1 and t2 are not known before the coercion has been applied.
+  -- -/
+  -- instance {R : Type} [TupleSet R] {arity : ℕ} (t1 t2 : RelType R arity) (r : (Rel t1)):
+  --   CoeDep (Rel t1) r (Rel t2) where
+  -- --    coe := mkSupertype t1 t2 r
+  --   coe := Rel.mk r.relation (@Subtype.castable R _ arity t1 r t2 (by aesop))
 
-  section test_coercion
-    variable (ThoR_TupleSet : Type) [TupleSet ThoR_TupleSet]
-    variable (PERSON : ∷ some univ)
-    #check (PERSON : ∷ PERSON - PERSON)
-    def v : ∷ PERSON + PERSON := PERSON
-    #check v
-  end test_coercion
+  -- section test_coercion
+  --   variable (ThoR_TupleSet : Type) [TupleSet ThoR_TupleSet]
+  --   variable (PERSON : ∷ some univ)
+  --   #check (PERSON : ∷ PERSON - PERSON)
+  --   def v : ∷ PERSON + PERSON := PERSON
+  --   #check v
+  -- end test_coercion
 
 end ThoR
