@@ -102,10 +102,10 @@ lemma RelType'.arity.cons {R : Type} [TupleSet R] {n : ℕ} (t : RelType R n) : 
   cases t with
   | mk val property => dsimp[RelType'.arity]; trivial
 
-def RelType.arity {R : Type} [TupleSet R] {n : ℕ} (t : RelType R n) := t.1.arity
+def RelType.arity {R : Type} [TupleSet R] {n : ℕ} (t : RelType R n) := n
 lemma RelType.arity.cons {R : Type} [TupleSet R] {n : ℕ} (t : RelType R n) : t.arity = n := by
   cases t with
-  | mk val property => dsimp[RelType.arity]; trivial
+  | mk val property => dsimp[arity]
 
 def RelType.complex {R : Type} [TupleSet R] {n1 : ℕ} (t1 : RelType' R) (h1 : t1.arity = some n1) (m1 m2 : Shared.mult) {n2 : ℕ} (t2 : RelType' R) (h2 : t2.arity = some n2):=
   @Subtype.mk _ (λ r => r.arity = some (n1 + n2)) (@RelType'.complex R _ t1 m1 m2 t2) (by simp; rw[h1,h2]; simp)

@@ -18,33 +18,32 @@ def mult_to_pred {R : Type u} [ThoR.TupleSet R] (m : Shared.mult) : R → Prop :
 
 namespace HasRelType
 
-inductive hasType {R: Type} [TupleSet R]:
-  {n : ℕ} → R → (RelType R n) → Prop :=
+inductive hasType' {R: Type} [TupleSet R]: R → (RelType' R) → Prop :=
   -- subset : m univ
   | sig (m : Shared.mult):
     ∀ (subset : R), subset ⊂ RelConstants.univ → mult_to_pred m subset
-    → hasType subset (RelType.sig m (Eq.refl 1))
+    → hasType' subset (RelType.sig R m)
   -- subet : m superset
   | unary_rel (m : Shared.mult) (superset : R) (h : HasArity.hasArity superset 1):
     ∀ (subset : R), subset ⊂ superset → mult_to_pred m subset
-    → hasType subset (RelType.unary_rel m superset (Eq.refl 1) h)
+    → hasType' subset (RelType.unary_rel R m superset h)
   -- subrel : subrel
-  | rel (superrel : R) (h: HasArity.hasArity superrel n):
+  | rel (superrel : R) (n : ℕ) (h: HasArity.hasArity superrel n):
     ∀ (subrel : R), subrel ⊂ superrel
-    → hasType subrel (RelType.rel superrel h)
+    → hasType' subrel (RelType.rel R superrel n h)
   -- none ∷ constant none, univ ∷ constant univ, id ∷ constant id
-  | constant (c : R) (h : HasArity.hasArity c n):
+  | constant (c : R) (n : ℕ) (h : HasArity.hasArity c n):
     ∀ (c' : R), c' = c
-    → hasType c' (RelType.constant c h)
+    → hasType' c' (RelType.constant R c n h)
   -- r1' ∷ t1 , r2' ∷ t2 → t1 m1 ⟶ m2 t2
   -- TODO replace ⋈ by correct operator "⋈*" (left/right)
   | complex
-    (n1 n2 : ℕ) (ha : n=n1+n2)
-    (r : R) (ha': HasArity.hasArity r n)
+    (n1 n2 : ℕ)
+    (r : R) (ha: HasArity.hasArity r (n1 + n2))
     (t1 : RelType R n1) (m1 m2 : Shared.mult) (t2 : RelType R n2)
-    (ht : t = ha ▸ (RelType.complex t1 m1 m2 t2)) :
+     :
     ∀ (r1' r2' : R),
-      hasType r1' t1 → hasType r2' t2 →
+      hasType' r1' t1 → hasType' r2' t2 →
       ∀ (r' : R),
         (r' ⊂ r1' ⟶ r2') →
       (
@@ -53,7 +52,7 @@ inductive hasType {R: Type} [TupleSet R]:
       ) →
       (
         (∀ (r1'' : R),
-          r1'' ⊂ r1' → SetMultPredicates.one r1'' → (hasType (r1'' ⋈ r') t2))
+          r1'' ⊂ r1' → SetMultPredicates.one r1'' → (hasType' (r1'' ⋈ r') t2))
       )
         →
       (
@@ -63,61 +62,85 @@ inductive hasType {R: Type} [TupleSet R]:
         →
       (
         (∀ (r2'' : R),
-          r2'' ⊂ r2' → SetMultPredicates.one r2'' → (hasType (r' ⋈ r2'') t1))
+          r2'' ⊂ r2' → SetMultPredicates.one r2'' → (hasType' (r' ⋈ r2'') t1))
       )
        →
-      hasType r' t
+      hasType' r' t
   -- r1' & r2' : t1 & t2
   | intersect (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
-    ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
-    → hasType (r1' & r2') (RelType.intersect t1 t2)
-  -- r1' + r2' : t1 + t2
-  | add (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
-    ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
-    → hasType (r1' + r2') (t1 + t2)
-  -- r1' - r2' : t1 - t2
-  | sub (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
-    ∀ (r1' r2' : R),
-    hasType r1' t1 → hasType r2' t2
-    → hasType (r1' - r2') (t1 - t2)
-  -- r1' ++ r2' : t1 ++ t2
-  | append (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
-    ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
-    → hasType (r1' ++ r2') (t1 ++ t2)
-  -- TODO cartprod redundant to complex
-  -- r1' ⟶ r2' : t1 ⟶ t2
-  | cartprod (n1 n2 : ℕ) (ha : n=n1+n2) (t1 : RelType R n1) (t2 : RelType R n2) (ht : t=ha ▸ ((RelType.cartprod t1 t2))):
-    ∀ (r1' r2' : R),
-      hasType r1' t1 → hasType r2' t2 →
-      ∀ (r' : R),
-        (r' ⊂ r1' ⟶ r2')
-      → hasType r' t
+    ∀ (r1' r2' : R), hasType' r1' t1 → hasType' r2' t2
+    → hasType' (r1' & r2') (t1 & t2)
+  -- -- r1' + r2' : t1 + t2
+  -- | add (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
+  --   ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
+  --   → hasType (r1' + r2') (t1 + t2)
+  -- -- r1' - r2' : t1 - t2
+  -- | sub (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
+  --   ∀ (r1' r2' : R),
+  --   hasType r1' t1 → hasType r2' t2
+  --   → hasType (r1' - r2') (t1 - t2)
+  -- -- r1' ++ r2' : t1 ++ t2
+  -- | append (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
+  --   ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
+  --   → hasType (r1' ++ r2') (t1 ++ t2)
+  -- -- TODO cartprod redundant to complex
+  -- -- r1' ⟶ r2' : t1 ⟶ t2
+  -- | cartprod (n1 n2 : ℕ) (ha : n=n1+n2) (t1 : RelType R n1) (t2 : RelType R n2) (ht : t=ha ▸ ((RelType.cartprod t1 t2))):
+  --   ∀ (r1' r2' : R),
+  --     hasType r1' t1 → hasType r2' t2 →
+  --     ∀ (r' : R),
+  --       (r' ⊂ r1' ⟶ r2')
+  --     → hasType r' t
   -- r1' ⋈ r2' : t1 ⋈ t2
-  | dotjoin (n1 n2 : ℕ) (ha: n=n1+n2) (t1 : RelType R (n1+1)) (t2 : RelType R (n2+1)) (ht: t=ha ▸ (t1 ⋈ t2)):
-    ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
-    → hasType (r1' ⋈ r2') t
-  -- ^r' : ^t
-  | transclos (t : RelType R 2):
-    ∀ (r' : R), hasType r' t
-    → hasType (^r') (^t)
-  -- *r' : *t
-  | reftransclos (t : RelType R 2):
-    ∀ (r' : R), hasType r' t
-    → hasType (*r') (*t)
-  -- ~r' : ~t
-  | transpose (t : RelType R 2):
-    ∀ (r' : R), hasType r' t
-    → hasType (~ r') (~ t)
-  -- r1' <: r2' : t1 <: t2
-  | domrestr (n : ℕ) (t1 : RelType R 1) (t2 : RelType R n):
-    ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
-    → hasType (r1' <: r2') (RelType.domrestr t1 t2)
-  -- r1' :> r2' : t1 :> t2
-  | rangerestr (n : ℕ) (t1 : RelType R n) (t2 : RelType R 1):
-    ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
-    → hasType (r1' :> r2') (RelType.rangerestr t1 t2)
+  | dotjoin (n1 n2 : ℕ) (t1 : RelType R (n1+1)) (t2 : RelType R (n2+1)) :
+    ∀ (r1' r2' : R), hasType' r1' t1 → hasType' r2' t2
+    → hasType' (r1' ⋈ r2') (t1 ⋈ t2)
+  -- -- ^r' : ^t
+  -- | transclos (t : RelType R 2):
+  --   ∀ (r' : R), hasType r' t
+  --   → hasType (^r') (^t)
+  -- -- *r' : *t
+  -- | reftransclos (t : RelType R 2):
+  --   ∀ (r' : R), hasType r' t
+  --   → hasType (*r') (*t)
+  -- -- ~r' : ~t
+  -- | transpose (t : RelType R 2):
+  --   ∀ (r' : R), hasType r' t
+  --   → hasType (~ r') (~ t)
+  -- -- r1' <: r2' : t1 <: t2
+  -- | domrestr (n : ℕ) (t1 : RelType R 1) (t2 : RelType R n):
+  --   ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
+  --   → hasType (r1' <: r2') (RelType.domrestr t1 t2)
+  -- -- r1' :> r2' : t1 :> t2
+  -- | rangerestr (n : ℕ) (t1 : RelType R n) (t2 : RelType R 1):
+  --   ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
+  --   → hasType (r1' :> r2') (RelType.rangerestr t1 t2)
 
-infixl:63 " ∷ " => hasType
+infixl:63 " ∷ " => hasType'
+
+def hasType'.checkArity {R: Type} [TupleSet R]: R → (RelType R n) :=
+  match t with
+  | RelType'.sig _    => some 1
+  | unary_rel _ _ _   => some 1
+  | rel _ n _         => some n
+  | constant _ n _    => some n
+  | complex t1 _ _ t2 => do
+                          let n1 ← t1.arity
+                          let n2 ← t2.arity
+                          some (n1+n2)
+  | intersect t1 t2   => do
+                          let n1 ← arity t1
+                          let n2 ← arity t2
+                          if (n1 = n2)
+                          then return n1
+                          else none
+  | dotjoin t1 t2 => do
+                      let n1 ← t1.arity
+                      let n2 ← t2.arity
+                      if (n1 > 0 ∧ n2 >0)
+                      then return n1 + n2 - 2
+                      else none
+
 
 
   theorem arity {R : Type} [TupleSet R] (n : ℕ) (r : R) (t : RelType R n):
