@@ -24,7 +24,8 @@ namespace Alloy
           (requiredVars : List (String)) -- only for Lean Infoview
           /-
           a list of called predicates, contains the called predicate and
-          a list of the calls in the given arguments. Note that there can
+          a list of the calls in the given arguments and the expression
+          of the argument to simplify checks. Note that there can
           be multiple calls in one argumen e.g. t - t => t is called two times
           the innermost list can contain multiple varDecls IF the call is
           ambigous.
@@ -32,7 +33,7 @@ namespace Alloy
           Possible improvement on clarity:
           Make a Structure that conveys the meaning better?
           -/
-          (predCalls : List (commandDecl × List (List (List (varDecl)))))
+          (predCalls : List (commandDecl × List (expr × List (List (varDecl)))))
           (relationCalls : List (List (varDecl))) -- called relations
           (signatureCalls : List (List (varDecl))) -- called signatures
   deriving Repr
