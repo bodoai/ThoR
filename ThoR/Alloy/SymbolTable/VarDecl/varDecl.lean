@@ -7,7 +7,7 @@ import ThoR.Shared.Syntax.TypeExpr.typeExpr
 
 import ThoR.Alloy.Config
 
-open Shared Config
+open Shared Config Lean
 
 namespace Alloy
 
@@ -61,10 +61,16 @@ namespace Alloy
                     requiredDecls := default
                   }
 
-    def getFullRelationName (vd : varDecl) : String :=
-      s!"{if vd.isOpened then s!"{vd.openedFrom.replace "_" "."}." else ""}\
-      {vd.relationOf}.\
-      {vd.name}"
+    def getFullRelationName (vd : varDecl) : Name := Id.run do
+      Name.fromComponents
+        (
+          ( if vd.isOpened then
+              ((vd.openedFrom.splitOn "_").map
+                fun elem => elem.toName)
+            else
+              []
+          )
+          ++ [vd.relationOf.toName, vd.name.toName])
 
     def getRelationReplacementName (vd : varDecl) : String :=
       s!"{vd.openedFrom}\
@@ -73,9 +79,16 @@ namespace Alloy
       {relationSeparator}\
       {vd.name}"
 
-    def getFullSignatureName (vd : varDecl) : String :=
-      s!"{if vd.isOpened then s!"{vd.openedFrom.replace "_" "."}." else ""}\
-      {vd.name}"
+    def getFullSignatureName (vd : varDecl) : Name :=
+      Name.fromComponents
+        (
+          ( if vd.isOpened then
+              ((vd.openedFrom.splitOn "_").map
+                fun elem => elem.toName)
+            else
+              []
+          )
+          ++ [vd.name.toName])
 
     def getSignatureReplacementName (vd : varDecl) : String :=
       s!"{vd.openedFrom}\

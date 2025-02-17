@@ -177,6 +177,7 @@ end
 
 open b2.vars
 open b2.preds
+#check xte
 #print xte
 #check b2.vars.A
 #check b2.vars.B

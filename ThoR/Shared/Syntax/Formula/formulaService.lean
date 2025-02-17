@@ -6,17 +6,18 @@ Authors: s. file CONTRIBUTORS
 
 import ThoR.Shared.Syntax.Formula.formula
 import ThoR.Alloy.SymbolTable.CommandDecl.commandDecl
-import ThoR.Alloy.SymbolTable.CommandDecl.commandDecl
+import ThoR.Alloy.Syntax.Predicate.PredDecl.predDecl
 
 import ThoR.Shared.Syntax.Relation.Expr.exprService
 import ThoR.Shared.Syntax.TypeExpr.typeExprService
 import ThoR.Shared.Syntax.Algebra.AlgExpr.algExprService
 
 import ThoR.Relation.Elab
+import ThoR.Relation.SubType
 import ThoR.Relation.Quantification
 
 open Alloy ThoR ThoR.Quantification
-open Lean
+open Lean ThoR
 
 namespace Shared.formula
 
@@ -91,7 +92,8 @@ namespace Shared.formula
     (f: formula)
     (blockName : Name)
     (variableNames : List (String)) -- to check if var or pred
-    (callablePreds : List (predDecl))
+    (callableVariables : List (varDecl))
+    (callablePredicates : List (commandDecl × List (expr × List (List varDecl))))
     -- names that have to be pure with no namespace (quantors and args)
     (pureNames : List (String) := [])
     : TSyntax `term := Unhygienic.run do
@@ -120,8 +122,52 @@ namespace Shared.formula
               ∻ $(mkIdent s!"{blockName}.preds.{p}".toName)
             ))
 
-        for arg in pa do
-          term ← `($term $(arg.toTermFromBlock blockName pureNames))
+        let possibleCalledPredicates :=
+          (callablePredicates.filter fun cp => cp.1.name == p)
+
+        if possibleCalledPredicates.isEmpty || possibleCalledPredicates.length > 1 then
+          panic!
+            s!"Called Preds is Empty or more than one \
+            in formulaService {possibleCalledPredicates}"
+
+        let calledPredicate := possibleCalledPredicates.get! 0
+
+        let calledArgsVarDecls :=
+          (calledPredicate.1.args.map fun cp =>
+            cp.1.names.map fun _ =>
+              cp.2).join
+
+        for index in [0:pa.length] do
+
+          --let definedArg := calledPredArgs.get! index
+
+          let vd := calledArgsVarDecls.get! index
+
+          let typeName :=
+            (if vd.isRelation then
+              vd.getFullRelationName
+            else
+              vd.getFullSignatureName)
+
+          let calledArg := pa.get! index
+
+          /-
+          if definedArg == calledArg then
+            term ← `($term $(calledArg.toTermFromBlock blockName pureNames))
+
+          else
+          -/
+
+          let t := typeExpr.relExpr (expr.string_rb typeName.toString)
+
+          let castCommand ←
+            `(term |
+              cast
+              ($(calledArg.toTermFromBlock blockName pureNames):term)
+              ∷ $(t.toSyntax blockName))
+
+          term ←
+            `(term | $term $castCommand)
 
         return term
 
@@ -134,30 +180,30 @@ namespace Shared.formula
       | formula.unaryLogicOperation op f =>
         `(( $(op.toTerm)
             $(f.toTerm
-              blockName variableNames callablePreds pureNames
+              blockName variableNames callableVariables callablePredicates pureNames
               )
           ))
 
       | formula.binaryLogicOperation op f1 f2 =>
         `(( $(op.toTerm)
             $(f1.toTerm
-              blockName variableNames callablePreds pureNames
+              blockName variableNames callableVariables callablePredicates pureNames
               )
             $(f2.toTerm
-              blockName variableNames callablePreds pureNames
+              blockName variableNames callableVariables callablePredicates pureNames
               )
           ))
 
       | formula.tertiaryLogicOperation op f1 f2 f3 =>
         `(( $(op.toTerm)
             $(f1.toTerm
-              blockName variableNames callablePreds pureNames
+              blockName variableNames callableVariables callablePredicates pureNames
               )
             $(f2.toTerm
-              blockName variableNames callablePreds pureNames
+              blockName variableNames callableVariables callablePredicates pureNames
               )
             $(f3.toTerm
-              blockName variableNames callablePreds pureNames
+              blockName variableNames callableVariables callablePredicates pureNames
               )
           ))
       | formula.algebraicComparisonOperation op ae1 ae2 =>
@@ -179,7 +225,7 @@ namespace Shared.formula
         let firstForm := f.get! 0
         let mut fTerm ←
           `($(firstForm.toTerm
-              blockName variableNames callablePreds
+              blockName variableNames callableVariables callablePredicates
               (pureNames.append n)
             ))
 
@@ -187,7 +233,7 @@ namespace Shared.formula
           fTerm ←
             `(( $fTerm ∧
                 ($(form.toTerm
-                  blockName variableNames callablePreds
+                  blockName variableNames callableVariables callablePredicates
                   (pureNames.append n)
                 ))
               ))
