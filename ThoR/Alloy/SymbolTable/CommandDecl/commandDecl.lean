@@ -5,7 +5,7 @@ Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Shared.Syntax.Formula.formula
 import ThoR.Alloy.Syntax.Predicate.PredArg.predArg
-import ThoR.Alloy.SymbolTable.varDecl
+import ThoR.Alloy.SymbolTable.VarDecl.varDecl
 
 open Shared
 

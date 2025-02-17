@@ -18,7 +18,10 @@ namespace Alloy.commandDecl
     let formulas := cd.formulas.map fun f => f.simplifyDomainRestrictions st
     let predCalls := cd.predCalls.map fun pc =>
       ((pc.1.simplifyDomainRestrictions st),
-        (pc.2.map fun l1 => l1.map fun l2 => l2.map fun vd => vd.simplifyDomainRestrictions st))
+        (pc.2.map fun l1 =>
+          (l1.1,
+            (l1.2.map fun l2 =>
+              l2.map fun vd => vd.simplifyDomainRestrictions st))))
     let relationCalls := cd.relationCalls.map fun rc =>
       rc.map fun vd => vd.simplifyDomainRestrictions st
     let signatureCalls := cd.signatureCalls.map fun sc =>
