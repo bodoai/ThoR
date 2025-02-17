@@ -6,5 +6,5 @@ Authors: s. file CONTRIBUTORS
 /-
 This file bundels all imports from the directory Signature
 -/
-import ThoR.Alloy.Syntax.Signature.sigDecl
+import ThoR.Alloy.Syntax.Signature.SigDecl.sigDecl
 import ThoR.Alloy.Syntax.Signature.signatureFactDecl

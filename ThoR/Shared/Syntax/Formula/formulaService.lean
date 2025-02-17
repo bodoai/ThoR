@@ -5,7 +5,8 @@ Authors: s. file CONTRIBUTORS
 -/
 
 import ThoR.Shared.Syntax.Formula.formula
-import ThoR.Alloy.SymbolTable.commandDecl
+import ThoR.Alloy.SymbolTable.CommandDecl.commandDecl
+import ThoR.Alloy.SymbolTable.CommandDecl.commandDecl
 
 import ThoR.Shared.Syntax.Relation.Expr.exprService
 import ThoR.Shared.Syntax.TypeExpr.typeExprService
@@ -231,10 +232,10 @@ namespace Shared.formula
         | `(formula| ( $f:formula )) => toType f
 
         | `(formula| $name:ident) =>
-          formula.string name.getId.lastComponentAsString
+          formula.string name.getId.toString
 
         | `(formula| $predName:ident [$predargs,*]) =>
-          formula.pred_with_args predName.getId.lastComponentAsString
+          formula.pred_with_args predName.getId.toString
             (predargs.getElems.map fun (elem) =>
               expr.toType elem signatureFactSigNames).toList
 
@@ -282,7 +283,7 @@ namespace Shared.formula
           formula.quantification
           (quant.toType q)
           true
-          (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+          (names.getElems.map fun (elem) => elem.getId.toString).toList
           (typeExpr.toType typeExpression)
           ([toType form])
 
@@ -296,7 +297,7 @@ namespace Shared.formula
           formula.quantification
           (quant.toType q)
           true
-          (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+          (names.getElems.map fun (elem) => elem.getId.toString).toList
           (typeExpr.toType typeExpression)
           (form.map fun f => toType f).toList
 
@@ -309,7 +310,7 @@ namespace Shared.formula
           formula.quantification
           (quant.toType q)
           false
-          (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+          (names.getElems.map fun (elem) => elem.getId.toString).toList
           (typeExpr.toType typeExpression)
           ([toType form])
 
@@ -322,7 +323,7 @@ namespace Shared.formula
           formula.quantification
           (quant.toType q)
           false
-          (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+          (names.getElems.map fun (elem) => elem.getId.toString).toList
           (typeExpr.toType typeExpression)
           (form.map fun f => toType f).toList
 
@@ -485,5 +486,75 @@ namespace Shared.formula
               form.getCalledVariables (callableVariables ++ quantVarDecls)).join
 
         | _ => []
+
+  partial def simplifyDomainRestrictions
+    (f : formula)
+    (st : SymbolTable)
+    : formula :=
+    match f with
+      | formula.pred_with_args p args =>
+        pred_with_args p (args.map fun arg => arg.simplifyDomainRestrictions st)
+      | formula.unaryRelBoolOperation op e =>
+        formula.unaryRelBoolOperation op (e.simplifyDomainRestrictions st)
+      | formula.unaryLogicOperation op f =>
+        formula.unaryLogicOperation op (f.simplifyDomainRestrictions st)
+      | formula.binaryLogicOperation op f1 f2 =>
+        formula.binaryLogicOperation
+          op
+          (f1.simplifyDomainRestrictions st)
+          (f2.simplifyDomainRestrictions st)
+      | formula.tertiaryLogicOperation op f1 f2 f3 =>
+        formula.tertiaryLogicOperation
+        op
+        (f1.simplifyDomainRestrictions st)
+        (f2.simplifyDomainRestrictions st)
+        (f3.simplifyDomainRestrictions st)
+      | formula.quantification q d n t f =>
+        formula.quantification
+        q
+        d
+        n
+        (t.simplifyDomainRestrictions st)
+        (f.map fun f => f.simplifyDomainRestrictions st)
+      | _ => f
+
+  partial def insertModuleVariables
+    (f : formula)
+    (moduleVariables openVariables : List (String))
+    : formula :=
+    match f with
+      | formula.pred_with_args p args =>
+        pred_with_args
+          p
+          (args.map fun arg =>
+            arg.insertModuleVariables moduleVariables openVariables)
+      | formula.unaryRelBoolOperation op e =>
+        formula.unaryRelBoolOperation
+          op
+          (e.insertModuleVariables moduleVariables openVariables)
+      | formula.unaryLogicOperation op f =>
+        formula.unaryLogicOperation
+          op
+          (f.insertModuleVariables moduleVariables openVariables)
+      | formula.binaryLogicOperation op f1 f2 =>
+        formula.binaryLogicOperation
+          op
+          (f1.insertModuleVariables moduleVariables openVariables)
+          (f2.insertModuleVariables moduleVariables openVariables)
+      | formula.tertiaryLogicOperation op f1 f2 f3 =>
+        formula.tertiaryLogicOperation
+        op
+        (f1.insertModuleVariables moduleVariables openVariables)
+        (f2.insertModuleVariables moduleVariables openVariables)
+        (f3.insertModuleVariables moduleVariables openVariables)
+      | formula.quantification q d n t f =>
+        formula.quantification
+        q
+        d
+        n
+        (t.insertModuleVariables moduleVariables openVariables)
+        (f.map fun f =>
+          f.insertModuleVariables moduleVariables openVariables)
+      | _ => f
 
 end Shared.formula

@@ -17,7 +17,7 @@ namespace Alloy
   -/
   structure separatedNamespace where
     (representedNamespace : Ident)
-  deriving Repr
+  deriving Repr, BEq, Inhabited
 
   /--
   A syntax repreaentation of an separatedNamespace
@@ -31,12 +31,6 @@ namespace Alloy
     toString (sn : separatedNamespace) : String :=
       s!"separatedNamespace : {sn.representedNamespace.getId}"
 
-  instance : Inhabited separatedNamespace where
-    default := {representedNamespace := default}
-
-  instance : BEq separatedNamespace where
-    beq (sn1 sn2 : separatedNamespace) :=
-      sn1.representedNamespace == sn2.representedNamespace
   namespace separatedNamespace
 
     /-- Generates a String representation from the type -/
@@ -53,15 +47,15 @@ namespace Alloy
 
           | `(separatedNamespace|
                 $ei:extendedIdent $eie:separatedNamespaceExtension*) =>
-            let finalName :=
+            let components :=
               eie.foldl (fun result elem =>
                 match elem with
-                  | `(separatedNamespaceExtension| / $ei:extendedIdent) =>
-                    result.appendAfter s!".{extendedIdent.toName ei}"
+                  | `(separatedNamespaceExtension| / $nei:extendedIdent) =>
+                    result.concat (extendedIdent.toName nei)
                   | _ => result
-              ) (extendedIdent.toName ei)
+              ) [(extendedIdent.toName ei)]
 
-            return {representedNamespace := (mkIdent finalName)}
+            return {representedNamespace := (mkIdent (Name.fromComponents components))}
 
           | _ => default
 

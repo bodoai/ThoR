@@ -19,6 +19,8 @@ import ThoR.Alloy.SymbolTable.SymbolTable
 import ThoR.Alloy.SymbolTable.SymbolTableService
 import ThoR.Alloy.InheritanceTree.UnTyped.InheritanceTree
 
+import ThoR.Alloy.Syntax.Signature.SigDecl.sigDeclService
+
 import ThoR.Alloy.Syntax.SeparatedNamespace
 import ThoR.Alloy.Syntax.alloyData
 import ThoR.Alloy.Syntax.OpenModule.openModuleHelper
@@ -321,46 +323,85 @@ private def createAxiomCommands
       return commandList
 
 /--
-Creates commands to create Lean aliases for signature relation names.
+Creates commands to create Lean aliases for variable declarations
 
-These are intendet to offer a natural (alloy-like) way to acces these relations
+These are intendet to offer a natural (alloy-like) way to acces these variables
 -/
-private def createRelationAliasCommands
+private def createVariableAliasCommands
   (blockName : Name)
-  (relations : List (varDecl))
+  (variableDeclarations : List (varDecl))
   : List ((TSyntax `command)) := Unhygienic.run do
     let mut commandList : List ((TSyntax `command)) := []
-    for relation in relations do
-      let undottetString := s!"{blockName}.vars.{relation.getRelationReplacementName}"
-      let undottetName := undottetString.toName
-      let dottetName := s!"{blockName}.vars.{if relation.isOpened then s!"{relation.openedFrom}." else ""}{relation.relationOf}.{relation.name}".toName
+    for variableDeclaration in variableDeclarations do
+
+      /-
+      The "undottet" name is the name created by the definition. It
+      contains undesireable symbols like the relation separator.
+      -/
+      let mut undottetComponents :=
+        blockName.components.concat "vars".toName
+
+      /-
+      Get the correct replacement name
+      -/
+      if variableDeclaration.isRelation then
+        undottetComponents :=
+          undottetComponents.concat
+            variableDeclaration.getRelationReplacementName.toName
+      else
+        undottetComponents :=
+          undottetComponents.concat
+            variableDeclaration.getSignatureReplacementName.toName
+
+      let undottetName := Name.fromComponents undottetComponents
+
+      /-
+      The "dottet" name has the undesired symbols replaced by dots.
+      -/
+      let mut dottetComponents :=
+        blockName.components.concat "vars".toName
+
+      /-
+      the alloy "dottet" name provides alloy like module access.
+      this works by creating another alias which contains only
+      the last element of the module name.
+
+      (this is only created if it differs from the regual dotted name)
+      -/
+      let mut alloyDottedComponents := dottetComponents
+
+      if variableDeclaration.isOpened then
+        let openedFromSplit := variableDeclaration.openedFrom.splitOn "_"
+        for element in openedFromSplit do
+          dottetComponents :=
+            (dottetComponents.concat element.toName)
+
+        alloyDottedComponents :=
+          (alloyDottedComponents.concat openedFromSplit.getLast!.toName)
+
+      let mut nameComponents := []
+      if variableDeclaration.isRelation then
+        nameComponents :=
+          nameComponents.concat variableDeclaration.relationOf.toName
+      nameComponents := nameComponents.concat variableDeclaration.name.toName
+
+      dottetComponents :=
+        dottetComponents.append
+          nameComponents
+
+      alloyDottedComponents :=
+        alloyDottedComponents.append
+          nameComponents
+
+      let dottetName := Name.fromComponents dottetComponents
+      let alloyDottetName := Name.fromComponents alloyDottedComponents
 
       let command ← `(alias $(mkIdent dottetName) := $(mkIdent undottetName))
       commandList := commandList.concat command
 
-    return commandList
-
-/--
-Creates commands to create Lean aliases for signature names.
-
-These are intendet to offer a natural (alloy-like) way to acces these signatures
--/
-private def createSignatureAliasCommands
-  (blockName : Name)
-  (signatures : List (varDecl))
-  : List ((TSyntax `command)) := Unhygienic.run do
-    let mut commandList : List ((TSyntax `command)) := []
-    for signature in signatures do
-      let undottetString := s!"{blockName}.vars.{signature.getSignatureReplacementName}"
-      let undottetName := undottetString.toName
-
-      -- change to natural Name && remove this from module name
-      let dottetString := s!"{blockName}.vars.{if signature.isOpened then s!"{signature.openedFrom.replace "_" "."}." else ""}{signature.name}"
-
-      let dottetName := dottetString.toName
-
-      let command ← `(alias $(mkIdent dottetName) := $(mkIdent undottetName))
-      commandList := commandList.concat command
+      if dottetName != alloyDottetName then
+        let command ← `(alias $(mkIdent alloyDottetName) := $(mkIdent undottetName))
+        commandList := commandList.concat command
 
     return commandList
 
@@ -372,10 +413,8 @@ The created commands are encapsulated in a namespaces, which are opened as the l
 private def createCommands (st : SymbolTable) (ast : AST)
   : List ((TSyntax `command)) := Unhygienic.run do
 
-    let blockName : Name := st.name.toName
+    let blockName : Name := st.name
     let mut namespacesToOpen : Array (Ident) := #[]
-    let relations := st.getRelations
-    let signatures := st.getSignatures
 
     --variables
     let mut commandList : List ((TSyntax `command)) := []
@@ -385,12 +424,9 @@ private def createCommands (st : SymbolTable) (ast : AST)
     if !(varCommands.isEmpty) then
       namespacesToOpen := namespacesToOpen.push (mkIdent s!"{blockName}.vars".toName)
 
-    let signatureAliasCommands := createSignatureAliasCommands blockName signatures
-    commandList := commandList.append signatureAliasCommands
-
-    -- create Relation aliases
-    let relationAliasCommands := createRelationAliasCommands blockName relations
-    commandList := commandList.append relationAliasCommands
+    -- creating aliases
+    let aliasCommands := createVariableAliasCommands blockName st.variableDecls
+    commandList := commandList.append aliasCommands
 
     -- defs
     let defCommands := createPredDefsCommands blockName st.defDecls st.variableDecls ast.predDecls
@@ -419,6 +455,16 @@ private def createCommands (st : SymbolTable) (ast : AST)
 
     return commandList
 
+declare_syntax_cat moduleVar
+syntax ("exactly" ident) : moduleVar
+
+private def moduleVar.getIdent
+  (mv : Lean.TSyntax `moduleVar)
+  : Ident :=
+    match mv with
+      | `(moduleVar | exactly $i) => i
+      | _ => unreachable!
+
 /--
 Represents the syntax for the alloy block.
 
@@ -427,7 +473,12 @@ Options:
 - To succeed on failure (with the exception of syntax errors): ~alloy
 -/
 syntax (name := alloyBlock)
-  ("#" <|> "~")? "alloy " (("module")? separatedNamespace)? specification* " end" : command
+  ("#" <|> "~")?
+  "alloy"
+  (("module")? separatedNamespace ("[" moduleVar+ "]")?)?
+  specification*
+  "end"
+  : command
 
 /--
 This function tries to recursivly open all modules.
@@ -446,6 +497,55 @@ private partial def openModules
           throw msg
         | Except.ok data =>
           let mut newAst := data.ast
+
+          -- if an alias is defined, use it as name for the module
+          if moduleToOpen.moduleAlias != default then
+            newAst := newAst.updateName moduleToOpen.moduleAlias
+
+          let variablesOnOpen := moduleToOpen.moduleVariables
+          let numberOfVariablesOnOpen := variablesOnOpen.length
+
+          let variablesOnModule := newAst.modulVariables
+          let numberOfVariablesOnModule := variablesOnModule.length
+
+          /-
+          the open and the module need to have
+          the same number of arguments
+          -/
+          if
+            !(numberOfVariablesOnOpen ==
+            numberOfVariablesOnModule)
+          then
+            throw s!"The module {newAst.name} was openend \
+            with {numberOfVariablesOnOpen} arguments ({variablesOnOpen}) \
+            , but the expected number of arguments is {numberOfVariablesOnModule}"
+
+          /-
+          if the module has Variables (and passed previous check)
+          then the variables are to be replaced
+          -/
+          if !variablesOnOpen.isEmpty then
+
+            newAst :=
+              newAst.updateSigDecls
+                (newAst.sigDecls.map
+                  fun sd => sd.insertModuleVariables variablesOnModule variablesOnOpen)
+
+            newAst :=
+              newAst.updateFactDecls
+                (newAst.factDecls.map
+                  fun fd => fd.insertModuleVariables variablesOnModule variablesOnOpen)
+
+            newAst :=
+              newAst.updateAssertDecls
+                (newAst.assertDecls.map
+                  fun ad => ad.insertModuleVariables variablesOnModule variablesOnOpen)
+
+            newAst :=
+              newAst.updatePredDecls
+                (newAst.predDecls.map
+                  fun dd => dd.insertModuleVariables variablesOnModule variablesOnOpen)
+
           if !newAst.modulesToOpen.isEmpty then
             let additionalModules := (openModules newAst env)
             match additionalModules with
@@ -463,13 +563,14 @@ Evaluates the alloy block syntax.
 private def evalAlloyBlock
   (name : Ident)
   (specifications : Array (TSyntax `specification))
-  (logging: Bool)
+  (moduleVariables : List (String) := default)
+  (logging: Bool := false)
   : CommandElabM Unit := do
 
     let monadeState ← get
     let monadeEnv := monadeState.env
 
-    let mut ast := AST.create name specifications
+    let mut ast := AST.create name specifications moduleVariables
     if logging then
       logInfo
         s!"AST without opened Modules: \n
@@ -557,54 +658,159 @@ private def alloyBlockImpl : CommandElab := fun stx => do
     match stx with
       | `(alloy $blockName:separatedNamespace
             $specifications:specification* end) =>
+
           let blockName :=
             (separatedNamespace.toType blockName).representedNamespace
-          evalAlloyBlock blockName specifications false
+
+          evalAlloyBlock blockName specifications
+
+      | `(alloy $blockName:separatedNamespace [$mvs:moduleVar*]
+            $specifications:specification* end) =>
+
+          let blockName :=
+            (separatedNamespace.toType blockName).representedNamespace
+
+          let moduleVariables :=
+            (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+
+          evalAlloyBlock
+            (moduleVariables := moduleVariables)
+            blockName
+            specifications
 
       | `(alloy module $blockName:separatedNamespace
             $specifications:specification* end) =>
+
           let blockName :=
             (separatedNamespace.toType blockName).representedNamespace
-          evalAlloyBlock blockName specifications false
+
+          evalAlloyBlock blockName specifications
+
+      | `(alloy module $blockName:separatedNamespace [$mvs:moduleVar*]
+            $specifications:specification* end) =>
+
+          let blockName :=
+            (separatedNamespace.toType blockName).representedNamespace
+
+          let moduleVariables :=
+            (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+
+          evalAlloyBlock
+            (moduleVariables := moduleVariables)
+            blockName
+            specifications
 
       | `(alloy $specifications:specification* end) =>
           let defaultBlockName := mkIdent (findDefaultName (← get).env)
-          evalAlloyBlock defaultBlockName  specifications false
+          evalAlloyBlock defaultBlockName specifications
 
       | `(#alloy $blockName:separatedNamespace
             $specifications:specification* end) =>
+
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
-            evalAlloyBlock blockName specifications true
+
+            evalAlloyBlock
+              (logging := true)
+              blockName
+              specifications
+
+      | `(#alloy $blockName:separatedNamespace [$mvs:moduleVar*]
+            $specifications:specification* end) =>
+
+            let blockName :=
+              (separatedNamespace.toType blockName).representedNamespace
+
+            let moduleVariables :=
+              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+
+            evalAlloyBlock
+              (logging := true)
+              (moduleVariables := moduleVariables)
+              blockName
+              specifications
 
       | `(#alloy module $blockName:separatedNamespace
             $specifications:specification* end) =>
+
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
-            evalAlloyBlock blockName specifications true
+
+            evalAlloyBlock
+              (logging := true)
+              blockName
+              specifications
+
+      | `(#alloy module $blockName:separatedNamespace [$mvs:moduleVar*]
+            $specifications:specification* end) =>
+
+            let blockName :=
+              (separatedNamespace.toType blockName).representedNamespace
+
+            let moduleVariables :=
+              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+
+            evalAlloyBlock
+              (logging := true)
+              (moduleVariables := moduleVariables)
+              blockName
+              specifications
 
       | `(#alloy $specifications:specification* end) =>
             let defaultBlockName := mkIdent (findDefaultName (← get).env)
-            evalAlloyBlock defaultBlockName specifications true
+            evalAlloyBlock
+              (logging := true)
+              defaultBlockName
+              specifications
 
       | `(~alloy $blockName:separatedNamespace
             $specifications:specification* end) =>
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
             Lean.Elab.Command.failIfSucceeds
-              (evalAlloyBlock blockName specifications false)
+              (evalAlloyBlock blockName specifications)
+
+      | `(~alloy $blockName:separatedNamespace [$mvs:moduleVar*]
+            $specifications:specification* end) =>
+
+            let blockName :=
+              (separatedNamespace.toType blockName).representedNamespace
+
+            let moduleVariables :=
+              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+
+            Lean.Elab.Command.failIfSucceeds
+              (evalAlloyBlock
+                (moduleVariables := moduleVariables)
+                blockName
+                specifications )
 
       | `(~alloy module $blockName:separatedNamespace
             $specifications:specification* end) =>
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
             Lean.Elab.Command.failIfSucceeds
-              (evalAlloyBlock blockName specifications false)
+              (evalAlloyBlock blockName specifications)
+
+      | `(~alloy module $blockName:separatedNamespace [$mvs:moduleVar*]
+            $specifications:specification* end) =>
+
+            let blockName :=
+              (separatedNamespace.toType blockName).representedNamespace
+
+            let moduleVariables :=
+              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+
+            Lean.Elab.Command.failIfSucceeds
+              (evalAlloyBlock
+                (moduleVariables := moduleVariables)
+                blockName
+                specifications)
 
       | `(~alloy $specifications:specification* end) =>
           let defaultBlockName := mkIdent (findDefaultName (← get).env)
           Lean.Elab.Command.failIfSucceeds
-            (evalAlloyBlock defaultBlockName specifications false)
+            (evalAlloyBlock defaultBlockName specifications)
 
 
       | _ => return -- if you enter # it might try to match and end here => do nothing
@@ -619,7 +825,7 @@ private def evaluateCreationCommand
   : CommandElabM Unit := do
     let monadeState ← get
 
-    let dataName : Name := s!"{ident.getId.lastComponentAsString}_Data".toName
+    let dataName : Name := s!"{ident.getId.toString}_Data".toName
     let ads := getAlloyData monadeState.env
 
     if let Option.some (ad : alloyData) := ads.find? dataName then
