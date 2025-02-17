@@ -27,17 +27,16 @@ inductive RelType' (R : Type) [TupleSet R] : Type :=
   | intersect (t1 : RelType' R) (t2 : RelType' R) : RelType' R
   | dotjoin (t1 : RelType' R) (t2 : RelType' R) :  RelType' R
 
-#print Option
-
-#check 1 = 2
-
-def checkArityEq {R : Type} [TupleSet R] (t1 t2 : RelType' R) (arity : RelType' R → Option ℕ)
-:= do
-    let n1 ← arity t1
-    let n2 ← arity t2
+-- Why define checkArityEq as a macro and not as a function?
+-- Putting this into a macro makes it easier to implement RelType'.arity.
+-- Putting this into a function requires an explicit proof for termination of arity.
+macro "checkArityEq" "(" f:term ", " t1:term ", " t2:term ")": term =>
+`(do
+    let n1 ← ($f $t1)
+    let n2 ← ($f $t2)
     if (n1 = n2)
     then return n1
-    else none
+    else none)
 
 @[simp]
 def RelType'.arity {R : Type} [TupleSet R] (t : RelType' R) :=
@@ -46,16 +45,8 @@ def RelType'.arity {R : Type} [TupleSet R] (t : RelType' R) :=
   | unary_rel _ _ _   => some 1
   | rel _ n _         => some n
   | constant _ n _    => some n
-  | complex t1 _ _ t2 => do
-                          let n1 ← t1.arity
-                          let n2 ← t2.arity
-                          some (n1+n2)
-  | intersect t1 t2   => do
-                          let n1 ← arity t1
-                          let n2 ← arity t2
-                          if (n1 = n2)
-                          then return n1
-                          else none
+  | complex t1 _ _ t2 => Nat.add <*> t1.arity <*> t2.arity
+  | intersect t1 t2   => checkArityEq (arity, t1, t2)
   | dotjoin t1 t2 => do
                       let n1 ← t1.arity
                       let n2 ← t2.arity

@@ -9,6 +9,7 @@ import ThoR.Relation.RelType
 
 namespace ThoR
 
+-- TODO move mult_to_pred to ThoR.Set
 def mult_to_pred {R : Type u} [ThoR.TupleSet R] (m : Shared.mult) : R → Prop :=
   match m with
   | Shared.mult.set  => λ _ => True
@@ -18,7 +19,7 @@ def mult_to_pred {R : Type u} [ThoR.TupleSet R] (m : Shared.mult) : R → Prop :
 
 namespace HasRelType
 
-inductive hasType' {R: Type} [TupleSet R]: R → (RelType' R) → Prop :=
+inductive hasType' {R: Type} [TupleSet R]: R → (RelType' R) → Type :=
   -- subset : m univ
   | sig (m : Shared.mult):
     ∀ (subset : R), subset ⊂ RelConstants.univ → mult_to_pred m subset
@@ -40,7 +41,7 @@ inductive hasType' {R: Type} [TupleSet R]: R → (RelType' R) → Prop :=
   | complex
     (n1 n2 : ℕ)
     (r : R) (ha: HasArity.hasArity r (n1 + n2))
-    (t1 : RelType R n1) (m1 m2 : Shared.mult) (t2 : RelType R n2)
+    (t1 : RelType' R) (m1 m2 : Shared.mult) (t2 : RelType' R)
      :
     ∀ (r1' r2' : R),
       hasType' r1' t1 → hasType' r2' t2 →
@@ -65,11 +66,11 @@ inductive hasType' {R: Type} [TupleSet R]: R → (RelType' R) → Prop :=
           r2'' ⊂ r2' → SetMultPredicates.one r2'' → (hasType' (r' ⋈ r2'') t1))
       )
        →
-      hasType' r' t
+      hasType' r' (RelType'.complex t1 m1 m2 t2)
   -- r1' & r2' : t1 & t2
-  | intersect (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
+  | intersect (n : ℕ) (t1 : RelType' R) (t2 : RelType' R):
     ∀ (r1' r2' : R), hasType' r1' t1 → hasType' r2' t2
-    → hasType' (r1' & r2') (t1 & t2)
+    → hasType' (r1' & r2') (RelType'.intersect t1 t2)
   -- -- r1' + r2' : t1 + t2
   -- | add (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
   --   ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
@@ -92,9 +93,9 @@ inductive hasType' {R: Type} [TupleSet R]: R → (RelType' R) → Prop :=
   --       (r' ⊂ r1' ⟶ r2')
   --     → hasType r' t
   -- r1' ⋈ r2' : t1 ⋈ t2
-  | dotjoin (n1 n2 : ℕ) (t1 : RelType R (n1+1)) (t2 : RelType R (n2+1)) :
+  | dotjoin (n1 n2 : ℕ) (t1 : RelType' R) (t2 : RelType' R) :
     ∀ (r1' r2' : R), hasType' r1' t1 → hasType' r2' t2
-    → hasType' (r1' ⋈ r2') (t1 ⋈ t2)
+    → hasType' (r1' ⋈ r2') (RelType'.dotjoin t1 t2)
   -- -- ^r' : ^t
   -- | transclos (t : RelType R 2):
   --   ∀ (r' : R), hasType r' t
@@ -116,102 +117,52 @@ inductive hasType' {R: Type} [TupleSet R]: R → (RelType' R) → Prop :=
   --   ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
   --   → hasType (r1' :> r2') (RelType.rangerestr t1 t2)
 
-infixl:63 " ∷ " => hasType'
+def hasType'.arity {R: Type} [TupleSet R] {r : R} {t : RelType' R} (h : hasType' r t):=
+  match h with
+  | sig _ _ _ _ => some 1
+  | unary_rel _ _ _ _ _ _ => some 1
+  | rel _ n _ _ _ => some n
+  | constant _ n _ _ _ => some n
+  | complex n1 n2 _ _ t1 _ _ t2 _ _ _ _ _ _ _ _ _ _ =>
+      do
+        let nt1 ← t1.arity
+        let nt2 ← t2.arity
+        if nt1 = n1 /\ nt2 = n2
+        then return n1 + n2
+        else none
+  | intersect n t1 t2 _ _ _ _ =>
+          do
+            let nt1 ← t1.arity
+            let nt2 ← t2.arity
+            if (nt1 = n) /\ (nt2 = n)
+            then return n
+            else none
+  | dotjoin n1 n2 t1 t2 _ _ _ _ =>
+          do
+            let nt1 ← t1.arity
+            let nt2 ← t2.arity
+            if (nt1 = n1+1) /\ (nt2 = n2+1)
+            then return n1 + n2
+            else none
 
-def hasType'.checkArity {R: Type} [TupleSet R]: R → (RelType R n) :=
-  match t with
-  | RelType'.sig _    => some 1
-  | unary_rel _ _ _   => some 1
-  | rel _ n _         => some n
-  | constant _ n _    => some n
-  | complex t1 _ _ t2 => do
-                          let n1 ← t1.arity
-                          let n2 ← t2.arity
-                          some (n1+n2)
-  | intersect t1 t2   => do
-                          let n1 ← arity t1
-                          let n2 ← arity t2
-                          if (n1 = n2)
-                          then return n1
-                          else none
-  | dotjoin t1 t2 => do
-                      let n1 ← t1.arity
-                      let n2 ← t2.arity
-                      if (n1 > 0 ∧ n2 >0)
-                      then return n1 + n2 - 2
-                      else none
-
-
-
-  theorem arity {R : Type} [TupleSet R] (n : ℕ) (r : R) (t : RelType R n):
-    r ∷ t → HasArity.hasArity r n := by
-    intros ht
-    sorry
-    -- cases ht with
-    -- -- sig m r h1 hs hm
-    -- | sig m r' h1 h2 h3 h4 => -- WTF wird h2 verschluckt?
-    --   apply (subset_hasArity h1 h3)
-    -- | TupleSet r' h1 h2 h3 =>
-    --   apply (subset_hasArity h1 h3) -- WTF wird h2 verschluckt?
-
-    theorem intersect_consistent {R : Type} [TupleSet R] {n : ℕ}
-      {r1 r2 : R} {t1 t2 : RelType R n}:
-      r1 ∷ t1 → r2 ∷ t2 → r1 & r2 ∷ RelType.intersect t1 t2 := by sorry
-
-    theorem add_consistent {R : Type} [TupleSet R] {n : ℕ}
-      {r1 r2 : R} {t1 t2 : RelType R n}:
-      r1 ∷ t1 → r2 ∷ t2 → r1 + r2 ∷ RelType.add t1 t2 := by sorry
-
-    theorem sub_consistent {R : Type} [TupleSet R] {n : ℕ}
-      {r1 r2 : R} {t1 t2 : RelType R n}:
-      r1 ∷ t1 → r2 ∷ t2 → r1 - r2 ∷ RelType.sub t1 t2 := by sorry
-
-    theorem append_consistent {R : Type} [TupleSet R] {n : ℕ}
-      {r1 r2 : R} {t1 t2 : RelType R n}:
-      r1 ∷ t1 → r2 ∷ t2 → r1 ++ r2 ∷ RelType.append t1 t2 := by sorry
-
-    theorem cartprod_consistent {R : Type} [TupleSet R] {n1 n2 : ℕ}
-      {r1 r2 : R} {t1 : RelType R n1} {t2 : RelType R n2}:
-      r1 ∷ t1 → r2 ∷ t2 → r1 ⟶ r2 ∷ RelType.cartprod t1 t2 := by sorry
-
-    theorem dotjoin_consistent {R : Type} [TupleSet R] {n1 n2 : ℕ}
-      {r1 r2 : R} {t1 : RelType R (n1+1)} {t2 : RelType R (n2+1)}:
-      r1 ∷ t1 → r2 ∷ t2 → r1 ⋈ r2 ∷ RelType.dotjoin t1 t2 := by sorry
-
-    theorem transclos_consistent {R : Type} [TupleSet R]
-      {r : R} {t : RelType R 2}:
-      r ∷ t → ^r ∷ RelType.transclos t := by sorry
-
-    theorem reftransclos_consistent {R : Type} [TupleSet R]
-      {r : R} {t : RelType R 2}:
-      r ∷ t → *r ∷ RelType.reftransclos t := by sorry
-
-    theorem transpose_consistent {R : Type} [TupleSet R]
-      {r : R} {t : RelType R 2}:
-      r ∷ t → ~ r ∷ RelType.transpose t := by sorry
-
-    theorem domrestr_consistent {R : Type} [TupleSet R] {n : ℕ}
-      {r1 r2 : R} {t1 : RelType R 1} {t2 : RelType R n}:
-      r1 ∷ t1 → r2 ∷ t2 → r1 <: r2  ∷ RelType.domrestr t1 t2 := by sorry
-
-    theorem rangerestr_consistent {R : Type} [TupleSet R] {n : ℕ}
-      {r1 r2 : R} {t1 : RelType R n} {t2 : RelType R 1}:
-      r1 ∷ t1 → r2 ∷ t2 → r1 :> r2  ∷ RelType.rangerestr t1 t2 := by sorry
+  def hasType {R: Type} [TupleSet R] {n : ℕ} (r : R) (t : RelType R n)
+    := ∃ ht : hasType' r t.1, ht.arity = some n
 
 end HasRelType
 
+infixl:63 " ∷ " => HasRelType.hasType
 -- variable (R : Type) [TupleSet R] (s : R) (h : HasArity.hasArity s 1)
 namespace HasRelType
   variable (R : Type) [TupleSet R]
   namespace sig
     lemma isUnary (a : R) (m : Shared.mult):
-      a ∷ RelType.sig m (Eq.refl 1) → HasArity.hasArity a 1
+      a ∷ RelType.sig R m → HasArity.hasArity a 1
     := by sorry
   end sig
   namespace TupleSet
     lemma refl (R : Type) [TupleSet R] (a : R) (m : Shared.mult):
       (h1 : HasArity.hasArity a 1) → mult_to_pred m a
-      → a ∷ RelType.unary_rel m a (Eq.refl 1) h1 := by
+      → a ∷ RelType.unary_rel R m a h1 := by
       -- intro h1 h2
       -- constructor <;> try simp
       -- TODO inversion properties for arity axioms in TupleSet
