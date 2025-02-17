@@ -90,6 +90,7 @@ namespace Shared.formula
     (f: formula)
     (blockName : Name)
     (variableNames : List (String)) -- to check if var or pred
+    (callablePreds : List (predDecl))
     -- names that have to be pure with no namespace (quantors and args)
     (pureNames : List (String) := [])
     : TSyntax `term := Unhygienic.run do
@@ -132,30 +133,30 @@ namespace Shared.formula
       | formula.unaryLogicOperation op f =>
         `(( $(op.toTerm)
             $(f.toTerm
-              blockName variableNames pureNames
+              blockName variableNames callablePreds pureNames
               )
           ))
 
       | formula.binaryLogicOperation op f1 f2 =>
         `(( $(op.toTerm)
             $(f1.toTerm
-              blockName variableNames pureNames
+              blockName variableNames callablePreds pureNames
               )
             $(f2.toTerm
-              blockName variableNames pureNames
+              blockName variableNames callablePreds pureNames
               )
           ))
 
       | formula.tertiaryLogicOperation op f1 f2 f3 =>
         `(( $(op.toTerm)
             $(f1.toTerm
-              blockName variableNames pureNames
+              blockName variableNames callablePreds pureNames
               )
             $(f2.toTerm
-              blockName variableNames pureNames
+              blockName variableNames callablePreds pureNames
               )
             $(f3.toTerm
-              blockName variableNames pureNames
+              blockName variableNames callablePreds pureNames
               )
           ))
       | formula.algebraicComparisonOperation op ae1 ae2 =>
@@ -177,7 +178,7 @@ namespace Shared.formula
         let firstForm := f.get! 0
         let mut fTerm ←
           `($(firstForm.toTerm
-              blockName variableNames
+              blockName variableNames callablePreds
               (pureNames.append n)
             ))
 
@@ -185,7 +186,7 @@ namespace Shared.formula
           fTerm ←
             `(( $fTerm ∧
                 ($(form.toTerm
-                  blockName variableNames
+                  blockName variableNames callablePreds
                   (pureNames.append n)
                 ))
               ))
@@ -387,7 +388,7 @@ namespace Shared.formula
     (f : formula)
     (callablePredicates : List (commandDecl))
     (callableVariables : List (varDecl))
-    : (List (commandDecl × List (List (List (varDecl))))) := Id.run do
+    : (List (commandDecl × List (expr × List (List (varDecl))))) := Id.run do
       let callablePredicateNames := callablePredicates.map fun cp => cp.name
 
       match f with
@@ -405,7 +406,7 @@ namespace Shared.formula
             let calledPredicate := callablePredicates.get! index
             let calledArgumentVariables :=
               (predicate_arguments.map
-                fun argument => argument.getCalledVariables callableVariables
+                fun argument => (argument ,(argument.getCalledVariables callableVariables))
               )
 
             [(calledPredicate, calledArgumentVariables)]

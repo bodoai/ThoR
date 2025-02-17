@@ -92,7 +92,8 @@ private def createDefOrAxiomCommand
   (blockName : Name)
   (cd : commandDecl)
   (isDefinition : Bool)
-  (callables : List (varDecl))
+  (callableVariables : List (varDecl))
+  (callablePredicates : List (predDecl))
   : Option (TSyntax `command) := Unhygienic.run do
 
     -- formula evaluation
@@ -106,7 +107,7 @@ private def createDefOrAxiomCommand
       let forms :=
         (cd.formulas.map
           fun f =>
-            f.replaceCalls callables)
+            f.replaceCalls callableVariables)
 
       let argnames := (cd.args.map fun (arg) => arg.names).join
 
@@ -120,37 +121,38 @@ private def createDefOrAxiomCommand
         bodyTerm ←
           `($bodyTerm ∧ ($newTerm))
 
-    -- Alloy pred argument evaluation
-    -- (no arguments for definition=false, as facts do not have any arguments)
-    -- Alloy pred arguments are transformed into Lean function arguments.
-    let mut argTerms : TSyntax ``Lean.Parser.Command.optDeclSig ←
-      `(Lean.Parser.Command.optDeclSig|)
-
-    if !(cd.args.isEmpty) then
-      for arg in cd.args do
-        let mut singleArg :
-          Array (TSyntax ``Lean.Parser.Term.bracketedBinderF) := #[]
-        let mut names : Array (TSyntax `ident) := #[]
-
-        let argExpr :=
-          arg.expression.replaceCalls callables
-
-        let t :=
-          (typeExpr.relExpr
-            argExpr.toStringRb).toSyntax blockName
-
-        for name in arg.names do
-          names := names.push (mkIdent name.toName)
-
-        let argTerm ← `(Lean.Parser.Term.bracketedBinderF |
-          ($[$names]* : ∷ $t))
-
-        singleArg := singleArg.push argTerm
-
-        argTerms ← `(Lean.Parser.Command.optDeclSig| $[$singleArg]*)
-
     -- define command
     if isDefinition then
+
+      -- Alloy pred argument evaluation
+      -- (no arguments for definition=false, as facts do not have any arguments)
+      -- Alloy pred arguments are transformed into Lean function arguments.
+      let mut argTerms : TSyntax ``Lean.Parser.Command.optDeclSig ←
+        `(Lean.Parser.Command.optDeclSig|)
+
+      if !(cd.args.isEmpty) then
+        for arg in cd.args do
+          let mut singleArg :
+            Array (TSyntax ``Lean.Parser.Term.bracketedBinderF) := #[]
+          let mut names : Array (TSyntax `ident) := #[]
+
+          let argExpr :=
+            arg.expression.replaceCalls callableVariables
+
+          let t :=
+            (typeExpr.relExpr
+              argExpr.toStringRb).toSyntax blockName
+
+          for name in arg.names do
+            names := names.push (mkIdent name.toName)
+
+          let argTerm ← `(Lean.Parser.Term.bracketedBinderF |
+            ($[$names]* : ∷ $t))
+
+          singleArg := singleArg.push argTerm
+
+          argTerms ← `(Lean.Parser.Command.optDeclSig| $[$singleArg]*)
+
       if bodyTerm != emptyTerm then
         return ← `(def $(mkIdent cd.name.toName) $argTerms := $bodyTerm)
       else
@@ -180,10 +182,11 @@ blockname and command declaration.
 private def createDefCommand
   (blockName : Name)
   (cd : commandDecl)
-  (callables : List (varDecl))
+  (callableVariables : List (varDecl))
+  (callablePredicates : List (predDecl))
   : Option (TSyntax `command) :=
     createDefOrAxiomCommand (isDefinition := true)
-      blockName cd callables
+      blockName cd callableVariables callablePredicates
 
 /--
 convenience function:
@@ -193,10 +196,11 @@ blockname and command declaration.
 private def createAxiomCommand
   (blockName : Name)
   (cd : commandDecl)
-  (callables : List (varDecl))
+  (callableVariables : List (varDecl))
+  (callablePredicates : List (predDecl))
   : Option (TSyntax `command) :=
     createDefOrAxiomCommand (isDefinition := false)
-      blockName cd callables
+      blockName cd callableVariables callablePredicates
 
 /--
 Creates commands to create Lean definitions from the given blockname and commandDecls.
@@ -207,7 +211,8 @@ private def createDefsCommandsWithNamespace
   (blockName : Name)
   (namespaceName : Name)
   (commandDecls : List (commandDecl))
-  (callables : List (varDecl))
+  (callableVariables : List (varDecl))
+  (callablePredicates : List (predDecl))
   :List ((TSyntax `command) ) := Unhygienic.run do
     let mut commandList : List ((TSyntax `command) ) := []
 
@@ -229,7 +234,8 @@ private def createDefsCommandsWithNamespace
 
       --Def declaration
       for cd in commandDecls do
-        let cdCmd := (createDefCommand blockName cd callables)
+        let cdCmd :=
+          (createDefCommand blockName cd callableVariables callablePredicates)
         if cdCmd.isSome then
           commandList := commandList.concat cdCmd.get!
 
@@ -248,11 +254,12 @@ The created commands are encapsulated in a namespace named blockname.preds
 private def createPredDefsCommands
   (blockName : Name)
   (defDecls : List (commandDecl))
-  (callables : List (varDecl))
+  (callableVariables : List (varDecl))
+  (callablePredicates : List (predDecl))
   :List ((TSyntax `command) ) :=
     createDefsCommandsWithNamespace
       (namespaceName := s!"{blockName}.preds".toName)
-      blockName defDecls callables
+      blockName defDecls callableVariables callablePredicates
 
 /--
 Creates commands to create Lean definitions (for asserts) from the given
@@ -263,11 +270,12 @@ The created commands are encapsulated in a namespace named blockname.asserts
 private def createAssertDefsCommands
   (blockName : Name)
   (defDecls : List (commandDecl))
-  (callables : List (varDecl))
+  (callableVariables : List (varDecl))
+  (callablePredicates : List (predDecl))
   :List ((TSyntax `command) ) :=
     createDefsCommandsWithNamespace
       (namespaceName := s!"{blockName}.asserts".toName)
-      blockName  defDecls callables
+      blockName  defDecls callableVariables callablePredicates
 
 /--
 Creates commands to create Lean axioms from the given blockname and commandDecls.
@@ -277,7 +285,8 @@ The created commands are encapsulated in a namespace named blockname.facts
 private def createAxiomCommands
   (blockName : Name)
   (axiomDecls : List (commandDecl))
-  (callables : List (varDecl))
+  (callableVariables : List (varDecl))
+  (callablePredicates : List (predDecl))
   :List ((TSyntax `command)) := Unhygienic.run do
     let mut commandList : List ((TSyntax `command)) := []
 
@@ -301,7 +310,7 @@ private def createAxiomCommands
 
       --Axiom declaration
       for ad in axiomDecls do
-       let adCmd := (createAxiomCommand blockName ad callables)
+       let adCmd := (createAxiomCommand blockName ad callableVariables callablePredicates)
         if adCmd.isSome then
           commandList := commandList.concat adCmd.get!
 
@@ -360,7 +369,7 @@ Creates commands to create all variables, definitions and axioms in Lean.
 
 The created commands are encapsulated in a namespaces, which are opened as the last command.
 -/
-private def createCommands (st : SymbolTable)
+private def createCommands (st : SymbolTable) (ast : AST)
   : List ((TSyntax `command)) := Unhygienic.run do
 
     let blockName : Name := st.name.toName
@@ -384,19 +393,19 @@ private def createCommands (st : SymbolTable)
     commandList := commandList.append relationAliasCommands
 
     -- defs
-    let defCommands := createPredDefsCommands blockName st.defDecls st.variableDecls
+    let defCommands := createPredDefsCommands blockName st.defDecls st.variableDecls ast.predDecls
     commandList := commandList.append defCommands
     if !(defCommands.isEmpty) then
       namespacesToOpen := namespacesToOpen.push (mkIdent s!"{blockName}.preds".toName)
 
     -- axioms
-    let axCommands := createAxiomCommands blockName st.axiomDecls st.variableDecls
+    let axCommands := createAxiomCommands blockName st.axiomDecls st.variableDecls ast.predDecls
     commandList := commandList.append axCommands
     if !(axCommands.isEmpty) then
       namespacesToOpen := namespacesToOpen.push (mkIdent s!"{blockName}.facts".toName)
 
     -- asserts
-    let assertCommands := createAssertDefsCommands blockName st.assertDecls st.variableDecls
+    let assertCommands := createAssertDefsCommands blockName st.assertDecls st.variableDecls ast.predDecls
     commandList := commandList.append assertCommands
     if !(assertCommands.isEmpty) then
       namespacesToOpen := namespacesToOpen.push (mkIdent s!"{blockName}.asserts".toName)
@@ -620,7 +629,7 @@ private def evaluateCreationCommand
       let st := ad.st
       let ast := ad.ast
 
-      let commands := createCommands st
+      let commands := createCommands st ast
 
       let mut commandString : String := ""
 
