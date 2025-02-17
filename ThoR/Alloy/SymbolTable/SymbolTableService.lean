@@ -152,6 +152,23 @@ to be better digestible for further computation and transformation into Lean.
                 fun ps => ps.openedFrom}"
 
     /--
+    Check if the number of arguments match
+    -/
+    private def checkPredCallArgNumber
+      (calledPredDecl : predDecl)
+      (calledArguments : List (expr × List (List varDecl)))
+      : Except String Unit := do
+        let requiredArgNumber :=
+          (calledPredDecl.args.map fun a => a.names).join.length
+
+        let calledArgNumber := calledArguments.length
+
+        let isCorrectNumberOfArguments := requiredArgNumber == calledArgNumber
+        if !isCorrectNumberOfArguments then
+          throw s!"Definition {calledPredDecl.name} called with {calledArgNumber} \
+          arguments ({calledArguments}), but expected {requiredArgNumber} arguments"
+
+    /--
     Checks if all predicate calls are correct.
 
     Currently checks if the predicate exists and if the number of arguments are correct.
@@ -185,15 +202,7 @@ to be better digestible for further computation and transformation into Lean.
           let calledPredDecl := availablePredDecls.get! index
           let calledArguments := calledPred.2
 
-          let requiredArgNumber :=
-            (calledPredDecl.args.map fun a => a.names).join.length
-
-          let calledArgNumber := calledArguments.length
-
-          let isCorrectNumberOfArguments := requiredArgNumber == calledArgNumber
-          if !isCorrectNumberOfArguments then
-            throw s!"Definition {calledPredName} called with {calledArgNumber} \
-            arguments ({calledArguments}), but expected {requiredArgNumber} arguments"
+          checkPredCallArgNumber calledPredDecl calledArguments
 
     /--
     Adds the given signature declarations (including the contained signature field
