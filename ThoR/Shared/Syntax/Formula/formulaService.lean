@@ -149,25 +149,54 @@ namespace Shared.formula
             else
               vd.getFullSignatureName)
 
-          let calledArg := pa.get! index
+          let typeReplacementName :=
+            (if vd.isRelation then
+              vd.getRelationReplacementName
+            else
+              vd.getSignatureReplacementName)
 
-          /-
-          if definedArg == calledArg then
+          let calledArg := pa.get! index
+          let calledVarDecls_of_arg_to_cast :=
+            calledArg.getCalledVariables callableVariables
+          let calledVarDecls_of_arg_to_cast_joined :=
+            calledVarDecls_of_arg_to_cast.join
+
+          let cast_type_as_expr_string := expr.string typeName.toString
+          let cast_type_as_expr_string_rb := cast_type_as_expr_string.toStringRb
+          let cast_type_as_type_expr_relExpr := typeExpr.relExpr cast_type_as_expr_string_rb
+
+          let cast_type_equals_called_var_type :=
+            -- the type must be clear (only one called var)
+            (calledVarDecls_of_arg_to_cast_joined.length == 1) &&
+            /-
+            get the type, stringify it and compare it to the
+            replacerName of the type we try to cast to
+            (the replacer is only needed because its "prettier"
+            to use the alias for casting, otherwise you could use
+            the replacer on both sides (its the actual name))
+            -/
+            (
+              let cv := (calledVarDecls_of_arg_to_cast_joined.get! 0)
+              cv.type.toString == typeReplacementName
+            )
+
+          if
+            cast_type_as_expr_string == calledArg ||
+            cast_type_as_expr_string_rb == calledArg ||
+            cast_type_equals_called_var_type
+          then
             term ← `($term $(calledArg.toTermFromBlock blockName pureNames))
 
           else
-          -/
 
-          let t := typeExpr.relExpr (expr.string_rb typeName.toString)
+            let castCommand ←
+              `(term |
+                cast
+                ($(calledArg.toTermFromBlock blockName pureNames):term)
+                ∷ $(cast_type_as_type_expr_relExpr.toSyntax blockName))
 
-          let castCommand ←
-            `(term |
-              cast
-              ($(calledArg.toTermFromBlock blockName pureNames):term)
-              ∷ $(t.toSyntax blockName))
-
-          term ←
-            `(term | $term $castCommand)
+            term ←
+              `(term | $term $castCommand)
 
         return term
 
@@ -221,11 +250,24 @@ namespace Shared.formula
 
         let names := (n.map fun (name) => mkIdent name.toName).reverse
 
+        /-add quant vars here so you can get their type later-/
+        let quantVarDecls :=
+          n.map fun nam =>
+            varDecl.mk
+              (name := nam)
+              (isQuantor := true)
+              (isOpened := false)
+              (openedFrom := "this")
+              (isRelation := false)
+              (relationOf := default)
+              (type := te)
+              (requiredDecls := [])
+
         -- one form ist present -> see syntax (+)
         let firstForm := f.get! 0
         let mut fTerm ←
           `($(firstForm.toTerm
-              blockName variableNames callableVariables callablePredicates
+              blockName variableNames (callableVariables ++ quantVarDecls) callablePredicates
               (pureNames.append n)
             ))
 
@@ -233,7 +275,7 @@ namespace Shared.formula
           fTerm ←
             `(( $fTerm ∧
                 ($(form.toTerm
-                  blockName variableNames callableVariables callablePredicates
+                  blockName variableNames (callableVariables ++ quantVarDecls) callablePredicates
                   (pureNames.append n)
                 ))
               ))
