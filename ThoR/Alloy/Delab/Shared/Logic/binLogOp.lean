@@ -7,6 +7,7 @@ Authors: s. file CONTRIBUTORS
 import Lean
 import ThoR.Relation.Set
 import ThoR.Alloy.Delab.DelaborationService
+import ThoR.Shared.Syntax.Logic.binLogOp
 
 open Lean PrettyPrinter Delaborator SubExpr Expr
 open ThoR
@@ -80,5 +81,29 @@ def unexpandIff : Unexpander
 
   | `($_ $a $b) =>
     `($a $(mkIdent `iff) $b)
+
+  | _ => throw Unit.unit
+
+@[app_unexpander Shared.binLogOp.myImplication]
+def unexpandImpl : Unexpander
+  | `($_ $a:ident $b:ident) =>
+    let new_a :=
+      delaborationService.switch_thoR_representation_to_alloy_representation a
+    let new_b :=
+      delaborationService.switch_thoR_representation_to_alloy_representation b
+    `($new_a $(mkIdent `implies) $new_b)
+
+  | `($_ $a:ident $b) =>
+    let new_a :=
+      delaborationService.switch_thoR_representation_to_alloy_representation a
+    `($new_a $(mkIdent `implies) $b)
+
+  | `($_ $a $b:ident) =>
+    let new_b :=
+      delaborationService.switch_thoR_representation_to_alloy_representation b
+    `($a $(mkIdent `implies) $new_b)
+
+  | `($_ $a $b) =>
+    `($a $(mkIdent `implies) $b)
 
   | _ => throw Unit.unit

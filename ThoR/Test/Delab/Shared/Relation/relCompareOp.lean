@@ -6,26 +6,38 @@ Authors: s. file CONTRIBUTORS
 
 import ThoR
 
-alloy trans_close
+alloy equal
   sig a {
     r : a
   }
   fact {
-    some x : a | x in a.^r
+    not (r = r)
   }
 end
+create equal
 
-create trans_close
-#check trans_close.facts.f0
+#check equal.facts.f0
 
-alloy refl_close
+alloy nequal
   sig a {
     r : a
   }
   fact {
-    some x : a | x in a.*r
+    not (r != r)
   }
 end
+create nequal
 
-create refl_close
-#check refl_close.facts.f0
+#check nequal.facts.f0
+
+alloy incp
+  sig a {
+    r : a
+  }
+  fact {
+    not (r in r)
+  }
+end
+create incp
+
+#check incp.facts.f0

@@ -7,3 +7,4 @@ Authors: s. file CONTRIBUTORS
 import ThoR.Alloy.Delab.Shared.Relation.binRelOp
 import ThoR.Alloy.Delab.Shared.Relation.unRelOp
 import ThoR.Alloy.Delab.Shared.Relation.unRelBoolOp
+import ThoR.Alloy.Delab.Shared.Relation.relCompareOp
