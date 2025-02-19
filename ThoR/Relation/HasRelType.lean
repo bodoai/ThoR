@@ -40,7 +40,6 @@ inductive hasType' {R: Type} [TupleSet R]: R → (RelType' R) → Type :=
   -- TODO replace ⋈ by correct operator "⋈*" (left/right)
   | complex
     (n1 n2 : ℕ)
-    (r : R) (ha: HasArity.hasArity r (n1 + n2))
     (t1 : RelType' R) (m1 m2 : Shared.mult) (t2 : RelType' R)
      :
     ∀ (r1' r2' : R),
@@ -71,51 +70,73 @@ inductive hasType' {R: Type} [TupleSet R]: R → (RelType' R) → Type :=
   | intersect (n : ℕ) (t1 : RelType' R) (t2 : RelType' R):
     ∀ (r1' r2' : R), hasType' r1' t1 → hasType' r2' t2
     → hasType' (r1' & r2') (RelType'.intersect t1 t2)
-  -- -- r1' + r2' : t1 + t2
-  -- | add (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
-  --   ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
-  --   → hasType (r1' + r2') (t1 + t2)
-  -- -- r1' - r2' : t1 - t2
-  -- | sub (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
-  --   ∀ (r1' r2' : R),
-  --   hasType r1' t1 → hasType r2' t2
-  --   → hasType (r1' - r2') (t1 - t2)
-  -- -- r1' ++ r2' : t1 ++ t2
-  -- | append (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
-  --   ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
-  --   → hasType (r1' ++ r2') (t1 ++ t2)
-  -- -- TODO cartprod redundant to complex
-  -- -- r1' ⟶ r2' : t1 ⟶ t2
-  -- | cartprod (n1 n2 : ℕ) (ha : n=n1+n2) (t1 : RelType R n1) (t2 : RelType R n2) (ht : t=ha ▸ ((RelType.cartprod t1 t2))):
-  --   ∀ (r1' r2' : R),
-  --     hasType r1' t1 → hasType r2' t2 →
-  --     ∀ (r' : R),
-  --       (r' ⊂ r1' ⟶ r2')
-  --     → hasType r' t
+  -- r1' + r2' : t1 + t2
+  | add (n : ℕ) (t1 : RelType' R) (t2 : RelType' R):
+    ∀ (r1' r2' : R), hasType' r1' t1 → hasType' r2' t2
+    → hasType' (r1' + r2') (RelType'.add t1 t2)
+  -- r1' - r2' : t1 - t2
+  | sub (n : ℕ) (t1 : RelType' R) (t2 : RelType' R):
+    ∀ (r1' r2' : R),
+    hasType' r1' t1 → hasType' r2' t2
+    → hasType' (r1' - r2') (RelType'.sub t1 t2)
+  -- r1' ++ r2' : t1 ++ t2
+  | append (n : ℕ) (t1 : RelType' R) (t2 : RelType' R):
+    ∀ (r1' r2' : R), hasType' r1' t1 → hasType' r2' t2
+    → hasType' (r1' ++ r2') (RelType'.append t1 t2)
+  -- TODO cartprod redundant to complex
+  -- r1' ⟶ r2' : t1 ⟶ t2
+  | cartprod (n1 n2 : ℕ) (t1 : RelType' R) (t2 : RelType' R):
+    ∀ (r1' r2' : R), hasType' r1' t1 → hasType' r2' t2
+    → hasType' (r1' ⟶ r2') (RelType'.cartprod t1 t2)
   -- r1' ⋈ r2' : t1 ⋈ t2
   | dotjoin (n1 n2 : ℕ) (t1 : RelType' R) (t2 : RelType' R) :
     ∀ (r1' r2' : R), hasType' r1' t1 → hasType' r2' t2
     → hasType' (r1' ⋈ r2') (RelType'.dotjoin t1 t2)
-  -- -- ^r' : ^t
-  -- | transclos (t : RelType R 2):
-  --   ∀ (r' : R), hasType r' t
-  --   → hasType (^r') (^t)
-  -- -- *r' : *t
-  -- | reftransclos (t : RelType R 2):
-  --   ∀ (r' : R), hasType r' t
-  --   → hasType (*r') (*t)
+  -- ^r' : ^t
+  | transclos (t : RelType' R):
+    ∀ (r' : R), hasType' r' t
+    → hasType' (^r') (RelType'.transclos t)
+  -- *r' : *t
+  | reftransclos (t : RelType' R):
+    ∀ (r' : R), hasType' r' t
+    → hasType' (^r') (RelType'.reftransclos t)
   -- -- ~r' : ~t
   -- | transpose (t : RelType R 2):
-  --   ∀ (r' : R), hasType r' t
-  --   → hasType (~ r') (~ t)
-  -- -- r1' <: r2' : t1 <: t2
-  -- | domrestr (n : ℕ) (t1 : RelType R 1) (t2 : RelType R n):
-  --   ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
-  --   → hasType (r1' <: r2') (RelType.domrestr t1 t2)
+  | transpose (t : RelType' R):
+    ∀ (r' : R), hasType' r' t
+    → hasType' (~ r') (RelType'.transpose t)
+  -- r1' <: r2' : t1 <: t2
+  | domrestr (n : ℕ) (t1 : RelType' R) (t2 : RelType' R):
+    ∀ (r1' r2' : R), hasType' r1' t1 → hasType' r2' t2
+    → hasType' (r1' <: r2') (RelType'.domrestr t1 t2)
   -- -- r1' :> r2' : t1 :> t2
-  -- | rangerestr (n : ℕ) (t1 : RelType R n) (t2 : RelType R 1):
-  --   ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
-  --   → hasType (r1' :> r2') (RelType.rangerestr t1 t2)
+  | rangerestr (n : ℕ) (t1 : RelType' R) (t2 : RelType' R):
+    ∀ (r1' r2' : R), hasType' r1' t1 → hasType' r2' t2
+    → hasType' (r1' <: r2') (RelType'.rangerestr t1 t2)
+
+
+local macro "checkArityEqN" "(" t1:term ", " t2:term ", " n:term ")": term =>
+`(do
+    let n1 ← ($t1).arity
+    let n2 ← ($t2).arity
+    if (n1 = $n) /\ (n2 = $n)
+    then return $n
+    else none)
+
+local macro "checkArityN" "(" t:term ", " n:term ")": term =>
+`(do
+    let tn ← ($t).arity
+    if (tn = $n)
+    then return $n
+    else none)
+
+local macro "checkArityNNN" "(" t1:term ", " n1:term ", " t2:term ", " n2:term ", " n:term ")": term =>
+`(do
+    let tn1 ← ($t1).arity
+    let tn2 ← ($t2).arity
+    if (tn1 = $n1) /\ (tn2 = $n2)
+    then return $n
+    else none)
 
 def hasType'.arity {R: Type} [TupleSet R] {r : R} {t : RelType' R} (h : hasType' r t):=
   match h with
@@ -123,19 +144,23 @@ def hasType'.arity {R: Type} [TupleSet R] {r : R} {t : RelType' R} (h : hasType'
   | unary_rel _ _ _ _ _ _ => some 1
   | rel _ n _ _ _ => some n
   | constant _ n _ _ _ => some n
-  | complex n1 n2 _ _ t1 _ _ t2 _ _ _ _ _ _ _ _ _ _ =>
+  | complex n1 n2 t1 _ _ t2 _ _ _ _ _ _ _ _ _ _ =>
       do
         let nt1 ← t1.arity
         let nt2 ← t2.arity
         if nt1 = n1 /\ nt2 = n2
         then return n1 + n2
         else none
-  | intersect n t1 t2 _ _ _ _ =>
+  | intersect n t1 t2 _ _ _ _ => checkArityEqN (t1, t2, n)
+  | add n t1 t2 _ _ _ _ => checkArityEqN (t1, t2, n)
+  | sub n t1 t2 _ _ _ _ => checkArityEqN (t1, t2, n)
+  | append n t1 t2 _ _ _ _ => checkArityEqN (t1, t2, n)
+  | cartprod n1 n2 t1 t2 _ _ _ _ =>
           do
             let nt1 ← t1.arity
             let nt2 ← t2.arity
-            if (nt1 = n) /\ (nt2 = n)
-            then return n
+            if (nt1 = n1) /\ (nt2 = n2)
+            then return n1 + n2
             else none
   | dotjoin n1 n2 t1 t2 _ _ _ _ =>
           do
@@ -144,6 +169,11 @@ def hasType'.arity {R: Type} [TupleSet R] {r : R} {t : RelType' R} (h : hasType'
             if (nt1 = n1+1) /\ (nt2 = n2+1)
             then return n1 + n2
             else none
+  | transclos t _ _ => checkArityN(t, 2)
+  | reftransclos t _ _ => checkArityN(t, 2)
+  | transpose t _ _ => checkArityN(t, 2)
+  | domrestr n t1 t2 _ _ _ _ => checkArityNNN(t1, 1, t2, n, n)
+  | rangerestr n t1 t2 _ _ _ _ => checkArityNNN(t1, n, t2, 1, n)
 
   def hasType {R: Type} [TupleSet R] {n : ℕ} (r : R) (t : RelType R n)
     := ∃ ht : hasType' r t.1, ht.arity = some n

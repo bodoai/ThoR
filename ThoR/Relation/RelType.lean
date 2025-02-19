@@ -48,7 +48,7 @@ inductive RelType' (R : Type) [TupleSet R] : Type :=
 -- Why define checkArityEq as a macro and not as a function?
 -- Putting this into a macro makes it easier to implement RelType'.arity.
 -- Putting this into a function requires an explicit proof for termination of arity.
-macro "checkArityEq" "(" arity:term ", " t1:term ", " t2:term ")": term =>
+local macro "checkArityEq" "(" arity:term ", " t1:term ", " t2:term ")": term =>
 `(do
     let n1 ← ($arity $t1)
     let n2 ← ($arity $t2)
@@ -56,7 +56,7 @@ macro "checkArityEq" "(" arity:term ", " t1:term ", " t2:term ")": term =>
     then return n1
     else none)
 
-macro "checkArityN" "(" arity:term ", " t:term ", " n:term ")": term =>
+local macro "checkArityN" "(" arity:term ", " t:term ", " n:term ")": term =>
 `(do
     let tn ← ($arity $t)
     if (tn = $n)
