@@ -5,14 +5,12 @@ Authors: s. file CONTRIBUTORS
 -/
 import ThoR
 
--- r is not created here... ok or fix ?
 alloy m1 [exactly lol]
   sig a {
     r : lol
   }
 end
-#create m1
-#check m1.vars.a
+~create m1
 
 ~alloy m2
   open m1

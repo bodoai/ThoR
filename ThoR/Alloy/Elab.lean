@@ -808,7 +808,7 @@ private def alloyBlockImpl : CommandElab := fun stx => do
 
   catch | x => throwError x.toMessageData
 
-syntax (name := creationSyntax) ("#")? "create" separatedNamespace : command
+syntax (name := creationSyntax) ("#" <|> "~")? "create" separatedNamespace : command
 
 private def evaluateCreationCommand
   (ident : Ident)
@@ -826,34 +826,40 @@ private def evaluateCreationCommand
       let st := ad.st
       let ast := ad.ast
 
-      let commands := createCommands st
+      if !ast.modulVariables.isEmpty then
+        logError s!"The module you tried to create has unbound module variables \n\
+        ({ast.modulVariables})"
 
-      let mut commandString : String := ""
+      else
 
-      for command in commands do
-        elabCommand command
-        commandString := s!"{commandString} {command.raw.prettyPrint} \n\n"
+        let commands := createCommands st
 
-      if logging then
-        logInfo commandString
+        let mut commandString : String := ""
 
-      let it :=  InheritanceTree.create ast
-      if logging then
-        logInfo it.toString
+        for command in commands do
+          elabCommand command
+          commandString := s!"{commandString} {command.raw.prettyPrint} \n\n"
 
-      let extensionAxiomCommands :=
-        it.createInheritanceAxiomCommands
-          (blockName := ident.getId)
-          st.getSignatureNames st.getSignatureRNames
+        if logging then
+          logInfo commandString
 
-      let mut extensionAxiomCommandsString := ""
-      for axiomCommand in extensionAxiomCommands do
-        elabCommand axiomCommand
-        extensionAxiomCommandsString :=
-          s!"{extensionAxiomCommandsString} {axiomCommand.raw.prettyPrint} \n\n"
+        let it :=  InheritanceTree.create ast
+        if logging then
+          logInfo it.toString
 
-      if logging then
-        logInfo extensionAxiomCommandsString
+        let extensionAxiomCommands :=
+          it.createInheritanceAxiomCommands
+            (blockName := ident.getId)
+            st.getSignatureNames st.getSignatureRNames
+
+        let mut extensionAxiomCommandsString := ""
+        for axiomCommand in extensionAxiomCommands do
+          elabCommand axiomCommand
+          extensionAxiomCommandsString :=
+            s!"{extensionAxiomCommandsString} {axiomCommand.raw.prettyPrint} \n\n"
+
+        if logging then
+          logInfo extensionAxiomCommandsString
 
     else
       logError s!"No data found for {dataName}"
@@ -872,6 +878,14 @@ private def creationImpl : CommandElab := fun stx => do
         evaluateCreationCommand
           (separatedNamespace.toType name).representedNamespace
           true
+
+      | `(~create $name:separatedNamespace) =>
+        Lean.Elab.Command.failIfSucceeds
+          (
+            evaluateCreationCommand
+              (separatedNamespace.toType name).representedNamespace
+              false
+          )
 
       | _ => return
   catch | x => throwError x.toMessageData
