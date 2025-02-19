@@ -4,8 +4,6 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 
-import ThoR.Alloy.Delab.Shared.mult
-
-import ThoR.Alloy.Delab.Shared.Logic
-import ThoR.Alloy.Delab.Shared.Relation
-import ThoR.Alloy.Delab.Shared.Algebra
+import ThoR.Alloy.Delab.Shared.Algebra.binAlgOp
+import ThoR.Alloy.Delab.Shared.Algebra.unAlgOp
+import ThoR.Alloy.Delab.Shared.Algebra.algCompareOp
