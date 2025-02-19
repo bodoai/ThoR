@@ -89,6 +89,26 @@ namespace Shared.typeExpr
               $(e.toTermOutsideBlock)))
 
   /--
+  Generates a Lean term corresponding to the RelType
+
+  to be called from outside of an alloy block
+  -/
+  def toRelTypeTermOutsideBlock
+    (te : Shared.typeExpr)
+    : TSyntax `term := Unhygienic.run do
+      match te with
+        | Shared.typeExpr.arrowExpr ae =>
+          `($(ae.toTermOutsideBlock))
+
+        | Shared.typeExpr.multExpr m e =>
+          `(($(mkIdent ``RelType.mk.unary_rel)
+              $(m.toTerm) $(e.toTermOutsideBlock)))
+
+        | Shared.typeExpr.relExpr e =>
+          `(($(mkIdent ``RelType.mk.rel)
+              $(e.toTermOutsideBlock)))
+
+  /--
   changes a string expr in the type expression to a string rb expression
   -/
   def toStringRb (te: typeExpr) : typeExpr :=

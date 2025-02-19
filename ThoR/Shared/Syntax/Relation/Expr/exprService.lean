@@ -119,9 +119,9 @@ namespace Shared.expr
 
                 let identifer := mkIdent
                   (if calledElement.isRelation then
-                    calledElement.getFullRelationName.toName
+                    calledElement.getFullRelationName
                   else
-                    calledElement.getFullSignatureName.toName)
+                    calledElement.getFullSignatureName)
 
                 return expr.callFromOpen (Alloy.separatedNamespace.mk identifer)
 
@@ -178,7 +178,14 @@ namespace Shared.expr
         | expr.dotjoin dj e1 e2 =>
           `(expr|$(e1.toSyntax blockName):expr $(dj.toSyntax):dotjoin $(e2.toSyntax blockName):expr)
         -- FIXME In der folgenden Zeile fehlt noch das $rb -> Macht das Probleme?
-        | expr.string_rb s => `(expr| @$(mkIdent s!"{blockName}.vars.{s}".toName):ident)
+        | expr.string_rb s =>
+          let components :=
+            [blockName, `vars] ++
+            (s.splitOn ".").map fun n => n.toName
+
+          let name := Name.fromComponents components
+          let identifier := mkIdent name
+          `(expr| @$(identifier):ident)
 
   /--
   Generates a Lean term corosponding with the type

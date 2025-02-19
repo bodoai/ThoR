@@ -9,7 +9,6 @@ import ThoR.Alloy.Syntax.AST
 import ThoR.Alloy.Config
 import ThoR.Alloy.SymbolTable.SymbolTable
 import ThoR.Alloy.SymbolTable.CommandDecl.commandDeclService
-import ThoR.Alloy.Syntax.Predicate.PredDecl.predDeclService
 import ThoR.Alloy.Syntax.FactDecl.factDeclService
 import ThoR.Alloy.Syntax.AssertDecl.assertDeclService
 
@@ -89,7 +88,7 @@ to be better digestible for further computation and transformation into Lean.
           (st.axiomDecls.map  fun (ad) => ad.name) ++
           (st.defDecls.map  fun (dd) => dd.name) ++
           (st.defDecls.map  fun (dd) =>
-            (dd.args.map fun (arg) => arg.names).join).join
+            (dd.args.map fun (arg) => arg.1.names).join).join
 
         for requiredSymbol in st.requiredDecls do
           if !(availableSymbols.contains requiredSymbol) then
@@ -190,6 +189,23 @@ to be better digestible for further computation and transformation into Lean.
                 fun ps => ps.openedFrom}"
 
     /--
+    Check if the number of arguments match
+    -/
+    private def checkPredCallArgNumber
+      (calledPredDecl : predDecl)
+      (calledArguments : List (expr × List (List varDecl)))
+      : Except String Unit := do
+        let requiredArgNumber :=
+          (calledPredDecl.args.map fun a => a.names).join.length
+
+        let calledArgNumber := calledArguments.length
+
+        let isCorrectNumberOfArguments := requiredArgNumber == calledArgNumber
+        if !isCorrectNumberOfArguments then
+          throw s!"Definition {calledPredDecl.name} called with {calledArgNumber} \
+          arguments ({calledArguments}), but expected {requiredArgNumber} arguments"
+
+    /--
     Checks if all predicate calls are correct.
 
     Currently checks if the predicate exists and if the number of arguments are correct.
@@ -223,15 +239,7 @@ to be better digestible for further computation and transformation into Lean.
           let calledPredDecl := availablePredDecls.get! index
           let calledArguments := calledPred.2
 
-          let requiredArgNumber :=
-            (calledPredDecl.args.map fun a => a.names).join.length
-
-          let calledArgNumber := calledArguments.length
-
-          let isCorrectNumberOfArguments := requiredArgNumber == calledArgNumber
-          if !isCorrectNumberOfArguments then
-            throw s!"Definition {calledPredName} called with {calledArgNumber} \
-            arguments ({calledArguments}), but expected {requiredArgNumber} arguments"
+          checkPredCallArgNumber calledPredDecl calledArguments
 
     /--
     If possible replace domain restrictions with relations.
@@ -410,16 +418,25 @@ to be better digestible for further computation and transformation into Lean.
         let mut declarationName := predDecl.name
         /-
         if a moduleName is given, it is added to the
-        signature name to make it unique
+        name to make it unique
         -/
         if moduleName != default then
           declarationName :=
             s!"{moduleName}{signatureSeparator}{declarationName}"
 
+        let newArgs := predDecl.args.map fun a =>
+          if !a.expression.isString then
+            panic! s!"invalid arg, not String"
+          else
+            let fv := (st.variableDecls.filter
+              fun cv =>
+                cv.name == a.expression.getStringData).get! 0
+            (a, fv)
+
         st := st.addDefDecl
           (
             commandDecl.mk (name := declarationName)
-            (args := predDecl.args)
+            (args := newArgs)
             (isPredicate := true)
             (formulas := predDecl.forms)
             (requiredVars := reqVars)
