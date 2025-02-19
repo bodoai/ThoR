@@ -159,6 +159,12 @@ to be better digestible for further computation and transformation into Lean.
         for signatureCall in location.signatureCalls do
 
           if signatureCall.isEmpty then
+            let index := location.signatureCalls.indexOf signatureCall
+            let relCall := location.relationCalls.get! index
+            if relCall.isEmpty then
+              throw s!"Could not find one of the required variables \
+              of {location.name} ({location.requiredVars}) as a relation \
+              or as a signature"
             continue
 
           if signatureCall.length > 1 then

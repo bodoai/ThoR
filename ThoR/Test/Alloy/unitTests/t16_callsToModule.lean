@@ -72,7 +72,17 @@ alloy m1/wewa
   }
 end
 
-alloy m2/w/a
+~alloy mx/w/a
+  open m1/wewa as wowo
+  sig a {
+    r : a
+  }
+  fact {
+    some wewa/a
+  }
+end
+
+#alloy m2/w/a
   open m1/wewa as wowo
   sig a {
     r : a
