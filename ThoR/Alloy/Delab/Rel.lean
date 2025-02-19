@@ -38,13 +38,3 @@ def unexpTypedRelConstantNone : Unexpander
 def unexpTypedRelConstantIden : Unexpander
   | `($_ $_) => `($(mkIdent `iden))
   | _ => throw Unit.unit
-
-@[app_unexpander ThoR.HEqual.hEqual]
-def unexpHEqual : Unexpander
-  | `($_ $a $b) => `($a = $b)
-  | _ => throw Unit.unit
-
-@[app_unexpander ThoR.HSubset.hSubset]
-def unexpHSubset : Unexpander
-  | `($_ $a $b) => `($a $(mkIdent `in) $b)
-  | _ => throw Unit.unit

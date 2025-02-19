@@ -51,7 +51,7 @@ namespace Shared
     /--
     Used to write the implication to a term
     -/
-    private def myImplication (a b : Prop) : Prop := a → b
+    def myImplication (a b : Prop) : Prop := a → b
 
     /--
     Generates a Lean term corosponding with the type

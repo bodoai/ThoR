@@ -7,6 +7,7 @@ Authors: s. file CONTRIBUTORS
 import ThoR.Relation.Quantification
 import ThoR.Relation.Rel
 
+import ThoR.Alloy.Delab.DelaborationService
 import ThoR.Shared.Syntax.Formula.formula
 
 open ThoR
@@ -39,7 +40,14 @@ def delab2 : Delab := do
   let name := extractVarName e
   let type ← (delab (extractType e))
   let body ← (delab (extractBody e))
-  `($(mkIdent name) $(type) $body)
+
+  -- if the type is an ident, then generate the alloy representation, else continue
+  match type with
+    | `(term | $type_as_ident:ident) =>
+      let newType :=
+        delaborationService.switch_thoR_representation_to_alloy_representation type_as_ident
+      `($(mkIdent name) $(newType) $body)
+    | _ => `($(mkIdent name) $(type) $body)
 
 -- TODO How can we get rid of the (obsolete?) syntax
 --      category delab_formula?
@@ -81,7 +89,14 @@ def delab3 : Delab := do
   let ea_body := (substituteBVarsWithConst pure_body (extractBVarNames e))
   let body ← (delab ea_body)
   let q : Shared.quant := (termToQuant (← delab (args.get! 2))) -- quant steht an Pos. 2
-  `(term | $(q.toSyntax):quant $(mkIdent name) : $(type) | $(body))
+
+  -- if the type is an ident, then generate the alloy representation, else continue
+  match type with
+    | `(term | $type_as_ident:ident) =>
+      let newType :=
+        delaborationService.switch_thoR_representation_to_alloy_representation type_as_ident
+      `(term | $(q.toSyntax):quant $(mkIdent name) : $(newType) | $(body))
+    | _ => `(term | $(q.toSyntax):quant $(mkIdent name) : $(type) | $(body))
 
 @[app_unexpander ThoR.Quantification.Formula.eval]
 def unexpThoRQuantificationFormulaEval : Unexpander
@@ -145,7 +160,12 @@ def delab4 : Delab := do
   let namesArray : Array (Ident) :=
     bVarNames.toArray.map fun (e) => mkIdent e
 
-  `(term |  $(q.toSyntax):quant $[ $namesArray ],* : $(type) | $(body))
+  match type with
+    | `(term | $type_as_ident:ident) =>
+      let newType :=
+        delaborationService.switch_thoR_representation_to_alloy_representation type_as_ident
+      `(term |  $(q.toSyntax):quant $[ $namesArray ],* : $(newType) | $(body))
+    | _ => `(term |  $(q.toSyntax):quant $[ $namesArray ],* : $(type) | $(body))
 
 @[delab app.ThoR.Quantification.Formula.disj]
 def delab5 : Delab := do
@@ -163,4 +183,9 @@ def delab5 : Delab := do
   let namesArray : Array (Ident) :=
     bVarNames.toArray.map fun (e) => mkIdent e
 
-  `(term |  $(q.toSyntax):quant disj $[ $namesArray ],* : $(type) | $(body))
+   match type with
+    | `(term | $type_as_ident:ident) =>
+      let newType :=
+        delaborationService.switch_thoR_representation_to_alloy_representation type_as_ident
+      `(term |  $(q.toSyntax):quant disj $[ $namesArray ],* : $(newType) | $(body))
+    | _ => `(term |  $(q.toSyntax):quant disj $[ $namesArray ],* : $(type) | $(body))
