@@ -97,14 +97,10 @@ namespace ThoR
 
     lemma instance_is_subset_unary_rel' {t2 : RelType R 1} {r2 : Rel t2} {m : Shared.mult} {r1 : R} : r1 ∷ (RelType.mk.unary_rel m r2) → r1 ⊂ r2.relation := by
       intro h
-      cases h with
-      | unary_rel _ _ _ _ h => apply h
-      | complex n1 n2 r _ ha' t1 m1 m2 t2 ht =>
-        dsimp[RelType.mk.unary_rel] at ht
-/- TODO : show with contradiction that RelType.unary_rel ≠ <proof> ▸ RelType.complex -/
-        sorry
-      | cartprod => sorry
-      | dotjoin => sorry
+      match h with
+      | ⟨ht , ha⟩ =>
+        cases ht with
+        | unary_rel _ _ _ _ h => apply h
 
     lemma instance_is_subset_unary_rel {t2 : RelType R 1} {r2 : Rel t2} {m : Shared.mult} {r1 : Rel (RelType.mk.unary_rel m r2)} : r1 ⊂ r2 := by
       cases r1 with
@@ -116,13 +112,12 @@ namespace ThoR
     lemma instance_is_subset_rel {t2 : RelType R arity} {r2 : Rel t2} {r1 : Rel (RelType.mk.rel r2)} : r1 ⊂ r2 := by
       cases r1 with
       | mk r p =>
-        cases p with
-        | rel _ h_arity subrel h =>
-          dsimp[HSubset.hSubset,Rel.subset]
-          apply h
-        | complex => sorry
-        | cartprod => sorry
-        | dotjoin => sorry
+        match p with
+        | ⟨ ht, ha ⟩ =>
+          cases ht with
+          | rel _ h_arity subrel h hr =>
+            dsimp[HSubset.hSubset,Rel.subset]
+            trivial
 
   end Subtype
 
@@ -155,7 +150,6 @@ namespace ThoR
     variable (MANN' : ∷ set MANN)
     variable (MANN'' : ∷ PERSON) -- !!! RelType.rel
     variable (m : ∷ lone PERSON)
-
 
     example : ◃∷ set PERSON ≺ ◃∷ set univ := by aesop
     example : ◃∷ set MANN ≺ ◃∷ set univ  := by aesop

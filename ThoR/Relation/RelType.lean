@@ -129,8 +129,8 @@ lemma RelType.arity.cons {R : Type} [TupleSet R] {n : ℕ} (t : RelType R n) : t
   cases t with
   | mk val property => dsimp[arity]
 
-def RelType.complex {R : Type} [TupleSet R] {n1 : ℕ} (t1 : RelType' R) (h1 : t1.arity = some n1) (m1 m2 : Shared.mult) {n2 : ℕ} (t2 : RelType' R) (h2 : t2.arity = some n2):=
-  @Subtype.mk _ (λ r => r.arity = some (n1 + n2)) (@RelType'.complex R _ t1 m1 m2 t2) (by simp; rw[h1,h2]; simp)
+def RelType.complex {R : Type} [TupleSet R] {n1 : ℕ} (t1 : RelType R n1) (m1 m2 : Shared.mult) {n2 : ℕ} (t2 : RelType R n2) :=
+  @Subtype.mk _ (λ r => r.arity = some (n1 + n2)) (@RelType'.complex R _ t1.1 m1 m2 t2.1) (by simp)
 
 instance (R : Type) [TupleSet R] (n : ℕ) : Intersect (RelType R n) where
   intersect t1 t2 := Subtype.mk (RelType'.intersect t1.1 t2.1) (by simp)
