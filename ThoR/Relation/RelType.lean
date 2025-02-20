@@ -110,6 +110,15 @@ def RelType.rel (R : Type) [TupleSet R] (r : R) (n : ℕ) (h : HasArity.hasArity
 def RelType.constant (R : Type) [TupleSet R] (c : R) (n : ℕ) (h : HasArity.hasArity c n) :=
   @Subtype.mk _ (λ r => r.arity = some n) (@RelType'.constant R _ c n h) (by dsimp[RelType'.arity])
 
+def RelType.none (R : Type) [TupleSet R] (n : ℕ) :=
+  @Subtype.mk _ (λ r => r.arity = some n) (@RelType'.constant R _ ((@SetConstants.none R _)) n arity_none) (by dsimp)
+
+def RelType.univ (R : Type) [TupleSet R] :=
+  @Subtype.mk _ (λ r => r.arity = some 1) (@RelType'.constant R _ ((@RelConstants.univ R _)) 1 arity_univ) (by dsimp)
+
+def RelType.iden (R : Type) [TupleSet R] :=
+  @Subtype.mk _ (λ r => r.arity = some 2) (@RelType'.constant R _ ((@RelConstants.iden R _)) 2 arity_iden) (by dsimp)
+
 @[simp]
 lemma RelType'.arity.cons {R : Type} [TupleSet R] {n : ℕ} (t : RelType R n) : t.1.arity = n := by
   cases t with

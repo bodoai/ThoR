@@ -184,20 +184,103 @@ infixl:63 " ∷ " => HasRelType.hasType
 -- variable (R : Type) [TupleSet R] (s : R) (h : HasArity.hasArity s 1)
 namespace HasRelType
   variable (R : Type) [TupleSet R]
-  namespace sig
-    lemma isUnary (a : R) (m : Shared.mult):
-      a ∷ RelType.sig R m → HasArity.hasArity a 1
-    := by sorry
-  end sig
-  namespace TupleSet
-    lemma refl (R : Type) [TupleSet R] (a : R) (m : Shared.mult):
-      (h1 : HasArity.hasArity a 1) → mult_to_pred m a
-      → a ∷ RelType.unary_rel R m a h1 := by
-      -- intro h1 h2
-      -- constructor <;> try simp
-      -- TODO inversion properties for arity axioms in TupleSet
-      sorry
-  end TupleSet
+  theorem arity {R : Type} [TupleSet R] (n : ℕ) (r : R) (t : RelType R n):
+    r ∷ t → HasArity.hasArity r n := by
+    sorry
+    -- intros ht
+    -- dsimp [hasType] at ht
+    -- cases t with
+    -- | mk val property =>
+    --   match ht with
+    --   | ⟨ h, ha ⟩ =>
+    --     dsimp at h
+    --     cases h with
+    --     | sig subset _ hsubset _ =>
+    --       dsimp [hasType'.arity] at ha
+    --       injection ha with h
+    --       rw [← h]
+    --       apply subset_hasArity RelConstants.univ
+    --       apply arity_univ
+    --       trivial
+
+    theorem intersect_consistent {R : Type} [TupleSet R] {n : ℕ}
+      {r1 r2 : R} {t1 t2 : RelType R n}:
+      r1 ∷ t1 → r2 ∷ t2 → r1 & r2 ∷ t1 & t2 := by sorry
+
+    theorem add_consistent {R : Type} [TupleSet R] {n : ℕ}
+      {r1 r2 : R} {t1 t2 : RelType R n}:
+      r1 ∷ t1 → r2 ∷ t2 → r1 + r2 ∷ t1 + t2 := by sorry
+
+    theorem sub_consistent {R : Type} [TupleSet R] {n : ℕ}
+      {r1 r2 : R} {t1 t2 : RelType R n}:
+      r1 ∷ t1 → r2 ∷ t2 → r1 - r2 ∷ t1 - t2 := by sorry
+
+    theorem append_consistent {R : Type} [TupleSet R] {n : ℕ}
+      {r1 r2 : R} {t1 t2 : RelType R n}:
+      r1 ∷ t1 → r2 ∷ t2 → r1 ++ r2 ∷ t1 ++ t2 := by sorry
+
+    theorem cartprod_consistent {R : Type} [TupleSet R] {n1 n2 : ℕ}
+      {r1 r2 : R} {t1 : RelType R n1} {t2 : RelType R n2}:
+      r1 ∷ t1 → r2 ∷ t2 → r1 ⟶ r2 ∷ t1 ⟶ t2 := by sorry
+
+    theorem dotjoin_consistent {R : Type} [TupleSet R] {n1 n2 : ℕ}
+      {r1 r2 : R} {t1 : RelType R (n1+1)} {t2 : RelType R (n2+1)}:
+      r1 ∷ t1 → r2 ∷ t2 → r1 ⋈ r2 ∷ t1 ⋈ t2 := by sorry
+
+    theorem transclos_consistent {R : Type} [TupleSet R]
+      {r : R} {t : RelType R 2}:
+      r ∷ t → ^r ∷ ^ t := by sorry
+
+    theorem reftransclos_consistent {R : Type} [TupleSet R]
+      {r : R} {t : RelType R 2}:
+      r ∷ t → *r ∷ * t := by sorry
+
+    theorem transpose_consistent {R : Type} [TupleSet R]
+      {r : R} {t : RelType R 2}:
+      r ∷ t → ~ r ∷ ~ t := by sorry
+
+    theorem domrestr_consistent {R : Type} [TupleSet R] {n : ℕ}
+      {r1 r2 : R} {t1 : RelType R 1} {t2 : RelType R n}:
+      r1 ∷ t1 → r2 ∷ t2 → r1 <: r2  ∷ t1 <: t2 := by sorry
+
+    theorem rangerestr_consistent {R : Type} [TupleSet R] {n : ℕ}
+      {r1 r2 : R} {t1 : RelType R n} {t2 : RelType R 1}:
+      r1 ∷ t1 → r2 ∷ t2 → r1 :> r2  ∷ t1 :> t2 := by sorry
+
+
+    namespace sig
+      lemma isUnary (a : R) (m : Shared.mult):
+        a ∷ RelType.sig R m → HasArity.hasArity a 1
+      := by sorry
+    end sig
+    namespace none
+      lemma isNnary {n : ℕ}: a ∷ RelType.none R n → HasArity.hasArity a n
+      := by sorry
+      #check @SetConstants.none R _
+      lemma consistent {n : ℕ}: (@SetConstants.none R _) ∷ RelType.none R n
+      := by sorry
+    end none
+    namespace univ
+      lemma isUnary : a ∷ RelType.univ R → HasArity.hasArity a 1
+      := by sorry
+      lemma consistent : univ ∷ RelType.univ R
+      := by sorry
+    end univ
+    namespace iden
+      lemma isBinary : a ∷ RelType.iden R → HasArity.hasArity a 2
+      := by sorry
+      lemma consistent : iden ∷ RelType.iden R
+      := by sorry
+    end iden
+    namespace TupleSet
+      lemma refl (R : Type) [TupleSet R] (a : R) (m : Shared.mult):
+        (h1 : HasArity.hasArity a 1) → mult_to_pred m a
+        → a ∷ RelType.unary_rel R m a h1 := by
+        -- intro h1 h2
+        -- constructor <;> try simp
+        -- TODO inversion properties for arity axioms in TupleSet
+        sorry
+    end TupleSet
 end HasRelType
 
 end ThoR

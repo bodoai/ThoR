@@ -60,108 +60,68 @@ namespace Rel
     HSubset (Rel t1) (Rel t2) where
       hSubset := subset
 
-  macro "binop_def" name:ident relTypeOp:ident relOp:ident consistencyProof:ident : command
-    => do
-      `(def $name
-          {R : Type} [TupleSet R] {n : ℕ} {t1 t2 : RelType R n}
-          (r1 : Rel t1) (r2: Rel t2) :
-        Rel ($relTypeOp t1 t2) :=
-        Rel.mk
-          ($relOp r1.relation r2.relation)
-          ($consistencyProof r1.type_pf r2.type_pf)
-      )
-  macro "binop_inst" name:ident relTypeOp:ident typeClass:ident op:ident : command
+  local macro "binop_inst"
+    typeClass:ident op:ident relTypeOp:ident consistencyProof:ident : command
     => do
       `(
         instance (R : Type) [TupleSet R] (arity : ℕ) (t1 t2 : RelType R arity):
         $typeClass (Rel t1) (Rel t2) (Rel ($relTypeOp t1 t2)) where
-        $op := $name
+        $op r1 r2 := Rel.mk
+                ($relTypeOp r1.1 r2.1)
+                ($consistencyProof r1.2 r2.2)
       )
 
--- intersect
-  binop_def intersect RelType.intersect Intersect.intersect HasRelType.intersect_consistent
-  binop_inst intersect RelType.intersect HIntersect hIntersect
--- add
-  binop_def add RelType.add Add.add HasRelType.add_consistent
-  binop_inst add RelType.add HAdd hAdd
--- sub
-  binop_def sub RelType.sub Sub.sub HasRelType.sub_consistent
-  binop_inst sub RelType.sub HSub hSub
--- append
-  binop_def append RelType.append Append.append HasRelType.append_consistent
-  binop_inst append RelType.append HAppend hAppend
+-- r1 - r2
+  binop_inst HIntersect hIntersect Intersect.intersect HasRelType.intersect_consistent
+-- r1 + r2
+  binop_inst HAdd hAdd Add.add HasRelType.add_consistent
+-- r1 - r2
+  binop_inst HSub hSub Sub.sub HasRelType.sub_consistent
+-- r1 ++ r2
+  binop_inst HAppend hAppend Append.append HasRelType.append_consistent
 
 /-- cartprod -/
-  def cartprod {R : Type} [TupleSet R] {n1 n2 : ℕ}
-    {t1 : RelType R n1} {t2 : RelType R n2}
-    (r1 : Rel t1) (r2 : Rel t2) :
-    Rel (RelType.cartprod t1 t2) :=
-    Rel.mk
-      (r1.relation ⟶ r2.relation)
-      (HasRelType.cartprod_consistent r1.type_pf r2.type_pf)
-  instance (R : Type) [TupleSet R] (n1 n2 : ℕ)
-    (t1 : RelType R n1) (t2 : RelType R n2):
-    HCartprod (Rel t1) (Rel t2) (Rel (RelType.cartprod t1 t2)) where
-    hCartprod := Rel.cartprod
+  instance (R : Type) [TupleSet R] (n1 n2 : ℕ) (t1 : RelType R n1) (t2 : RelType R n2): HCartprod (Rel t1) (Rel t2) (Rel (t1 ⟶ t2)) where
+    hCartprod r1 r2 := Rel.mk
+      (r1.1 ⟶ r2.1) (HasRelType.cartprod_consistent r1.2 r2.2)
 
 /-- dotjoin -/
-  def dotjoin {R : Type} [TupleSet R] {n1 n2 : ℕ}
-    {t1 : RelType R (n1+1)} {t2 : RelType R (n2+1)}
-    (r1 : Rel t1) (r2 : Rel t2) :
-    Rel (RelType.dotjoin t1 t2) :=
-    Rel.mk
-      (r1.relation ⋈ r2.relation)
-      (HasRelType.dotjoin_consistent r1.type_pf r2.type_pf)
   instance (R : Type) [TupleSet R] (n1 n2 : ℕ)
     (t1 : RelType R (n1+1)) (t2 : RelType R (n2+1)):
-    HDotjoin (Rel t1) (Rel t2) (Rel (RelType.dotjoin t1 t2)) where
-    hDotjoin := Rel.dotjoin
+    HDotjoin (Rel t1) (Rel t2) (Rel (t1 ⋈ t2)) where
+    hDotjoin r1 r2 := Rel.mk
+      (r1.1 ⋈ r2.1) (HasRelType.dotjoin_consistent r1.2 r2.2)
 
-  macro "unop_def" name:ident relTypeOp:ident relOp:ident consistencyProof:ident : command
-    => do
-      `(def $name
-          {R : Type} [TupleSet R] {t : RelType R 2} (r: Rel t) :
-        Rel ($relTypeOp t) :=
-        Rel.mk
-          ($relOp r.relation)
-          ($consistencyProof r.type_pf)
-      )
-  macro "unop_inst" name:ident relTypeOp:ident typeClass:ident op:ident : command
+  local macro "unop_inst"
+    typeClass:ident op:ident relTypeOp:ident consistencyProof:ident : command
     => do
       `(
         instance (R : Type) [TupleSet R] (t : RelType R 2):
-          $typeClass (Rel t) (Rel ($relTypeOp t)) where
-            $op := $name
+        $typeClass (Rel t) (Rel ($relTypeOp t)) where
+        $op r := Rel.mk
+                ($relTypeOp r.1)
+                ($consistencyProof r.2)
       )
 
--- transclos
-  unop_def transclos RelType.transclos Transclos.transclos HasRelType.transclos_consistent
-  unop_inst transclos RelType.transclos HTransclos hTransclos
--- reftransclos
-  unop_def reftransclos RelType.reftransclos ReflTransclos.rtransclos HasRelType.reftransclos_consistent
-  unop_inst reftransclos RelType.reftransclos HReflTransclos hRTransclos
--- reftransclos
-  unop_def transpose RelType.transpose Transpose.transpose HasRelType.transpose_consistent
-  unop_inst transpose RelType.transpose HTranspose hTranspose
+-- ^ r
+  unop_inst HTransclos hTransclos Transclos.transclos HasRelType.transclos_consistent
+-- * r
+  unop_inst HReflTransclos hRTransclos ReflTransclos.rtransclos HasRelType.reftransclos_consistent
+-- ~ r
+  unop_inst HTranspose hTranspose Transpose.transpose HasRelType.transpose_consistent
 
--- domainrestr
-  def domrestr {R : Type} [TupleSet R] {n : ℕ} {t1 : RelType R 1} {t2 : RelType R n}
-    (r1 : Rel t1) (r2: Rel t2) : Rel (RelType.domrestr t1 t2) :=
-        Rel.mk
-          (r1.relation <: r2.relation)
-          (HasRelType.domrestr_consistent r1.type_pf r2.type_pf)
-  instance (R : Type) [TupleSet R] (n : ℕ) (t1 : RelType R 1) (t2 : RelType R n):
-    HDomRestr (Rel t1) (Rel t2) (Rel (RelType.domrestr t1 t2)) where
-      hDomrestr := Rel.domrestr
--- rangerestr
-  def rangerestr {R : Type} [TupleSet R] {n : ℕ} {t1 : RelType R n} {t2 : RelType R 1}
-    (r1 : Rel t1) (r2: Rel t2) : Rel (RelType.rangerestr t1 t2) :=
-        Rel.mk
-          (r1.relation :> r2.relation)
-          (HasRelType.rangerestr_consistent r1.type_pf r2.type_pf)
-  instance (R : Type) [TupleSet R] (n : ℕ) (t1 : RelType R n) (t2 : RelType R 1):
-    HRangeRestr (Rel t1) (Rel t2) (Rel (RelType.rangerestr t1 t2)) where
-      hRangerestr := Rel.rangerestr
+-- r1 <: r2
+  instance (R : Type) [TupleSet R] (n : ℕ)
+    (t1 : RelType R 1) (t2 : RelType R n):
+    HDomRestr (Rel t1) (Rel t2) (Rel (t1 <: t2)) where
+    hDomrestr r1 r2 := Rel.mk
+      (r1.1 <: r2.1) (HasRelType.domrestr_consistent r1.2 r2.2)
+-- r1 :> r2
+  instance (R : Type) [TupleSet R] (n : ℕ)
+    (t1 : RelType R n) (t2 : RelType R 1):
+    HRangeRestr (Rel t1) (Rel t2) (Rel (t1 :> t2)) where
+    hRangerestr r1 r2 := Rel.mk
+      (r1.1 :> r2.1) (HasRelType.rangerestr_consistent r1.2 r2.2)
 
 -- cardinality
 --  def card {R : Type} [TupleSet R] {n : ℕ} {t : RelType R n} (r : Rel t): ℕ := #(r.relation)
@@ -192,34 +152,18 @@ namespace Rel
   namespace constant
     variable (R : Type) [TupleSet R]
     variable (n : ℕ)
-
     def none {n : ℕ} :=
       Rel.mk
         (@SetConstants.none R _)
-        (HasRelType.hasType.constant
-          (@SetConstants.none R _)
-          (TupleSet₀.arity_none n)
-          (@SetConstants.none R _)
-          rfl
-        )
+        (@HasRelType.none.consistent R _ n)
     def univ :=
       Rel.mk
         (@RelConstants.univ R _)
-        (HasRelType.hasType.constant
-          (@RelConstants.univ R _)
-          (arity_univ)
-          (@RelConstants.univ R _)
-          rfl
-        )
+        (HasRelType.univ.consistent R)
     def iden :=
       Rel.mk
         (@RelConstants.iden R _)
-        (HasRelType.hasType.constant
-          (@RelConstants.iden R _)
-          (arity_iden)
-          (@RelConstants.iden R _)
-          rfl
-        )
+        (HasRelType.iden.consistent R)
   end constant
 end Rel
 
@@ -233,10 +177,10 @@ namespace RelType
     variable {R : Type} [TupleSet R]
     -- (r : Rel unary_rel) → (∷ mult r)
     def unary_rel {t : RelType R 1} (m : Shared.mult) (r : Rel t) :=
-      RelType.unary_rel m r.relation (Eq.refl 1) (Rel.arity r)
+      RelType.unary_rel R m r.1 (Rel.arity r)
     -- (r : Rel TupleSet) → (∷ r)
     def rel {n : ℕ} {t : RelType R n} (r : Rel t) :=
-      RelType.rel r.relation (Rel.arity r)
+      RelType.rel R r.1 n (Rel.arity r)
     -- namespace complex
     --   def both {n1 n2 : ℕ} {t1 : RelType R n1} {t2 : RelType R n2}
     --     (r1 : Rel t1) (m1 m2 : Shared.mult) (r2 : Rel t2) :=

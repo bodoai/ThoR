@@ -18,6 +18,9 @@ section
 
 variable (R: Type u) [TupleSet₀ R]
 
+lemma arity_none {R : Type} [TupleSet R] {n : ℕ}:
+  HasArity.hasArity (@SetConstants.none R _) n := by sorry
+
 lemma arity_iden {R : Type} [TupleSet R]:
   HasArity.hasArity (@RelConstants.iden R _) 2 := by sorry
 
@@ -28,7 +31,7 @@ lemma arity_univ {R : Type} [TupleSet R]: HasArity.hasArity (@RelConstants.univ 
 -- lemma add_arity_left (r1 r2 : R) [TupleSet R]:
 --   Arity.arity r1 = Arity.arity r2 → Arity.arity (r1 + r2) = Arity.arity r1 := by sorry
 
-lemma subset_hasArity {R: Type u} [TupleSet₀ R] {r1 r2 : R} {n : ℕ} :
+lemma subset_hasArity {R: Type u} [TupleSet₀ R] {r1 : R} (r2 : R) {n : ℕ} :
   hasArity r2 n → r1 ⊂ r2 → hasArity r1 n := by sorry
 
 lemma union_hasArity (r1 r2 : R) (n : ℕ) :
