@@ -151,6 +151,7 @@ end
 
 #create b2
 
+
 -- variables (ThoR_TupleSet : Type) [TupleSet ThoR_TupleSet] [b2.vars ThoR_TupleSet]
 -- def  xte'  :=
 --   (  ThoR.Quantification.Formula.var  Shared.quant.all
@@ -176,6 +177,7 @@ end
 
 open b2.vars
 open b2.preds
+#check xte
 #print xte
 #check b2.vars.A
 #check b2.vars.B
@@ -204,6 +206,7 @@ open b2.preds
         p != p' implies p in p'.^(hatVater + hatMutter)
     }
 end
+
 
 #create verwandschaft
 
@@ -253,35 +256,3 @@ end
 #check buch.vars.Buch.prequel
 #print buch.preds.EntwederPrequelOderSequel
 open Shared.quant
-
-#alloy module m1
-  sig a {
-    r : a
-  }
-  fact {
-    some this/a
-  }
-end
-
-#alloy m2/te
-  open m1
-  sig a {
-    r : a
-  }
-end
-
-#alloy m3
-  open m2/te
-  sig a {
-    r : a
-  }
-
-  fact {
-    some this/a
-    some m2/te/a
-    some m1/a
-  }
-
-end
-
-#create m3

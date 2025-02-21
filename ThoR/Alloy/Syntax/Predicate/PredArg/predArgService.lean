@@ -20,7 +20,7 @@ namespace Alloy.predArg
     (e: TSyntax `expr)
     : predArg := Id.run do
 
-    let names := (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+    let names := (names.getElems.map fun (elem) => elem.getId.toString).toList
     let e := (expr.toType e)
 
     return {
@@ -45,5 +45,18 @@ namespace Alloy.predArg
           expression := expr.const constant.none
           names:= ["panic"]
         } -- unreachable
+
+  def simplifyDomainRestrictions
+    (pa : predArg)
+    (st : SymbolTable)
+    : predArg :=
+      {pa with expression := pa.expression.simplifyDomainRestrictions st}
+
+  def insertModuleVariables
+    (pa : predArg)
+    (moduleVariables openVariables : List (String))
+    : predArg :=
+    {pa with expression :=
+      pa.expression.insertModuleVariables moduleVariables openVariables}
 
 end Alloy.predArg

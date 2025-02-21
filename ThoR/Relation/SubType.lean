@@ -121,6 +121,7 @@ namespace ThoR
 
   end Subtype
 
+
   -- propositional subtype
   /-- The typeclass behind the notation `a ≺ b` -/
   class PSubtype (α : Type u) where
@@ -154,7 +155,6 @@ namespace ThoR
 -- FIXME
     -- example : ◃∷ set PERSON ≺ ◃∷ set univ := by aesop
     -- example : ◃∷ set MANN ≺ ◃∷ set univ  := by aesop
-
 
     lemma ex1 : (PERSON - MANN).getType ≺ PERSON.getType
       := by

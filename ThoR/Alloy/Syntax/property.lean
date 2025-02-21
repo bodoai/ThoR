@@ -59,7 +59,7 @@ namespace Alloy
             !(formulas.isEmpty) then
 
         return {
-          name:= name.lastComponentAsString,
+          name:= name.toString,
           formulas := [
             formula.quantification
               (quantifier := quant.all)
@@ -72,7 +72,7 @@ namespace Alloy
         }
       else
         return {
-          name:= name.lastComponentAsString,
+          name:= name.toString,
           formulas := formulas
         }
 

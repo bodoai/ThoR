@@ -62,6 +62,11 @@ namespace Shared
     -/
     def toString (op : binRelOp) : String := s!"{op}"
 
+    def isDomainRestriction (op : binRelOp) : Bool :=
+      match op with
+        | binRelOp.domain_restriction => true
+        | _ => false
+
     /--
     Generates a syntax representation of the type
     -/

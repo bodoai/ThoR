@@ -5,17 +5,19 @@ Authors: s. file CONTRIBUTORS
 -/
 
 import ThoR.Shared.Syntax.Formula.formula
-import ThoR.Alloy.SymbolTable.commandDecl
+import ThoR.Alloy.SymbolTable.CommandDecl.commandDecl
+import ThoR.Alloy.Syntax.Predicate.PredDecl.predDecl
 
 import ThoR.Shared.Syntax.Relation.Expr.exprService
 import ThoR.Shared.Syntax.TypeExpr.typeExprService
 import ThoR.Shared.Syntax.Algebra.AlgExpr.algExprService
 
 import ThoR.Relation.Elab
+import ThoR.Relation.SubType
 import ThoR.Relation.Quantification
 
 open Alloy ThoR ThoR.Quantification
-open Lean
+open Lean ThoR
 
 namespace Shared.formula
 
@@ -90,6 +92,8 @@ namespace Shared.formula
     (f: formula)
     (blockName : Name)
     (variableNames : List (String)) -- to check if var or pred
+    (callableVariables : List (varDecl))
+    (callablePredicates : List (commandDecl × List (expr × List (List varDecl))))
     -- names that have to be pure with no namespace (quantors and args)
     (pureNames : List (String) := [])
     : TSyntax `term := Unhygienic.run do
@@ -118,8 +122,81 @@ namespace Shared.formula
               ∻ $(mkIdent s!"{blockName}.preds.{p}".toName)
             ))
 
-        for arg in pa do
-          term ← `($term $(arg.toTermFromBlock blockName pureNames))
+        let possibleCalledPredicates :=
+          (callablePredicates.filter fun cp => cp.1.name == p)
+
+        if possibleCalledPredicates.isEmpty || possibleCalledPredicates.length > 1 then
+          panic!
+            s!"Called Preds is Empty or more than one \
+            in formulaService {possibleCalledPredicates}"
+
+        let calledPredicate := possibleCalledPredicates.get! 0
+
+        let calledArgsVarDecls :=
+          (calledPredicate.1.args.map fun cp =>
+            cp.1.names.map fun _ =>
+              cp.2).join
+
+        for index in [0:pa.length] do
+
+          --let definedArg := calledPredArgs.get! index
+
+          let vd := calledArgsVarDecls.get! index
+
+          let typeName :=
+            (if vd.isRelation then
+              vd.getFullRelationName
+            else
+              vd.getFullSignatureName)
+
+          let typeReplacementName :=
+            (if vd.isRelation then
+              vd.getRelationReplacementName
+            else
+              vd.getSignatureReplacementName)
+
+          let calledArg := pa.get! index
+          let calledVarDecls_of_arg_to_cast :=
+            calledArg.getCalledVariables callableVariables
+          let calledVarDecls_of_arg_to_cast_joined :=
+            calledVarDecls_of_arg_to_cast.join
+
+          let cast_type_as_expr_string := expr.string typeName.toString
+          let cast_type_as_expr_string_rb := cast_type_as_expr_string.toStringRb
+          let cast_type_as_type_expr_relExpr := typeExpr.relExpr cast_type_as_expr_string_rb
+
+          let cast_type_equals_called_var_type :=
+            -- the type must be clear (only one called var)
+            (calledVarDecls_of_arg_to_cast_joined.length == 1) &&
+            /-
+            get the type, stringify it and compare it to the
+            replacerName of the type we try to cast to
+            (the replacer is only needed because its "prettier"
+            to use the alias for casting, otherwise you could use
+            the replacer on both sides (its the actual name))
+            -/
+            (
+              let cv := (calledVarDecls_of_arg_to_cast_joined.get! 0)
+              cv.type.toString == typeReplacementName
+            )
+
+          if
+            cast_type_as_expr_string == calledArg ||
+            cast_type_as_expr_string_rb == calledArg ||
+            cast_type_equals_called_var_type
+          then
+            term ← `($term $(calledArg.toTermFromBlock blockName pureNames))
+
+          else
+
+            let castCommand ←
+              `(term |
+                cast
+                ($(calledArg.toTermFromBlock blockName pureNames):term)
+                ∷ $(cast_type_as_type_expr_relExpr.toSyntax blockName))
+
+            term ←
+              `(term | $term $castCommand)
 
         return term
 
@@ -132,30 +209,30 @@ namespace Shared.formula
       | formula.unaryLogicOperation op f =>
         `(( $(op.toTerm)
             $(f.toTerm
-              blockName variableNames pureNames
+              blockName variableNames callableVariables callablePredicates pureNames
               )
           ))
 
       | formula.binaryLogicOperation op f1 f2 =>
         `(( $(op.toTerm)
             $(f1.toTerm
-              blockName variableNames pureNames
+              blockName variableNames callableVariables callablePredicates pureNames
               )
             $(f2.toTerm
-              blockName variableNames pureNames
+              blockName variableNames callableVariables callablePredicates pureNames
               )
           ))
 
       | formula.tertiaryLogicOperation op f1 f2 f3 =>
         `(( $(op.toTerm)
             $(f1.toTerm
-              blockName variableNames pureNames
+              blockName variableNames callableVariables callablePredicates pureNames
               )
             $(f2.toTerm
-              blockName variableNames pureNames
+              blockName variableNames callableVariables callablePredicates pureNames
               )
             $(f3.toTerm
-              blockName variableNames pureNames
+              blockName variableNames callableVariables callablePredicates pureNames
               )
           ))
       | formula.algebraicComparisonOperation op ae1 ae2 =>
@@ -173,11 +250,24 @@ namespace Shared.formula
 
         let names := (n.map fun (name) => mkIdent name.toName).reverse
 
+        /-add quant vars here so you can get their type later-/
+        let quantVarDecls :=
+          n.map fun nam =>
+            varDecl.mk
+              (name := nam)
+              (isQuantor := true)
+              (isOpened := false)
+              (openedFrom := "this")
+              (isRelation := false)
+              (relationOf := default)
+              (type := te)
+              (requiredDecls := [])
+
         -- one form ist present -> see syntax (+)
         let firstForm := f.get! 0
         let mut fTerm ←
           `($(firstForm.toTerm
-              blockName variableNames
+              blockName variableNames (callableVariables ++ quantVarDecls) callablePredicates
               (pureNames.append n)
             ))
 
@@ -185,7 +275,7 @@ namespace Shared.formula
           fTerm ←
             `(( $fTerm ∧
                 ($(form.toTerm
-                  blockName variableNames
+                  blockName variableNames (callableVariables ++ quantVarDecls) callablePredicates
                   (pureNames.append n)
                 ))
               ))
@@ -230,10 +320,10 @@ namespace Shared.formula
         | `(formula| ( $f:formula )) => toType f
 
         | `(formula| $name:ident) =>
-          formula.string name.getId.lastComponentAsString
+          formula.string name.getId.toString
 
         | `(formula| $predName:ident [$predargs,*]) =>
-          formula.pred_with_args predName.getId.lastComponentAsString
+          formula.pred_with_args predName.getId.toString
             (predargs.getElems.map fun (elem) =>
               expr.toType elem signatureFactSigNames).toList
 
@@ -281,7 +371,7 @@ namespace Shared.formula
           formula.quantification
           (quant.toType q)
           true
-          (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+          (names.getElems.map fun (elem) => elem.getId.toString).toList
           (typeExpr.toType typeExpression)
           ([toType form])
 
@@ -295,7 +385,7 @@ namespace Shared.formula
           formula.quantification
           (quant.toType q)
           true
-          (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+          (names.getElems.map fun (elem) => elem.getId.toString).toList
           (typeExpr.toType typeExpression)
           (form.map fun f => toType f).toList
 
@@ -308,7 +398,7 @@ namespace Shared.formula
           formula.quantification
           (quant.toType q)
           false
-          (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+          (names.getElems.map fun (elem) => elem.getId.toString).toList
           (typeExpr.toType typeExpression)
           ([toType form])
 
@@ -321,7 +411,7 @@ namespace Shared.formula
           formula.quantification
           (quant.toType q)
           false
-          (names.getElems.map fun (elem) => elem.getId.lastComponentAsString).toList
+          (names.getElems.map fun (elem) => elem.getId.toString).toList
           (typeExpr.toType typeExpression)
           (form.map fun f => toType f).toList
 
@@ -387,7 +477,7 @@ namespace Shared.formula
     (f : formula)
     (callablePredicates : List (commandDecl))
     (callableVariables : List (varDecl))
-    : (List (commandDecl × List (List (List (varDecl))))) := Id.run do
+    : (List (commandDecl × List (expr × List (List (varDecl))))) := Id.run do
       let callablePredicateNames := callablePredicates.map fun cp => cp.name
 
       match f with
@@ -405,7 +495,7 @@ namespace Shared.formula
             let calledPredicate := callablePredicates.get! index
             let calledArgumentVariables :=
               (predicate_arguments.map
-                fun argument => argument.getCalledVariables callableVariables
+                fun argument => (argument ,(argument.getCalledVariables callableVariables))
               )
 
             [(calledPredicate, calledArgumentVariables)]
@@ -484,5 +574,75 @@ namespace Shared.formula
               form.getCalledVariables (callableVariables ++ quantVarDecls)).join
 
         | _ => []
+
+  partial def simplifyDomainRestrictions
+    (f : formula)
+    (st : SymbolTable)
+    : formula :=
+    match f with
+      | formula.pred_with_args p args =>
+        pred_with_args p (args.map fun arg => arg.simplifyDomainRestrictions st)
+      | formula.unaryRelBoolOperation op e =>
+        formula.unaryRelBoolOperation op (e.simplifyDomainRestrictions st)
+      | formula.unaryLogicOperation op f =>
+        formula.unaryLogicOperation op (f.simplifyDomainRestrictions st)
+      | formula.binaryLogicOperation op f1 f2 =>
+        formula.binaryLogicOperation
+          op
+          (f1.simplifyDomainRestrictions st)
+          (f2.simplifyDomainRestrictions st)
+      | formula.tertiaryLogicOperation op f1 f2 f3 =>
+        formula.tertiaryLogicOperation
+        op
+        (f1.simplifyDomainRestrictions st)
+        (f2.simplifyDomainRestrictions st)
+        (f3.simplifyDomainRestrictions st)
+      | formula.quantification q d n t f =>
+        formula.quantification
+        q
+        d
+        n
+        (t.simplifyDomainRestrictions st)
+        (f.map fun f => f.simplifyDomainRestrictions st)
+      | _ => f
+
+  partial def insertModuleVariables
+    (f : formula)
+    (moduleVariables openVariables : List (String))
+    : formula :=
+    match f with
+      | formula.pred_with_args p args =>
+        pred_with_args
+          p
+          (args.map fun arg =>
+            arg.insertModuleVariables moduleVariables openVariables)
+      | formula.unaryRelBoolOperation op e =>
+        formula.unaryRelBoolOperation
+          op
+          (e.insertModuleVariables moduleVariables openVariables)
+      | formula.unaryLogicOperation op f =>
+        formula.unaryLogicOperation
+          op
+          (f.insertModuleVariables moduleVariables openVariables)
+      | formula.binaryLogicOperation op f1 f2 =>
+        formula.binaryLogicOperation
+          op
+          (f1.insertModuleVariables moduleVariables openVariables)
+          (f2.insertModuleVariables moduleVariables openVariables)
+      | formula.tertiaryLogicOperation op f1 f2 f3 =>
+        formula.tertiaryLogicOperation
+        op
+        (f1.insertModuleVariables moduleVariables openVariables)
+        (f2.insertModuleVariables moduleVariables openVariables)
+        (f3.insertModuleVariables moduleVariables openVariables)
+      | formula.quantification q d n t f =>
+        formula.quantification
+        q
+        d
+        n
+        (t.insertModuleVariables moduleVariables openVariables)
+        (f.map fun f =>
+          f.insertModuleVariables moduleVariables openVariables)
+      | _ => f
 
 end Shared.formula

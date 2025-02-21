@@ -17,16 +17,31 @@ namespace Alloy
 
 structure openModule where
   moduleToOpen : Name
+  moduleAlias : Name
+  moduleVariables : List (String)
 deriving Repr
 
 declare_syntax_cat openModule
-syntax "open" separatedNamespace : openModule
+syntax
+  "open" separatedNamespace
+  ("[" (ident)+ "]")?
+  ("as" ident)?
+  : openModule
 
 instance : Inhabited openModule where
-  default := {moduleToOpen := default}
+  default :=
+    {
+      moduleToOpen := default,
+      moduleAlias := default,
+      moduleVariables := default
+    }
 
 instance : ToString openModule where
-  toString (om : openModule) := s!"OpenModule: \{ name := {om.moduleToOpen} }"
+  toString (om : openModule) :=
+    s!"OpenModule: \{
+        name := {om.moduleToOpen},
+        alias := {om.moduleAlias}
+      }"
 
 namespace openModule
 
@@ -38,8 +53,52 @@ namespace openModule
     : openModule := Id.run do
       match om with
         | `(openModule| open $sn:separatedNamespace) =>
-          let name := (separatedNamespace.toType sn).representedNamespace.getId
-          {moduleToOpen := name}
+          let name :=
+            (separatedNamespace.toType sn).representedNamespace.getId
+
+          let default : openModule := default
+          { default with moduleToOpen := name}
+
+        | `(openModule | open $sn:separatedNamespace as $mAlias:ident) =>
+          let name :=
+            (separatedNamespace.toType sn).representedNamespace.getId
+          let aliasName := (mAlias.getId)
+
+          let default : openModule := default
+          { default with
+              moduleToOpen := name,
+              moduleAlias := aliasName
+          }
+
+        | `(openModule | open $sn:separatedNamespace [$moduleVariable:ident*]) =>
+          let name :=
+            (separatedNamespace.toType sn).representedNamespace.getId
+          let moduleVariableNames :=
+            (moduleVariable.map
+              fun mv => mv.getId.lastComponentAsString
+            ).toList
+
+          let default : openModule := default
+          { default with
+              moduleToOpen := name,
+              moduleVariables := moduleVariableNames
+          }
+
+        | `(openModule | open $sn:separatedNamespace [$moduleVariable:ident*] as $mAlias:ident) =>
+          let name :=
+            (separatedNamespace.toType sn).representedNamespace.getId
+          let moduleVariableNames :=
+            (moduleVariable.map
+              fun mv => mv.getId.lastComponentAsString
+            ).toList
+          let aliasName := (mAlias.getId)
+
+          let default : openModule := default
+          { default with
+              moduleToOpen := name,
+              moduleAlias := aliasName,
+              moduleVariables := moduleVariableNames
+          }
 
         | _ => default
 
