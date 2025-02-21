@@ -18,13 +18,14 @@ namespace Alloy
   inductive commandDecl where
     | mk  (name : String)
           (isPredicate : Bool := false)
-          (args : List (predArg) := []) -- empty if axiom
+          (args : List (predArg × varDecl) := []) -- empty if axiom
           (formulas : List (formula)) -- formulas in an Alloy pred or an Alloy fact
           (requiredDefs : List (String)) -- only for Lean Infoview
           (requiredVars : List (String)) -- only for Lean Infoview
           /-
           a list of called predicates, contains the called predicate and
-          a list of the calls in the given arguments. Note that there can
+          a list of the calls in the given arguments and the expression
+          of the argument to simplify checks. Note that there can
           be multiple calls in one argumen e.g. t - t => t is called two times
           the innermost list can contain multiple varDecls IF the call is
           ambigous.
@@ -32,7 +33,7 @@ namespace Alloy
           Possible improvement on clarity:
           Make a Structure that conveys the meaning better?
           -/
-          (predCalls : List (commandDecl × List (List (List (varDecl)))))
+          (predCalls : List (commandDecl × List (expr × List (List (varDecl)))))
           (relationCalls : List (List (varDecl))) -- called relations
           (signatureCalls : List (List (varDecl))) -- called signatures
   deriving Repr
@@ -60,6 +61,28 @@ namespace Alloy
           (predCalls := default)
           (relationCalls := default)
           (signatureCalls := default)
+
+    def updateFormulas
+      (formulas : List (formula))
+        | mk
+            name
+            isPredicate
+            args
+            _
+            requiredDefs
+            requiredVars
+            predCalls
+            relationCalls
+            signatureCalls =>
+          mk
+            name
+            isPredicate
+            args formulas
+            requiredDefs
+            requiredVars
+            predCalls
+            relationCalls
+            signatureCalls
 
   /--
   Generates a String representation from the type.

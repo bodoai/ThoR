@@ -5,6 +5,8 @@ Authors: s. file CONTRIBUTORS
 -/
 
 import ThoR
+import ThoR.Relation.SubType
+import ThoR.Relation.RelType
 
 alloy empty
 end
@@ -28,9 +30,14 @@ end
     all t: B | some t + B.r
   }
 
+  pred p2 {
+
+  }
+
 end
 
 #create x2
+#check x2.preds.p1
 
 
 ~alloy x3
@@ -46,6 +53,89 @@ end
 
 end
 
+  namespace b2_example
+    namespace  b2
+
+    class  vars  (  ThoR_TupleSet  :  Type  )  [  ThoR.TupleSet  ThoR_TupleSet  ]  where  (  this_φ_B  :  ∷  set  univ  )  (  this_φ_A  :  ∷  set  this_φ_B  ) (  this_φ_A_ξ_r  :  ∷  this_φ_A  set  →  one  this_φ_B  )
+
+    end  b2
+
+    alias  b2.vars.B  :=  b2.vars.this_φ_B
+
+    alias  b2.vars.A  :=  b2.vars.this_φ_A
+
+    alias  b2.vars.A.r  :=  b2.vars.this_φ_A_ξ_r
+
+    namespace  b2.preds
+
+    variable  {  ThoR_TupleSet  :  Type  }  [  ThoR.TupleSet  ThoR_TupleSet  ]  [  b2.vars  ThoR_TupleSet  ]
+
+    def  x  (  a1  a2  :  ∷  @  b2.vars.this_φ_A_ξ_r  )  :=  (  ThoR.SetMultPredicates.some  (  ∻  b2.vars.this_φ_B  )  )
+
+    namespace cast_examples
+      variable (  r1  :  ∷  @  b2.vars.this_φ_A_ξ_r  )
+      variable (  r2  :  ∷  @  b2.vars.this_φ_A_ξ_r  )
+
+      lemma l1 : ThoR.Subtype.subtypeP (r1 - r2).getType r1.getType := by aesop
+      #check ThoR.Subtype.cast (r1-r2) r1.getType (by aesop)
+
+      lemma l2 : ThoR.Subtype.subtypeP (r1 - r2).getType (◃∷  @  b2.vars.this_φ_A_ξ_r) := by aesop
+      #check ThoR.Subtype.cast (r1-r2) (◃∷  @  b2.vars.this_φ_A_ξ_r) (by aesop)
+
+      lemma l3 : ThoR.Subtype.subtypeP (r1 - r1).getType (◃∷  @  b2.vars.this_φ_A_ξ_r) := by aesop
+      #check ThoR.Subtype.cast (r1-r1) (◃∷  @  b2.vars.this_φ_A_ξ_r) (by aesop)
+
+      lemma l4 : ThoR.Subtype.subtypeP r1.getType (r1 + r2).getType := by aesop
+      #check ThoR.Subtype.cast r1 (r1 + r2).getType (by aesop)
+    end cast_examples
+
+    def  xte  :=
+    (  ThoR.Quantification.Formula.var  Shared.quant.all  )
+    (  fun  (  t  :  ∷  @  b2.vars.this_φ_A_ξ_r  )  =>
+      (  ThoR.Quantification.Formula.prop  (  (  ∻  b2.preds.x  )
+
+
+      (cast (  HSub.hSub  t  t  ) ∷  @  b2.vars.this_φ_A_ξ_r)
+
+
+        t  ))
+      )
+
+    def  xte'  :=
+    (  ThoR.Quantification.Formula.var  Shared.quant.all  )
+    (  fun  (  t  :  ∷  @  b2.vars.this_φ_A_ξ_r  )  =>
+      (  ThoR.Quantification.Formula.prop  (  (  ∻  b2.preds.x  )
+
+
+      (ThoR.Subtype.cast (  HSub.hSub  t  t  ) (t.getType) (by aesop))
+
+
+        t  ))
+      )
+
+    def  xte''  :=
+    (  ThoR.Quantification.Formula.var  Shared.quant.all  )
+    (  fun  (  t  :  ∷  @  b2.vars.this_φ_A_ξ_r  )  =>
+      (  ThoR.Quantification.Formula.prop  (  (  ∻  b2.preds.x  )
+
+
+      (ThoR.Subtype.cast (  HSub.hSub  t  t  ) (◃∷  @  b2.vars.this_φ_A_ξ_r) (by aesop))
+
+
+        t  ))
+      )
+    end  b2.preds
+
+    namespace  b2.facts
+
+    variable  {  ThoR_TupleSet  :  Type  }  [  ThoR.TupleSet  ThoR_TupleSet  ]  [  b2.vars  ThoR_TupleSet  ]
+
+    axiom  f0  :  (  ∻  b2.preds.xte  )
+
+    end  b2.facts
+
+    open  b2.vars  b2.preds  b2.facts
+  end b2_example
 
 
 #alloy b2
@@ -61,6 +151,7 @@ end
 end
 
 #create b2
+
 
 -- variables (ThoR_TupleSet : Type) [TupleSet ThoR_TupleSet] [b2.vars ThoR_TupleSet]
 -- def  xte'  :=
@@ -87,6 +178,7 @@ end
 
 open b2.vars
 open b2.preds
+#check xte
 #print xte
 #check b2.vars.A
 #check b2.vars.B

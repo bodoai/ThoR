@@ -23,15 +23,15 @@ inductive hasType {R: Type} [TupleSet R]:
   -- subset : m univ
   | sig (m : Shared.mult):
     ∀ (subset : R), subset ⊂ RelConstants.univ → mult_to_pred m subset
-    → hasType subset (RelType.sig m)
+    → hasType subset (RelType.sig m (Eq.refl 1))
   -- subet : m superset
-  | unary_rel (m : Shared.mult) (superset : R) (h : superset ⊂ RelConstants.univ):
+  | unary_rel (m : Shared.mult) (superset : R) (h : HasArity.hasArity superset 1):
     ∀ (subset : R), subset ⊂ superset → mult_to_pred m subset
-    → hasType subset (RelType.unary_rel m superset (TupleSet₀.arity_1 superset h))
+    → hasType subset (RelType.unary_rel m superset (Eq.refl 1) h)
   -- subrel : subrel
-  | TupleSet (superrel : R) (h: HasArity.hasArity superrel n):
+  | rel (superrel : R) (h: HasArity.hasArity superrel n):
     ∀ (subrel : R), subrel ⊂ superrel
-    → hasType subset (RelType.rel superrel h)
+    → hasType subrel (RelType.rel superrel h)
   -- none ∷ constant none, univ ∷ constant univ, id ∷ constant id
   | constant (c : R) (h : HasArity.hasArity c n):
     ∀ (c' : R), c' = c
@@ -39,21 +39,34 @@ inductive hasType {R: Type} [TupleSet R]:
   -- r1' ∷ t1 , r2' ∷ t2 → t1 m1 ⟶ m2 t2
   -- TODO replace ⋈ by correct operator "⋈*" (left/right)
   | complex
-    (n1 n2 : ℕ)
-    (t1 : RelType R n1) (m1 m2 : Shared.mult) (t2 : RelType R n2):
+    (n1 n2 : ℕ) (ha : n=n1+n2)
+    (r : R) (ha': HasArity.hasArity r n)
+    (t1 : RelType R n1) (m1 m2 : Shared.mult) (t2 : RelType R n2)
+    (ht : t = ha ▸ (RelType.complex t1 m1 m2 t2)) :
     ∀ (r1' r2' : R),
       hasType r1' t1 → hasType r2' t2 →
       ∀ (r' : R),
         (r' ⊂ r1' ⟶ r2') →
+      (
         (∀ (r1'' : R),
-          r1'' ⊂ r1' → SetMultPredicates.one r1'' → (mult_to_pred m2 (r1'' ⋈ r'))) ->
+          r1'' ⊂ r1' → SetMultPredicates.one r1'' → (mult_to_pred m2 (r1'' ⋈ r')))
+      ) →
+      (
         (∀ (r1'' : R),
-          r1'' ⊂ r1' → SetMultPredicates.one r1'' → (hasType (r1'' ⋈ r') t2)) ->
+          r1'' ⊂ r1' → SetMultPredicates.one r1'' → (hasType (r1'' ⋈ r') t2))
+      )
+        →
+      (
         (∀ (r2'' : R),
-          r2'' ⊂ r2' → SetMultPredicates.one r2'' → (mult_to_pred m1 (r' ⋈ r2''))) ->
+          r2'' ⊂ r2' → SetMultPredicates.one r2'' → (mult_to_pred m1 (r' ⋈ r2'')))
+      )
+        →
+      (
         (∀ (r2'' : R),
           r2'' ⊂ r2' → SetMultPredicates.one r2'' → (hasType (r' ⋈ r2'') t1))
-      -> hasType r' ((RelType.complex t1 m1 m2 t2))
+      )
+       →
+      hasType r' t
   -- r1' & r2' : t1 & t2
   | intersect (n : ℕ) (t1 : RelType R n) (t2 : RelType R n):
     ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
@@ -73,16 +86,16 @@ inductive hasType {R: Type} [TupleSet R]:
     → hasType (r1' ++ r2') (t1 ++ t2)
   -- TODO cartprod redundant to complex
   -- r1' ⟶ r2' : t1 ⟶ t2
-  | cartprod (n1 n2 : ℕ) (t1 : RelType R n1) (t2 : RelType R n2):
+  | cartprod (n1 n2 : ℕ) (ha : n=n1+n2) (t1 : RelType R n1) (t2 : RelType R n2) (ht : t=ha ▸ ((RelType.cartprod t1 t2))):
     ∀ (r1' r2' : R),
       hasType r1' t1 → hasType r2' t2 →
       ∀ (r' : R),
         (r' ⊂ r1' ⟶ r2')
-      → hasType r' ((RelType.cartprod t1 t2))
+      → hasType r' t
   -- r1' ⋈ r2' : t1 ⋈ t2
-  | dotjoin (n1 n2 : ℕ) (t1 : RelType R (n1+1)) (t2 : RelType R (n2+1)):
+  | dotjoin (n1 n2 : ℕ) (ha: n=n1+n2) (t1 : RelType R (n1+1)) (t2 : RelType R (n2+1)) (ht: t=ha ▸ (t1 ⋈ t2)):
     ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
-    → hasType (r1' ⋈ r2') (t1 ⋈ t2)
+    → hasType (r1' ⋈ r2') t
   -- ^r' : ^t
   | transclos (t : RelType R 2):
     ∀ (r' : R), hasType r' t
@@ -103,7 +116,6 @@ inductive hasType {R: Type} [TupleSet R]:
   | rangerestr (n : ℕ) (t1 : RelType R n) (t2 : RelType R 1):
     ∀ (r1' r2' : R), hasType r1' t1 → hasType r2' t2
     → hasType (r1' :> r2') (RelType.rangerestr t1 t2)
--- TODO r1' --> r2'
 
 infixl:63 " ∷ " => hasType
 
@@ -170,13 +182,13 @@ namespace HasRelType
   variable (R : Type) [TupleSet R]
   namespace sig
     lemma isUnary (a : R) (m : Shared.mult):
-      a ∷ RelType.sig m → HasArity.hasArity a 1
+      a ∷ RelType.sig m (Eq.refl 1) → HasArity.hasArity a 1
     := by sorry
   end sig
   namespace TupleSet
     lemma refl (R : Type) [TupleSet R] (a : R) (m : Shared.mult):
       (h1 : HasArity.hasArity a 1) → mult_to_pred m a
-      → a ∷ RelType.unary_rel m a h1 := by
+      → a ∷ RelType.unary_rel m a (Eq.refl 1) h1 := by
       -- intro h1 h2
       -- constructor <;> try simp
       -- TODO inversion properties for arity axioms in TupleSet
