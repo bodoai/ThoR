@@ -137,7 +137,6 @@ end
     open  b2.vars  b2.preds  b2.facts
   end b2_example
 
-
 #alloy b2
   sig A extends B{
     r: B
