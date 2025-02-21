@@ -31,7 +31,7 @@ namespace Shared
     /--
     Used to write the ifelse to a term
     -/
-    private def myIfElse (a b c : Prop) := (a -> b) /\ ((Not a) -> c)
+    def myIfElse (a b c : Prop) := (a -> b) /\ ((Not a) -> c)
 
     /--
     Generates a Lean term corosponding with the type
