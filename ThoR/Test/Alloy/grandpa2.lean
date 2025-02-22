@@ -2,6 +2,7 @@ import ThoR.Alloy
 import ThoR.Test.Alloy.test_macro
 import ThoR.Rules.quant
 import ThoR.Rules.dotjoin
+import ThoR.Rules.eq
 
 #alloy
 module language/grandpa1 ---- Page 84, 85
@@ -50,6 +51,8 @@ open Person
 #print language.grandpa1.facts.f0
 
 startTestBlock language.grandpa1
+#check Rules.eq.refl
+
 lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   unfold NoSelfGrandpa
   apply Rules.no.intro
@@ -64,6 +67,21 @@ lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
     apply Rules.no.elim at f1
     apply f1
     apply Rules.some.intro
+    simp [ThoR.Quantification.Formula.eval] at contra
+    -- dsimp [ThoR.HSubset.hSubset] at contra
+    -- unfold ThoR.Rel.subset at contra
+    -- simp [ThoR.HDotjoin.hDotjoin] at contra
+    -- simp [HAdd.hAdd] at contra
+    apply Rules.eq.subset p p at contra
+    have h : p ≡ p := by apply Rules.eq.refl
+    apply contra at h
+
+
+
+
+
+
+
     rw [Rules.eq.rw (Rules.dotjoin.add.dist.l _ _ _)] at contra
 
 
