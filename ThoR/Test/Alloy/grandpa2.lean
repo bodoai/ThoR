@@ -120,13 +120,83 @@ partial def toRel' (t : Term) : Term := Unhygienic.run do
       `($(toRel' t))
   | _ => Macro.throwUnsupported
 
+partial def toRelString' (t : TSyntax `term) : String :=
+  match t with
+    | `(($t:term)) => "(" ++ (toRelString' t) ++ ")"
+    -- | `($x:term ⋈ $y:term) =>
+    --   let x' := toRelString' x
+    --   let y' := toRelString' y
+    --   `($x' ⋈ $y')
+    | `($x:term ⊂ $y:term) =>
+      "(subset: " ++ ")" ++
+        let x' := toRelString' x
+        x'
+      ++ ", " ++
+        let y' := toRelString' y
+        y'
+      ++ ")"
+    -- | `($x:term + $y:term) =>
+    --   let x' := toRelString' x
+    --   let y' := toRelString' y
+    --   `($x' + $y')
+    -- | `($x:term & $y:term) =>
+    --   let x' := toRelString' x
+    --   let y' := toRelString' y
+    --   `($x' & $y')
+    -- | `($x:ident) => `(ThoR.Rel.relation $x)
+    | _ => s!"(default: {t.raw.prettyPrint})"
+    -- `(ThoR.Rel.relation $t)
+
+#check Syntax.atom (SourceInfo.synthetic (String.Pos.mk 0) (String.Pos.mk 0) )
+
+@[macro toRel_stx_name] def toRelStringImpl : Macro
+  | `(toRel $t:term) =>
+    return Syntax.atom (SourceInfo.synthetic (String.Pos.mk 0) (String.Pos.mk 0) ) (toRelString' t)
+  | _ => Macro.throwUnsupported
+
+partial def toRelString' (t : TSyntax `term) : String :=
+  match t with
+    | `(($t:term)) => "(" ++ (toRelString' t) ++ ")"
+    -- | `($x:term ⋈ $y:term) =>
+    --   let x' := toRelString' x
+    --   let y' := toRelString' y
+    --   `($x' ⋈ $y')
+    | `($x:term ⊂ $y:term) =>
+      "(subset: " ++ ")" ++
+        let x' := toRelString' x
+        x'
+      ++ ", " ++
+        let y' := toRelString' y
+        y'
+      ++ ")"
+    -- | `($x:term + $y:term) =>
+    --   let x' := toRelString' x
+    --   let y' := toRelString' y
+    --   `($x' + $y')
+    -- | `($x:term & $y:term) =>
+    --   let x' := toRelString' x
+    --   let y' := toRelString' y
+    --   `($x' & $y')
+    -- | `($x:ident) => `(ThoR.Rel.relation $x)
+    | _ => s!"(default: {t.raw.prettyPrint})"
+    -- `(ThoR.Rel.relation $t)
+
+#check Syntax.atom (SourceInfo.synthetic (String.Pos.mk 0) (String.Pos.mk 0) )
+
+@[macro toRel_stx_name] def toRelStringImpl : Macro
+  | `(toRel $t:term) =>
+    return Syntax.atom (SourceInfo.synthetic (String.Pos.mk 0) (String.Pos.mk 0) ) (toRelString' t)
+  | _ => Macro.throwUnsupported
+
 variable (p : ∷ @ Person)
 variable (m : ∷ @ Man)
 variable (w : ∷ @ Woman)
-#check p ⋈ father
+#check ∻ father ⋈ ∻ father
+#check toRel (∻ father ⋈ ∻ father)
 #check toRel m & w
 #check toRel m + w
-#check toRel (p ⋈ father)
+#check (p ⋈ ∻ father)
+#check toRel (p ⋈ ∻ father)
 #check toRel p ⊂ p
 #check toRel ThoR.HSubset.hSubset p p
 --#check toRel LOL p XXX p
@@ -135,7 +205,7 @@ variable (w : ∷ @ Woman)
 #check toRel m + m + w
 #check toRel p ⊂ (m + w)
 #check toRel (p ⊂ (m + w))
-#check toRel p ⊂ (p ⋈ father)
+#check toRel p ⊂ (p ⋈ ∻ father)
 #check toRel p ⊂ (p + m)
 #check toRel p ⊂ (p + m)
 

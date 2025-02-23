@@ -150,7 +150,7 @@ instance (R : Type) [TupleSet R] (n1 n2 : ℕ):
         Subtype.mk (RelType'.cartprod t1.1 t2.1) (by simp)
 
 instance (R : Type) [TupleSet R] (n1 n2 : ℕ):
-    HDotjoin (RelType R (n1 + 1)) (RelType R (n2 + 1)) (outParam (RelType R (n1 + n2))) where
+    HDotjoin (RelType R (n1 + 1)) (RelType R (n2 + 1)) ( (RelType R (n1 + n2))) where
       hDotjoin (t1 : RelType R (n1 +1)) (t2 : RelType R (n2 + 1)):=
         Subtype.mk (RelType'.dotjoin t1.1 t2.1) (by simp ; ring_nf ; rw[add_assoc, add_comm] ; simp)
 
