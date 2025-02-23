@@ -91,6 +91,9 @@ partial def toRel' (t : Term) : Term := Unhygienic.run do
 variable (p : ∷ @ Person)
 variable (m : ∷ @ Man)
 variable (w : ∷ @ Woman)
+#check p ⋈ father
+#check toRel m & w
+#check toRel m + w
 #check toRel (p ⋈ father)
 #check toRel p ⊂ p
 #check toRel p + p
@@ -99,7 +102,7 @@ variable (w : ∷ @ Woman)
 #check toRel p ⊂ (m + w)
 #check toRel (p ⊂ (m + w))
 #check toRel p ⊂ (p ⋈ father)
-#check p ⊂ (p + m)
+#check toRel p ⊂ (p + m)
 #check toRel p ⊂ (p + m)
 
 lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
