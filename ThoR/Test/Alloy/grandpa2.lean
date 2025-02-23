@@ -78,6 +78,9 @@ partial def toRel' (t : Term) : Term := Unhygienic.run do
     | `($x ⋈ $y) =>
       `($(toRel' x) ⋈ $(toRel' y))
 
+    | `($x & $y) =>
+      `($(toRel' x) & $(toRel' y))
+
     | `($x ⊂ $y) =>
       `($(toRel' x) ⊂ $(toRel' y))
 
