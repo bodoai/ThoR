@@ -64,35 +64,65 @@ def isSubset : TSyntax `term → Bool
 --   | `($x:term ⊂ $y:term) => `((ThoR.Rel.relation $x) ⊂ (ThoR.Rel.relation $y))
 --   | `($t:term) => `($t)
 
-partial def toRel' (t : TSyntax `term) : TSyntax `term := Unhygienic.run do
+partial def toRel' (t : Term) : Term := Unhygienic.run do
   match t with
-    | `(($t:term)) =>
-      let t' := toRel' t
-      `($t')
-    | `($x:term ⋈ $y:term) =>
-      let x' := toRel' x
-      let y' := toRel' y
-      `($x' ⋈ $y')
-    | `($x:term ⊂ $y:term) =>
-      let x' := toRel' x
-      let y' := toRel' y
-      `($x' ⊂ $y')
-    | `($x:term + $y:term) =>
-      let x' := toRel' x
-      let y' := toRel' y
-      `($x' + $y')
-    | `($x:term & $y:term) =>
-      let x' := toRel' x
-      let y' := toRel' y
-      `($x' & $y')
-    | `($x:ident) => `(ThoR.Rel.relation $x)
-    | t => panic! s!"{t.raw.prettyPrint}"
-    -- `(ThoR.Rel.relation $t)
+    | `(($t)) =>
+      return toRel' t
+
+    | `($x:ident) =>
+      `($(mkIdent ``ThoR.Rel.relation) $x)
+
+    | `($x + $y) =>
+      `($(toRel' x) + $(toRel' y))
+
+    | `($x ⋈ $y) =>
+      `($(toRel' x) ⋈ $(toRel' y))
+
+    | `($x & $y) =>
+      `($(toRel' x) & $(toRel' y))
+
+    | `($x ⊂ $y) =>
+      `($(toRel' x) ⊂ $(toRel' y))
+
+    | _ => return  t
 
 @[macro toRel_stx_name] def toRelImpl : Macro
   | `(toRel $t:term) =>
-      let c := toRel' t
-      `($c)
+      `($(toRel' t))
+  | _ => Macro.throwUnsupported
+
+partial def toRelString' (t : TSyntax `term) : String :=
+  match t with
+    | `(($t:term)) => "(" ++ (toRelString' t) ++ ")"
+    -- | `($x:term ⋈ $y:term) =>
+    --   let x' := toRelString' x
+    --   let y' := toRelString' y
+    --   `($x' ⋈ $y')
+    | `($x:term ⊂ $y:term) =>
+      "(subset: " ++ ")" ++
+        let x' := toRelString' x
+        x'
+      ++ ", " ++
+        let y' := toRelString' y
+        y'
+      ++ ")"
+    -- | `($x:term + $y:term) =>
+    --   let x' := toRelString' x
+    --   let y' := toRelString' y
+    --   `($x' + $y')
+    -- | `($x:term & $y:term) =>
+    --   let x' := toRelString' x
+    --   let y' := toRelString' y
+    --   `($x' & $y')
+    -- | `($x:ident) => `(ThoR.Rel.relation $x)
+    | _ => s!"(default: {t.raw.prettyPrint})"
+    -- `(ThoR.Rel.relation $t)
+
+#check Syntax.atom (SourceInfo.synthetic (String.Pos.mk 0) (String.Pos.mk 0) )
+
+@[macro toRel_stx_name] def toRelStringImpl : Macro
+  | `(toRel $t:term) =>
+    return Syntax.atom (SourceInfo.synthetic (String.Pos.mk 0) (String.Pos.mk 0) ) (toRelString' t)
   | _ => Macro.throwUnsupported
 
 partial def toRelString' (t : TSyntax `term) : String :=
@@ -139,6 +169,7 @@ variable (w : ∷ @ Woman)
 #check (p ⋈ ∻ father)
 #check toRel (p ⋈ ∻ father)
 #check toRel p ⊂ p
+#check toRel p + p
 #check toRel m + w
 #check toRel m + m + w
 #check toRel p ⊂ (m + w)
