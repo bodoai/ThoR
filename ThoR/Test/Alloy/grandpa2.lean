@@ -54,18 +54,6 @@ open Person
 
 startTestBlock language.grandpa1
 
-#check ∻ Person
-variable (p : ∷ @ Person)
-
-def myTerm :=
-    (p) ⊂ (p) ⋈ (((∻ Person.mother) + (∻ Person.father)) ⋈ ((∻ Person.father)))
-    ↔
-    (p.relation) ⊂ (p.relation) ⋈ (((∻ Person.mother).relation + (∻ Person.father).relation) ⋈ ((∻ Person.father).relation))
-
-#print myTerm
-#check ∻ myTerm
-
-
 syntax:10 (name := toRel_stx_name) " toRel " term : term
 
 def isSubset : TSyntax `term → Bool
@@ -76,23 +64,44 @@ def isSubset : TSyntax `term → Bool
 --   | `($x:term ⊂ $y:term) => `((ThoR.Rel.relation $x) ⊂ (ThoR.Rel.relation $y))
 --   | `($t:term) => `($t)
 
-partial def convertSubset (t : TSyntax `term) : TSyntax `term := Unhygienic.run do
+partial def toRel' (t : TSyntax `term) : TSyntax `term := Unhygienic.run do
   match t with
-    | `($x:ident) => `((ThoR.Rel.relation $x))
+    | `(($t:term)) =>
+      let t' := toRel' t
+      `($t')
     | `($x:term ⊂ $y:term) =>
-      let x' := convertSubset x
-      let y' := convertSubset y
+      let x' := toRel' x
+      let y' := toRel' y
       `($x' ⊂ $y')
+    | `($x:term + $y:term) =>
+      let x' := toRel' x
+      let y' := toRel' y
+      `($x' + $y')
+    | `($x:term ⋈ $y:term) =>
+      let x' := toRel' x
+      let y' := toRel' y
+      `($x' ⋈ $y')
+    | `($x:ident) => `(ThoR.Rel.relation $x)
     | _ => return t
 
 @[macro toRel_stx_name] def toRelImpl : Macro
   | `(toRel $t:term) =>
-      let c := convertSubset t
+      let c := toRel' t
       `($c)
   | _ => Macro.throwUnsupported
 
--- variable (p : ∷ @ Person)
--- #check toRel p ⊂ p
+variable (p : ∷ @ Person)
+variable (m : ∷ @ Man)
+variable (w : ∷ @ Woman)
+#check toRel (p ⋈ father)
+#check toRel p ⊂ p
+#check toRel m + w
+#check toRel m + m + w
+#check toRel p ⊂ (m + w)
+#check toRel (p ⊂ (m + w))
+#check toRel p ⊂ (p ⋈ father)
+#check p ⊂ (p + m)
+#check toRel p ⊂ (p + m)
 
 lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   unfold NoSelfGrandpa
@@ -100,6 +109,23 @@ lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   apply Rules.some.neg
   apply Rules.all.intro
   intro p
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   unfold ThoR.Quantification.Formula.eval
   intro contra
   simp [ThoR.Quantification.Formula.eval] at contra
@@ -130,32 +156,18 @@ lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   apply h2.mpr at contra
 
   fact f0 : language.grandpa1.facts.f0
-  cases f0 with
-  | intro f1 f2 =>
-    apply Rules.no.elim at f1
-    apply f1
-    apply Rules.some.intro
-    simp [ThoR.Quantification.Formula.eval] at contra
-    -- dsimp [ThoR.HSubset.hSubset] at contra
-    -- unfold ThoR.Rel.subset at contra
-    -- simp [ThoR.HDotjoin.hDotjoin] at contra
-    -- simp [HAdd.hAdd] at contra
-    apply Rules.eq.subset p p at contra
-    have h : p ≡ p := by apply Rules.eq.refl
-    apply contra at h
-
-
-
-
-
-
-
-    rw [Rules.eq.rw (Rules.dotjoin.add.dist.l _ _ _)] at contra
-
-
-
-
-
-
-
   sorry
+  -- cases f0 with
+  -- | intro f1 f2 =>
+  --   apply Rules.no.elim at f1
+  --   apply f1
+  --   apply Rules.some.intro
+  --   simp [ThoR.Quantification.Formula.eval] at contra
+  --   -- dsimp [ThoR.HSubset.hSubset] at contra
+  --   -- unfold ThoR.Rel.subset at contra
+  --   -- simp [ThoR.HDotjoin.hDotjoin] at contra
+  --   -- simp [HAdd.hAdd] at contra
+  --   apply Rules.eq.subset p p at contra
+  --   have h : p ≡ p := by apply Rules.eq.refl
+  --   apply contra at h
+  --   sorry

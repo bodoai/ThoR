@@ -4,7 +4,7 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 
-import ThoR.Alloy.Delab.Shared
+-- import ThoR.Alloy.Delab.Shared
 
 -- import ThoR.Alloy.Delab.TupleSet
 -- import ThoR.Alloy.Delab.RelType
