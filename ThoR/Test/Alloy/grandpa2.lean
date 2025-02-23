@@ -48,135 +48,7 @@ end
 
 #create language/grandpa1
 
-open Person
-#print language.grandpa1.vars.Person.mother
-#print language.grandpa1.facts.f0
-
 startTestBlock language.grandpa1
-
-syntax:10 (name := toRel_stx_name) " toRel " term : term
-
-def isSubset : TSyntax `term → Bool
-  | `($x:term ⊂ $y:term) => true
-  | _ => false
-
--- def convertSubset : TSyntax `term → TSyntax `term
---   | `($x:term ⊂ $y:term) => `((ThoR.Rel.relation $x) ⊂ (ThoR.Rel.relation $y))
---   | `($t:term) => `($t)
-
-partial def toRel' (t : Term) : Term := Unhygienic.run do
-  match t with
-    | `(($t)) =>
-      return toRel' t
-
-    | `($x:ident) =>
-      `($(mkIdent ``ThoR.Rel.relation) $x)
-
-    | `($x + $y) =>
-      `($(toRel' x) + $(toRel' y))
-
-    | `($x ⋈ $y) =>
-      `($(toRel' x) ⋈ $(toRel' y))
-
-    | `($x & $y) =>
-      `($(toRel' x) & $(toRel' y))
-
-    | `($x ⊂ $y) =>
-      `($(toRel' x) ⊂ $(toRel' y))
-
-    | _ => return  t
-
-@[macro toRel_stx_name] def toRelImpl : Macro
-  | `(toRel $t:term) =>
-      `($(toRel' t))
-  | _ => Macro.throwUnsupported
-
-partial def toRelString' (t : TSyntax `term) : String :=
-  match t with
-    | `(($t:term)) => "(" ++ (toRelString' t) ++ ")"
-    -- | `($x:term ⋈ $y:term) =>
-    --   let x' := toRelString' x
-    --   let y' := toRelString' y
-    --   `($x' ⋈ $y')
-    | `($x:term ⊂ $y:term) =>
-      "(subset: " ++ ")" ++
-        let x' := toRelString' x
-        x'
-      ++ ", " ++
-        let y' := toRelString' y
-        y'
-      ++ ")"
-    -- | `($x:term + $y:term) =>
-    --   let x' := toRelString' x
-    --   let y' := toRelString' y
-    --   `($x' + $y')
-    -- | `($x:term & $y:term) =>
-    --   let x' := toRelString' x
-    --   let y' := toRelString' y
-    --   `($x' & $y')
-    -- | `($x:ident) => `(ThoR.Rel.relation $x)
-    | _ => s!"(default: {t.raw.prettyPrint})"
-    -- `(ThoR.Rel.relation $t)
-
-#check Syntax.atom (SourceInfo.synthetic (String.Pos.mk 0) (String.Pos.mk 0) )
-
-@[macro toRel_stx_name] def toRelStringImpl : Macro
-  | `(toRel $t:term) =>
-    return Syntax.atom (SourceInfo.synthetic (String.Pos.mk 0) (String.Pos.mk 0) ) (toRelString' t)
-  | _ => Macro.throwUnsupported
-
-partial def toRelString' (t : TSyntax `term) : String :=
-  match t with
-    | `(($t:term)) => "(" ++ (toRelString' t) ++ ")"
-    -- | `($x:term ⋈ $y:term) =>
-    --   let x' := toRelString' x
-    --   let y' := toRelString' y
-    --   `($x' ⋈ $y')
-    | `($x:term ⊂ $y:term) =>
-      "(subset: " ++ ")" ++
-        let x' := toRelString' x
-        x'
-      ++ ", " ++
-        let y' := toRelString' y
-        y'
-      ++ ")"
-    -- | `($x:term + $y:term) =>
-    --   let x' := toRelString' x
-    --   let y' := toRelString' y
-    --   `($x' + $y')
-    -- | `($x:term & $y:term) =>
-    --   let x' := toRelString' x
-    --   let y' := toRelString' y
-    --   `($x' & $y')
-    -- | `($x:ident) => `(ThoR.Rel.relation $x)
-    | _ => s!"(default: {t.raw.prettyPrint})"
-    -- `(ThoR.Rel.relation $t)
-
-#check Syntax.atom (SourceInfo.synthetic (String.Pos.mk 0) (String.Pos.mk 0) )
-
-@[macro toRel_stx_name] def toRelStringImpl : Macro
-  | `(toRel $t:term) =>
-    return Syntax.atom (SourceInfo.synthetic (String.Pos.mk 0) (String.Pos.mk 0) ) (toRelString' t)
-  | _ => Macro.throwUnsupported
-
-variable (p : ∷ @ Person)
-variable (m : ∷ @ Man)
-variable (w : ∷ @ Woman)
-#check ∻ father ⋈ ∻ father
-#check toRel (∻ father ⋈ ∻ father)
-#check toRel m & w
-#check toRel m + w
-#check (p ⋈ ∻ father)
-#check toRel (p ⋈ ∻ father)
-#check toRel p ⊂ p
-#check toRel p + p
-#check toRel m + w
-#check toRel m + m + w
-#check toRel p ⊂ (m + w)
-#check toRel (p ⊂ (m + w))
-#check toRel p ⊂ (p ⋈ ∻ father)
-#check toRel p ⊂ (p + m)
-#check toRel p ⊂ (p + m)
 
 lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   unfold NoSelfGrandpa
@@ -184,65 +56,54 @@ lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   apply Rules.some.neg
   apply Rules.all.intro
   intro p
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   unfold ThoR.Quantification.Formula.eval
   intro contra
   simp [ThoR.Quantification.Formula.eval] at contra
 
   have h1 :
-    (p) ⊂ (p) ⋈ (((∻ Person.mother) + (∻ Person.father)) ⋈ ((∻ Person.father)))
+    p ⊂ p ⋈ (((∻ Person.mother) + (∻ Person.father)) ⋈ ((∻ Person.father)))
     ↔
-    (p.relation) ⊂ (p.relation) ⋈ (((∻ Person.mother).relation + (∻ Person.father).relation) ⋈ ((∻ Person.father).relation))
-  := by
-    dsimp [ThoR.HSubset.hSubset]
-    dsimp [ThoR.Rel.subset]
+    p ⊂ p ⋈ (((∻ Person.mother) + (∻ Person.father)) ⋈ ((∻ Person.father)))
+  := by simp
+  have h2 :
+    p ⊂ p ⋈ (((∻ Person.mother) ⋈ (∻ Person.father)) + ((∻ Person.father)) ⋈ ((∻ Person.father)))
+    ↔
+    p ⊂ p ⋈ (((∻ Person.mother) ⋈ (∻ Person.father)) + ((∻ Person.father)) ⋈ ((∻ Person.father)))
+  := by simp
+
+  conv at h1 =>
+    rhs
+    simp [ThoR.HSubset.hSubset]
+    simp [ThoR.Rel.subset]
     simp [ThoR.HDotjoin.hDotjoin]
-    simp [HAdd.hAdd]
+    dsimp [HAdd.hAdd]
+
+  conv at h2 =>
+    lhs
+    simp [ThoR.HSubset.hSubset]
+    simp [ThoR.Rel.subset]
+    simp [ThoR.HDotjoin.hDotjoin]
+    dsimp [HAdd.hAdd]
 
   rw [Rules.dotjoin.add.dist.r] at h1
+
   apply h1.mp at contra
+  apply h2.mp at contra
 
-  have h2 :
-    (p) ⊂ (p) ⋈ (((∻ Person.mother) ⋈ ((∻ Person.father))+ (∻ Person.father) ⋈ ((∻ Person.father))))
-    ↔
-    (p.relation) ⊂ (p.relation) ⋈ (((∻ Person.mother).relation ⋈ ((∻ Person.father).relation)+ (∻ Person.father).relation ⋈ ((∻ Person.father)).relation))
-  := by
-    dsimp [ThoR.HSubset.hSubset]
-    dsimp [ThoR.Rel.subset]
-    simp [ThoR.HDotjoin.hDotjoin]
-    simp [HAdd.hAdd]
-
-  apply h2.mpr at contra
-
-  fact f0 : language.grandpa1.facts.f0
+  -- fact f0 : language.grandpa1.facts.f0
+  -- sorry
+  -- -- cases f0 with
+  -- -- | intro f1 f2 =>
+  -- --   apply Rules.no.elim at f1
+  -- --   apply f1
+  -- --   apply Rules.some.intro
+  -- --   simp [ThoR.Quantification.Formula.eval] at contra
+  -- --   -- dsimp [ThoR.HSubset.hSubset] at contra
+  -- --   -- unfold ThoR.Rel.subset at contra
+  -- --   -- simp [ThoR.HDotjoin.hDotjoin] at contra
+  -- --   -- simp [HAdd.hAdd] at contra
+  -- --   apply Rules.eq.subset p p at contra
+  -- --   have h : p ≡ p := by apply Rules.eq.refl
+  -- --   apply contra at h
+  -- --   sorry
   sorry
-  -- cases f0 with
-  -- | intro f1 f2 =>
-  --   apply Rules.no.elim at f1
-  --   apply f1
-  --   apply Rules.some.intro
-  --   simp [ThoR.Quantification.Formula.eval] at contra
-  --   -- dsimp [ThoR.HSubset.hSubset] at contra
-  --   -- unfold ThoR.Rel.subset at contra
-  --   -- simp [ThoR.HDotjoin.hDotjoin] at contra
-  --   -- simp [HAdd.hAdd] at contra
-  --   apply Rules.eq.subset p p at contra
-  --   have h : p ≡ p := by apply Rules.eq.refl
-  --   apply contra at h
-  --   sorry

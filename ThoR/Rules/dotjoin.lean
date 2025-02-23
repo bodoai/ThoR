@@ -10,6 +10,6 @@ namespace Rules.dotjoin
     a ⋈ (b + c) = (a ⋈ b) + (a ⋈ c) :=
   by sorry
   lemma add.dist.r {a b c : R} :
-    (a + b) ⋈ c = (a ⋈ c) + (b ⋈ c) :=
+    (Add.add a b) ⋈ c = Add.add (a ⋈ c) (b ⋈ c) :=
   by sorry
 end Rules.dotjoin
