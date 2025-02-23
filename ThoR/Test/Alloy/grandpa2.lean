@@ -64,30 +64,28 @@ def isSubset : TSyntax `term → Bool
 --   | `($x:term ⊂ $y:term) => `((ThoR.Rel.relation $x) ⊂ (ThoR.Rel.relation $y))
 --   | `($t:term) => `($t)
 
-partial def toRel' (t : TSyntax `term) : TSyntax `term := Unhygienic.run do
+partial def toRel' (t : Term) : Term := Unhygienic.run do
   match t with
-    | `(($t:term)) =>
-      let t' := toRel' t
-      `($t')
-    | `($x:term ⊂ $y:term) =>
-      let x' := toRel' x
-      let y' := toRel' y
-      `($x' ⊂ $y')
-    | `($x:term + $y:term) =>
-      let x' := toRel' x
-      let y' := toRel' y
-      `($x' + $y')
-    | `($x:term ⋈ $y:term) =>
-      let x' := toRel' x
-      let y' := toRel' y
-      `($x' ⋈ $y')
-    | `($x:ident) => `(ThoR.Rel.relation $x)
-    | _ => return t
+    | `(($t)) =>
+      return toRel' t
+
+    | `($x:ident) =>
+      `($(mkIdent ``ThoR.Rel.relation) $x)
+
+    | `($x + $y) =>
+      `($(toRel' x) + $(toRel' y))
+
+    | `($x ⋈ $y) =>
+      `($(toRel' x) ⋈ $(toRel' y))
+
+    | `($x ⊂ $y) =>
+      `($(toRel' x) ⊂ $(toRel' y))
+
+    | _ => return  t
 
 @[macro toRel_stx_name] def toRelImpl : Macro
   | `(toRel $t:term) =>
-      let c := toRel' t
-      `($c)
+      `($(toRel' t))
   | _ => Macro.throwUnsupported
 
 variable (p : ∷ @ Person)
@@ -95,6 +93,7 @@ variable (m : ∷ @ Man)
 variable (w : ∷ @ Woman)
 #check toRel (p ⋈ father)
 #check toRel p ⊂ p
+#check toRel p + p
 #check toRel m + w
 #check toRel m + m + w
 #check toRel p ⊂ (m + w)
