@@ -64,6 +64,26 @@ def isSubset : TSyntax `term → Bool
 --   | `($x:term ⊂ $y:term) => `((ThoR.Rel.relation $x) ⊂ (ThoR.Rel.relation $y))
 --   | `($t:term) => `($t)
 
+/-
+declare_syntax_cat hsublol
+syntax (name:= hx) term " XXX " term : hsublol
+syntax (name := hlx) "LOL" hsublol : term
+
+@[macro hx] def hsi : Macro
+  | `(hsublol | $t1:term XXX $t2:term) =>
+     `(term| $(mkIdent ``ThoR.HSubset.hSubset) $t1 $t2)
+  | _ => Macro.throwUnsupported
+
+@[macro hlx] def hsil : Macro
+  | `(term | LOL $z) =>
+    let nz := match z with
+      | `(hsublol | $t1:term XXX $t2:term) => Unhygienic.run do
+        return ← `(term | $(mkIdent ``ThoR.HSubset.hSubset) $t1 $t2)
+      | _ => unreachable!
+    `($nz)
+  | _ => Macro.throwUnsupported
+-/
+
 partial def toRel' (t : Term) : Term := Unhygienic.run do
   match t with
     | `(($t)) =>
@@ -80,6 +100,15 @@ partial def toRel' (t : Term) : Term := Unhygienic.run do
 
     | `($x & $y) =>
       `($(toRel' x) & $(toRel' y))
+
+    /-
+    | `(LOL $z) =>
+      let nz ← match z with
+        | `(hsublol | $t1:term XXX $t2:term) =>
+          `(hsublol | $(toRel' t1):term XXX $(toRel' t2):term)
+        | _ => unreachable!
+      `(LOL $nz)
+    -/
 
     | `($x ⊂ $y) =>
       `($(toRel' x) ⊂ $(toRel' y))
@@ -99,6 +128,8 @@ variable (w : ∷ @ Woman)
 #check toRel m + w
 #check toRel (p ⋈ father)
 #check toRel p ⊂ p
+#check toRel ThoR.HSubset.hSubset p p
+--#check toRel LOL p XXX p
 #check toRel p + p
 #check toRel m + w
 #check toRel m + m + w
