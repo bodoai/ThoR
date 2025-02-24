@@ -194,7 +194,12 @@ to be better digestible for further computation and transformation into Lean.
             let calledRelDecls := relCall.2
 
             if calledRelDecls.isEmpty then
-              throw s!"The name {call} cannot be found. (In {location.name})"
+              throw s!"The name {call} cannot be found. \
+              (In \
+              {(if location.isFact then "fact " else "")}\
+              {(if location.isAssert then "assert " else "")}\
+              {(if location.isPredicate then "predicate " else "")}\
+              {location.name})"
             continue
 
           if calledSigDecls.length > 1 then
@@ -542,7 +547,7 @@ to be better digestible for further computation and transformation into Lean.
           (
             commandDecl.mk
             (name := declarationName)
-            (args := [])
+            (isFact := true)
             (formulas := factDecl.formulas)
             (requiredVars := reqVars)
             (requiredDefs := reqDefs)
@@ -609,7 +614,7 @@ to be better digestible for further computation and transformation into Lean.
           (
             commandDecl.mk
             (name := declarationName)
-            (args := [])
+            (isAssert := true)
             (formulas := assertDecla.formulas)
             (requiredVars := reqVars)
             (requiredDefs := reqDefs)

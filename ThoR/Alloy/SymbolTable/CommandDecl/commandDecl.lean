@@ -18,6 +18,8 @@ namespace Alloy
   inductive commandDecl where
     | mk  (name : String)
           (isPredicate : Bool := false)
+          (isFact : Bool := false)
+          (isAssert : Bool := false)
           (args : List (predArg) := []) -- empty if axiom
           (formulas : List (formula)) -- formulas in an Alloy pred or an Alloy fact
           (requiredDefs : List (String)) -- only for Lean Infoview
@@ -38,22 +40,22 @@ namespace Alloy
   deriving Repr
   namespace commandDecl
 
-    def name | mk n _ _ _ _ _ _ _ _ => n
-    def isPredicate | mk _ isPredicate _ _ _ _ _ _ _ => isPredicate
-    def args | mk _ _ args _ _ _ _ _ _ => args
-    def formulas | mk _ _ _ formulas _ _ _ _ _ => formulas
-    def requiredDefs | mk _ _ _ _ requiredDefs _ _ _ _ => requiredDefs
-    def requiredVars | mk _ _ _ _ _ requiredVars _ _ _ => requiredVars
-    def predCalls | mk _ _ _ _ _ _ predCalls _ _ => predCalls
-    def relationCalls | mk _ _ _ _ _ _ _ relationCalls _ => relationCalls
-    def signatureCalls | mk _ _ _ _ _ _ _ _ signatureCalls => signatureCalls
+    def name | mk n _ _ _ _ _ _ _ _ _ _ => n
+    def isPredicate | mk _ isPredicate _ _ _ _ _ _ _ _ _ => isPredicate
+    def isFact | mk _ _ isFact _ _ _ _ _ _ _ _ => isFact
+    def isAssert | mk _ _ _ isAssert _ _ _ _ _ _ _ => isAssert
+    def args | mk _ _ _ _ args _ _ _ _ _ _ => args
+    def formulas | mk _ _ _ _ _ formulas _ _ _ _ _ => formulas
+    def requiredDefs | mk _ _ _ _ _ _ requiredDefs _ _ _ _ => requiredDefs
+    def requiredVars | mk _ _ _ _ _ _ _ requiredVars _ _ _ => requiredVars
+    def predCalls | mk _ _ _ _ _ _ _ _ predCalls _ _ => predCalls
+    def relationCalls | mk _ _ _ _ _ _ _ _ _ relationCalls _ => relationCalls
+    def signatureCalls | mk _ _ _ _ _ _ _ _ _ _ signatureCalls => signatureCalls
 
     instance : Inhabited commandDecl where
       default :=
         commandDecl.mk
           (name := default)
-          (isPredicate := default)
-          (args := default)
           (formulas := default)
           (requiredDefs := default)
           (requiredVars := default)
@@ -71,6 +73,8 @@ namespace Alloy
     s!"commandDeclaration : \{
       name := {cd.name},
       isPredicate := {cd.isPredicate},
+      isFact := {cd.isFact},
+      isAssert := {cd.isAssert},
       args := {cd.args},
       required definitions := {cd.requiredDefs},
       required variables := {cd.requiredVars},
