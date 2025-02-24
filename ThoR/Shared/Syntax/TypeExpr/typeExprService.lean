@@ -134,12 +134,15 @@ namespace Shared.typeExpr
   /--
   Gets all calls to the `callableVariables` which includes signatures and relations
 
-  The result is a list of all called variables
+  The result is a list of the call (in string from) and a (possibly empty) list
+  of the concrete possible called variables (in form of varDecls). If the inner
+  list contains more than one varDecl, called variable is ambiguous and could
+  be either.
   -/
   def getCalledVariables
     (te : typeExpr)
     (callableVariables : List (varDecl))
-    : List (List (varDecl)) :=
+    : Except String (List (String × List (varDecl))) :=
       match te with
         | arrowExpr ae =>
           (ae.getCalledVariables callableVariables)

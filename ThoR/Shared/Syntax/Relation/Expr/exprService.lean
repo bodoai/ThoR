@@ -483,10 +483,13 @@ namespace Shared.expr
       | _ => default
 
   /--
-  Gets all calls to the `callableVariables` which includes signatures and relations
+  Gets all calls to the `callableVariables` which includes signatures and
+  relations
 
-  The result is a list of Lists of called variables. If the inner List contains more
-  than one varDecl, called variable is ambiguous and could be either.
+  The result is a list of the call (in string from) and a (possibly empty) list
+  of the concrete possible called variables (in form of varDecls). If the inner
+  list contains more than one varDecl, called variable is ambiguous and could
+  be either.
   -/
   def getCalledVariables
     (e : expr)
@@ -500,7 +503,7 @@ namespace Shared.expr
     -/
     (right_side_dotjoin : Bool := false)
     (left_side_dotjoin_variable : varDecl := default)
-    : (List (List (varDecl))) := Id.run do
+    : Except String (List (String × List (varDecl))) := do
       let callableVariableNames := (callableVariables.map fun cv => cv.name)
 
       match e with
@@ -515,7 +518,7 @@ namespace Shared.expr
         -- there is only one variable with the give name
         if indices.length == 1 then
           let calledVariable := callableVariables.get! (indices.get! 0)
-          return [[calledVariable]]
+          return [(s,[calledVariable])]
 
         -- get possible variables
         let possibleCalledVariables := indices.foldl
@@ -526,12 +529,12 @@ namespace Shared.expr
         if there is not special dotjoin case, then return all possible
         variables. (The called variable is ambiguous)
         -/
-        if !right_side_dotjoin then return [possibleCalledVariables]
+        if !right_side_dotjoin then return [(s, possibleCalledVariables)]
 
         /-
         Left side must not be a relation
         -/
-        if left_side_dotjoin_variable.isRelation then return [possibleCalledVariables]
+        if left_side_dotjoin_variable.isRelation then return [(s, possibleCalledVariables)]
 
         /-
         If the left side is a quantor, the type has to be atomic
@@ -542,7 +545,7 @@ namespace Shared.expr
             | typeExpr.arrowExpr _ => false
             | _ => true
 
-          if !isAtomic then return [possibleCalledVariables]
+          if !isAtomic then return [(s, possibleCalledVariables)]
 
           let possibleSignatures :=
             callableVariables.filter
@@ -559,7 +562,7 @@ namespace Shared.expr
             possibleSignatures.isEmpty ||
             possibleSignatures.length > 1
           then
-            return [possibleCalledVariables]
+            return [(s, possibleCalledVariables)]
 
           let signature := (possibleSignatures.get! 0)
 
@@ -574,7 +577,7 @@ namespace Shared.expr
             (cv.isOpened == signature.isOpened &&
             cv.openedFrom == signature.openedFrom)
 
-          return [calledVariable]
+          return [(s, calledVariable)]
 
         -- if left side is signature (not quantor)
         else
@@ -589,7 +592,7 @@ namespace Shared.expr
             (cv.isOpened == left_side_dotjoin_variable.isOpened &&
             cv.openedFrom == left_side_dotjoin_variable.openedFrom)
 
-          return [calledVariable]
+          return [(s, calledVariable)]
 
       | expr.callFromOpen sn =>
         let fullName := sn.representedNamespace.getId.toString
@@ -603,7 +606,7 @@ namespace Shared.expr
               cv.name == calledVariableName
 
         -- if there is only one possible value
-        if possibleCalledVariables.length == 1 then return [possibleCalledVariables]
+        if possibleCalledVariables.length == 1 then return [(fullName, possibleCalledVariables)]
 
         -- namespace if the called Variable is a signature
         let sigNamespace :=
@@ -634,27 +637,45 @@ namespace Shared.expr
               pcv.openedFrom == sigNamespace
             )
 
-        return [calledVariables]
+        return [(fullName, calledVariables)]
 
       | expr.unaryRelOperation _ e =>
         e.getCalledVariables callableVariables
 
       | expr.binaryRelOperation _ e1 e2 =>
-        (e1.getCalledVariables callableVariables) ++
-          (e2.getCalledVariables callableVariables)
+        let e1_calls ← (e1.getCalledVariables callableVariables)
+        let e2_calls ← (e2.getCalledVariables callableVariables)
+        return e1_calls ++ e2_calls
 
       | expr.dotjoin _ e1 e2 =>
         /-TODO: As soons as it is possible to get the type of exprs then get it here-/
         /-Take the last possible expression -/
-        let leftSideVarDecl := (e1.getCalledVariables callableVariables).getLast!.getLast!
+        let leftSideCalls ← (e1.getCalledVariables callableVariables)
 
-        (e1.getCalledVariables callableVariables) ++
+        if leftSideCalls.isEmpty then
+          throw s!"The left side of {e1}.{e2} has no calls."
+
+        let leftSideVarDecls := leftSideCalls.getLast!.2
+
+        if leftSideVarDecls.isEmpty then
+          throw s!"No possible variable for the call to \
+          {leftSideCalls.getLast!.1} could be found"
+
+        if leftSideVarDecls.length > 1 then
+          throw s!"The left side of {e1}.{e2} is ambiguous. It could be any \
+          of ({leftSideVarDecls})"
+
+        let leftSideVarDecl := leftSideCalls.getLast!.2.getLast!
+
+        let rightSideCalls ←
           (e2.getCalledVariables
-            (right_side_dotjoin := true)
-            (left_side_dotjoin_variable := leftSideVarDecl)
-            callableVariables)
+          (right_side_dotjoin := true)
+          (left_side_dotjoin_variable := leftSideVarDecl)
+          callableVariables)
 
-      | _ => []
+        return leftSideCalls ++ rightSideCalls
+
+      | _ => return []
 
   def insertModuleVariables
     (e : expr)

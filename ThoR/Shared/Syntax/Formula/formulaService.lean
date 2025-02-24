@@ -388,7 +388,7 @@ namespace Shared.formula
     (f : formula)
     (callablePredicates : List (commandDecl))
     (callableVariables : List (varDecl))
-    : (List (commandDecl × List (List (List (varDecl))))) := Id.run do
+    : Except String (List (commandDecl × List (List (String × List (varDecl))))) := do
       let callablePredicateNames := callablePredicates.map fun cp => cp.name
 
       match f with
@@ -396,55 +396,65 @@ namespace Shared.formula
           if callablePredicateNames.contains s then
             let index := callablePredicateNames.indexOf s
             let calledPredicate := callablePredicates.get! index
-            [(calledPredicate, [])]
+            return [(calledPredicate, [])]
           else
-            []
+            return []
 
         | formula.pred_with_args predicate_name predicate_arguments =>
           if callablePredicateNames.contains predicate_name then
             let index := callablePredicateNames.indexOf predicate_name
             let calledPredicate := callablePredicates.get! index
-            let calledArgumentVariables :=
-              (predicate_arguments.map
-                fun argument => argument.getCalledVariables callableVariables
-              )
+            let mut calledArgumentVariables := []
+            for arg in predicate_arguments do
+              calledArgumentVariables :=
+                calledArgumentVariables.concat
+                  (← arg.getCalledVariables callableVariables)
 
-            [(calledPredicate, calledArgumentVariables)]
+            return [(calledPredicate, calledArgumentVariables)]
           else
-            []
+            return []
 
         | formula.unaryLogicOperation _ f =>
           f.getCalledPredicates callablePredicates callableVariables
 
         | formula.binaryLogicOperation _ f1 f2 =>
-          (f1.getCalledPredicates callablePredicates callableVariables) ++
-          (f2.getCalledPredicates callablePredicates callableVariables)
+          let f1_calls ← (f1.getCalledPredicates callablePredicates callableVariables)
+          let f2_calls ← (f2.getCalledPredicates callablePredicates callableVariables)
+          return f1_calls ++ f2_calls
 
         | formula.tertiaryLogicOperation _ f1 f2 f3 =>
-          (f1.getCalledPredicates callablePredicates callableVariables) ++
-          (f2.getCalledPredicates callablePredicates callableVariables) ++
-          (f3.getCalledPredicates callablePredicates callableVariables)
+          let f1_calls ← (f1.getCalledPredicates callablePredicates callableVariables)
+          let f2_calls ← (f2.getCalledPredicates callablePredicates callableVariables)
+          let f3_calls ← (f3.getCalledPredicates callablePredicates callableVariables)
+          return f1_calls ++ f2_calls ++ f3_calls
 
         | formula.quantification _ _ _ _ f =>
-           (f.map fun form =>
-              form.getCalledPredicates callablePredicates callableVariables).join
+          let mut result := []
+          for form in f do
+            result := result ++ (← form.getCalledPredicates callablePredicates callableVariables)
+          return result
 
-        | _ => []
+        | _ => return []
 
   /--
   Gets all calls to the `callableVariables` which includes signatures and relations.
 
-  Returns a list of the called Variables
+  The result is a list of the call (in string from) and a (possibly empty) list
+  of the concrete possible called variables (in form of varDecls). If the inner
+  list contains more than one varDecl, called variable is ambiguous and could
+  be either.
   -/
   partial def getCalledVariables
     (f : formula)
     (callableVariables : List (varDecl))
-    : List (List (varDecl)) := Id.run do
+    : Except String (List (String × List (varDecl))) := do
 
       match f with
         | formula.pred_with_args _ predicate_arguments =>
-          (predicate_arguments.map
-            fun pa => pa.getCalledVariables callableVariables).join
+          let mut result : List (String × List varDecl) := []
+          for pa in predicate_arguments do
+            result := result ++ (← pa.getCalledVariables callableVariables)
+          return result
 
         | formula.unaryRelBoolOperation _ e =>
           (e.getCalledVariables callableVariables)
@@ -453,20 +463,23 @@ namespace Shared.formula
           (f.getCalledVariables callableVariables)
 
         | formula.binaryLogicOperation _ f1 f2 =>
-          (f1.getCalledVariables callableVariables) ++
-          (f2.getCalledVariables callableVariables)
+          let f1_calls ← (f1.getCalledVariables callableVariables)
+          let f2_calls ← (f2.getCalledVariables callableVariables)
+          return f1_calls ++ f2_calls
 
         | formula.tertiaryLogicOperation _ f1 f2 f3 =>
-          (f1.getCalledVariables callableVariables) ++
-          (f2.getCalledVariables callableVariables) ++
-          (f3.getCalledVariables callableVariables)
+          let f1_calls ← (f1.getCalledVariables callableVariables)
+          let f2_calls ← (f2.getCalledVariables callableVariables)
+          let f3_calls ← (f3.getCalledVariables callableVariables)
+          return f1_calls ++ f2_calls ++ f3_calls
 
         | formula.relationComarisonOperation _ e1 e2 =>
-          (e1.getCalledVariables callableVariables) ++
-          (e2.getCalledVariables callableVariables)
+          let e1_calls ← (e1.getCalledVariables callableVariables)
+          let e2_calls ← (e2.getCalledVariables callableVariables)
+          return e1_calls ++ e2_calls
 
         | formula.quantification _ _ names te f =>
-          let typeExprRelCalls := te.getCalledVariables callableVariables
+          let typeExprRelCalls ← te.getCalledVariables callableVariables
 
           let quantVarDecls :=
             names.map fun n =>
@@ -480,11 +493,13 @@ namespace Shared.formula
                 (type := te)
                 (requiredDecls := [])
 
-          typeExprRelCalls ++
-          (f.map fun form =>
-              form.getCalledVariables (callableVariables ++ quantVarDecls)).join
+          let mut result : List (String × List varDecl) := []
+          for form in f do
+            result := result ++ (← form.getCalledVariables (callableVariables ++ quantVarDecls))
 
-        | _ => []
+          return typeExprRelCalls ++ result
+
+        | _ => return []
 
   partial def simplifyDomainRestrictions
     (f : formula)

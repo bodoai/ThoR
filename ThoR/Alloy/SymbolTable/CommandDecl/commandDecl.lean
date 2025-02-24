@@ -32,9 +32,9 @@ namespace Alloy
           Possible improvement on clarity:
           Make a Structure that conveys the meaning better?
           -/
-          (predCalls : List (commandDecl × List (List (List (varDecl)))))
-          (relationCalls : List (List (varDecl))) -- called relations
-          (signatureCalls : List (List (varDecl))) -- called signatures
+          (predCalls : List (commandDecl × List (List (String × List (varDecl)))))
+          (relationCalls : List (String × List (varDecl))) -- called relations
+          (signatureCalls : List (String × List (varDecl))) -- called signatures
   deriving Repr
   namespace commandDecl
 
