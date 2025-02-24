@@ -23,4 +23,12 @@ namespace Alloy.factDecl
       fd.formulas.map fun f => f.insertModuleVariables moduleVariables openVariables
     {fd with formulas := formulas}
 
+  def replaceThisCalls
+    (fd : factDecl)
+    (moduleName : String)
+    : factDecl :=
+    let formulas :=
+      fd.formulas.map fun f => f.replaceThisCalls moduleName
+    {fd with formulas := formulas}
+
 end Alloy.factDecl

@@ -571,4 +571,47 @@ namespace Shared.formula
           f.insertModuleVariables moduleVariables openVariables)
       | _ => f
 
+  /--
+  replaces calls to "this" (current module), with a call to the given module
+  name.
+  -/
+  partial def replaceThisCalls
+    (f : formula)
+    (moduleName : String)
+    : formula := Id.run do
+    match f with
+      | formula.pred_with_args p args =>
+        pred_with_args
+          p
+          (args.map fun arg =>
+            arg.replaceThisCalls moduleName)
+      | formula.unaryRelBoolOperation op e =>
+        formula.unaryRelBoolOperation
+          op
+          (e.replaceThisCalls moduleName)
+      | formula.unaryLogicOperation op f =>
+        formula.unaryLogicOperation
+          op
+          (f.replaceThisCalls moduleName)
+      | formula.binaryLogicOperation op f1 f2 =>
+        formula.binaryLogicOperation
+          op
+          (f1.replaceThisCalls moduleName)
+          (f2.replaceThisCalls moduleName)
+      | formula.tertiaryLogicOperation op f1 f2 f3 =>
+        formula.tertiaryLogicOperation
+          op
+          (f1.replaceThisCalls moduleName)
+          (f2.replaceThisCalls moduleName)
+          (f3.replaceThisCalls moduleName)
+      | formula.quantification q d n t f =>
+        formula.quantification
+          q
+          d
+          n
+          (t.replaceThisCalls moduleName)
+          (f.map fun f =>
+            f.replaceThisCalls moduleName)
+      | _ => f
+
 end Shared.formula

@@ -159,7 +159,7 @@ namespace Shared.expr
         expr.unaryRelOperation op (e.toStringRb)
       | expr.dotjoin dj e1 e2 =>
         expr.dotjoin dj (e1.toStringRb) (e2.toStringRb)
-      | e => e
+      | _ => e
 
   /--
   Generates a syntax representation of the type
@@ -595,33 +595,43 @@ namespace Shared.expr
           return [(s, calledVariable)]
 
       | expr.callFromOpen sn =>
-        let fullName := sn.representedNamespace.getId.toString
-        let components := fullName.splitOn "."
+        let fullName := sn.representedNamespace.getId.toString.replace "." "/"
+        let components := sn.representedNamespace.getId.components
 
         let calledVariableName := components.getLast!
 
         let possibleCalledVariables :=
           callableVariables.filter
             fun cv =>
-              cv.name == calledVariableName
+              cv.name == calledVariableName.toString
 
         -- if there is only one possible value
-        if possibleCalledVariables.length == 1 then return [(fullName, possibleCalledVariables)]
+        if possibleCalledVariables.length == 1 then
+          return [(fullName, possibleCalledVariables)]
 
         -- namespace if the called Variable is a signature
         let sigNamespace :=
           ((components.take (components.length - 1)).drop 1).foldl
             (fun result current => s!"{result}_{current}")
-            (components.get! 0)
+            (components.get! 0).toString
+
+        -- alternate namespace if you use alloy style access
+        let alternateSigNamespace :=
+          ((components.take (components.length - 1)).drop (components.length - 2))
 
         -- the signature name if it is a relation
-        let possibleSignatureName := components.get! (components.length - 2)
+        let possibleSignatureName :=
+          (components.get! (components.length - 2)).toString
 
         -- the namespace with the last element removed (assumend to be a sig name)
         let relNamespace :=
           ((components.take (components.length - 2)).drop 1).foldl
             (fun result current => s!"{result}_{current}")
-            (components.get! 0)
+            (components.get! 0).toString
+
+        -- alternate namespace if you use alloy style access
+        let alternateRelNamespace :=
+          ((components.take (components.length - 2)).drop (components.length - 3))
 
         let calledVariables := possibleCalledVariables.filter
           fun pcv =>
@@ -629,12 +639,38 @@ namespace Shared.expr
             (
               pcv.isRelation &&
               pcv.relationOf == possibleSignatureName &&
-              pcv.openedFrom == relNamespace
+              (
+                (pcv.openedFrom == relNamespace) ||
+                (
+                  -- on the alternate namespace only the last element counts
+                  !alternateRelNamespace.isEmpty &&
+                  (
+                    (pcv.openedFrom.splitOn "_").getLast! ==
+                    alternateRelNamespace.getLast!.toString
+                  )
+                ) ||
+                (
+                  -- or this is implicit
+                  (pcv.openedFrom == "this") &&
+                  (pcv.isOpened == false) &&
+                  (alternateRelNamespace.isEmpty)
+                )
+              )
             ) ||
             -- or signature with correct namespace
             (
               !pcv.isRelation &&
-              pcv.openedFrom == sigNamespace
+              (
+                (pcv.openedFrom == sigNamespace) ||
+                (
+                  -- on the alternate namespace only the last element counts
+                  !alternateSigNamespace.isEmpty &&
+                  (
+                    (pcv.openedFrom.splitOn "_").getLast! ==
+                    alternateSigNamespace.getLast!.toString
+                  )
+                )
+              )
             )
 
         return [(fullName, calledVariables)]
@@ -703,6 +739,43 @@ namespace Shared.expr
             dj
             (e1.insertModuleVariables moduleVariables openVariables)
             (e2.insertModuleVariables moduleVariables openVariables)
+
+        | _ => e
+
+  /--
+  replaces calls to "this" (current module), with a call to the given module
+  name.
+  -/
+  def replaceThisCalls
+    (e : expr)
+    (moduleName : String)
+    : expr := Id.run do
+      match e with
+
+        | expr.callFromOpen sn =>
+          let components := sn.representedNamespace.getId.components
+          if !components.get! 0 == `this then return e
+          let moduleName := (moduleName.splitOn "_").getLast!
+          let new_components := [moduleName.toName] ++ (components.drop 1)
+          let new_ident := mkIdent (Name.fromComponents new_components)
+
+          expr.callFromOpen
+            (separatedNamespace.mk new_ident)
+
+        | expr.unaryRelOperation op e =>
+          expr.unaryRelOperation
+            op
+            (e.replaceThisCalls moduleName)
+        | expr.binaryRelOperation op e1 e2 =>
+          expr.binaryRelOperation
+            op
+            (e1.replaceThisCalls moduleName)
+            (e2.replaceThisCalls moduleName)
+        | expr.dotjoin dj e1 e2 =>
+          expr.dotjoin
+            dj
+            (e1.replaceThisCalls moduleName)
+            (e2.replaceThisCalls moduleName)
 
         | _ => e
 

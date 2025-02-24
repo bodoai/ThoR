@@ -27,4 +27,14 @@ namespace Alloy.predDecl
       pd.forms.map fun f => f.insertModuleVariables moduleVariables openVariables
     { pd with args := args, forms := forms}
 
+  def replaceThisCalls
+    (pd : predDecl)
+    (moduleName : String)
+    : predDecl :=
+    let args := pd.args.map fun arg =>
+      arg.replaceThisCalls moduleName
+    let forms :=
+      pd.forms.map fun f => f.replaceThisCalls moduleName
+    { pd with args := args, forms := forms}
+
 end Alloy.predDecl

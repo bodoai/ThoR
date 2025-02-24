@@ -183,4 +183,20 @@ namespace Shared.typeExpr
         | relExpr e =>
           relExpr (e.insertModuleVariables moduleVariables openVariables)
 
+  /--
+  replaces calls to "this" (current module), with a call to the given module
+  name.
+  -/
+  def replaceThisCalls
+    (te : typeExpr)
+    (moduleName : String)
+    : typeExpr :=
+    match te with
+      | arrowExpr ae =>
+        arrowExpr (ae.replaceThisCalls moduleName)
+      | multExpr m e =>
+        multExpr m (e.replaceThisCalls moduleName)
+      | relExpr e =>
+        relExpr (e.replaceThisCalls moduleName)
+
 end Shared.typeExpr

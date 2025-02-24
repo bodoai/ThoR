@@ -342,4 +342,38 @@ namespace Shared.arrowOp
           m1 m2
           (ae2.insertModuleVariables moduleVariables openVariables)
 
+
+  /--
+  replaces calls to "this" (current module), with a call to the given module
+  name.
+  -/
+  def replaceThisCalls
+    (ao : arrowOp)
+    (moduleName : String)
+    : arrowOp :=
+    match ao with
+      | arrowOp.multArrowOpExpr e1 m1 m2 e2 =>
+        arrowOp.multArrowOpExpr
+          (e1.replaceThisCalls moduleName)
+          m1 m2
+          (e2.replaceThisCalls moduleName)
+
+      | arrowOp.multArrowOpExprLeft e1 m1 m2 ae2 =>
+        arrowOp.multArrowOpExprLeft
+          (e1.replaceThisCalls moduleName)
+          m1 m2
+          (ae2.replaceThisCalls moduleName)
+
+      | arrowOp.multArrowOpExprRight ae1 m1 m2 e2 =>
+        arrowOp.multArrowOpExprRight
+          (ae1.replaceThisCalls moduleName)
+          m1 m2
+          (e2.replaceThisCalls moduleName)
+
+      | arrowOp.multArrowOp ae1 m1 m2 ae2 =>
+        arrowOp.multArrowOp
+          (ae1.replaceThisCalls moduleName)
+          m1 m2
+          (ae2.replaceThisCalls moduleName)
+
 end Shared.arrowOp

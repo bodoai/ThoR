@@ -426,6 +426,9 @@ to be better digestible for further computation and transformation into Lean.
         -- first simplyfiy the domain restrictions
         let mut predDecl := predDecl.simplifyDomainRestrictions st
 
+        if moduleName != default then
+          predDecl := predDecl.replaceThisCalls moduleName
+
         -- get list of referenced signatures and signature fields
         let reqVars : List (String) := predDecl.getReqVariables.eraseDups
 
@@ -503,7 +506,10 @@ to be better digestible for further computation and transformation into Lean.
 
       for factDecl in factDecls do
 
-        let factDecl := factDecl.simplifyDomainRestrictions st
+        let mut factDecl := factDecl.simplifyDomainRestrictions st
+
+        if moduleName != default then
+          factDecl := factDecl.replaceThisCalls moduleName
 
         let mut predicateCalls := []
         for form in factDecl.formulas do
@@ -567,7 +573,10 @@ to be better digestible for further computation and transformation into Lean.
 
       for assertDecla in assertDecls do
 
-        let assertDecla := assertDecla.simplifyDomainRestrictions st
+        let mut assertDecla := assertDecla.simplifyDomainRestrictions st
+
+        if moduleName != default then
+          assertDecla := assertDecla.replaceThisCalls moduleName
 
         let mut predicateCalls := []
         for form in assertDecla.formulas do
