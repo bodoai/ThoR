@@ -48,9 +48,16 @@ private def evaluateRelationDecl
       elabCommand command
 
 
+-- ∷ <alloy type> creates corresponding (Rel <alloy type>)
 elab "∷" t:typeExpr : term => do
       let typeExpression := (Shared.typeExpr.toType t)
       let type := typeExpression.toTermOutsideBlock
+      elabTerm type Option.none
+
+-- ◃∷ <alloy type> creates corresponding RelType value
+elab "◃∷" t:typeExpr : term => do
+      let typeExpression := (Shared.typeExpr.toType t)
+      let type := typeExpression.toRelTypeTermOutsideBlock
       elabTerm type Option.none
 
 -- TODO: Variante von ∷ mit expliziter Angabe von R
