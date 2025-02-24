@@ -154,12 +154,15 @@ namespace Shared.typeExpr
   /--
   Gets all calls to the `callableVariables` which includes signatures and relations
 
-  The result is a list of all called variables
+  The result is a list of the call (in string from) and a (possibly empty) list
+  of the concrete possible called variables (in form of varDecls). If the inner
+  list contains more than one varDecl, called variable is ambiguous and could
+  be either.
   -/
   def getCalledVariables
     (te : typeExpr)
     (callableVariables : List (varDecl))
-    : List (List (varDecl)) :=
+    : Except String (List (String × List (varDecl))) :=
       match te with
         | arrowExpr ae =>
           (ae.getCalledVariables callableVariables)
@@ -199,5 +202,21 @@ namespace Shared.typeExpr
           multExpr m (e.insertModuleVariables moduleVariables openVariables)
         | relExpr e =>
           relExpr (e.insertModuleVariables moduleVariables openVariables)
+
+  /--
+  replaces calls to "this" (current module), with a call to the given module
+  name.
+  -/
+  def replaceThisCalls
+    (te : typeExpr)
+    (moduleName : String)
+    : typeExpr :=
+    match te with
+      | arrowExpr ae =>
+        arrowExpr (ae.replaceThisCalls moduleName)
+      | multExpr m e =>
+        multExpr m (e.replaceThisCalls moduleName)
+      | relExpr e =>
+        relExpr (e.replaceThisCalls moduleName)
 
 end Shared.typeExpr
