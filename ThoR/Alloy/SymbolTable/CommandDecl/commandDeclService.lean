@@ -22,8 +22,9 @@ namespace Alloy.commandDecl
         (pc.2.map fun l1 =>
           (l1.1,
             (l1.2.map fun l2 =>
-          (l2.1,
-              l2.2.map fun vd => vd.simplifyDomainRestrictions st)))
+              (l2.1,
+                  l2.2.map fun vd => vd.simplifyDomainRestrictions st))
+          )
 ))
     let relationCalls := cd.relationCalls.map fun rc =>
       (rc.1, rc.2.map fun vd => vd.simplifyDomainRestrictions st)

@@ -69,6 +69,8 @@ namespace Alloy
         | mk
             name
             isPredicate
+            isFact
+            isAssert
             args
             _
             requiredDefs
@@ -79,7 +81,10 @@ namespace Alloy
           mk
             name
             isPredicate
-            args formulas
+            isFact
+            isAssert
+            args
+            formulas
             requiredDefs
             requiredVars
             predCalls

@@ -234,7 +234,7 @@ to be better digestible for further computation and transformation into Lean.
     -/
     private def checkPredCallArgNumber
       (calledPredDecl : predDecl)
-      (calledArguments : List (expr × List (List varDecl)))
+      (calledArguments : List (expr × List (String × List varDecl)))
       : Except String Unit := do
         let requiredArgNumber :=
           (calledPredDecl.args.map fun a => a.names).join.length
