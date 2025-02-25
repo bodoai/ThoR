@@ -4,11 +4,9 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 
-import ThoR.Alloy.Config
 import ThoR.Shared.Syntax.Algebra
 import ThoR.Shared.Syntax.Algebra.CardExpr.cardExprService
 
-open Config
 open Lean
 
 namespace Shared.algExpr
@@ -25,7 +23,7 @@ namespace Shared.algExpr
       | algExpr.cardExpr ce =>
         match ce with
           | cardExpr.cardExpression expr =>
-            `((@$(mkIdent ``ThoR.Card.card) $(baseType.ident) $(expr.toTermFromBlock blockName)))
+            `(($(mkIdent ``ThoR.Card.card) $(expr.toTermFromBlock blockName)))
       | algExpr.unaryAlgebraOperation op ae => `(($(op.toTerm) $(ae.toTerm blockName)))
       | algExpr.binaryAlgebraOperation op ae1 ae2 =>
         `(($(op.toTerm) $(ae1.toTerm blockName) $(ae2.toTerm blockName)))
