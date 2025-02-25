@@ -23,13 +23,6 @@ end
   }
 end
 
-def x := ["a", "r"]
-def z := x.take (x.length - 1)
-def a := z.drop (x.length - 2)
-
-#eval z
-#eval a
-
 /-
 Test to import from Modules
 -/
