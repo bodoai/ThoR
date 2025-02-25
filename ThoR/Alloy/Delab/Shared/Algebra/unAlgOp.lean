@@ -6,6 +6,7 @@ Authors: s. file CONTRIBUTORS
 
 import Lean
 import ThoR.Relation.Notation
+import ThoR.Alloy.Delab.DelaborationService
 
 open Lean PrettyPrinter Delaborator SubExpr Expr
 
@@ -18,9 +19,12 @@ def unexpandNeg : Unexpander
 
 @[app_unexpander ThoR.Card.card]
 def unexpandCard : Unexpander
+  | `($_ $a:ident) =>
+    let new_a :=
+      delaborationService.switch_thoR_representation_to_alloy_representation a
+    `(# $new_a)
+
   | `($_ $a) =>
-    `(#$a)
+    `(# $a)
 
-  | `($_) => `($(mkIdent `card)) -- correct?
-
-  --| _ => throw Unit.unit
+  | _ => throw Unit.unit
