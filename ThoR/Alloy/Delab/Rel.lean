@@ -7,6 +7,7 @@ Authors: s. file CONTRIBUTORS
 import Lean
 import ThoR.Relation.Notation
 import ThoR.Relation.Elab
+import ThoR.Alloy.Delab.DelaborationService
 
 open Lean PrettyPrinter Delaborator SubExpr
 
@@ -18,11 +19,15 @@ def unexpTypedRelToRel : Unexpander
 -- FIXME
 @[app_unexpander ThoR.Rel.getType]
 def unexpTypedRelGetType : Unexpander
-  | `($_ $r) => `($r)
+  | `($_ $r) => `(KEK $r)
   | _ => throw Unit.unit
 
 @[app_unexpander ThoR.Rel]
 def unexpTypedRel : Unexpander
+  | `($_ $t:ident) =>
+    let new_t :=
+      delaborationService.switch_thoR_representation_to_alloy_representation t
+    `($new_t)
   | `($_ $t) => `($t)
   | _ => throw Unit.unit
 
@@ -30,10 +35,12 @@ def unexpTypedRel : Unexpander
 def unexpTypedRelConstantUniv : Unexpander
   | `($_ $_) => `($(mkIdent `univ))
   | _ => throw Unit.unit
+
 @[app_unexpander ThoR.Rel.constant.none]
 def unexpTypedRelConstantNone : Unexpander
   | `($_ $_) => `($(mkIdent `none))
   | _ => throw Unit.unit
+
 @[app_unexpander ThoR.Rel.constant.iden]
 def unexpTypedRelConstantIden : Unexpander
   | `($_ $_) => `($(mkIdent `iden))
