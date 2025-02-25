@@ -460,6 +460,16 @@ namespace Shared.expr
             (expr.toType subExpr1)
             (expr.toType subExpr2)
 
+        | `(expr |
+          $subExpr1:expr .( $subExpr2:expr ). $subExpr3:expr) =>
+          expr.dotjoin
+            dotjoin.dot_join
+            (expr.toType subExpr1)
+            (expr.dotjoin
+              dotjoin.dot_join
+              (expr.toType subExpr2)
+              (expr.toType subExpr3))
+
 
         | _ => expr.const constant.none -- unreachable
 
