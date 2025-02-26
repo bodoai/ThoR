@@ -45,9 +45,9 @@ namespace Shared
   This syntax represents a relation
   -/
   declare_syntax_cat expr
-  syntax constant : expr
-  syntax ident : expr
   syntax separatedNamespace : expr -- to call opened module entries
+  syntax ident : expr
+  syntax constant : expr
   syntax "(" expr ")" : expr
   syntax:60 expr:60 binRelOp expr:60 : expr
 

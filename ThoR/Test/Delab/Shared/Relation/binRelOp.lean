@@ -6,19 +6,20 @@ Authors: s. file CONTRIBUTORS
 
 import ThoR
 
-alloy dotjoin_sig_rel
+#alloy dotjoin_sig_rel
   sig a {
     r : a
   }
   fact {
-    some (a.r)
+    some (univ)
   }
 end
 
-create dotjoin_sig_rel
+#create dotjoin_sig_rel
 
 -- some (a . r)
 #check dotjoin_sig_rel.facts.f0
+#print dotjoin_sig_rel.facts.f0
 
 alloy dotjoin_rel_rel
   sig a {

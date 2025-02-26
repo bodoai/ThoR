@@ -898,20 +898,15 @@ syntax
   "alloy_formula"
     formula*
   "end"
-  : command
+  : term
 
-@[command_elab alloyFormulaBlock]
-private def alloyFormulaBlockImpl : CommandElab := fun stx => do
-  try match stx with
+@[term_elab alloyFormulaBlock]
+private def alloyFormulaBlockImpl : TermElab := fun stx expectedType? => do
+  match stx with
     | `(alloy_formula $formulas:formula* end) =>
-      return
+      (elabTerm (← `(term | 3 + 3)) expectedType?)
     | `(# alloy_formula $formulas:formula* end) =>
-      let formulas := formulas.map fun f => formula.toType f
-      logInfo s!"{formulas}"
-      return
-    | _ => return
-  catch | x => throwError x.toMessageData
+      (elabTerm (← `(term | 3 + 3)) expectedType?)
+    | _ => throwUnsupportedSyntax
 
-#alloy_formula
-  some x + x
-end
+def x := alloy_formula some x end
