@@ -30,8 +30,8 @@ end
     all t: B | some t + B.r
   }
 
-  pred p2 {
-
+  pred p2 [x : univ] {
+    x = x
   }
 
 end
