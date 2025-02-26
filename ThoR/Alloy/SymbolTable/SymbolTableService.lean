@@ -92,7 +92,7 @@ to be better digestible for further computation and transformation into Lean.
 
         for requiredSymbol in st.requiredDecls do
           if !(availableSymbols.contains requiredSymbol) then
-            throw s!"{requiredSymbol} is not defined"
+            throw s!"{requiredSymbol} is not defined in {availableSymbols}"
 
     /-
     The duplication of module names is checked here.
@@ -426,7 +426,7 @@ to be better digestible for further computation and transformation into Lean.
 
         let newArgs := predDecl.args.map fun a =>
           if !a.expression.isString then
-            panic! s!"invalid arg, not String"
+            (a, default)
           else
             let fv := (st.variableDecls.filter
               fun cv =>
