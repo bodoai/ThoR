@@ -891,3 +891,27 @@ private def creationImpl : CommandElab := fun stx => do
 
       | _ => return
   catch | x => throwError x.toMessageData
+
+syntax
+  (name := alloyFormulaBlock)
+  ("#")?
+  "alloy_formula"
+    formula*
+  "end"
+  : command
+
+@[command_elab alloyFormulaBlock]
+private def alloyFormulaBlockImpl : CommandElab := fun stx => do
+  try match stx with
+    | `(alloy_formula $formulas:formula* end) =>
+      return
+    | `(# alloy_formula $formulas:formula* end) =>
+      let formulas := formulas.map fun f => formula.toType f
+      logInfo s!"{formulas}"
+      return
+    | _ => return
+  catch | x => throwError x.toMessageData
+
+#alloy_formula
+  some x + x
+end
