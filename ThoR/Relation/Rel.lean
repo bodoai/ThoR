@@ -55,7 +55,7 @@ namespace Rel
 -- subset
   def subset {R : Type} [TupleSet R] {n : ℕ} {t1 t2 : RelType R n}
     (r1 : Rel t1) (r2: Rel t2) : Prop :=
-        r1.relation ⊂ r2.relation
+        Subset.subset r1.relation r2.relation
   instance (R : Type) [TupleSet R] (n : ℕ) (t1 t2 : RelType R n):
     HSubset (Rel t1) (Rel t2) where
       hSubset := subset
@@ -90,7 +90,7 @@ namespace Rel
     (t1 : RelType R (n1+1)) (t2 : RelType R (n2+1)):
     HDotjoin (Rel t1) (Rel t2) (Rel (t1 ⋈ t2)) where
     hDotjoin r1 r2 := Rel.mk
-      (r1.1 ⋈ r2.1) (HasRelType.dotjoin_consistent r1.2 r2.2)
+      (Dotjoin.dotjoin r1.1 r2.1) (HasRelType.dotjoin_consistent r1.2 r2.2)
 
   local macro "unop_inst"
     typeClass:ident op:ident relTypeOp:ident consistencyProof:ident : command

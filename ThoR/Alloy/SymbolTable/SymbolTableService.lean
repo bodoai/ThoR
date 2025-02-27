@@ -103,11 +103,15 @@ to be better digestible for further computation and transformation into Lean.
       let importedVariableDeclarations :=
         st.variableDecls.filter fun vd => vd.isOpened
 
+      if importedVariableDeclarations.isEmpty then return
+
       let importedModuleNames :=
         (importedVariableDeclarations.map fun vd => vd.openedFrom).eraseDups
 
+      if importedModuleNames.isEmpty then return
+
       let alloyLikeModuleNames :=
-        importedModuleNames.map fun name => (name.splitOn "_").getLast!
+        importedModuleNames.map fun name => (name.splitOn "_").getLastD name
 
       let mut lookedAtNames := []
       for index in [:(alloyLikeModuleNames.length)] do
