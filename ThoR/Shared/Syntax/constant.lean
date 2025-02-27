@@ -73,6 +73,38 @@ namespace Shared
           | constant.iden =>
             `($(mkIdent ``Rel.constant.iden) $(baseType.ident))
 
+    open ThoR.Rel.constant
+    /--
+    Generates a Lean term corosponding with the type
+    -/
+    def fromTerm
+      (c : Term)
+      : Except String constant := Unhygienic.run do
+        let ms ←  `($(mkIdent `univ))
+        if c == ms then
+          return Except.ok constant.univ
+
+        match c with
+          | `(``ThoR.Rel.constant.none $_) =>
+            return Except.ok constant.none
+          | `(``ThoR.Rel.constant.univ $_) =>
+            return Except.ok constant.univ
+          | `(``ThoR.Rel.constant.univ) =>
+            return Except.ok constant.univ
+          | `(`univ $_) =>
+            return Except.ok constant.univ
+          | `(`univ) =>
+            return Except.ok constant.univ
+          | `(constant| univ) =>
+            return Except.ok constant.univ
+          | `(ThoR.Rel.constant.univ) =>
+            return Except.ok constant.univ
+          | `(ThoR.Rel.constant.univ $_) =>
+            return Except.ok constant.univ
+          | `(``ThoR.Rel.constant.iden $_) =>
+            return Except.ok constant.iden
+          | a => return (Except.error s!"YYY {a.raw.prettyPrint}")
+
     /--
     Parses the given syntax to the type
     -/

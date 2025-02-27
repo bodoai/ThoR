@@ -165,8 +165,8 @@ namespace Shared.expr
   Generates a syntax representation of the type
   -/
   def toSyntax
-    (blockName : Name)
     (e : expr)
+    (blockName : Name := default)
     : TSyntax `expr := Unhygienic.run do
       match e with
         | expr.const c => `(expr| $(c.toSyntax):constant)
@@ -186,6 +186,13 @@ namespace Shared.expr
           let name := Name.fromComponents components
           let identifier := mkIdent name
           `(expr| @$(identifier):ident)
+
+  def fromTerm
+    (e : Term)
+    : expr := Id.run do
+      match constant.fromTerm e with
+        | Except.ok c => expr.const c
+        | Except.error msg => panic! s!"XXX {msg}"
 
   /--
   Generates a Lean term corosponding with the type
@@ -372,6 +379,102 @@ namespace Shared.expr
   -/
   partial def toType
     (e : TSyntax `expr)
+    (signatureRelationNames : List String := [])
+    : expr :=
+      match e with
+        | `(expr | ( $e:expr )) => expr.toType e
+        | `(expr |
+            $op:unRelOp
+            $subExpr: expr) =>
+            expr.unaryRelOperation
+            (unRelOp.toType op)
+            (expr.toType subExpr)
+
+        | `(expr |
+            $subExpr1:expr
+            $op:binRelOp
+            $subExpr2:expr) =>
+            expr.binaryRelOperation
+              (binRelOp.toType op)
+              (expr.toType subExpr1)
+              (expr.toType subExpr2)
+
+        | `(expr |
+            $subExpr1:expr
+            $dj:dotjoin
+            $subExpr2:expr) =>
+            expr.dotjoin
+            (dotjoin.toType dj)
+            (expr.toType subExpr1)
+            (expr.toType subExpr2)
+
+        | `(expr | $const:constant) =>
+            expr.const (constant.toType const)
+
+        | `(expr | @$name:ident) => Id.run do
+            expr.string_rb name.getId.toString
+
+        | `(expr | $sn:separatedNamespace) => Id.run do
+          let sn := Alloy.separatedNamespace.toType sn
+          let components := sn.representedNamespace.getId.components
+          let lastComponent := components.getLast!
+          let lastComponentString := lastComponent.toString
+
+          let split := lastComponentString.splitOn "<:"
+          let splitNames := split.map fun c => c.toName
+          let newComponents := (components.take (components.length - 1)) ++ splitNames
+          let newName := Name.fromComponents newComponents
+          let newIdent := mkIdent newName
+          return expr.callFromOpen (Alloy.separatedNamespace.mk newIdent)
+
+        | `(expr | $name:ident) => Id.run do
+            let parsedName := name.getId
+
+            if parsedName.isAtomic then
+
+              let exprStringName := name.getId.toString
+
+              -- If the string (name) of the expr is a sigField in a sigFact
+              if (signatureRelationNames.contains exprStringName) then
+                expr.dotjoin
+                  dotjoin.dot_join
+                  (expr.string "this")
+                  (expr.string exprStringName)
+
+              else
+                expr.string exprStringName
+
+            else -- ident contains . which must be parsed as dotjoin
+              let x := (parsedName.splitAt (parsedName.components.length - 1))
+              let subExpr1 := x.1
+              let subExpr2 := x.2
+
+              let subE1 : TSyntax `expr := Unhygienic.run
+                `(expr| $(mkIdent subExpr1): ident)
+
+              let subE2 : TSyntax `expr := Unhygienic.run
+                `(expr| $(mkIdent subExpr2): ident)
+
+              expr.dotjoin
+                dotjoin.dot_join
+                (expr.toType subE1)
+                (expr.toType subE2)
+
+        | `(expr | -- Hack to allow dotjoin before ()
+          $subExpr1:expr .( $subExpr2:expr )) =>
+          expr.dotjoin
+            dotjoin.dot_join
+            (expr.toType subExpr1)
+            (expr.toType subExpr2)
+
+
+        | _ => expr.const constant.none -- unreachable
+
+  /--
+  Parses the given syntax to the type
+  -/
+  partial def toType'
+    (e : Term)
     (signatureRelationNames : List String := [])
     : expr :=
       match e with
