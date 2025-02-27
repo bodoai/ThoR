@@ -23,4 +23,12 @@ namespace Alloy.assertDecl
       fun f => f.insertModuleVariables moduleVariables openVariables
     {ad with formulas := formulas}
 
+  def replaceThisCalls
+    (ad : assertDecl)
+    (moduleName : String)
+    : assertDecl :=
+    let formulas :=
+      ad.formulas.map fun f => f.replaceThisCalls moduleName
+    {ad with formulas := formulas}
+
 end Alloy.assertDecl

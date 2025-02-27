@@ -229,28 +229,35 @@ namespace Shared.arrowOp
   /--
   Gets all calls to the `callableVariables` which includes signatures and relations
 
-  The result is a list of all called variables
+  The result is a list of the call (in string from) and a (possibly empty) list
+  of the concrete possible called variables (in form of varDecls). If the inner
+  list contains more than one varDecl, called variable is ambiguous and could
+  be either.
   -/
   def getCalledVariables
     (ao : arrowOp)
     (callableVariables : List (varDecl))
-    : List (List (varDecl)) :=
+    : Except String (List (String × List (varDecl))) := do
       match ao with
         | multArrowOpExpr e1 _ _ e2 =>
-          (e1.getCalledVariables callableVariables) ++
-            (e2.getCalledVariables callableVariables)
+          let e1_calls ← (e1.getCalledVariables callableVariables)
+          let e2_calls ← (e2.getCalledVariables callableVariables)
+          return e1_calls ++ e2_calls
 
-        | multArrowOpExprLeft e _ _ ao1 =>
-          (e.getCalledVariables callableVariables) ++
-            (ao1.getCalledVariables callableVariables)
+        | multArrowOpExprLeft e _ _ ao =>
+          let e_calls ← (e.getCalledVariables callableVariables)
+          let ao_calls ← (ao.getCalledVariables callableVariables)
+          return e_calls ++ ao_calls
 
-        | multArrowOpExprRight ao1 _ _ e =>
-          (ao1.getCalledVariables callableVariables) ++
-            (e.getCalledVariables callableVariables)
+        | multArrowOpExprRight ao _ _ e =>
+          let ao_calls ← (ao.getCalledVariables callableVariables)
+          let e_calls ← (e.getCalledVariables callableVariables)
+          return ao_calls ++ e_calls
 
         | multArrowOp ao1 _ _ ao2 =>
-          (ao1.getCalledVariables callableVariables) ++
-            (ao2.getCalledVariables callableVariables)
+          let ao1_calls ← (ao1.getCalledVariables callableVariables)
+          let ao2_calls ← (ao2.getCalledVariables callableVariables)
+          return ao1_calls ++ ao2_calls
 
   /--
   changes a string expr in the arrowOp to a string rb expression
@@ -334,5 +341,39 @@ namespace Shared.arrowOp
           (ae1.insertModuleVariables moduleVariables openVariables)
           m1 m2
           (ae2.insertModuleVariables moduleVariables openVariables)
+
+
+  /--
+  replaces calls to "this" (current module), with a call to the given module
+  name.
+  -/
+  def replaceThisCalls
+    (ao : arrowOp)
+    (moduleName : String)
+    : arrowOp :=
+    match ao with
+      | arrowOp.multArrowOpExpr e1 m1 m2 e2 =>
+        arrowOp.multArrowOpExpr
+          (e1.replaceThisCalls moduleName)
+          m1 m2
+          (e2.replaceThisCalls moduleName)
+
+      | arrowOp.multArrowOpExprLeft e1 m1 m2 ae2 =>
+        arrowOp.multArrowOpExprLeft
+          (e1.replaceThisCalls moduleName)
+          m1 m2
+          (ae2.replaceThisCalls moduleName)
+
+      | arrowOp.multArrowOpExprRight ae1 m1 m2 e2 =>
+        arrowOp.multArrowOpExprRight
+          (ae1.replaceThisCalls moduleName)
+          m1 m2
+          (e2.replaceThisCalls moduleName)
+
+      | arrowOp.multArrowOp ae1 m1 m2 ae2 =>
+        arrowOp.multArrowOp
+          (ae1.replaceThisCalls moduleName)
+          m1 m2
+          (ae2.replaceThisCalls moduleName)
 
 end Shared.arrowOp

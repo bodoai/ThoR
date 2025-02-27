@@ -59,4 +59,11 @@ namespace Alloy.predArg
     {pa with expression :=
       pa.expression.insertModuleVariables moduleVariables openVariables}
 
+  def replaceThisCalls
+    (pa : predArg)
+    (moduleName : String)
+    : predArg :=
+    {pa with expression :=
+      pa.expression.replaceThisCalls moduleName}
+
 end Alloy.predArg
