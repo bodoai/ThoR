@@ -5,7 +5,7 @@ Authors: s. file CONTRIBUTORS
 -/
 
 import ThoR.Basic
-import ThoR.Shared.Syntax.constant
+import ThoR.Shared.Syntax.Constant.constantService
 import ThoR.Shared.Syntax.Relation.unRelOp
 import ThoR.Shared.Syntax.Relation.binRelOp
 import ThoR.Shared.Syntax.Relation.dotjoin

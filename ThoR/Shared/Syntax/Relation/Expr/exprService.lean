@@ -6,6 +6,7 @@ Authors: s. file CONTRIBUTORS
 
 import ThoR.Alloy.SymbolTable.VarDecl.varDecl
 import ThoR.Alloy.SymbolTable.SymbolTable
+import ThoR.Shared.Syntax.Constant.constantTermConverter
 import ThoR.Alloy.Config
 
 open Alloy Config
