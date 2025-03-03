@@ -111,45 +111,7 @@ lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   intro contra
   simp [ThoR.Quantification.Formula.eval] at contra
 
-  dup_rel_r p ⊂ p ⋈ (((∻ Person.mother) + (∻ Person.father)) ⋈ ((∻ Person.father))) as h1
-
-  dup_rel_l p ⊂ p ⋈ (((∻ Person.mother) ⋈ (∻ Person.father)) + ((∻ Person.father)) ⋈ ((∻ Person.father))) as h2
-
-
-  -- have h1 :
-  --   p ⊂ p ⋈ (((∻ Person.mother) + (∻ Person.father)) ⋈ ((∻ Person.father)))
-  --   ↔
-  --   p ⊂ p ⋈ (((∻ Person.mother) + (∻ Person.father)) ⋈ ((∻ Person.father)))
-  -- := by simp
-  -- have h2 :
-  --   p ⊂ p ⋈ (((∻ Person.mother) ⋈ (∻ Person.father)) + ((∻ Person.father)) ⋈ ((∻ Person.father)))
-  --   ↔
-  --   p ⊂ p ⋈ (((∻ Person.mother) ⋈ (∻ Person.father)) + ((∻ Person.father)) ⋈ ((∻ Person.father)))
-  -- := by simp
-
-  -- conv at h1 =>
-  --   rhs
-  --   simp [ThoR.HSubset.hSubset]
-  --   simp [ThoR.Rel.subset]
-  --   simp [ThoR.HDotjoin.hDotjoin]
-  --   dsimp [HAdd.hAdd]
-
-  -- conv at h2 =>
-  --   lhs
-  --   simp [ThoR.HSubset.hSubset]
-  --   simp [ThoR.Rel.subset]
-  --   simp [ThoR.HDotjoin.hDotjoin]
-  --   dsimp [HAdd.hAdd]
-
-  -- rw [Rules.dotjoin.add.dist.r] at h1
-
-  -- have hr := h2.mp ∘ h1.mp
-
-  -- apply h1.mp at contra
-  -- apply h2.mp at contra
-
   rewrite p ⊂ p ⋈ (((∻ Person.mother) + (∻ Person.father)) ⋈ ((∻ Person.father))) to p ⊂ p ⋈ (((∻ Person.mother) ⋈ (∻ Person.father)) + ((∻ Person.father)) ⋈ ((∻ Person.father))) as hr
-  clear h1 h2
 
   -- fact f0 : language.grandpa1.facts.f0
   -- sorry
