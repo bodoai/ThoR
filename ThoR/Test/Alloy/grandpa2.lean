@@ -98,89 +98,26 @@ macro_rules
       dsimp [HAdd.hAdd]
     )
 
-#check MacroM
+#check Lean.Parser.Tactic.locationHyp
 
-syntax "rewrite" term "to" term "as" ident : tactic
-macro_rules
-  | `(tactic|rewrite $t1:term to $t2:term as $h:ident) =>
-  `(tactic|
-    dup_rel_r $t1 as h1
-    ;
-    dup_rel_l $t2 as h2
-    ;
-    rw [Rules.dotjoin.add.dist.r] at h1
-    ;
-    have $h := h2.mp ∘ h1.mp
-    ;
-    clear h1 h2
-  )
-
-
-elab "custom_sorry_1" : tactic =>
+elab " rewrite " t1:term " to " t2:term " as " h:ident : tactic =>
   Lean.Elab.Tactic.withMainContext do
-    let goal ← Lean.Elab.Tactic.getMainGoal
-    let goalDecl ← goal.getDecl
-    let goalType := goalDecl.type
-    dbg_trace f!"goal type: {goalType}"
-
-elab "custom_sorry_2" : tactic =>
-  Lean.Elab.Tactic.withMainContext do
-    let goal ← Lean.Elab.Tactic.getMainGoal
-    Lean.Elab.admitGoal goal
-
-elab "list_local_decls_1" : tactic =>
-  Lean.Elab.Tactic.withMainContext do
-    let ctx ← Lean.MonadLCtx.getLCtx -- get the local context.
-    ctx.forM fun decl: Lean.LocalDecl => do
-      let declExpr := decl.toExpr -- Find the expression of the declaration.
-      let declName := decl.userName -- Find the name of the declaration.
-      dbg_trace f!"+ local decl: name: {declName} | expr: {declExpr}"
-
-elab "list_local_decls_2" : tactic =>
-  Lean.Elab.Tactic.withMainContext do
-    let ctx ← Lean.MonadLCtx.getLCtx -- get the local context.
-    ctx.forM fun decl: Lean.LocalDecl => do
-      let declExpr := decl.toExpr -- Find the expression of the declaration.
-      let declName := decl.userName -- Find the name of the declaration.
-      let declType ← Lean.Meta.inferType declExpr -- **NEW:** Find the type.
-      dbg_trace f!"+ local decl: name: {declName} | expr: {declExpr} | type: {declType}"
-
-elab "list_local_decls_3" : tactic =>
-  Lean.Elab.Tactic.withMainContext do
-    let goalType ← Lean.Elab.Tactic.getMainTarget
-    let ctx ← Lean.MonadLCtx.getLCtx -- get the local context.
-    ctx.forM fun decl: Lean.LocalDecl => do
-      let declExpr := decl.toExpr -- Find the expression of the declaration.
-      let declName := decl.userName -- Find the name of the declaration.
-      let declType ← Lean.Meta.inferType declExpr -- Find the type.
-      let eq? ← Lean.Meta.isExprDefEq declType goalType -- **NEW** Check if type equals goal type.
-      dbg_trace f!"+ local decl[EQUAL? {eq?}]: name: {declName}"
-
-open Lean.Elab.Tactic in
-elab "custom_let " n:ident " : " t:term " := " v:term : tactic =>
-  withMainContext do
-    let t1 ← ((elabTerm t) none)
-  return
-    -- let v ← elabTermEnsuringType v t
-    -- liftMetaTactic fun mvarId => do
-    --   let mvarIdNew ← mvarId.define n.getId t v
-    --   let (_, mvarIdNew) ← mvarIdNew.intro1P
-    --   return [mvarIdNew]
-
-elab "fresh_name" : tactic =>
-  Lean.Elab.Tactic.withMainContext do
-    let h1 ← mkFreshUserName `h
-    let h1 := mkIdent h1
-    let h2 ← mkFreshUserName `h
-    let h2 := mkIdent h2
-    Lean.Elab.Tactic.evalTactic (← `(tactic| have $h1 : 1 = 1 := by rfl))
-    Lean.Elab.Tactic.evalTactic (← `(tactic| have $h2 : 2 = 2 := by rfl))
+    let h1 := mkIdent <| ← mkFreshUserName `h
+    let h2 := mkIdent <| ← mkFreshUserName `h
+    Lean.Elab.Tactic.evalTactic (← `(tactic| dup_rel_r $t1 as $h1))
+    Lean.Elab.Tactic.evalTactic (← `(tactic| dup_rel_l $t2 as $h2))
+-- FIXME : at * → at $h1
+    Lean.Elab.Tactic.evalTactic (← `(tactic| rewrite [Rules.dotjoin.add.dist.r] at *))
+    Lean.Elab.Tactic.evalTactic (← `(tactic| try have $h := ($h2).mp ∘ ($h1).mp))
+    Lean.Elab.Tactic.evalTactic (← `(tactic| clear $h1))
+    Lean.Elab.Tactic.evalTactic (← `(tactic| clear $h2))
+    -- Lean.Elab.Tactic.evalTactic (← `(tactic| rw [Rules.dotjoin.add.dist.r] at $h1))
 --    Lean.Elab.Tactic.evalTactic (← `(tactic| clear $h1))
-    dbg_trace f!"fresh name: {h1}"
-    dbg_trace f!"fresh name: {h2}"
+    -- dbg_trace f!"fresh name: {h1}"
+    -- dbg_trace f!"fresh name: {h2}"
+
 
 lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
-  fresh_name
   unfold NoSelfGrandpa
   apply Rules.no.intro
   apply Rules.some.neg
