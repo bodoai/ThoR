@@ -4,7 +4,22 @@ import ThoR.Rules.quant
 import ThoR.Rules.dotjoin
 import ThoR.Rules.eq
 import Lean
-open Lean
+open Lean Lean.Elab Command Term Lean.Elab.Tactic
+
+#check elabTerm
+#check elabTermEnsuringType
+
+open Lean.Elab.Tactic in
+elab "custom_have " n:ident " : " t:term " := " v:term : tactic =>
+  withMainContext do
+    let t ← Lean.Elab.Term.elabTerm t Option.none
+    let v ← Lean.Elab.Tactic.elabTermEnsuringType v (Option.some t)
+    liftMetaTactic fun mvarId => do
+      let mvarIdNew ← mvarId.assert n.getId t v
+      let (_, mvarIdNew) ← mvarIdNew.intro1P
+      return [mvarIdNew]
+
+
 
 #alloy
 module language/grandpa1 ---- Page 84, 85
@@ -99,7 +114,56 @@ macro_rules
     clear h1 h2
   )
 
+elab "custom_sorry_1" : tactic =>
+  Lean.Elab.Tactic.withMainContext do
+    let goal ← Lean.Elab.Tactic.getMainGoal
+    let goalDecl ← goal.getDecl
+    let goalType := goalDecl.type
+    dbg_trace f!"goal type: {goalType}"
 
+elab "custom_sorry_2" : tactic =>
+  Lean.Elab.Tactic.withMainContext do
+    let goal ← Lean.Elab.Tactic.getMainGoal
+    Lean.Elab.admitGoal goal
+
+elab "list_local_decls_1" : tactic =>
+  Lean.Elab.Tactic.withMainContext do
+    let ctx ← Lean.MonadLCtx.getLCtx -- get the local context.
+    ctx.forM fun decl: Lean.LocalDecl => do
+      let declExpr := decl.toExpr -- Find the expression of the declaration.
+      let declName := decl.userName -- Find the name of the declaration.
+      dbg_trace f!"+ local decl: name: {declName} | expr: {declExpr}"
+
+elab "list_local_decls_2" : tactic =>
+  Lean.Elab.Tactic.withMainContext do
+    let ctx ← Lean.MonadLCtx.getLCtx -- get the local context.
+    ctx.forM fun decl: Lean.LocalDecl => do
+      let declExpr := decl.toExpr -- Find the expression of the declaration.
+      let declName := decl.userName -- Find the name of the declaration.
+      let declType ← Lean.Meta.inferType declExpr -- **NEW:** Find the type.
+      dbg_trace f!"+ local decl: name: {declName} | expr: {declExpr} | type: {declType}"
+
+elab "list_local_decls_3" : tactic =>
+  Lean.Elab.Tactic.withMainContext do
+    let goalType ← Lean.Elab.Tactic.getMainTarget
+    let ctx ← Lean.MonadLCtx.getLCtx -- get the local context.
+    ctx.forM fun decl: Lean.LocalDecl => do
+      let declExpr := decl.toExpr -- Find the expression of the declaration.
+      let declName := decl.userName -- Find the name of the declaration.
+      let declType ← Lean.Meta.inferType declExpr -- Find the type.
+      let eq? ← Lean.Meta.isExprDefEq declType goalType -- **NEW** Check if type equals goal type.
+      dbg_trace f!"+ local decl[EQUAL? {eq?}]: name: {declName}"
+
+open Lean.Elab.Tactic in
+elab "custom_let " n:ident " : " t:term " := " v:term : tactic =>
+  withMainContext do
+    let t1 ← ((elabTerm t) none)
+  return
+    -- let v ← elabTermEnsuringType v t
+    -- liftMetaTactic fun mvarId => do
+    --   let mvarIdNew ← mvarId.define n.getId t v
+    --   let (_, mvarIdNew) ← mvarIdNew.intro1P
+    --   return [mvarIdNew]
 
 lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   unfold NoSelfGrandpa
