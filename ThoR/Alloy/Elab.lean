@@ -570,6 +570,21 @@ private def evalAlloyBlock
         s!"AST without opened Modules: \n
         {ast.toString}"
 
+    let module_variables_with_number_of_occurences :=
+      ( ast.modulVariables.map
+        fun elem => (elem, ast.modulVariables.count elem)
+      ).dedup
+
+    for module_variable in module_variables_with_number_of_occurences do
+      let module_variable_name := module_variable.1
+      let module_variable_number_of_occurences := module_variable.2
+
+      if module_variable_number_of_occurences > 1 then
+        logError s!"The Module {ast.name} has \
+        {module_variable_number_of_occurences} module variables \
+        with the name {module_variable_name}. Module variable names \
+        must be unique."
+
     -- try to open all modules
     let ast_withExcept := openModules ast monadeEnv
 
