@@ -4,6 +4,7 @@ import ThoR.Rules.quant
 import ThoR.Rules.dotjoin
 import ThoR.Rules.eq
 import Lean
+import Lean.Meta.Tactic.Intro
 open Lean Lean.Elab Command Term Lean.Elab.Tactic
 
 #check elabTerm
@@ -18,8 +19,6 @@ elab "custom_have " n:ident " : " t:term " := " v:term : tactic =>
       let mvarIdNew ← mvarId.assert n.getId t v
       let (_, mvarIdNew) ← mvarIdNew.intro1P
       return [mvarIdNew]
-
-
 
 #alloy
 module language/grandpa1 ---- Page 84, 85
@@ -99,6 +98,8 @@ macro_rules
       dsimp [HAdd.hAdd]
     )
 
+#check MacroM
+
 syntax "rewrite" term "to" term "as" ident : tactic
 macro_rules
   | `(tactic|rewrite $t1:term to $t2:term as $h:ident) =>
@@ -113,6 +114,7 @@ macro_rules
     ;
     clear h1 h2
   )
+
 
 elab "custom_sorry_1" : tactic =>
   Lean.Elab.Tactic.withMainContext do
@@ -165,7 +167,20 @@ elab "custom_let " n:ident " : " t:term " := " v:term : tactic =>
     --   let (_, mvarIdNew) ← mvarIdNew.intro1P
     --   return [mvarIdNew]
 
+elab "fresh_name" : tactic =>
+  Lean.Elab.Tactic.withMainContext do
+    let h1 ← mkFreshUserName `h
+    let h1 := mkIdent h1
+    let h2 ← mkFreshUserName `h
+    let h2 := mkIdent h2
+    Lean.Elab.Tactic.evalTactic (← `(tactic| have $h1 : 1 = 1 := by rfl))
+    Lean.Elab.Tactic.evalTactic (← `(tactic| have $h2 : 2 = 2 := by rfl))
+--    Lean.Elab.Tactic.evalTactic (← `(tactic| clear $h1))
+    dbg_trace f!"fresh name: {h1}"
+    dbg_trace f!"fresh name: {h2}"
+
 lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
+  fresh_name
   unfold NoSelfGrandpa
   apply Rules.no.intro
   apply Rules.some.neg
