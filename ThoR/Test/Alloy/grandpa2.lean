@@ -7,9 +7,6 @@ import Lean
 import Lean.Meta.Tactic.Intro
 open Lean Lean.Elab Command Term Lean.Elab.Tactic
 
-#check elabTerm
-#check elabTermEnsuringType
-
 open Lean.Elab.Tactic in
 elab "custom_have " n:ident " : " t:term " := " v:term : tactic =>
   withMainContext do
@@ -20,7 +17,7 @@ elab "custom_have " n:ident " : " t:term " := " v:term : tactic =>
       let (_, mvarIdNew) ← mvarIdNew.intro1P
       return [mvarIdNew]
 
-#alloy
+alloy
 module language/grandpa1 ---- Page 84, 85
 
 abstract sig Person {
@@ -60,7 +57,7 @@ assert NoSelfGrandpa {
 check NoSelfGrandpa for 4 Person
 end
 
-#create language/grandpa1
+create language/grandpa1
 
 startTestBlock language.grandpa1
 
@@ -98,24 +95,32 @@ macro_rules
       dsimp [HAdd.hAdd]
     )
 
-#check Lean.Parser.Tactic.locationHyp
+-- #check Lean.Parser.Tactic.locationHyp
+-- #check TSyntax [`Lean.Parser.Tactic.locationWildcard, `Lean.Parser.Tactic.locationHyp]
+-- #check mkIdent
+-- #check Lean.Parser.Tactic.location
 
+-- #check Syntax.node1 SourceInfo.none `Lean.Parser.Tactic.location (
+--           Syntax.node1 SourceInfo.none `Lean.Parser.Tactic.locationHyp (
+--             mkIdent "abc".toName))
+
+
+-- instance : Coe (Ident) (TSyntax [`Lean.Parser.Tactic.locationWildcard, `Lean.Parser.Tactic.locationHyp]) where
+--   coe s := ⟨s.raw⟩
+-- #check Lean.Parser.Tactic.location
+
+open Lean.Parser.Tactic in
 elab " rewrite " t1:term " to " t2:term " as " h:ident : tactic =>
   Lean.Elab.Tactic.withMainContext do
     let h1 := mkIdent <| ← mkFreshUserName `h
     let h2 := mkIdent <| ← mkFreshUserName `h
-    Lean.Elab.Tactic.evalTactic (← `(tactic| dup_rel_r $t1 as $h1))
-    Lean.Elab.Tactic.evalTactic (← `(tactic| dup_rel_l $t2 as $h2))
--- FIXME : at * → at $h1
-    Lean.Elab.Tactic.evalTactic (← `(tactic| rewrite [Rules.dotjoin.add.dist.r] at *))
+    Lean.Elab.Tactic.evalTactic (← `(tactic| dup_rel_r $t1:term as $h1:ident))
+    Lean.Elab.Tactic.evalTactic (← `(tactic| dup_rel_l $t2:term as $h2:ident))
+    Lean.Elab.Tactic.evalTactic (← `(tactic| rewrite [Rules.dotjoin.add.dist.r] at $h1:ident))
     Lean.Elab.Tactic.evalTactic (← `(tactic| try have $h := ($h2).mp ∘ ($h1).mp))
     Lean.Elab.Tactic.evalTactic (← `(tactic| clear $h1))
     Lean.Elab.Tactic.evalTactic (← `(tactic| clear $h2))
-    -- Lean.Elab.Tactic.evalTactic (← `(tactic| rw [Rules.dotjoin.add.dist.r] at $h1))
---    Lean.Elab.Tactic.evalTactic (← `(tactic| clear $h1))
     -- dbg_trace f!"fresh name: {h1}"
-    -- dbg_trace f!"fresh name: {h2}"
-
 
 lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   unfold NoSelfGrandpa
@@ -128,6 +133,7 @@ lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   simp [ThoR.Quantification.Formula.eval] at contra
 
   rewrite p ⊂ p ⋈ (((∻ Person.mother) + (∻ Person.father)) ⋈ ((∻ Person.father))) to p ⊂ p ⋈ (((∻ Person.mother) ⋈ (∻ Person.father)) + ((∻ Person.father)) ⋈ ((∻ Person.father))) as hr
+  apply hr at contra
 
   -- fact f0 : language.grandpa1.facts.f0
   -- sorry
