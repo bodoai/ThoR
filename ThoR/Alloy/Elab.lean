@@ -449,13 +449,14 @@ private def createCommands (st : SymbolTable)
     return commandList
 
 declare_syntax_cat moduleVar
-syntax ("exactly" ident) : moduleVar
+syntax ("exactly")? ident : moduleVar
 
 private def moduleVar.getIdent
   (mv : Lean.TSyntax `moduleVar)
   : Ident :=
     match mv with
-      | `(moduleVar | exactly $i) => i
+      | `(moduleVar | exactly $i:ident) => i
+      | `(moduleVar | $i:ident) => i
       | _ => unreachable!
 
 /--
@@ -468,7 +469,7 @@ Options:
 syntax (name := alloyBlock)
   ("#" <|> "~")?
   "alloy"
-  (("module")? separatedNamespace ("[" moduleVar+ "]")?)?
+  (("module")? separatedNamespace ("[" moduleVar,+ "]")?)?
   specification*
   "end"
   : command
@@ -657,14 +658,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
 
           evalAlloyBlock blockName specifications
 
-      | `(alloy $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(alloy $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
           let blockName :=
             (separatedNamespace.toType blockName).representedNamespace
 
           let moduleVariables :=
-            (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+            (mvs.getElems.map
+              fun mv =>
+              (moduleVar.getIdent mv).getId.toString
+            ).toList
 
           evalAlloyBlock
             (moduleVariables := moduleVariables)
@@ -679,14 +683,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
 
           evalAlloyBlock blockName specifications
 
-      | `(alloy module $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(alloy module $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
           let blockName :=
             (separatedNamespace.toType blockName).representedNamespace
 
           let moduleVariables :=
-            (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+            (mvs.getElems.map
+              fun mv =>
+              (moduleVar.getIdent mv).getId.toString
+            ).toList
 
           evalAlloyBlock
             (moduleVariables := moduleVariables)
@@ -708,14 +715,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
               blockName
               specifications
 
-      | `(#alloy $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(#alloy $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
 
             let moduleVariables :=
-              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+              (mvs.getElems.map
+                fun mv =>
+                (moduleVar.getIdent mv).getId.toString
+              ).toList
 
             evalAlloyBlock
               (logging := true)
@@ -734,14 +744,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
               blockName
               specifications
 
-      | `(#alloy module $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(#alloy module $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
 
             let moduleVariables :=
-              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+              (mvs.getElems.map
+                fun mv =>
+                (moduleVar.getIdent mv).getId.toString
+              ).toList
 
             evalAlloyBlock
               (logging := true)
@@ -763,14 +776,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
             Lean.Elab.Command.failIfSucceeds
               (evalAlloyBlock blockName specifications)
 
-      | `(~alloy $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(~alloy $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
 
             let moduleVariables :=
-              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+              (mvs.getElems.map
+                fun mv =>
+                (moduleVar.getIdent mv).getId.toString
+              ).toList
 
             Lean.Elab.Command.failIfSucceeds
               (evalAlloyBlock
@@ -785,14 +801,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
             Lean.Elab.Command.failIfSucceeds
               (evalAlloyBlock blockName specifications)
 
-      | `(~alloy module $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(~alloy module $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
 
             let moduleVariables :=
-              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+              (mvs.getElems.map
+                fun mv =>
+                (moduleVar.getIdent mv).getId.toString
+              ).toList
 
             Lean.Elab.Command.failIfSucceeds
               (evalAlloyBlock
