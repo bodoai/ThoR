@@ -128,19 +128,34 @@ private def createDefOrAxiomCommand
         bodyTerm := unhygienicUnfolder `($bodyTerm ∧ ($newTerm))
 
     -- define command
-    if isDefinition then
+    let tupleSetArg
+      : Array (TSyntax ``Lean.Parser.Term.bracketedBinderF) :=
+    #[
+      (unhygienicUnfolder `(Lean.Parser.Term.bracketedBinderF |
+        {$(baseType.ident) : Type}
+      )),
+      (unhygienicUnfolder `(Lean.Parser.Term.bracketedBinderF |
+        [$(mkIdent ``ThoR.TupleSet) $(baseType.ident)]
+      )),
+      (unhygienicUnfolder `(Lean.Parser.Term.bracketedBinderF |
+        [$(mkIdent s!"{blockName}.vars".toName) $(baseType.ident)]
+      ))
+    ]
 
+
+    if isDefinition then
       -- Alloy pred argument evaluation
       -- (no arguments for definition=false, as facts do not have any arguments)
       -- Alloy pred arguments are transformed into Lean function arguments.
       let mut argTerms :
         TSyntax ``Lean.Parser.Command.optDeclSig :=
-          unhygienicUnfolder `(Lean.Parser.Command.optDeclSig|)
+          unhygienicUnfolder `(Lean.Parser.Command.optDeclSig | $[$tupleSetArg]*)
+
+      let mut allArgs : Array (TSyntax ``Lean.Parser.Term.bracketedBinderF) :=
+        tupleSetArg
 
       if !(cd.args.isEmpty) then
         for arg in cd.args do
-          let mut singleArg :
-            Array (TSyntax ``Lean.Parser.Term.bracketedBinderF) := #[]
           let mut names : Array (TSyntax `ident) := #[]
 
           let argExpr :=
@@ -156,29 +171,28 @@ private def createDefOrAxiomCommand
           let argTerm := unhygienicUnfolder `(Lean.Parser.Term.bracketedBinderF |
             ($[$names]* : ∷ $t))
 
-          singleArg := singleArg.push argTerm
+          allArgs := allArgs.push argTerm
 
-          argTerms := unhygienicUnfolder `(Lean.Parser.Command.optDeclSig| $[$singleArg]*)
+        argTerms := unhygienicUnfolder `(Lean.Parser.Command.optDeclSig| $[$allArgs]*)
 
       if bodyTerm != emptyTerm then
-        return unhygienicUnfolder `(def $(mkIdent cd.name.toName) $argTerms := $bodyTerm)
+        return unhygienicUnfolder `(
+          def $(mkIdent cd.name.toName)
+          $argTerms
+          := $bodyTerm)
       else
         return unhygienicUnfolder `(
           def $(mkIdent cd.name.toName)
-          ($(baseType.ident) : Type)
-          [$(mkIdent ``ThoR.TupleSet) $(baseType.ident)]
-          [$(mkIdent s!"{blockName}.vars".toName) $(baseType.ident)]
+          $argTerms
           := True )
     else
     -- axiom command
       if bodyTerm != emptyTerm then
-        return unhygienicUnfolder `(axiom $(mkIdent cd.name.toName) : $bodyTerm)
+        return unhygienicUnfolder `(axiom $(mkIdent cd.name.toName) $[$tupleSetArg]* : $bodyTerm)
       else
         return unhygienicUnfolder `(
           axiom $(mkIdent cd.name.toName)
-          ($(baseType.ident) : Type)
-          [$(mkIdent ``ThoR.TupleSet) $(baseType.ident)]
-          [$(mkIdent s!"{blockName}.vars".toName) $(baseType.ident)]
+          $[$tupleSetArg]*
           : True )
 
 /--
