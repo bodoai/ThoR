@@ -57,6 +57,7 @@ namespace Shared
   syntax:80 unRelOp expr:80 : expr
 
   syntax:60 expr ".(" expr ")" : expr -- dotjoin helper syntax
+  syntax:60 expr ".(" expr ")" "." expr : expr -- dotjoin helper syntax
 
 -- used to call an expr (function) with implicit parameters explicitly (see string_rb)
   syntax "@" ident : expr
