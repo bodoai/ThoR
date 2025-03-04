@@ -86,7 +86,6 @@ macro_rules
     )
 
 -- TODO
--- - fresh name for h1_new and h2_new
 -- - add/remove .relation by macro
 
 open Lean.Parser.Tactic in
@@ -108,27 +107,27 @@ elab " rewrite " rw_target:ident " to " rw_result:term  : tactic =>
             ]
           ]
 
-        let h1_new := mkIdent `h1
+        let h1_new ← Lean.Core.mkFreshUserName `h
         liftMetaTactic fun mvarId => do
-          let mvarIdNew ← mvarId.assert h1_new.getId declTypeDup declTypeDupProof
-          let (_, mvarIdNew) ← mvarIdNew.intro h1_new.getId
+          let mvarIdNew ← mvarId.assert h1_new declTypeDup declTypeDupProof
+          let (_, mvarIdNew) ← mvarIdNew.intro h1_new
           return [mvarIdNew]
 
-        Lean.Elab.Tactic.evalTactic (← `(tactic | conv at $(h1_new) =>
+        Lean.Elab.Tactic.evalTactic (← `(tactic | conv at $(mkIdent h1_new) =>
           rhs
           simp [ThoR.HSubset.hSubset]
           simp [ThoR.Rel.subset]
           simp [ThoR.HDotjoin.hDotjoin]
           dsimp [HAdd.hAdd]))
 
-        let h2_new := mkIdent `h2
-        Lean.Elab.Tactic.evalTactic (← `(tactic| dup_rel_l $rw_result:term as $h2_new:ident))
+        let h2_new ← Lean.Core.mkFreshUserName `h
+        Lean.Elab.Tactic.evalTactic (← `(tactic| dup_rel_l $rw_result:term as $(mkIdent h2_new):ident))
 
-        Lean.Elab.Tactic.evalTactic (← `(tactic| rewrite [Rules.dotjoin.add.dist.r] at $h1_new:ident))
+        Lean.Elab.Tactic.evalTactic (← `(tactic| rewrite [Rules.dotjoin.add.dist.r] at $(mkIdent h1_new):ident))
 
-        Lean.Elab.Tactic.evalTactic (← `(tactic| apply (($h2_new).mp ∘ ($h1_new).mp) at $rw_target:ident))
+        Lean.Elab.Tactic.evalTactic (← `(tactic| apply (($(mkIdent h2_new)).mp ∘ ($(mkIdent h1_new)).mp) at $rw_target:ident))
 
-        Lean.Elab.Tactic.evalTactic (← `(tactic| clear $h1_new $h2_new))
+        Lean.Elab.Tactic.evalTactic (← `(tactic| clear $(mkIdent h1_new) $(mkIdent h2_new)))
 
 lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   unfold NoSelfGrandpa
