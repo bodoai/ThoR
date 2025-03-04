@@ -85,6 +85,10 @@ macro_rules
       dsimp [HAdd.hAdd]
     )
 
+-- TODO
+-- - fresh name for h1_new and h2_new
+-- - add/remove .relation by macro
+
 open Lean.Parser.Tactic in
 elab " rewrite " rw_target:ident " to " rw_result:term  : tactic =>
   Lean.Elab.Tactic.withMainContext do
