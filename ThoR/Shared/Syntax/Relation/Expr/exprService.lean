@@ -593,8 +593,8 @@ namespace Shared.expr
            -- has to be a relation
             cv.isRelation &&
 
-            -- has to be a relation of the quantorType
-            cv.relationOf == left_side_dotjoin_variable.relationOf &&
+            -- has to be a relation of the signature type
+            cv.relationOf == left_side_dotjoin_variable.name &&
 
             (cv.isOpened == left_side_dotjoin_variable.isOpened &&
             cv.openedFrom == left_side_dotjoin_variable.openedFrom)
