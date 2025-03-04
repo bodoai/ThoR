@@ -85,39 +85,43 @@ namespace Shared.formula
             (te.replaceCalls callables)
             (forms.map fun f => f.replaceCalls callables)
 
+  private def unhygienicUnfolder
+    (input : Unhygienic (Term))
+    : Term := Unhygienic.run do
+    return ← input
   /--
   Generates a Lean term corosponding with the type
   -/
-  partial def toTerm
+  private partial def toTerm'
     (f: formula)
     (blockName : Name)
     (variableNames : List (String)) -- to check if var or pred
     (callableVariables : List (varDecl))
-    (callablePredicates : List (commandDecl × List (expr × List (List varDecl))))
+    (callablePredicates : List (commandDecl × List (expr × List (String × List varDecl))))
     -- names that have to be pure with no namespace (quantors and args)
     (pureNames : List (String) := [])
-    : TSyntax `term := Unhygienic.run do
+    : Except String (Unhygienic (Term)) := do
 
       match f with
       | formula.string s => do
         -- Quantors dont use namespaces
         if pureNames.contains s then
-          `($(mkIdent s.toName))
+          return `($(mkIdent s.toName))
 
         else
           -- check if the ident is a variable or def
           if variableNames.contains s then
-            `((
-              ∻ $(mkIdent s!"{blockName}.vars.{s}".toName)
-            ))
+            return `((
+                      ∻ $(mkIdent s!"{blockName}.vars.{s}".toName)
+                    ))
 
           else
-            `((
-              ∻ $(mkIdent s!"{blockName}.preds.{s}".toName)
-            ))
+            return `((
+                      ∻ $(mkIdent s!"{blockName}.preds.{s}".toName)
+                    ))
 
       | formula.pred_with_args p pa => do
-        let mut term ←
+        let mut term :=
           `((
               ∻ $(mkIdent s!"{blockName}.preds.{p}".toName)
             ))
@@ -156,10 +160,10 @@ namespace Shared.formula
               vd.getSignatureReplacementName)
 
           let calledArg := pa.get! index
-          let calledVarDecls_of_arg_to_cast :=
+          let calledVarDecls_of_arg_to_cast ←
             calledArg.getCalledVariables callableVariables
           let calledVarDecls_of_arg_to_cast_joined :=
-            calledVarDecls_of_arg_to_cast.join
+            (calledVarDecls_of_arg_to_cast.map fun a => a.2).join
 
           let cast_type_as_expr_string := expr.string typeName.toString
           let cast_type_as_expr_string_rb := cast_type_as_expr_string.toStringRb
@@ -185,61 +189,66 @@ namespace Shared.formula
             cast_type_as_expr_string_rb == calledArg ||
             cast_type_equals_called_var_type
           then
-            term ← `($term $(calledArg.toTermFromBlock blockName pureNames))
+            term :=
+              `(term |
+                $(unhygienicUnfolder term)
+                $(calledArg.toTermFromBlock blockName pureNames)
+              )
 
           else
 
-            let castCommand ←
+            let castCommand : Unhygienic Term :=
               `(term |
                 cast
                 ($(calledArg.toTermFromBlock blockName pureNames):term)
                 ∷ $(cast_type_as_type_expr_relExpr.toSyntax blockName))
 
-            term ←
-              `(term | $term $castCommand)
+            term :=
+              `(term |
+                $(unhygienicUnfolder term)
+                $(unhygienicUnfolder castCommand)
+              )
 
         return term
 
       | formula.unaryRelBoolOperation op e =>
-        `(( $(op.toTerm)
+        return `(( $(op.toTerm)
             $(e.toTermFromBlock
               blockName pureNames)
           ))
 
       | formula.unaryLogicOperation op f =>
-        `(( $(op.toTerm)
-            $(f.toTerm
-              blockName variableNames callableVariables callablePredicates pureNames
-              )
-          ))
+        let fTerm ← f.toTerm' blockName variableNames callableVariables callablePredicates pureNames
+        return `(term | ( $(op.toTerm) $(unhygienicUnfolder fTerm)))
 
       | formula.binaryLogicOperation op f1 f2 =>
-        `(( $(op.toTerm)
-            $(f1.toTerm
-              blockName variableNames callableVariables callablePredicates pureNames
-              )
-            $(f2.toTerm
-              blockName variableNames callableVariables callablePredicates pureNames
-              )
+        let f1Term ←
+          f1.toTerm' blockName variableNames callableVariables callablePredicates pureNames
+        let f2Term ←
+          f2.toTerm' blockName variableNames callableVariables callablePredicates pureNames
+        return `(( $(op.toTerm)
+            $(unhygienicUnfolder f1Term)
+            $(unhygienicUnfolder f2Term)
           ))
 
       | formula.tertiaryLogicOperation op f1 f2 f3 =>
-        `(( $(op.toTerm)
-            $(f1.toTerm
-              blockName variableNames callableVariables callablePredicates pureNames
-              )
-            $(f2.toTerm
-              blockName variableNames callableVariables callablePredicates pureNames
-              )
-            $(f3.toTerm
-              blockName variableNames callableVariables callablePredicates pureNames
-              )
+        let f1Term ←
+          f1.toTerm' blockName variableNames callableVariables callablePredicates pureNames
+        let f2Term ←
+          f2.toTerm' blockName variableNames callableVariables callablePredicates pureNames
+        let f3Term ←
+          f3.toTerm' blockName variableNames callableVariables callablePredicates pureNames
+        return `(( $(op.toTerm)
+            $(unhygienicUnfolder f1Term)
+            $(unhygienicUnfolder f2Term)
+            $(unhygienicUnfolder f3Term)
           ))
+
       | formula.algebraicComparisonOperation op ae1 ae2 =>
-        `(($(op.toTerm) $(ae1.toTerm blockName) $(ae2.toTerm blockName)))
+        return `(($(op.toTerm) $(ae1.toTerm blockName) $(ae2.toTerm blockName)))
 
       | formula.relationComarisonOperation op e1 e2 =>
-        `(( $(op.toTerm)
+        return `(( $(op.toTerm)
             $(e1.toTermFromBlock
               blockName pureNames)
             $(e2.toTermFromBlock
@@ -265,49 +274,76 @@ namespace Shared.formula
 
         -- one form ist present -> see syntax (+)
         let firstForm := f.get! 0
-        let mut fTerm ←
-          `($(firstForm.toTerm
-              blockName variableNames (callableVariables ++ quantVarDecls) callablePredicates
-              (pureNames.append n)
-            ))
+        let firstFTerm ←
+          firstForm.toTerm'
+            blockName variableNames (callableVariables ++ quantVarDecls) callablePredicates
+            (pureNames.append n)
+
+        let mut completefTerm : Unhygienic (Term) :=
+          `(term | $(unhygienicUnfolder firstFTerm))
 
         for form in f.drop 1 do
-          fTerm ←
-            `(( $fTerm ∧
-                ($(form.toTerm
-                  blockName variableNames (callableVariables ++ quantVarDecls) callablePredicates
-                  (pureNames.append n)
-                ))
+          let fTerm ←
+            form.toTerm'
+              blockName variableNames (callableVariables ++ quantVarDecls) callablePredicates
+              (pureNames.append n)
+
+          completefTerm :=
+            `(( $(unhygienicUnfolder completefTerm) ∧
+                ($(unhygienicUnfolder fTerm))
               ))
 
-        fTerm ←
+        completefTerm :=
           `((
             $(mkIdent ``Formula.prop)
-            ($fTerm)
+            ($(unhygienicUnfolder completefTerm))
             ))
 
         -- singular parameter is var constructor
         if names.length == 1 then
-            `(($(mkIdent ``Formula.var) $(q.toTerm)) (
+            return `(($(mkIdent ``Formula.var) $(q.toTerm)) (
               fun ( $(names.get! 0) : ∷ $((te.toStringRb).toSyntax blockName))
-                => $fTerm))
+                => $(unhygienicUnfolder completefTerm)))
 
         -- multiple parameter is Group constructor
         else
-          let mut formulaGroup ←
+          let mut formulaGroup :=
             `(($(mkIdent ``Group.var) (
               fun ( $(names.get! 0) : ∷ $((te.toStringRb).toSyntax blockName))
-                => $(mkIdent ``Group.formula) $fTerm)))
-          for n in names.drop 1 do
-            formulaGroup ←
+                => $(mkIdent ``Group.formula) $(unhygienicUnfolder completefTerm))))
+          for n in (names.drop 1) do
+            formulaGroup :=
               `(($(mkIdent ``Group.var) (
                 fun ( $(n) : ∷ $((te.toStringRb).toSyntax blockName))
-                  => $formulaGroup)))
+                  => $(unhygienicUnfolder formulaGroup))))
           if disjunction then
-            formulaGroup ← `(($(mkIdent ``Formula.disj) $(mkIdent ``Shared.quant.all) $formulaGroup))
+            formulaGroup :=
+              `(( $(mkIdent ``Formula.disj)
+                  $(mkIdent ``Shared.quant.all)
+                  $(unhygienicUnfolder formulaGroup)
+                ))
           else
-            formulaGroup ← `(($(mkIdent ``Formula.group) $(mkIdent ``Shared.quant.all) $formulaGroup))
+            formulaGroup :=
+              `(( $(mkIdent ``Formula.group)
+                  $(mkIdent ``Shared.quant.all)
+                  $(unhygienicUnfolder formulaGroup)
+                ))
+
           return formulaGroup
+
+  def toTerm
+    (f: formula)
+    (blockName : Name)
+    (variableNames : List (String)) -- to check if var or pred
+    (callableVariables : List (varDecl))
+    (callablePredicates : List (commandDecl × List (expr × List (String × List varDecl))))
+    -- names that have to be pure with no namespace (quantors and args)
+    (pureNames : List (String) := [])
+    : Except String (Term) := do
+    let x := toTerm' f blockName variableNames callableVariables callablePredicates pureNames
+    match x with
+      | Except.error msg => throw msg
+      | Except.ok data => return unhygienicUnfolder data
 
   /--
   Parses the given syntax to the type
@@ -477,7 +513,7 @@ namespace Shared.formula
     (f : formula)
     (callablePredicates : List (commandDecl))
     (callableVariables : List (varDecl))
-    : (List (commandDecl × List (expr × List (List (varDecl))))) := Id.run do
+    : Except String (List (commandDecl × List (expr × List (String × List (varDecl))))) := do
       let callablePredicateNames := callablePredicates.map fun cp => cp.name
 
       match f with
@@ -485,55 +521,66 @@ namespace Shared.formula
           if callablePredicateNames.contains s then
             let index := callablePredicateNames.indexOf s
             let calledPredicate := callablePredicates.get! index
-            [(calledPredicate, [])]
+            return [(calledPredicate, [])]
           else
-            []
+            return []
 
         | formula.pred_with_args predicate_name predicate_arguments =>
           if callablePredicateNames.contains predicate_name then
             let index := callablePredicateNames.indexOf predicate_name
             let calledPredicate := callablePredicates.get! index
-            let calledArgumentVariables :=
-              (predicate_arguments.map
-                fun argument => (argument ,(argument.getCalledVariables callableVariables))
-              )
 
-            [(calledPredicate, calledArgumentVariables)]
+            let mut calledArgumentVariables := []
+            for arg in predicate_arguments do
+              calledArgumentVariables :=
+                calledArgumentVariables.concat
+                  (arg, (← arg.getCalledVariables callableVariables))
+
+            return [(calledPredicate, calledArgumentVariables)]
           else
-            []
+            return []
 
         | formula.unaryLogicOperation _ f =>
           f.getCalledPredicates callablePredicates callableVariables
 
         | formula.binaryLogicOperation _ f1 f2 =>
-          (f1.getCalledPredicates callablePredicates callableVariables) ++
-          (f2.getCalledPredicates callablePredicates callableVariables)
+          let f1_calls ← (f1.getCalledPredicates callablePredicates callableVariables)
+          let f2_calls ← (f2.getCalledPredicates callablePredicates callableVariables)
+          return f1_calls ++ f2_calls
 
         | formula.tertiaryLogicOperation _ f1 f2 f3 =>
-          (f1.getCalledPredicates callablePredicates callableVariables) ++
-          (f2.getCalledPredicates callablePredicates callableVariables) ++
-          (f3.getCalledPredicates callablePredicates callableVariables)
+          let f1_calls ← (f1.getCalledPredicates callablePredicates callableVariables)
+          let f2_calls ← (f2.getCalledPredicates callablePredicates callableVariables)
+          let f3_calls ← (f3.getCalledPredicates callablePredicates callableVariables)
+          return f1_calls ++ f2_calls ++ f3_calls
 
         | formula.quantification _ _ _ _ f =>
-           (f.map fun form =>
-              form.getCalledPredicates callablePredicates callableVariables).join
+          let mut result := []
+          for form in f do
+            result := result ++ (← form.getCalledPredicates callablePredicates callableVariables)
+          return result
 
-        | _ => []
+        | _ => return []
 
   /--
   Gets all calls to the `callableVariables` which includes signatures and relations.
 
-  Returns a list of the called Variables
+  The result is a list of the call (in string from) and a (possibly empty) list
+  of the concrete possible called variables (in form of varDecls). If the inner
+  list contains more than one varDecl, called variable is ambiguous and could
+  be either.
   -/
   partial def getCalledVariables
     (f : formula)
     (callableVariables : List (varDecl))
-    : List (List (varDecl)) := Id.run do
+    : Except String (List (String × List (varDecl))) := do
 
       match f with
         | formula.pred_with_args _ predicate_arguments =>
-          (predicate_arguments.map
-            fun pa => pa.getCalledVariables callableVariables).join
+          let mut result : List (String × List varDecl) := []
+          for pa in predicate_arguments do
+            result := result ++ (← pa.getCalledVariables callableVariables)
+          return result
 
         | formula.unaryRelBoolOperation _ e =>
           (e.getCalledVariables callableVariables)
@@ -542,20 +589,23 @@ namespace Shared.formula
           (f.getCalledVariables callableVariables)
 
         | formula.binaryLogicOperation _ f1 f2 =>
-          (f1.getCalledVariables callableVariables) ++
-          (f2.getCalledVariables callableVariables)
+          let f1_calls ← (f1.getCalledVariables callableVariables)
+          let f2_calls ← (f2.getCalledVariables callableVariables)
+          return f1_calls ++ f2_calls
 
         | formula.tertiaryLogicOperation _ f1 f2 f3 =>
-          (f1.getCalledVariables callableVariables) ++
-          (f2.getCalledVariables callableVariables) ++
-          (f3.getCalledVariables callableVariables)
+          let f1_calls ← (f1.getCalledVariables callableVariables)
+          let f2_calls ← (f2.getCalledVariables callableVariables)
+          let f3_calls ← (f3.getCalledVariables callableVariables)
+          return f1_calls ++ f2_calls ++ f3_calls
 
         | formula.relationComarisonOperation _ e1 e2 =>
-          (e1.getCalledVariables callableVariables) ++
-          (e2.getCalledVariables callableVariables)
+          let e1_calls ← (e1.getCalledVariables callableVariables)
+          let e2_calls ← (e2.getCalledVariables callableVariables)
+          return e1_calls ++ e2_calls
 
         | formula.quantification _ _ names te f =>
-          let typeExprRelCalls := te.getCalledVariables callableVariables
+          let typeExprRelCalls ← te.getCalledVariables callableVariables
 
           let quantVarDecls :=
             names.map fun n =>
@@ -569,11 +619,13 @@ namespace Shared.formula
                 (type := te)
                 (requiredDecls := [])
 
-          typeExprRelCalls ++
-          (f.map fun form =>
-              form.getCalledVariables (callableVariables ++ quantVarDecls)).join
+          let mut result : List (String × List varDecl) := []
+          for form in f do
+            result := result ++ (← form.getCalledVariables (callableVariables ++ quantVarDecls))
 
-        | _ => []
+          return typeExprRelCalls ++ result
+
+        | _ => return []
 
   partial def simplifyDomainRestrictions
     (f : formula)
@@ -643,6 +695,49 @@ namespace Shared.formula
         (t.insertModuleVariables moduleVariables openVariables)
         (f.map fun f =>
           f.insertModuleVariables moduleVariables openVariables)
+      | _ => f
+
+  /--
+  replaces calls to "this" (current module), with a call to the given module
+  name.
+  -/
+  partial def replaceThisCalls
+    (f : formula)
+    (moduleName : String)
+    : formula := Id.run do
+    match f with
+      | formula.pred_with_args p args =>
+        pred_with_args
+          p
+          (args.map fun arg =>
+            arg.replaceThisCalls moduleName)
+      | formula.unaryRelBoolOperation op e =>
+        formula.unaryRelBoolOperation
+          op
+          (e.replaceThisCalls moduleName)
+      | formula.unaryLogicOperation op f =>
+        formula.unaryLogicOperation
+          op
+          (f.replaceThisCalls moduleName)
+      | formula.binaryLogicOperation op f1 f2 =>
+        formula.binaryLogicOperation
+          op
+          (f1.replaceThisCalls moduleName)
+          (f2.replaceThisCalls moduleName)
+      | formula.tertiaryLogicOperation op f1 f2 f3 =>
+        formula.tertiaryLogicOperation
+          op
+          (f1.replaceThisCalls moduleName)
+          (f2.replaceThisCalls moduleName)
+          (f3.replaceThisCalls moduleName)
+      | formula.quantification q d n t f =>
+        formula.quantification
+          q
+          d
+          n
+          (t.replaceThisCalls moduleName)
+          (f.map fun f =>
+            f.replaceThisCalls moduleName)
       | _ => f
 
 end Shared.formula

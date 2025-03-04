@@ -123,26 +123,53 @@ to be better digestible for further computation and transformation into Lean.
 
         lookedAtNames := lookedAtNames.concat alloyName
 
+    /-- structure to encapsulate variableCalls -/
+    private structure variableCalls where
+      (relationCalls : List (String × List (varDecl)))
+      (signatureCalls : List (String × List (varDecl)))
+
+    /-- gets relation and signature calls of formulas -/
+    private def get_relation_and_signature_calls
+      (formulas : List (formula))
+      (callableVariables : List (varDecl))
+      : Except String variableCalls
+        := do
+
+      let mut calledVariables : List (String × List (varDecl)) := []
+      for form in formulas do
+          calledVariables :=
+            calledVariables ++ (← form.getCalledVariables callableVariables)
+
+      let calledRelations : List (String × List (varDecl)) :=
+        calledVariables.map fun elem =>
+          (elem.1, elem.2.filter fun elem => elem.isRelation)
+
+      let calledSignatures : List (String × List (varDecl)) :=
+        calledVariables.map fun elem =>
+          (elem.1, elem.2.filter fun elem => !elem.isRelation)
+
+      return {  relationCalls := calledRelations,
+                signatureCalls := calledSignatures  }
+
     private def checkRelationCalls
       (st : SymbolTable)
       : Except String Unit := do
 
-        let formulas := st.getAllFormulas
+        let variableCalls ←
+          get_relation_and_signature_calls st.getAllFormulas st.variableDecls
 
-        let calls := (formulas.map
-            fun f => f.getCalledVariables st.variableDecls).join
+        for relationCall in variableCalls.relationCalls do
 
-        let relCalls := calls.map fun f => f.filter fun i => i.isRelation
+          let calledName := relationCall.1
+          let calledDecls := relationCall.2
 
-        for call in relCalls do
-
-          if call.isEmpty then
+          if calledDecls.isEmpty then
             continue
 
-          if call.length > 1 then
-            throw s!"The call to {(call.get! 0).name} is ambiguous. \
+          if calledDecls.length > 1 then
+            throw s!"The call to {calledName} is ambiguous. \
             Could be the relation from any of \
-            {call.map fun c => s!"{c.openedFrom}/{c.relationOf}/{c.name}"}"
+            {calledDecls.map fun c => s!"{c.openedFrom}/{c.relationOf}/{c.name}"}"
 
     /--
     Checks if the called signatures are valid and not ambiguous
@@ -157,15 +184,29 @@ to be better digestible for further computation and transformation into Lean.
       for location in allCallLocations do
         for signatureCall in location.signatureCalls do
 
-          if signatureCall.isEmpty then
+          let call := signatureCall.1
+          let calledSigDecls := signatureCall.2
+
+          if calledSigDecls.isEmpty then
+            let index := location.signatureCalls.indexOf signatureCall
+            let relCall := location.relationCalls.get! index
+            let calledRelDecls := relCall.2
+
+            if calledRelDecls.isEmpty then
+              throw s!"The name {call} cannot be found. \
+              (In \
+              {(if location.isFact then "fact " else "")}\
+              {(if location.isAssert then "assert " else "")}\
+              {(if location.isPredicate then "predicate " else "")}\
+              {location.name})"
             continue
 
-          if signatureCall.length > 1 then
+          if calledSigDecls.length > 1 then
             throw s!"The calls for signature {location.name} to \
-            {(signatureCall.get! 0).name} are ambiguous. \
-            Could be any of {signatureCall}"
+            {call} are ambiguous. \
+            Could be any of {signatureCall.2}"
 
-          let calledSignature := signatureCall.get! 0
+          let calledSignature := signatureCall.2.get! 0
 
           -- temp quantors are not to be checked here
           if calledSignature.isQuantor then
@@ -193,7 +234,7 @@ to be better digestible for further computation and transformation into Lean.
     -/
     private def checkPredCallArgNumber
       (calledPredDecl : predDecl)
-      (calledArguments : List (expr × List (List varDecl)))
+      (calledArguments : List (expr × List (String × List varDecl)))
       : Except String Unit := do
         let requiredArgNumber :=
           (calledPredDecl.args.map fun a => a.names).join.length
@@ -389,14 +430,17 @@ to be better digestible for further computation and transformation into Lean.
     (inputST : SymbolTable)
     (predDecls : List (predDecl))
     (moduleName : String := default)
-    : SymbolTable := Id.run do
+    : Except String SymbolTable := do
 
       let mut st := inputST
 
       for predDecl in predDecls do
 
         -- first simplyfiy the domain restrictions
-        let predDecl := predDecl.simplifyDomainRestrictions st
+        let mut predDecl := predDecl.simplifyDomainRestrictions st
+
+        if moduleName != default then
+          predDecl := predDecl.replaceThisCalls moduleName
 
         -- get list of referenced signatures and signature fields
         let reqVars : List (String) := predDecl.getReqVariables.eraseDups
@@ -404,16 +448,9 @@ to be better digestible for further computation and transformation into Lean.
         -- get list of referenced preds
         let reqDefs : List (String) := predDecl.getReqDefinitions.eraseDups
 
-        let calledVariables : List (List (varDecl)) :=
-          (predDecl.forms.map fun f => f.getCalledVariables st.variableDecls).join
-
-        let calledRelations : List (List (varDecl)) :=
-          calledVariables.map fun elem =>
-            elem.filter fun elem => elem.isRelation
-
-        let calledSignatures : List (List (varDecl)) :=
-          calledVariables.map fun elem =>
-            elem.filter fun elem => !elem.isRelation
+        -- get relation and signature calls
+        let variableCalls ←
+          get_relation_and_signature_calls predDecl.forms st.variableDecls
 
         let mut declarationName := predDecl.name
         /-
@@ -442,8 +479,8 @@ to be better digestible for further computation and transformation into Lean.
             (requiredVars := reqVars)
             (requiredDefs := reqDefs)
             (predCalls := [])
-            (relationCalls := calledRelations)
-            (signatureCalls := calledSignatures)
+            (relationCalls := variableCalls.relationCalls)
+            (signatureCalls := variableCalls.signatureCalls)
           )
 
         st :=
@@ -454,9 +491,11 @@ to be better digestible for further computation and transformation into Lean.
       -- add calls to preds only after all preds are defined
       let mut newPredDefDecls := []
       for predDefDecl in st.defDecls do
-        let predicateCalls :=
-          (predDefDecl.formulas.map
-            fun f => f.getCalledPredicates st.defDecls st.variableDecls).join
+        let mut predicateCalls := []
+        for form in predDefDecl.formulas do
+          predicateCalls :=
+            predicateCalls ++
+            (← form.getCalledPredicates st.defDecls st.variableDecls)
 
         let newPredDefDecl :=
           commandDecl.mk
@@ -483,34 +522,28 @@ to be better digestible for further computation and transformation into Lean.
     (inputST : SymbolTable)
     (factDecls : List (factDecl))
     (moduleName : String := default)
-    : SymbolTable := Id.run do
+    : Except String SymbolTable := do
 
       let mut st := inputST
 
       for factDecl in factDecls do
 
-        let factDecl := factDecl.simplifyDomainRestrictions st
+        let mut factDecl := factDecl.simplifyDomainRestrictions st
 
-        let predicateCalls :=
-          (factDecl.formulas.map
-            fun f =>
-              f.getCalledPredicates
+        if moduleName != default then
+          factDecl := factDecl.replaceThisCalls moduleName
+
+        let mut predicateCalls := []
+        for form in factDecl.formulas do
+          predicateCalls :=
+            predicateCalls ++
+            (← form.getCalledPredicates
                 st.getPredicateDeclarations
-                st.variableDecls
-          ).join
+                st.variableDecls)
 
-        let calledVariables : List (List (varDecl)) :=
-          (factDecl.formulas.map fun f =>
-            f.getCalledVariables st.variableDecls
-          ).join
-
-        let calledRelations : List (List (varDecl)) :=
-          calledVariables.map fun elem =>
-            elem.filter fun elem => elem.isRelation
-
-        let calledSignatures : List (List (varDecl)) :=
-          calledVariables.map fun elem =>
-            elem.filter fun elem => !elem.isRelation
+        -- get relation and signature calls
+        let variableCalls ←
+          get_relation_and_signature_calls factDecl.formulas st.variableDecls
 
         -- get list of the names of the referenced signatures and signature fields
         let reqVars : List (String) := factDecl.getReqVariables.eraseDups
@@ -531,13 +564,13 @@ to be better digestible for further computation and transformation into Lean.
           (
             commandDecl.mk
             (name := declarationName)
-            (args := [])
+            (isFact := true)
             (formulas := factDecl.formulas)
             (requiredVars := reqVars)
             (requiredDefs := reqDefs)
             (predCalls := predicateCalls)
-            (relationCalls := calledRelations)
-            (signatureCalls := calledSignatures)
+            (relationCalls := variableCalls.relationCalls)
+            (signatureCalls := variableCalls.signatureCalls)
           )
 
         st :=
@@ -556,34 +589,28 @@ to be better digestible for further computation and transformation into Lean.
     (inputST : SymbolTable)
     (assertDecls : List (assertDecl))
     (moduleName : String := default)
-    : SymbolTable := Id.run do
+    : Except String SymbolTable := do
 
       let mut st := inputST
 
       for assertDecla in assertDecls do
 
-        let assertDecla := assertDecla.simplifyDomainRestrictions st
+        let mut assertDecla := assertDecla.simplifyDomainRestrictions st
 
-        let predicateCalls :=
-          (assertDecla.formulas.map
-            fun f =>
-              f.getCalledPredicates
+        if moduleName != default then
+          assertDecla := assertDecla.replaceThisCalls moduleName
+
+        let mut predicateCalls := []
+        for form in assertDecla.formulas do
+          predicateCalls :=
+            predicateCalls ++
+            (← form.getCalledPredicates
                 st.getPredicateDeclarations
-                st.variableDecls
-          ).join
+                st.variableDecls)
 
-        let calledVariables : List (List (varDecl)) :=
-          (assertDecla.formulas.map fun f =>
-            f.getCalledVariables st.variableDecls
-          ).join
-
-        let calledRelations : List (List (varDecl)) :=
-          calledVariables.map fun elem =>
-            elem.filter fun elem => elem.isRelation
-
-        let calledSignatures : List (List (varDecl)) :=
-          calledVariables.map fun elem =>
-            elem.filter fun elem => !elem.isRelation
+         -- get relation and signature calls
+        let variableCalls ←
+          get_relation_and_signature_calls assertDecla.formulas st.variableDecls
 
         -- get list of the names of the referenced signatures and signature fields
         let reqVars : List (String) := assertDecla.getReqVariables.eraseDups
@@ -604,13 +631,13 @@ to be better digestible for further computation and transformation into Lean.
           (
             commandDecl.mk
             (name := declarationName)
-            (args := [])
+            (isAssert := true)
             (formulas := assertDecla.formulas)
             (requiredVars := reqVars)
             (requiredDefs := reqDefs)
             (predCalls := predicateCalls)
-            (relationCalls := calledRelations)
-            (signatureCalls := calledSignatures)
+            (relationCalls := variableCalls.relationCalls)
+            (signatureCalls := variableCalls.signatureCalls)
           )
 
         st :=
@@ -623,7 +650,7 @@ to be better digestible for further computation and transformation into Lean.
     private partial def addModule
       (input : SymbolTable)
       (ast : AST)
-      : SymbolTable := Id.run do
+      : Except String SymbolTable := do
         let mut st := input
 
         let mut module_name := ast.name.toString
@@ -639,15 +666,15 @@ to be better digestible for further computation and transformation into Lean.
           add all sigs, preds, facts and asserts of the current MAIN module
         -/
         st := st.addSigs ast.sigDecls module_name
-        st := st.addPreds ast.predDecls module_name
-        st := st.addFacts ast.factDecls module_name
-        st := st.addAsserts ast.assertDecls module_name
+        st ← st.addPreds ast.predDecls module_name
+        st ←  st.addFacts ast.factDecls module_name
+        st ←  st.addAsserts ast.assertDecls module_name
 
         /-
           if there are modules left, they have to be addes as well
         -/
         for module in ast.openedModules do
-          st := st.addModule module
+          st ← st.addModule module
 
         return st
 
@@ -674,20 +701,20 @@ to be better digestible for further computation and transformation into Lean.
 
         -- Add elements from OPENED (imported) modules
         for openedModuleAST in ast.openedModules do
-          st := st.addModule openedModuleAST
+          st ←  st.addModule openedModuleAST
 
         -- Add the elements of the CURRENT module (block)
         -- sigs
         st := st.addSigs ast.sigDecls
 
         -- facts
-        st := st.addFacts ast.factDecls
+        st ← st.addFacts ast.factDecls
 
         --preds
-        st := st.addPreds ast.predDecls
+        st ← st.addPreds ast.predDecls
 
         --asserts
-        st := st.addAsserts ast.assertDecls
+        st ← st.addAsserts ast.assertDecls
 
         -- CHECKS
         if let Except.error msg := st.checkSymbols ast then
