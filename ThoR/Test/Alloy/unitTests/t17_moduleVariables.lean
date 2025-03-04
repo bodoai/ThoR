@@ -5,12 +5,33 @@ Authors: s. file CONTRIBUTORS
 -/
 import ThoR
 
-alloy m1 [exactly lol]
+alloy m1/e [exactly lol]
   sig a {
     r : lol
   }
 end
 ~create m1
+
+alloy m1/e/mv [exactly lol, kek]
+  sig a {
+    r : lol,
+    q : kek
+  }
+end
+~create m1/e/mv
+
+alloy m1 [lol]
+  sig a {
+    r : lol
+  }
+end
+~create m1/e
+
+~alloy m1/duplicated/mv [lol, lol]
+  sig a {
+    r : lol
+  }
+end
 
 ~alloy m2
   open m1

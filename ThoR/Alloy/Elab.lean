@@ -454,13 +454,14 @@ private def createCommands (st : SymbolTable)
     return commandList
 
 declare_syntax_cat moduleVar
-syntax ("exactly" ident) : moduleVar
+syntax ("exactly")? ident : moduleVar
 
 private def moduleVar.getIdent
   (mv : Lean.TSyntax `moduleVar)
   : Ident :=
     match mv with
-      | `(moduleVar | exactly $i) => i
+      | `(moduleVar | exactly $i:ident) => i
+      | `(moduleVar | $i:ident) => i
       | _ => unreachable!
 
 /--
@@ -473,7 +474,7 @@ Options:
 syntax (name := alloyBlock)
   ("#" <|> "~")?
   "alloy"
-  (("module")? separatedNamespace ("[" moduleVar+ "]")?)?
+  (("module")? separatedNamespace ("[" moduleVar,+ "]")?)?
   specification*
   "end"
   : command
@@ -574,6 +575,21 @@ private def evalAlloyBlock
         s!"AST without opened Modules: \n
         {ast.toString}"
 
+    let module_variables_with_number_of_occurences :=
+      ( ast.modulVariables.map
+        fun elem => (elem, ast.modulVariables.count elem)
+      ).dedup
+
+    for module_variable in module_variables_with_number_of_occurences do
+      let module_variable_name := module_variable.1
+      let module_variable_number_of_occurences := module_variable.2
+
+      if module_variable_number_of_occurences > 1 then
+        logError s!"The Module {ast.name} has \
+        {module_variable_number_of_occurences} module variables \
+        with the name {module_variable_name}. Module variable names \
+        must be unique."
+
     -- try to open all modules
     let ast_withExcept := openModules ast monadeEnv
 
@@ -662,14 +678,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
 
           evalAlloyBlock blockName specifications
 
-      | `(alloy $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(alloy $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
           let blockName :=
             (separatedNamespace.toType blockName).representedNamespace
 
           let moduleVariables :=
-            (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+            (mvs.getElems.map
+              fun mv =>
+              (moduleVar.getIdent mv).getId.toString
+            ).toList
 
           evalAlloyBlock
             (moduleVariables := moduleVariables)
@@ -684,14 +703,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
 
           evalAlloyBlock blockName specifications
 
-      | `(alloy module $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(alloy module $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
           let blockName :=
             (separatedNamespace.toType blockName).representedNamespace
 
           let moduleVariables :=
-            (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+            (mvs.getElems.map
+              fun mv =>
+              (moduleVar.getIdent mv).getId.toString
+            ).toList
 
           evalAlloyBlock
             (moduleVariables := moduleVariables)
@@ -713,14 +735,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
               blockName
               specifications
 
-      | `(#alloy $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(#alloy $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
 
             let moduleVariables :=
-              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+              (mvs.getElems.map
+                fun mv =>
+                (moduleVar.getIdent mv).getId.toString
+              ).toList
 
             evalAlloyBlock
               (logging := true)
@@ -739,14 +764,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
               blockName
               specifications
 
-      | `(#alloy module $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(#alloy module $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
 
             let moduleVariables :=
-              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+              (mvs.getElems.map
+                fun mv =>
+                (moduleVar.getIdent mv).getId.toString
+              ).toList
 
             evalAlloyBlock
               (logging := true)
@@ -768,14 +796,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
             Lean.Elab.Command.failIfSucceeds
               (evalAlloyBlock blockName specifications)
 
-      | `(~alloy $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(~alloy $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
 
             let moduleVariables :=
-              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+              (mvs.getElems.map
+                fun mv =>
+                (moduleVar.getIdent mv).getId.toString
+              ).toList
 
             Lean.Elab.Command.failIfSucceeds
               (evalAlloyBlock
@@ -790,14 +821,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
             Lean.Elab.Command.failIfSucceeds
               (evalAlloyBlock blockName specifications)
 
-      | `(~alloy module $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(~alloy module $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
 
             let moduleVariables :=
-              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+              (mvs.getElems.map
+                fun mv =>
+                (moduleVar.getIdent mv).getId.toString
+              ).toList
 
             Lean.Elab.Command.failIfSucceeds
               (evalAlloyBlock
