@@ -98,6 +98,7 @@ elab " rewrite " rw_target:ident " to " rw_result:term  : tactic =>
       let declType ← Lean.Meta.inferType declExpr -- **NEW:** Find the type.
       if declName = rw_target.getId
       then
+        -- dbg_trace f!"then: {declType} = {declType}"
         -- dbg_trace f!"then: {declName} = {h1.getId}"
         let declTypeDup := mkAppN (Expr.const ``Iff []) #[declType,declType]
         let declTypeDupProof :=
@@ -120,14 +121,24 @@ elab " rewrite " rw_target:ident " to " rw_result:term  : tactic =>
           simp [ThoR.HDotjoin.hDotjoin]
           dsimp [HAdd.hAdd]))
 
-        let h2_new ← Lean.Core.mkFreshUserName `h
-        Lean.Elab.Tactic.evalTactic (← `(tactic| dup_rel_l $rw_result:term as $(mkIdent h2_new):ident))
+        Lean.Elab.Tactic.withMainContext do
+          let ctx ← Lean.MonadLCtx.getLCtx -- get the local context.
+          ctx.forM fun decl: Lean.LocalDecl => do
+            let declExpr := decl.toExpr -- Find the expression of the declaration.
+            let declName := decl.userName -- Find the name of the declaration.
+            let declType ← Lean.Meta.inferType declExpr -- **NEW:** Find the type.
+            if declName = h1_new
+            then
+              dbg_trace f!"h1_new: {declType}"
 
-        Lean.Elab.Tactic.evalTactic (← `(tactic| rewrite [Rules.dotjoin.add.dist.r] at $(mkIdent h1_new):ident))
+          let h2_new ← Lean.Core.mkFreshUserName `h
+          Lean.Elab.Tactic.evalTactic (← `(tactic| dup_rel_l $rw_result:term as $(mkIdent h2_new):ident))
 
-        Lean.Elab.Tactic.evalTactic (← `(tactic| apply (($(mkIdent h2_new)).mp ∘ ($(mkIdent h1_new)).mp) at $rw_target:ident))
+          Lean.Elab.Tactic.evalTactic (← `(tactic| rewrite [Rules.dotjoin.add.dist.r] at $(mkIdent h1_new):ident))
 
-        Lean.Elab.Tactic.evalTactic (← `(tactic| clear $(mkIdent h1_new) $(mkIdent h2_new)))
+          Lean.Elab.Tactic.evalTactic (← `(tactic| apply (($(mkIdent h2_new)).mp ∘ ($(mkIdent h1_new)).mp) at $rw_target:ident))
+
+          Lean.Elab.Tactic.evalTactic (← `(tactic| clear $(mkIdent h1_new) $(mkIdent h2_new)))
 
 lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   unfold NoSelfGrandpa
