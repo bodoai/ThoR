@@ -131,13 +131,13 @@ private def createDefOrAxiomCommand
     let tupleSetArg
       : Array (TSyntax ``Lean.Parser.Term.bracketedBinderF) :=
     #[
-      (← `(Lean.Parser.Term.bracketedBinderF |
+      (unhygienicUnfolder `(Lean.Parser.Term.bracketedBinderF |
         {$(baseType.ident) : Type}
       )),
-      (← `(Lean.Parser.Term.bracketedBinderF |
+      (unhygienicUnfolder `(Lean.Parser.Term.bracketedBinderF |
         [$(mkIdent ``ThoR.TupleSet) $(baseType.ident)]
       )),
-      (← `(Lean.Parser.Term.bracketedBinderF |
+      (unhygienicUnfolder `(Lean.Parser.Term.bracketedBinderF |
         [$(mkIdent s!"{blockName}.vars".toName) $(baseType.ident)]
       ))
     ]
