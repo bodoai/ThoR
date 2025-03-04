@@ -159,7 +159,7 @@ namespace Shared.expr
         expr.unaryRelOperation op (e.toStringRb)
       | expr.dotjoin dj e1 e2 =>
         expr.dotjoin dj (e1.toStringRb) (e2.toStringRb)
-      | e => e
+      | _ => e
 
   /--
   Generates a syntax representation of the type
@@ -490,10 +490,13 @@ namespace Shared.expr
       | _ => default
 
   /--
-  Gets all calls to the `callableVariables` which includes signatures and relations
+  Gets all calls to the `callableVariables` which includes signatures and
+  relations
 
-  The result is a list of Lists of called variables. If the inner List contains more
-  than one varDecl, called variable is ambiguous and could be either.
+  The result is a list of the call (in string from) and a (possibly empty) list
+  of the concrete possible called variables (in form of varDecls). If the inner
+  list contains more than one varDecl, called variable is ambiguous and could
+  be either.
   -/
   def getCalledVariables
     (e : expr)
@@ -507,7 +510,7 @@ namespace Shared.expr
     -/
     (right_side_dotjoin : Bool := false)
     (left_side_dotjoin_variable : varDecl := default)
-    : (List (List (varDecl))) := Id.run do
+    : Except String (List (String × List (varDecl))) := do
       let callableVariableNames := (callableVariables.map fun cv => cv.name)
 
       match e with
@@ -522,7 +525,7 @@ namespace Shared.expr
         -- there is only one variable with the give name
         if indices.length == 1 then
           let calledVariable := callableVariables.get! (indices.get! 0)
-          return [[calledVariable]]
+          return [(s,[calledVariable])]
 
         -- get possible variables
         let possibleCalledVariables := indices.foldl
@@ -533,12 +536,12 @@ namespace Shared.expr
         if there is not special dotjoin case, then return all possible
         variables. (The called variable is ambiguous)
         -/
-        if !right_side_dotjoin then return [possibleCalledVariables]
+        if !right_side_dotjoin then return [(s, possibleCalledVariables)]
 
         /-
         Left side must not be a relation
         -/
-        if left_side_dotjoin_variable.isRelation then return [possibleCalledVariables]
+        if left_side_dotjoin_variable.isRelation then return [(s, possibleCalledVariables)]
 
         /-
         If the left side is a quantor, the type has to be atomic
@@ -549,7 +552,7 @@ namespace Shared.expr
             | typeExpr.arrowExpr _ => false
             | _ => true
 
-          if !isAtomic then return [possibleCalledVariables]
+          if !isAtomic then return [(s, possibleCalledVariables)]
 
           let possibleSignatures :=
             callableVariables.filter
@@ -566,7 +569,7 @@ namespace Shared.expr
             possibleSignatures.isEmpty ||
             possibleSignatures.length > 1
           then
-            return [possibleCalledVariables]
+            return [(s, possibleCalledVariables)]
 
           let signature := (possibleSignatures.get! 0)
 
@@ -581,7 +584,7 @@ namespace Shared.expr
             (cv.isOpened == signature.isOpened &&
             cv.openedFrom == signature.openedFrom)
 
-          return [calledVariable]
+          return [(s, calledVariable)]
 
         -- if left side is signature (not quantor)
         else
@@ -596,36 +599,46 @@ namespace Shared.expr
             (cv.isOpened == left_side_dotjoin_variable.isOpened &&
             cv.openedFrom == left_side_dotjoin_variable.openedFrom)
 
-          return [calledVariable]
+          return [(s, calledVariable)]
 
       | expr.callFromOpen sn =>
-        let fullName := sn.representedNamespace.getId.toString
-        let components := fullName.splitOn "."
+        let fullName := sn.representedNamespace.getId.toString.replace "." "/"
+        let components := sn.representedNamespace.getId.components
 
         let calledVariableName := components.getLast!
 
         let possibleCalledVariables :=
           callableVariables.filter
             fun cv =>
-              cv.name == calledVariableName
+              cv.name == calledVariableName.toString
 
         -- if there is only one possible value
-        if possibleCalledVariables.length == 1 then return [possibleCalledVariables]
+        if possibleCalledVariables.length == 1 then
+          return [(fullName, possibleCalledVariables)]
 
         -- namespace if the called Variable is a signature
         let sigNamespace :=
           ((components.take (components.length - 1)).drop 1).foldl
             (fun result current => s!"{result}_{current}")
-            (components.get! 0)
+            (components.get! 0).toString
+
+        -- alternate namespace if you use alloy style access
+        let alternateSigNamespace :=
+          ((components.take (components.length - 1)).drop (components.length - 2))
 
         -- the signature name if it is a relation
-        let possibleSignatureName := components.get! (components.length - 2)
+        let possibleSignatureName :=
+          (components.get! (components.length - 2)).toString
 
         -- the namespace with the last element removed (assumend to be a sig name)
         let relNamespace :=
           ((components.take (components.length - 2)).drop 1).foldl
             (fun result current => s!"{result}_{current}")
-            (components.get! 0)
+            (components.get! 0).toString
+
+        -- alternate namespace if you use alloy style access
+        let alternateRelNamespace :=
+          ((components.take (components.length - 2)).drop (components.length - 3))
 
         let calledVariables := possibleCalledVariables.filter
           fun pcv =>
@@ -633,35 +646,79 @@ namespace Shared.expr
             (
               pcv.isRelation &&
               pcv.relationOf == possibleSignatureName &&
-              pcv.openedFrom == relNamespace
+              (
+                (pcv.openedFrom == relNamespace) ||
+                (
+                  -- on the alternate namespace only the last element counts
+                  !alternateRelNamespace.isEmpty &&
+                  (
+                    (pcv.openedFrom.splitOn "_").getLast! ==
+                    alternateRelNamespace.getLast!.toString
+                  )
+                ) ||
+                (
+                  -- or this is implicit
+                  (pcv.openedFrom == "this") &&
+                  (pcv.isOpened == false) &&
+                  (alternateRelNamespace.isEmpty)
+                )
+              )
             ) ||
             -- or signature with correct namespace
             (
               !pcv.isRelation &&
-              pcv.openedFrom == sigNamespace
+              (
+                (pcv.openedFrom == sigNamespace) ||
+                (
+                  -- on the alternate namespace only the last element counts
+                  !alternateSigNamespace.isEmpty &&
+                  (
+                    (pcv.openedFrom.splitOn "_").getLast! ==
+                    alternateSigNamespace.getLast!.toString
+                  )
+                )
+              )
             )
 
-        return [calledVariables]
+        return [(fullName, calledVariables)]
 
       | expr.unaryRelOperation _ e =>
         e.getCalledVariables callableVariables
 
       | expr.binaryRelOperation _ e1 e2 =>
-        (e1.getCalledVariables callableVariables) ++
-          (e2.getCalledVariables callableVariables)
+        let e1_calls ← (e1.getCalledVariables callableVariables)
+        let e2_calls ← (e2.getCalledVariables callableVariables)
+        return e1_calls ++ e2_calls
 
       | expr.dotjoin _ e1 e2 =>
         /-TODO: As soons as it is possible to get the type of exprs then get it here-/
         /-Take the last possible expression -/
-        let leftSideVarDecl := (e1.getCalledVariables callableVariables).getLast!.getLast!
+        let leftSideCalls ← (e1.getCalledVariables callableVariables)
 
-        (e1.getCalledVariables callableVariables) ++
+        if leftSideCalls.isEmpty then
+          throw s!"The left side of {e1}.{e2} has no calls."
+
+        let leftSideVarDecls := leftSideCalls.getLast!.2
+
+        if leftSideVarDecls.isEmpty then
+          throw s!"No possible variable for the call to \
+          {leftSideCalls.getLast!.1} could be found"
+
+        if leftSideVarDecls.length > 1 then
+          throw s!"The left side of {e1}.{e2} is ambiguous. It could be any \
+          of ({leftSideVarDecls})"
+
+        let leftSideVarDecl := leftSideCalls.getLast!.2.getLast!
+
+        let rightSideCalls ←
           (e2.getCalledVariables
-            (right_side_dotjoin := true)
-            (left_side_dotjoin_variable := leftSideVarDecl)
-            callableVariables)
+          (right_side_dotjoin := true)
+          (left_side_dotjoin_variable := leftSideVarDecl)
+          callableVariables)
 
-      | _ => []
+        return leftSideCalls ++ rightSideCalls
+
+      | _ => return []
 
   def insertModuleVariables
     (e : expr)
@@ -689,6 +746,43 @@ namespace Shared.expr
             dj
             (e1.insertModuleVariables moduleVariables openVariables)
             (e2.insertModuleVariables moduleVariables openVariables)
+
+        | _ => e
+
+  /--
+  replaces calls to "this" (current module), with a call to the given module
+  name.
+  -/
+  def replaceThisCalls
+    (e : expr)
+    (moduleName : String)
+    : expr := Id.run do
+      match e with
+
+        | expr.callFromOpen sn =>
+          let components := sn.representedNamespace.getId.components
+          if !components.get! 0 == `this then return e
+          let moduleName := (moduleName.splitOn "_").getLast!
+          let new_components := [moduleName.toName] ++ (components.drop 1)
+          let new_ident := mkIdent (Name.fromComponents new_components)
+
+          expr.callFromOpen
+            (separatedNamespace.mk new_ident)
+
+        | expr.unaryRelOperation op e =>
+          expr.unaryRelOperation
+            op
+            (e.replaceThisCalls moduleName)
+        | expr.binaryRelOperation op e1 e2 =>
+          expr.binaryRelOperation
+            op
+            (e1.replaceThisCalls moduleName)
+            (e2.replaceThisCalls moduleName)
+        | expr.dotjoin dj e1 e2 =>
+          expr.dotjoin
+            dj
+            (e1.replaceThisCalls moduleName)
+            (e2.replaceThisCalls moduleName)
 
         | _ => e
 
