@@ -5,6 +5,9 @@ import ThoR.Rules.dotjoin
 import ThoR.Rules.eq
 import Lean
 import Lean.Meta.Tactic.Intro
+
+import ThoR.Alloy.Delab
+
 open Lean Lean.Elab PrettyPrinter Command Term Lean.Elab.Tactic
 
 alloy
@@ -51,117 +54,124 @@ create language/grandpa1
 
 startTestBlock language.grandpa1
 
-syntax "dup" term "as" ident : tactic
+namespace lift
+  open ThoR
+
+  /- predicates -/
+  lemma subset (R : Type) [TupleSet R] {n : ℕ} {t1 t2 : RelType R n} {a : Rel t1} {b : Rel t2} : a.relation ⊂ b.relation ↔ a ⊂ b := by
+    dsimp [HSubset.hSubset]
+    dsimp [Rel.subset]
+    trivial
+
+  lemma subset' (R : Type) [TupleSet R] {n : ℕ} {t1 t2 : RelType R n} {a : Rel t1} {b : Rel t2} : Subset.subset a.relation b.relation ↔ a ⊂ b := by
+    dsimp [HSubset.hSubset]
+    dsimp [Rel.subset]
+    trivial
+
+  lemma equal (R : Type) [TupleSet R] {n : ℕ} {t1 t2 : RelType R n} {a : Rel t1} {b : Rel t2} : a.relation = b.relation ↔ a ≡ b := by
+    dsimp [HEqual.hEqual]
+    trivial
+
+  lemma nEqual (R : Type) [TupleSet R] {n : ℕ} {t1 t2 : RelType R n} {a : Rel t1} {b : Rel t2} : a.relation ≠ b.relation ↔ a ≢ b := by
+    dsimp [HEqual.hEqual]
+    trivial
+
+  lemma mult.no (R : Type) [TupleSet R] {n : ℕ} {t : RelType R n} {a : Rel t} : SetMultPredicates.no a.relation ↔ SetMultPredicates.no a := by
+    simp [SetMultPredicates.no]
+  lemma mult.lone (R : Type) [TupleSet R] {n : ℕ} {t : RelType R n} {a : Rel t} : SetMultPredicates.lone a.relation ↔ SetMultPredicates.lone a := by
+    simp [SetMultPredicates.lone]
+  lemma mult.one (R : Type) [TupleSet R] {n : ℕ} {t : RelType R n} {a : Rel t} : SetMultPredicates.one a.relation ↔ SetMultPredicates.one a := by
+    simp [SetMultPredicates.one]
+  lemma mult.some (R : Type) [TupleSet R] {n : ℕ} {t : RelType R n} {a : Rel t} : SetMultPredicates.some a.relation ↔ SetMultPredicates.some a := by
+    simp [SetMultPredicates.some]
+
+  /- binary operators -/
+  -- TODO to be completed
+  lemma add (R : Type) [TupleSet R] {n : ℕ} {t1 t2 : RelType R n} {a : Rel t1} {b : Rel t2} : a.relation + b.relation = (a + b).relation := by
+    dsimp [HAdd.hAdd]
+
+  lemma add' (R : Type) [TupleSet R] {n : ℕ} {t1 t2 : RelType R n} {a : Rel t1} {b : Rel t2} : Add.add a.relation b.relation = (a + b).relation := by
+    dsimp [HAdd.hAdd]
+
+  lemma dotjoin (R : Type) [TupleSet R] {n1 n2 : ℕ} {t1 : RelType R (n1 + 1)} {t2 : RelType R (n2 + 1)} {a : Rel t1} {b : Rel t2} : a.relation ⋈ b.relation = (a ⋈ b).relation := by
+    dsimp [HDotjoin.hDotjoin]
+
+  /- unary operators -/
+  -- TODO to be completed
+  lemma transclos (R : Type) [TupleSet R] {t : RelType R 2} {a : Rel t} : ^ a.relation = (^ a).relation := by
+    dsimp [HTransclos.hTransclos]
+
+end lift
+
+syntax " thor_lift_pred " " at " Lean.Parser.Tactic.locationHyp : tactic
 macro_rules
-  | `(tactic|dup $t:term as $hypothesis:ident) =>
-  `(tactic|
-    have $hypothesis : $(mkIdent ``Iff) $t $t := by simp)
+| `(tactic| thor_lift_pred at $hyp) => `(tactic|
+  first
+    | rw [← lift.equal] at $hyp
+    | rw [← lift.nEqual] at $hyp
+    | rw [← lift.subset] at $hyp
+    | rw [← lift.mult.no] at $hyp
+    | rw [← lift.mult.lone] at $hyp
+    | rw [← lift.mult.one] at $hyp
+    | rw [← lift.mult.some] at $hyp
+)
 
-syntax "dup_rel_r" term "as" ident : tactic
+syntax " thor_lift_op " " at " Lean.Parser.Tactic.locationHyp : tactic
 macro_rules
-  | `(tactic|dup_rel_r $t:term as $hypothesis:ident) =>
-  `(tactic|
-    dup $t as $hypothesis
-    ;
-    conv at $hypothesis =>
-      rhs
-      simp [ThoR.HSubset.hSubset]
-      simp [ThoR.Rel.subset]
-      simp [ThoR.HDotjoin.hDotjoin]
-      dsimp [HAdd.hAdd]
-    )
+| `(tactic| thor_lift_op at $hyp) => `(tactic|
+  repeat
+    first
+      | rw [← lift.dotjoin] at $hyp
+      | rw [← lift.add] at $hyp
+)
 
-syntax "dup_rel_l" term "as" ident : tactic
+syntax " thor_lift " " at " Lean.Parser.Tactic.locationHyp : tactic
 macro_rules
-  | `(tactic|dup_rel_l $t:term as $hypothesis:ident) =>
-  `(tactic|
-    dup $t as $hypothesis
-    ;
-    conv at $hypothesis =>
-      lhs
-      simp [ThoR.HSubset.hSubset]
-      simp [ThoR.Rel.subset]
-      simp [ThoR.HDotjoin.hDotjoin]
-      dsimp [HAdd.hAdd]
-    )
+| `(tactic| thor_lift at $hyp) => `(tactic|
+  thor_lift_pred at $hyp
+  ;
+  thor_lift_op at $hyp
+)
 
--- TODO
--- - add/remove .relation by macro
+syntax " thor_unlift_pred " " at " Lean.Parser.Tactic.locationHyp : tactic
+macro_rules
+| `(tactic| thor_unlift_pred at $hyp) => `(tactic|
+  first
+    | rw [lift.equal] at $hyp
+    | rw [lift.nEqual] at $hyp
+    | rw [lift.subset] at $hyp
+    | rw [lift.mult.no] at $hyp
+    | rw [lift.mult.lone] at $hyp
+    | rw [lift.mult.one] at $hyp
+    | rw [lift.mult.some] at $hyp
+)
 
-open Lean.Parser.Tactic in
-elab " rewrite " rw_target:ident " to " rw_result:term  : tactic =>
-  Lean.Elab.Tactic.withMainContext do
-    let ctx ← Lean.MonadLCtx.getLCtx -- get the local context.
-    ctx.forM fun decl: Lean.LocalDecl => do
-      let declExpr := decl.toExpr -- Find the expression of the declaration.
-      let declName := decl.userName -- Find the name of the declaration.
-      let declType ← Lean.Meta.inferType declExpr -- **NEW:** Find the type.
-      if declName = rw_target.getId
-      then
-        -- dbg_trace f!"then: {declType} = {declType}"
-        -- dbg_trace f!"then: {declName} = {h1.getId}"
-        let declTypeDup := mkAppN (Expr.const ``Iff []) #[declType,declType]
-        let declTypeDupProof :=
-          mkAppN (Expr.const ``of_eq_true []) #[
-            mkAppN (Expr.const ``iff_self []) #[
-              declType
-            ]
-          ]
+syntax " thor_unlift_op " " at " Lean.Parser.Tactic.locationHyp : tactic
+macro_rules
+| `(tactic| thor_unlift_op at $hyp) => `(tactic|
+  repeat
+    first
+      | rw [lift.dotjoin] at $hyp
+      | rw [lift.add] at $hyp
+)
 
-        let h1_new := "h1".toName
---        let h1_new ← Lean.Core.mkFreshUserName `h
-        liftMetaTactic fun mvarId => do
-          let mvarIdNew ← mvarId.assert h1_new declTypeDup declTypeDupProof
-          let (_, mvarIdNew) ← mvarIdNew.intro h1_new
-          return [mvarIdNew]
+syntax " thor_unlift " " at " Lean.Parser.Tactic.locationHyp : tactic
+macro_rules
+| `(tactic| thor_unlift at $hyp) => `(tactic|
+  thor_unlift_op at $hyp
+  ;
+  thor_unlift_pred at $hyp
+)
 
-        Lean.Elab.Tactic.evalTactic (← `(tactic | conv at $(mkIdent h1_new) =>
-          rhs
-          simp [ThoR.HSubset.hSubset]
-          simp [ThoR.Rel.subset]
-          simp [ThoR.HDotjoin.hDotjoin]
-          dsimp [HAdd.hAdd]))
-
-        -- Lean.Elab.Tactic.withMainContext do
-        --   let ctx ← Lean.MonadLCtx.getLCtx -- get the local context.
-        --   ctx.forM fun decl: Lean.LocalDecl => do
-        --     let declExpr := decl.toExpr -- Find the expression of the declaration.
-        --     let declName := decl.userName -- Find the name of the declaration.
-        --     let declType ← Lean.Meta.inferType declExpr -- **NEW:** Find the type.
-        --     if declName = h1_new
-        --     then
-        --       dbg_trace f!"h1_new: {declType}"
-
-        let h2_new ← Lean.Core.mkFreshUserName `h
-        Lean.Elab.Tactic.evalTactic (← `(tactic| dup_rel_l $rw_result:term as $(mkIdent h2_new):ident))
-
-        Lean.Elab.Tactic.evalTactic (← `(tactic| rewrite [Rules.dotjoin.add.dist.r] at $(mkIdent h1_new):ident))
-
-        Lean.Elab.Tactic.evalTactic (← `(tactic| apply (($(mkIdent h2_new)).mp ∘ ($(mkIdent h1_new)).mp) at $rw_target:ident))
-
---        Lean.Elab.Tactic.evalTactic (← `(tactic| clear $(mkIdent h1_new) $(mkIdent h2_new)))
-
-
-lemma lift_add (R : Type) [ThoR.TupleSet R] {n : ℕ} {t1 t2 : ThoR.RelType R n} {a : ThoR.Rel t1} {b : ThoR.Rel t2} : a.relation + b.relation = (a + b).relation := by
-  dsimp [HAdd.hAdd]
-
-lemma lift_add' (R : Type) [ThoR.TupleSet R] {n : ℕ} {t1 t2 : ThoR.RelType R n} {a : ThoR.Rel t1} {b : ThoR.Rel t2} : Add.add a.relation b.relation = (a + b).relation := by
-  dsimp [HAdd.hAdd]
-
-lemma lift_subset (R : Type) [ThoR.TupleSet R] {n : ℕ} {t1 t2 : ThoR.RelType R n} {a : ThoR.Rel t1} {b : ThoR.Rel t2} : a.relation ⊂ b.relation ↔ a ⊂ b := by
-  dsimp [ThoR.HSubset.hSubset]
-  dsimp [ThoR.Rel.subset]
-  trivial
-
-lemma lift_subset' (R : Type) [ThoR.TupleSet R] {n : ℕ} {t1 t2 : ThoR.RelType R n} {a : ThoR.Rel t1} {b : ThoR.Rel t2} : ThoR.Subset.subset a.relation b.relation ↔ a ⊂ b := by
-  dsimp [ThoR.HSubset.hSubset]
-  dsimp [ThoR.Rel.subset]
-  trivial
-
-lemma lift_dotjoin (R : Type) [ThoR.TupleSet R] {n1 n2 : ℕ} {t1 : ThoR.RelType R (n1 + 1)} {t2 : ThoR.RelType R (n2 + 1)} {a : ThoR.Rel t1} {b : ThoR.Rel t2} : a.relation ⋈ b.relation = (a ⋈ b).relation := by
-  dsimp [ThoR.HDotjoin.hDotjoin]
-
-#check ThoR.Set.toSubset
+syntax " thor_rw " "[" Lean.Parser.Tactic.rwRule "]" " at " Lean.Parser.Tactic.locationHyp : tactic
+macro_rules
+| `(tactic| thor_rw [$rw_rule] at $hyp) => `(tactic|
+  thor_lift at $hyp
+  ;
+  rw [$rw_rule] at $hyp
+  ;
+  thor_unlift at $hyp
+)
 
 lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   unfold NoSelfGrandpa
@@ -173,13 +183,7 @@ lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   intro contra
   simp [ThoR.Quantification.Formula.eval] at contra
 
-  rewrite contra to p ⊂ p ⋈ (((∻ Person.mother) ⋈ (∻ Person.father)) + ((∻ Person.father)) ⋈ ((∻ Person.father)))
-
-  rw [lift_dotjoin] at h1
-  rw [lift_dotjoin] at h1
-  rw [lift_add'] at h1
-  rw [lift_dotjoin] at h1
-  unfold ThoR.Subset.subset at h1
+  thor_rw [Rules.dotjoin.add.dist.r] at contra
 
   sorry
 

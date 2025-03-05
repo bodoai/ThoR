@@ -5,4 +5,4 @@ Authors: s. file CONTRIBUTORS
 -/
 
 import ThoR.Alloy.Elab
-import ThoR.Alloy.Delab
+-- import ThoR.Alloy.Delab
