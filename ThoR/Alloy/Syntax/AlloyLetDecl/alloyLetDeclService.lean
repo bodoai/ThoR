@@ -4,28 +4,28 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 
-import ThoR.Alloy.Syntax.LetDecl.letDecl
+import ThoR.Alloy.Syntax.AlloyLetDecl.alloyLetDecl
 import ThoR.Shared.Syntax.Formula.formulaService
 import ThoR.Shared.unhygienicUnfolder
 
 open Shared Lean
 
-namespace Alloy.letDecl
+namespace Alloy.alloyLetDecl
 
-  def toType (ld : LetDecl) : letDecl :=
+  def toType (ld : AlloyLetDecl) : alloyLetDecl :=
     match ld with
-      | `(letDecl | let $name:ident = $value:formula | $body:formula) =>
+      | `(alloyLetDecl | let $name:ident = $value:formula | $body:formula) =>
         { name := name.getId,
           value := formula.toType value,
           body := [formula.toType body] }
-      | `(letDecl | let $name:ident = $value:formula | {$body:formula*}) =>
+      | `(alloyLetDecl | let $name:ident = $value:formula | {$body:formula*}) =>
         { name := name.getId,
           value := formula.toType value,
           body := (body.map fun e => formula.toType e).toList }
       | _ => default
 
   def toTerm
-  (ld : letDecl)
+  (ld : alloyLetDecl)
   (blockName : Name)
   (variableNames : List (String)) -- to check if var or pred
   (callableVariables : List (varDecl))
@@ -48,4 +48,4 @@ namespace Alloy.letDecl
 
     return [letTerm].append body
 
-end Alloy.letDecl
+end Alloy.alloyLetDecl

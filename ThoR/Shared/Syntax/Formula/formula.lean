@@ -86,6 +86,9 @@ namespace Shared
   --Special tertiariy Syntax
   syntax "if " formula " then " formula " else " formula : formula
 
+  -- introduce let syntax
+  syntax letDecl : formula
+
   instance : Inhabited formula where
     default := formula.string ""
 

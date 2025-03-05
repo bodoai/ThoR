@@ -8,15 +8,15 @@ import ThoR.Shared.Syntax.Formula.formula
 open Shared
 open Lean
 
-structure letDecl where
+structure alloyLetDecl where
   mk ::
     (name : Name)
     (value : formula)
     (body : List (formula))
 deriving Repr, Inhabited
 
-declare_syntax_cat letDecl
-syntax "let" ident "=" formula "|" formula : letDecl
-syntax "let" ident "=" formula "|" "{" formula* "}" : letDecl
+declare_syntax_cat alloyLetDecl
+syntax "let" ident "=" formula "|" formula : alloyLetDecl
+syntax "let" ident "=" formula "|" "{" formula* "}" : alloyLetDecl
 
-abbrev LetDecl := TSyntax `letDecl
+abbrev AlloyLetDecl := TSyntax `alloyLetDecl
