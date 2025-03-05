@@ -2,7 +2,7 @@ import ThoR.Alloy
 import ThoR.Test.Alloy.test_macro
 import ThoR.Rules
 
-import ThoR.Alloy.Delab
+-- import ThoR.Alloy.Delab
 
 alloy
 module language/grandpa1 ---- Page 84, 85
@@ -54,7 +54,7 @@ open language.grandpa1
 lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   unfold NoSelfGrandpa
   apply Rules.no.intro
-  apply Rules.some.neg
+  apply Rules.some.neg -- TODO get rid of insertion of redundant Formula.prop in Rules.some.neg
   apply Rules.all.intro
   intro p
   unfold ThoR.Quantification.Formula.eval
