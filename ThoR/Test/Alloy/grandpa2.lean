@@ -1,14 +1,8 @@
 import ThoR.Alloy
 import ThoR.Test.Alloy.test_macro
-import ThoR.Rules.quant
-import ThoR.Rules.dotjoin
-import ThoR.Rules.eq
-import Lean
-import Lean.Meta.Tactic.Intro
+import ThoR.Rules
 
 import ThoR.Alloy.Delab
-
-open Lean Lean.Elab PrettyPrinter Command Term Lean.Elab.Tactic
 
 alloy
 module language/grandpa1 ---- Page 84, 85
@@ -53,125 +47,9 @@ end
 create language/grandpa1
 
 startTestBlock language.grandpa1
-
-namespace lift
-  open ThoR
-
-  /- predicates -/
-  lemma subset (R : Type) [TupleSet R] {n : ℕ} {t1 t2 : RelType R n} {a : Rel t1} {b : Rel t2} : a.relation ⊂ b.relation ↔ a ⊂ b := by
-    dsimp [HSubset.hSubset]
-    dsimp [Rel.subset]
-    trivial
-
-  lemma subset' (R : Type) [TupleSet R] {n : ℕ} {t1 t2 : RelType R n} {a : Rel t1} {b : Rel t2} : Subset.subset a.relation b.relation ↔ a ⊂ b := by
-    dsimp [HSubset.hSubset]
-    dsimp [Rel.subset]
-    trivial
-
-  lemma equal (R : Type) [TupleSet R] {n : ℕ} {t1 t2 : RelType R n} {a : Rel t1} {b : Rel t2} : a.relation = b.relation ↔ a ≡ b := by
-    dsimp [HEqual.hEqual]
-    trivial
-
-  lemma nEqual (R : Type) [TupleSet R] {n : ℕ} {t1 t2 : RelType R n} {a : Rel t1} {b : Rel t2} : a.relation ≠ b.relation ↔ a ≢ b := by
-    dsimp [HEqual.hEqual]
-    trivial
-
-  lemma mult.no (R : Type) [TupleSet R] {n : ℕ} {t : RelType R n} {a : Rel t} : SetMultPredicates.no a.relation ↔ SetMultPredicates.no a := by
-    simp [SetMultPredicates.no]
-  lemma mult.lone (R : Type) [TupleSet R] {n : ℕ} {t : RelType R n} {a : Rel t} : SetMultPredicates.lone a.relation ↔ SetMultPredicates.lone a := by
-    simp [SetMultPredicates.lone]
-  lemma mult.one (R : Type) [TupleSet R] {n : ℕ} {t : RelType R n} {a : Rel t} : SetMultPredicates.one a.relation ↔ SetMultPredicates.one a := by
-    simp [SetMultPredicates.one]
-  lemma mult.some (R : Type) [TupleSet R] {n : ℕ} {t : RelType R n} {a : Rel t} : SetMultPredicates.some a.relation ↔ SetMultPredicates.some a := by
-    simp [SetMultPredicates.some]
-
-  /- binary operators -/
-  -- TODO to be completed
-  lemma add (R : Type) [TupleSet R] {n : ℕ} {t1 t2 : RelType R n} {a : Rel t1} {b : Rel t2} : a.relation + b.relation = (a + b).relation := by
-    dsimp [HAdd.hAdd]
-
-  lemma add' (R : Type) [TupleSet R] {n : ℕ} {t1 t2 : RelType R n} {a : Rel t1} {b : Rel t2} : Add.add a.relation b.relation = (a + b).relation := by
-    dsimp [HAdd.hAdd]
-
-  lemma dotjoin (R : Type) [TupleSet R] {n1 n2 : ℕ} {t1 : RelType R (n1 + 1)} {t2 : RelType R (n2 + 1)} {a : Rel t1} {b : Rel t2} : a.relation ⋈ b.relation = (a ⋈ b).relation := by
-    dsimp [HDotjoin.hDotjoin]
-
-  /- unary operators -/
-  -- TODO to be completed
-  lemma transclos (R : Type) [TupleSet R] {t : RelType R 2} {a : Rel t} : ^ a.relation = (^ a).relation := by
-    dsimp [HTransclos.hTransclos]
-
-end lift
-
-syntax " thor_lift_pred " " at " Lean.Parser.Tactic.locationHyp : tactic
-macro_rules
-| `(tactic| thor_lift_pred at $hyp) => `(tactic|
-  first
-    | rw [← lift.equal] at $hyp
-    | rw [← lift.nEqual] at $hyp
-    | rw [← lift.subset] at $hyp
-    | rw [← lift.mult.no] at $hyp
-    | rw [← lift.mult.lone] at $hyp
-    | rw [← lift.mult.one] at $hyp
-    | rw [← lift.mult.some] at $hyp
-)
-
-syntax " thor_lift_op " " at " Lean.Parser.Tactic.locationHyp : tactic
-macro_rules
-| `(tactic| thor_lift_op at $hyp) => `(tactic|
-  repeat
-    first
-      | rw [← lift.dotjoin] at $hyp
-      | rw [← lift.add] at $hyp
-)
-
-syntax " thor_lift " " at " Lean.Parser.Tactic.locationHyp : tactic
-macro_rules
-| `(tactic| thor_lift at $hyp) => `(tactic|
-  thor_lift_pred at $hyp
-  ;
-  thor_lift_op at $hyp
-)
-
-syntax " thor_unlift_pred " " at " Lean.Parser.Tactic.locationHyp : tactic
-macro_rules
-| `(tactic| thor_unlift_pred at $hyp) => `(tactic|
-  first
-    | rw [lift.equal] at $hyp
-    | rw [lift.nEqual] at $hyp
-    | rw [lift.subset] at $hyp
-    | rw [lift.mult.no] at $hyp
-    | rw [lift.mult.lone] at $hyp
-    | rw [lift.mult.one] at $hyp
-    | rw [lift.mult.some] at $hyp
-)
-
-syntax " thor_unlift_op " " at " Lean.Parser.Tactic.locationHyp : tactic
-macro_rules
-| `(tactic| thor_unlift_op at $hyp) => `(tactic|
-  repeat
-    first
-      | rw [lift.dotjoin] at $hyp
-      | rw [lift.add] at $hyp
-)
-
-syntax " thor_unlift " " at " Lean.Parser.Tactic.locationHyp : tactic
-macro_rules
-| `(tactic| thor_unlift at $hyp) => `(tactic|
-  thor_unlift_op at $hyp
-  ;
-  thor_unlift_pred at $hyp
-)
-
-syntax " thor_rw " "[" Lean.Parser.Tactic.rwRule "]" " at " Lean.Parser.Tactic.locationHyp : tactic
-macro_rules
-| `(tactic| thor_rw [$rw_rule] at $hyp) => `(tactic|
-  thor_lift at $hyp
-  ;
-  rw [$rw_rule] at $hyp
-  ;
-  thor_unlift at $hyp
-)
+open language.grandpa1
+#check vars.Person.father
+#print this_φ_Person_ξ_mother
 
 lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   unfold NoSelfGrandpa
@@ -181,25 +59,30 @@ lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   intro p
   unfold ThoR.Quantification.Formula.eval
   intro contra
-  simp [ThoR.Quantification.Formula.eval] at contra
+  unfold ThoR.Quantification.Formula.eval at contra
 
-  thor_rw [Rules.dotjoin.add.dist.r] at contra
+--  thor_rw [Rules.dotjoin.add.dist.r] at contra
 
-  sorry
+  fact f0 : language.grandpa1.facts.f0
+  cases f0 with
+  | intro f1 f2 =>
+    clear f2
+    apply Rules.no.elim at f1
+    apply f1
+    clear f1
+    apply Rules.some.intro p
+    have h1 : p ⊂ p ⋈ ((∻ this_φ_Person_ξ_mother + ∻ this_φ_Person_ξ_father) ⋈ (∻ this_φ_Person_ξ_mother + ∻ this_φ_Person_ξ_father)) := by
+      apply Rules.subset.trans
+      apply contra
+      apply Rules.dotjoin.subset.r
+      apply Rules.dotjoin.subset.r
+      apply Rules.add.subset.l
+    unfold ThoR.Quantification.Formula.eval
+    apply Rules.subset.trans
+    apply h1
+    apply Rules.dotjoin.subset.r
+    apply Rules.dotjoin.transclos_2
 
-  -- fact f0 : language.grandpa1.facts.f0
-  -- sorry
-  -- -- cases f0 with
-  -- -- | intro f1 f2 =>
-  -- --   apply Rules.no.elim at f1
-  -- --   apply f1
-  -- --   apply Rules.some.intro
-  -- --   simp [ThoR.Quantification.Formula.eval] at contra
-  -- --   -- dsimp [ThoR.HSubset.hSubset] at contra
-  -- --   -- unfold ThoR.Rel.subset at contra
-  -- --   -- simp [ThoR.HDotjoin.hDotjoin] at contra
-  -- --   -- simp [HAdd.hAdd] at contra
-  -- --   apply Rules.eq.subset p p at contra
-  -- --   have h : p ≡ p := by apply Rules.eq.refl
-  -- --   apply contra at h
-  -- --   sorry
+-- TODO
+-- this_φ_Person_ξ_mother kann nicht gemischt werden mit /
+-- umgewandelt werden in vars.Person.mother
