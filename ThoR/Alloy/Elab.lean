@@ -876,7 +876,7 @@ private def evaluateCreationCommand
 
     if let Option.some (ad : alloyData) := ads.find? dataName then
       if logging then
-        logInfo s!"Data with name {dataName} found:\n\n {ad}"
+        logInfo s!"Module data for {ident.getId.toString} found:\n\n {ad}"
 
       let st := ad.st
       let ast := ad.ast
@@ -919,7 +919,7 @@ private def evaluateCreationCommand
                 logInfo extensionAxiomCommandsString
 
     else
-      logError s!"No data found for {dataName}"
+      logError s!"Cannot create {ident.getId.toString}, it does not exist."
 
 
 @[command_elab creationSyntax]
