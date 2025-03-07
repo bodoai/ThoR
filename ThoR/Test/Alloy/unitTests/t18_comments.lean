@@ -11,12 +11,15 @@ end
 
 alloy single/line/comment
   // this is a comment
+  // a + 3
+  // a +
+  // //
 end
 
 alloy multi/line/empty/comment
-  /* */
+  /* a + 3 * / */
   /*
-
+      p in p..[xyz]
   */
 end
 
