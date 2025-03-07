@@ -26,7 +26,7 @@ end
 /-
 Test to import from Modules
 -/
-alloy module m1
+#alloy module m1
   sig a {
     r : a
   }
@@ -42,7 +42,7 @@ alloy m2/te
   }
 end
 
-alloy m3
+#alloy m3
   open m2/te
   sig a {
     r : a
@@ -56,7 +56,7 @@ alloy m3
     some m1/a
     some m2/te/a<:r
     some a<:r
-    some b<:a/r
+    some b<:this/a/r
   }
 
 end
@@ -72,7 +72,17 @@ alloy m1/wewa
   }
 end
 
-alloy m2/w/a
+~alloy mx/w/a
+  open m1/wewa as wowo
+  sig a {
+    r : a
+  }
+  fact {
+    some wewa/a
+  }
+end
+
+#alloy m2/w/a
   open m1/wewa as wowo
   sig a {
     r : a
