@@ -37,48 +37,48 @@ end Quantification
 
 namespace Quantification
   namespace Formula
-    def evalSome (eval : {T : Type} → Formula T → Prop) (p : T → Formula T') : Prop := (∃ x, eval (p x))
-    def evalNo (eval : {T : Type} → Formula T → Prop) (p : T → Formula T') : Prop := ¬ (evalSome eval p)
-    def evalLone (eval : {T : Type} → Formula T → Prop)  (p : T → Formula T') : Prop := (∀ x y, (eval (p x)) → (eval (p y)) → x=y)
-    def evalOne (eval : {T : Type} → Formula T → Prop) (p : T → Formula T') : Prop := (evalSome eval p) ∧ (evalLone eval p)
-    def evalAll (eval : {T : Type} → Formula T → Prop) (p : T → Formula T') : Prop := (∀ x, eval (p x))
+    def evalSome (eval : {T : Type u} → Formula T → Prop) (p : T → Formula T') : Prop := (∃ x, eval (p x))
+    def evalNo (eval : {T : Type u} → Formula T → Prop) (p : T → Formula T') : Prop := ¬ (evalSome eval p)
+    def evalLone (eval : {T : Type u} → Formula T → Prop)  (p : T → Formula T') : Prop := (∀ x y, (eval (p x)) → (eval (p y)) → x=y)
+    def evalOne (eval : {T : Type u} → Formula T → Prop) (p : T → Formula T') : Prop := (evalSome eval p) ∧ (evalLone eval p)
+    def evalAll (eval : {T : Type u} → Formula T → Prop) (p : T → Formula T') : Prop := (∀ x, eval (p x))
 
-    def evalGroupLone (eval : {T : Type} → Formula T → Prop) (g : Group T): Prop :=
+    def evalGroupLone (eval : {T : Type u} → Formula T → Prop) (g : Group T): Prop :=
       match g with
       | Group.formula f => eval f
       | Group.var p =>
         (∀ x y, evalGroupLone eval (p x) → evalGroupLone eval (p y) → x = y)
-    def evalGroupSome (eval : {T : Type} → Formula T → Prop) (g : Group T): Prop :=
+    def evalGroupSome (eval : {T : Type u} → Formula T → Prop) (g : Group T): Prop :=
       match g with
       | Group.formula f => eval f
       | Group.var p => (∃ x, evalGroupSome eval (p x))
-    def evalGroupAll (eval : {T : Type} → Formula T → Prop) (g : Group T): Prop :=
+    def evalGroupAll (eval : {T : Type u} → Formula T → Prop) (g : Group T): Prop :=
       match g with
       | Group.formula f => eval f
       | Group.var p => (∀ x, evalGroupAll eval (p x))
-    def evalGroupNo (eval : {T : Type} → Formula T → Prop) (g : Group T): Prop := ¬ (evalGroupSome eval g)
-    def evalGroupOne (eval : {T : Type} → Formula T → Prop) (g : Group T): Prop := (evalGroupSome eval g) ∧ (evalGroupLone eval g)
+    def evalGroupNo (eval : {T : Type u} → Formula T → Prop) (g : Group T): Prop := ¬ (evalGroupSome eval g)
+    def evalGroupOne (eval : {T : Type u} → Formula T → Prop) (g : Group T): Prop := (evalGroupSome eval g) ∧ (evalGroupLone eval g)
 
-    def evalDisjAll  {T' : Type} (eval : {T : Type} → Formula T → Prop) (g : Group T') (vars : List T') : Prop :=
+    def evalDisjAll  {T' : Type u} (eval : {T : Type u} → Formula T → Prop) (g : Group T') (vars : List T') : Prop :=
       match g with
       | Group.formula f => vars.Nodup → (eval f)
       | Group.var p => (∀ x, evalDisjAll eval (p x) (x::vars))
-    def evalDisjSome  {T' : Type} (eval : {T : Type} → Formula T → Prop) (g : Group T') (vars : List T') : Prop :=
+    def evalDisjSome  {T' : Type u} (eval : {T : Type u} → Formula T → Prop) (g : Group T') (vars : List T') : Prop :=
       match g with
       | Group.formula f => vars.Nodup ∧ (eval f)
       | Group.var p => (∃ x, evalDisjSome eval (p x) (x::vars))
     -- TODO Check evalDisjLone, evalDisjNo, evalDisjOne: Stimmt das so?
-    def evalDisjLone  {T' : Type} (eval : {T : Type} → Formula T → Prop) (g : Group T') (vars : List T') : Prop :=
+    def evalDisjLone  {T' : Type u} (eval : {T : Type u} → Formula T → Prop) (g : Group T') (vars : List T') : Prop :=
       match g with
       | Group.formula f => vars.Nodup → (eval f)
       | Group.var p =>
         (∀ x y, evalDisjLone eval (p x) (x::vars) → evalDisjLone eval (p y) (y::vars) → x = y)
-    def evalDisjNo  {T' : Type} (eval : {T : Type} → Formula T → Prop) (g : Group T') (vars : List T') : Prop :=
+    def evalDisjNo  {T' : Type u} (eval : {T : Type u} → Formula T → Prop) (g : Group T') (vars : List T') : Prop :=
       ¬ (evalDisjSome eval g vars)
-    def evalDisjOne  {T' : Type} (eval : {T : Type} → Formula T → Prop) (g : Group T') (vars : List T') : Prop :=
+    def evalDisjOne  {T' : Type u} (eval : {T : Type u} → Formula T → Prop) (g : Group T') (vars : List T') : Prop :=
       (evalDisjSome eval g vars) /\ (evalDisjLone eval g vars)
 
-    def eval : {T : Type} → Formula T → Prop := fun f =>
+    def eval : {T : Type u} → Formula T → Prop := fun f =>
       match f with
         | Formula.prop p  => p
         | Formula.var q p =>
@@ -106,5 +106,5 @@ namespace Quantification
   end Formula
 end Quantification
 
-instance {T : Type}: CoeSort (Quantification.Formula T) Prop where
+instance {T : Type u}: CoeSort (Quantification.Formula T) Prop where
   coe f := Quantification.Formula.eval f

@@ -4,5 +4,9 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 
-import ThoR.Alloy.Elab
--- import ThoR.Alloy.Delab
+import ThoR.Rules.add
+import ThoR.Rules.dotjoin
+import ThoR.Rules.eq
+import ThoR.Rules.quant
+import ThoR.Rules.rw
+import ThoR.Rules.subset
