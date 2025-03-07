@@ -198,10 +198,7 @@ to be better digestible for further computation and transformation into Lean.
 
             if calledRelDecls.isEmpty then
               throw s!"The name {call} cannot be found. \
-              (In \
-              {(if location.isFact then "fact " else "")}\
-              {(if location.isAssert then "assert " else "")}\
-              {(if location.isPredicate then "predicate " else "")}\
+              (In {location.commandType}}
               {location.name})"
             continue
 
@@ -478,7 +475,7 @@ to be better digestible for further computation and transformation into Lean.
           (
             commandDecl.mk (name := declarationName)
             (args := newArgs)
-            (isPredicate := true)
+            (commandType := commandType.pred)
             (formulas := predDecl.forms)
             (requiredVars := reqVars)
             (requiredDefs := reqDefs)
@@ -504,7 +501,7 @@ to be better digestible for further computation and transformation into Lean.
         let newPredDefDecl :=
           commandDecl.mk
             (name := predDefDecl.name)
-            (isPredicate := predDefDecl.isPredicate)
+            (commandType := predDefDecl.commandType)
             (args := predDefDecl.args)
             (formulas := predDefDecl.formulas)
             (requiredVars := predDefDecl.requiredVars)
@@ -568,7 +565,7 @@ to be better digestible for further computation and transformation into Lean.
           (
             commandDecl.mk
             (name := declarationName)
-            (isFact := true)
+            (commandType := commandType.fact)
             (formulas := factDecl.formulas)
             (requiredVars := reqVars)
             (requiredDefs := reqDefs)
@@ -635,7 +632,7 @@ to be better digestible for further computation and transformation into Lean.
           (
             commandDecl.mk
             (name := declarationName)
-            (isAssert := true)
+            (commandType := commandType.assert)
             (formulas := assertDecla.formulas)
             (requiredVars := reqVars)
             (requiredDefs := reqDefs)
