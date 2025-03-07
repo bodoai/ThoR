@@ -703,28 +703,23 @@ namespace Shared.expr
         return e1_calls ++ e2_calls
 
       | expr.dotjoin _ e1 e2 =>
-        let leftSideCalls ← (e1.getCalledVariables callableVariables)
+        /-TODO: As soons as it is possible to get the type of exprs then get it here-/
+        /-Take the last possible expression -/
+        let leftSideCalls ← e1.getCalledVariables callableVariables
+        let e2' ← e2.getCalledVariables callableVariables
+        let error_value := leftSideCalls ++ e2'
 
-        if leftSideCalls.isEmpty then
-          throw s!"The left side of {e1}.{e2} has no calls."
+        if leftSideCalls.isEmpty then return error_value
 
-        let leftSideVarDecls := leftSideCalls.getLast!.2
+        let leftSideLastCall := leftSideCalls.getLast!.2
+        if leftSideLastCall.isEmpty then return error_value
 
-        if leftSideVarDecls.isEmpty then
-          throw s!"No possible variable for the call to \
-          {leftSideCalls.getLast!.1} could be found"
-
-        if leftSideVarDecls.length > 1 then
-          throw s!"The left side of {e1}.{e2} is ambiguous. It could be any \
-          of ({leftSideVarDecls})"
-
-        let leftSideVarDecl := leftSideCalls.getLast!.2.getLast!
-
+        let leftSideLastVarDecl := leftSideLastCall.getLast!
         let rightSideCalls ←
           (e2.getCalledVariables
-          (right_side_dotjoin := true)
-          (left_side_dotjoin_variable := leftSideVarDecl)
-          callableVariables)
+            (right_side_dotjoin := true)
+            (left_side_dotjoin_variable := leftSideLastVarDecl)
+            callableVariables)
 
         return leftSideCalls ++ rightSideCalls
 
