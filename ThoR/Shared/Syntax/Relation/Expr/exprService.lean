@@ -59,73 +59,71 @@ namespace Shared.expr
           /-
           This should never be empty
           -/
-          if !nsSplit.isEmpty then
+          if nsSplit.isEmpty then return e
 
-            /-
-            the called name is the last element of this split
-            e.g. m1.a -> a is the called name
-            -/
-            let calledName := nsSplit.getLast!
+          /-
+          the called name is the last element of this split
+          e.g. m1.a -> a is the called name
+          -/
+          let calledName := nsSplit.getLast!
 
-            /-
-            a namespace means that there is more than just the called name
-            this has to be the case, since singular names are matched on string
-            -/
-            let namespacePresent := nsSplit.length > 1
+          /-
+          a namespace means that there is more than just the called name
+          this has to be the case, since singular names are matched on string
+          -/
+          let namespacePresent := nsSplit.length > 1
+          if !namespacePresent then return e
 
-            if namespacePresent then
+          -- the complete namespace
+          let sigNamespace :=
+            ((nsSplit.take (nsSplit.length - 1)).drop 1).foldl
+              (fun result current => s!"{result}_{current}")
+              (nsSplit.get! 0)
 
-              -- the complete namespace
-              let sigNamespace :=
-                ((nsSplit.take (nsSplit.length - 1)).drop 1).foldl
-                  (fun result current => s!"{result}_{current}")
-                  (nsSplit.get! 0)
+          -- the namespace with the last element removed (assumend to be a sig name)
+          let relNamespace :=
+            ((nsSplit.take (nsSplit.length - 2)).drop 1).foldl
+              (fun result current => s!"{result}_{current}")
+              (nsSplit.get! 0)
 
-              -- the namespace with the last element removed (assumend to be a sig name)
-              let relNamespace :=
-                ((nsSplit.take (nsSplit.length - 2)).drop 1).foldl
-                  (fun result current => s!"{result}_{current}")
-                  (nsSplit.get! 0)
+          let possibleCalls := callables.filter
+            fun c =>
+              -- the name has to be the name called
+              c.name = calledName &&
 
-              let possibleCalls := callables.filter
-                fun c =>
-                  -- the name has to be the name called
-                  c.name = calledName &&
+              (
+              -- if its a relation
+              ( c.isRelation &&
+              -- the signature name hast to be correct
+              ( c.relationOf == nsSplit.get! (nsSplit.length - 2) &&
+              -- and the namespace hast to be correct
+                (c.openedFrom == relNamespace) ||
+              -- or not given for this
+                (c.openedFrom == "this" && relNamespace == "")))
 
-                  (
-                  -- if its a relation
-                  ( c.isRelation &&
-                  -- the signature name hast to be correct
-                  ( c.relationOf == nsSplit.get! (nsSplit.length - 2) &&
-                  -- and the namespace hast to be correct
-                    (c.openedFrom == relNamespace) ||
-                  -- or not given for this
-                    (c.openedFrom == "this" && relNamespace == "")))
+              ||
 
-                  ||
+              -- if its a signature
+              ( !c.isRelation &&
+              -- the namespace hast to be correct
+              ( c.openedFrom == sigNamespace) ||
+              -- or not given for this
+              (c.openedFrom == "this" && relNamespace == ""))
 
-                  -- if its a signature
-                  ( !c.isRelation &&
-                  -- the namespace hast to be correct
-                  ( c.openedFrom == sigNamespace) ||
-                  -- or not given for this
-                  (c.openedFrom == "this" && relNamespace == ""))
+              )
 
-                  )
+          -- Only one call should be possible (since the symbold table already checked)
+          if !possibleCalls.length == 1 then return e
 
-              -- Only one call should be possible (since the symbold table already checked)
-              if possibleCalls.length == 1 then
-                let calledElement := possibleCalls.get! 0
+          let calledElement := possibleCalls.get! 0
 
-                let identifer := mkIdent
-                  (if calledElement.isRelation then
-                    calledElement.getFullRelationName
-                  else
-                    calledElement.getFullSignatureName)
+          let identifer := mkIdent
+            (if calledElement.isRelation then
+              calledElement.getFullRelationName
+            else
+              calledElement.getFullSignatureName)
 
-                return expr.callFromOpen (Alloy.separatedNamespace.mk identifer)
-
-          return e
+          return expr.callFromOpen (Alloy.separatedNamespace.mk identifer)
 
         | expr.binaryRelOperation op e1 e2 =>
           expr.binaryRelOperation
@@ -333,37 +331,41 @@ namespace Shared.expr
         if the left side is a call to another module, then it has to
         be a relation from this module
         -/
-        if leftSide.isCallFromOpen then
-          let leftSideData := leftSide.getCalledFromOpenData
+        if !leftSide.isCallFromOpen then return e
 
-          let leftSideComponents :=
-            leftSideData.representedNamespace.getId.components
+        let leftSideData := leftSide.getCalledFromOpenData
 
-          let moduleNameComponents :=
-            leftSideComponents.take (leftSideComponents.length - 1)
-          let moduleName :=
-            (moduleNameComponents.drop 1).foldl
-            (fun result component => s!"{result}_{component.toString}")
-            (moduleNameComponents.get! 0).toString
+        let leftSideComponents :=
+          leftSideData.representedNamespace.getId.components
 
-          let signatureName := leftSideComponents.getLast!
+        if leftSideComponents.isEmpty then return e
 
-          let matchingRelations :=
-            possibleRelations.filter
-              fun pr =>
-                pr.relationOf == signatureName.toString &&
-                pr.isOpened &&
-                pr.openedFrom == moduleName
+        let moduleNameComponents :=
+          leftSideComponents.take (leftSideComponents.length - 1)
+        let moduleName :=
+          (moduleNameComponents.drop 1).foldl
+          (fun result component => s!"{result}_{component.toString}")
+          (moduleNameComponents.get! 0).toString
 
-          if
-            !matchingRelations.isEmpty &&
-            !matchingRelations.length > 1
-          then
-            let components := leftSideComponents.concat rightSideData.toName
-            let ident := mkIdent (Name.fromComponents components)
-            return expr.callFromOpen (Alloy.separatedNamespace.mk ident)
+        let signatureName := leftSideComponents.getLast!
 
-        return e
+        let matchingRelations :=
+          possibleRelations.filter
+            fun pr =>
+              pr.relationOf == signatureName.toString &&
+              pr.isOpened &&
+              pr.openedFrom == moduleName
+
+        -- if matching relations are not exactly one return e
+        if
+          matchingRelations.isEmpty ||
+          matchingRelations.length > 1
+        then
+          return e
+
+        let components := leftSideComponents.concat rightSideData.toName
+        let ident := mkIdent (Name.fromComponents components)
+        return expr.callFromOpen (Alloy.separatedNamespace.mk ident)
 
       | _ => e
 
@@ -703,28 +705,21 @@ namespace Shared.expr
       | expr.dotjoin _ e1 e2 =>
         /-TODO: As soons as it is possible to get the type of exprs then get it here-/
         /-Take the last possible expression -/
-        let leftSideCalls ← (e1.getCalledVariables callableVariables)
+        let leftSideCalls ← e1.getCalledVariables callableVariables
+        let e2' ← e2.getCalledVariables callableVariables
+        let error_value := leftSideCalls ++ e2'
 
-        if leftSideCalls.isEmpty then
-          throw s!"The left side of {e1}.{e2} has no calls."
+        if leftSideCalls.isEmpty then return error_value
 
-        let leftSideVarDecls := leftSideCalls.getLast!.2
+        let leftSideLastCall := leftSideCalls.getLast!.2
+        if leftSideLastCall.isEmpty then return error_value
 
-        if leftSideVarDecls.isEmpty then
-          throw s!"No possible variable for the call to \
-          {leftSideCalls.getLast!.1} could be found"
-
-        if leftSideVarDecls.length > 1 then
-          throw s!"The left side of {e1}.{e2} is ambiguous. It could be any \
-          of ({leftSideVarDecls})"
-
-        let leftSideVarDecl := leftSideCalls.getLast!.2.getLast!
-
+        let leftSideLastVarDecl := leftSideLastCall.getLast!
         let rightSideCalls ←
           (e2.getCalledVariables
-          (right_side_dotjoin := true)
-          (left_side_dotjoin_variable := leftSideVarDecl)
-          callableVariables)
+            (right_side_dotjoin := true)
+            (left_side_dotjoin_variable := leftSideLastVarDecl)
+            callableVariables)
 
         return leftSideCalls ++ rightSideCalls
 

@@ -47,6 +47,7 @@ end
 create language/grandpa1
 
 startTestBlock language.grandpa1
+
 open language.grandpa1
 #check vars.Person.father
 #print this_φ_Person_ξ_mother
@@ -54,6 +55,7 @@ open language.grandpa1
 lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   unfold NoSelfGrandpa
   apply Rules.no.intro
+
 --  intro contra
   apply Rules.some.neg -- TODO get rid of insertion of redundant Formula.prop in Rules.some.neg
   -- TODO apply Rules.all.intro; intro p; unfold ThoR.Quantification.Formula.eval -> in one macro
