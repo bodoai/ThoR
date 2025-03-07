@@ -5,7 +5,7 @@ Authors: s. file CONTRIBUTORS
 -/
 
 import ThoR.Basic
-import ThoR.Shared.Syntax.constant
+import ThoR.Shared.Syntax.Constant.constantService
 import ThoR.Shared.Syntax.Relation.unRelOp
 import ThoR.Shared.Syntax.Relation.binRelOp
 import ThoR.Shared.Syntax.Relation.dotjoin
@@ -45,9 +45,9 @@ namespace Shared
   This syntax represents a relation
   -/
   declare_syntax_cat expr
-  syntax constant : expr
-  syntax ident : expr
   syntax separatedNamespace : expr -- to call opened module entries
+  syntax ident : expr
+  syntax constant : expr
   syntax "(" expr ")" : expr
   syntax:60 expr:60 binRelOp expr:60 : expr
 

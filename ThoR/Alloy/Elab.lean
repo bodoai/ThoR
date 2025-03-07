@@ -946,3 +946,22 @@ private def creationImpl : CommandElab := fun stx => do
 
       | _ => return
   catch | x => throwError x.toMessageData
+
+syntax
+  (name := alloyFormulaBlock)
+  ("#")?
+  "alloy_formula"
+    formula*
+  "end"
+  : term
+
+@[term_elab alloyFormulaBlock]
+private def alloyFormulaBlockImpl : TermElab := fun stx expectedType? => do
+  match stx with
+    | `(alloy_formula $formulas:formula* end) =>
+      (elabTerm (← `(term | 3 + 3)) expectedType?)
+    | `(# alloy_formula $formulas:formula* end) =>
+      (elabTerm (← `(term | 3 + 3)) expectedType?)
+    | _ => throwUnsupportedSyntax
+
+def x := alloy_formula some x end

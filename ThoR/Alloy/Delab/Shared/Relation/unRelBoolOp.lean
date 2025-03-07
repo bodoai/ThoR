@@ -6,6 +6,7 @@ Authors: s. file CONTRIBUTORS
 
 import Lean
 import ThoR.Alloy.Delab.DelaborationService
+import ThoR.Alloy.Elab
 import ThoR.Relation.Set
 
 open Lean PrettyPrinter Delaborator SubExpr
@@ -51,9 +52,15 @@ def unexpSetPredicatesSome : Unexpander
   | `($_ $param:ident) => do
     let new_param :=
       delaborationService.switch_thoR_representation_to_alloy_representation param
-    `($(mkIdent `some) $new_param)
+    let e := Shared.expr.fromTerm new_param
+    let es := e.toSyntax
+    `(term | alloy_formula some $(es) end)
+    --`($(mkIdent `some) $new_param)
 
   | `($_ $param) => do
-    `($(mkIdent `some) $param)
+    let e := Shared.expr.fromTerm param
+    let es := e.toSyntax
+    `(term | alloy_formula some $(es) end)
+    --`($(mkIdent `some) $param)
 
   | _ => throw Unit.unit
