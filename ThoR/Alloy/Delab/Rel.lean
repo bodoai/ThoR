@@ -19,7 +19,7 @@ def unexpTypedRelToRel : Unexpander
 -- FIXME
 @[app_unexpander ThoR.Rel.getType]
 def unexpTypedRelGetType : Unexpander
-  | `($_ $r) => `(KEK $r)
+  | `($_ $r) => `($r)
   | _ => throw Unit.unit
 
 @[app_unexpander ThoR.Rel]
