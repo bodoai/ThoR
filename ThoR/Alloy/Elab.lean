@@ -205,6 +205,8 @@ private def createDefOrAxiomCommand
         argTerms := unhygienicUnfolder
           `(Lean.Parser.Command.optDeclSig| $[$allArgs]* : ∷ $returnTypeSyntax)
 
+        bodyTerm := unhygienicUnfolder `(cast ($(bodyTerm)) ∷ $returnTypeSyntax)
+
       if bodyTerm != emptyTerm then
         return unhygienicUnfolder `(
           def $(mkIdent cd.name.toName)
