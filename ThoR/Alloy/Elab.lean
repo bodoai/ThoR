@@ -189,7 +189,7 @@ private def createDefOrAxiomCommand
       -- function arguments
       if cd.isFunction && !(cd.functionArgs.isEmpty) then
         for arg in cd.functionArgs do
-          let type := arg.1.type.replaceCalls callableVariables
+          let type := (arg.1.type.replaceCalls callableVariables).toStringRb
           let typeSyntax := type.toSyntax blockName
           let names := (arg.1.names.map fun name => (mkIdent name.toName)).toArray
           let unhygienicTerm :=
@@ -199,9 +199,11 @@ private def createDefOrAxiomCommand
 
       -- add function arguments and function return type
       if cd.isFunction then
-        let returnType := cd.functionReturnType.replaceCalls callableVariables
+        let returnType :=
+          (cd.functionReturnType.replaceCalls callableVariables).toStringRb
         let returnTypeSyntax := returnType.toSyntax blockName
-        argTerms := unhygienicUnfolder `(Lean.Parser.Command.optDeclSig| $[$allArgs]* : ∷ $returnTypeSyntax)
+        argTerms := unhygienicUnfolder
+          `(Lean.Parser.Command.optDeclSig| $[$allArgs]* : ∷ $returnTypeSyntax)
 
       if bodyTerm != emptyTerm then
         return unhygienicUnfolder `(
