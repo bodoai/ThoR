@@ -7,6 +7,8 @@ Authors: s. file CONTRIBUTORS
 import ThoR.Alloy.SymbolTable.CommandDecl.commandDecl
 import ThoR.Shared.Syntax.Formula.formulaService
 import ThoR.Alloy.Syntax.Predicate.PredArg.predArgService
+import ThoR.Alloy.Syntax.Function.FunctionArg.functionArg
+import ThoR.Alloy.Syntax.Function.FunctionArg.functionArgService
 import ThoR.Alloy.SymbolTable.VarDecl.varDeclService
 
 namespace Alloy.commandDecl
@@ -14,8 +16,11 @@ namespace Alloy.commandDecl
     (cd : commandDecl)
     (st : SymbolTable)
     : commandDecl :=
-    let args := cd.args.map fun arg => (arg.1.simplifyDomainRestrictions st , arg.2)
+    let predArgs := cd.predArgs.map fun arg => (arg.1.simplifyDomainRestrictions st , arg.2)
+    let functionArgs := cd.functionArgs.map fun arg => (arg.1.simplifyDomainRestrictions st , arg.2)
+
     let formulas := cd.formulas.map fun f => f.simplifyDomainRestrictions st
+    let expressions := cd.expressions.map fun e => e.simplifyDomainRestrictions st
 
     let predCalls := cd.predCalls.map fun pc =>
       ((pc.1.simplifyDomainRestrictions st),
@@ -35,8 +40,10 @@ namespace Alloy.commandDecl
     commandDecl.mk
       (name := cd.name)
       (commandType := cd.commandType)
-      (args := args)
+      (predArgs := predArgs)
+      (functionArgs := functionArgs)
       (formulas := formulas)
+      (expressions := expressions)
       (requiredDefs := cd.requiredDefs)
       (requiredVars := cd.requiredVars)
       (predCalls := predCalls)

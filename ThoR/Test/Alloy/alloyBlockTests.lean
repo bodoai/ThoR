@@ -151,7 +151,6 @@ end
 
 #create b2
 
-
 -- variables (ThoR_TupleSet : Type) [TupleSet ThoR_TupleSet] [b2.vars ThoR_TupleSet]
 -- def  xte'  :=
 --   (  ThoR.Quantification.Formula.var  Shared.quant.all
