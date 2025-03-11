@@ -40,6 +40,7 @@ namespace Alloy
           (commandType : commandType := commandType.pred)
           (predArgs : List (predArg × varDecl) := [])
           (functionArgs : List (functionArg × varDecl) := [])
+          (functionReturnType : typeExpr := default)
           (formulas : List (formula) := []) -- formulas (used in preds, axioms, asserts)
           (expressions : List (expr) := []) -- expressiosn (used in functions)
           (requiredDefs : List (String)) -- only for Lean Infoview
@@ -61,17 +62,18 @@ namespace Alloy
   deriving Repr
   namespace commandDecl
 
-    def name | mk n _ _ _ _ _ _ _ _ _ _ => n
-    def commandType | mk _ commandType _ _ _ _ _ _ _ _ _ => commandType
-    def predArgs | mk _ _ predArgs _ _ _ _ _ _ _ _ => predArgs
-    def functionArgs | mk _ _ _ functionArgs _ _ _ _ _ _ _ => functionArgs
-    def formulas | mk _ _ _ _ formulas _ _ _ _ _ _ => formulas
-    def expressions | mk _ _ _ _ _ expressions _ _ _ _ _ => expressions
-    def requiredDefs | mk _ _ _ _ _ _ requiredDefs _ _ _ _ => requiredDefs
-    def requiredVars | mk _ _ _ _ _ _ _ requiredVars _ _ _ => requiredVars
-    def predCalls | mk _ _ _ _ _ _ _ _ predCalls _ _ => predCalls
-    def relationCalls | mk _ _ _ _ _ _ _ _ _ relationCalls _ => relationCalls
-    def signatureCalls | mk _ _ _ _ _ _ _ _ _ _ signatureCalls => signatureCalls
+    def name | mk n _ _ _ _ _ _ _ _ _ _ _ => n
+    def commandType | mk  _ commandType _ _ _ _ _ _ _ _ _ _ => commandType
+    def predArgs | mk _ _ predArgs _ _ _ _ _ _ _ _ _ => predArgs
+    def functionArgs | mk _ _ _ functionArgs _ _ _ _ _ _ _ _ => functionArgs
+    def functionReturnType | mk _ _ _ _ functionReturnType _ _ _ _ _ _ _ => functionReturnType
+    def formulas | mk _ _ _ _ _ formulas _ _ _ _ _ _ => formulas
+    def expressions | mk _ _ _ _ _ _ expressions _ _ _ _ _ => expressions
+    def requiredDefs | mk _ _ _ _ _ _ _ requiredDefs _ _ _ _ => requiredDefs
+    def requiredVars | mk _ _ _ _ _ _ _ _ requiredVars _ _ _ => requiredVars
+    def predCalls | mk _ _ _ _ _ _ _ _ _ predCalls _ _ => predCalls
+    def relationCalls | mk _ _ _ _ _ _ _ _ _ _ relationCalls _ => relationCalls
+    def signatureCalls | mk _ _ _ _ _ _ _ _ _ _ _ signatureCalls => signatureCalls
 
     instance : Inhabited commandDecl where
       default :=
@@ -92,6 +94,7 @@ namespace Alloy
             commandType
             predArgs
             functionArgs
+            functionReturnType
             _
             expressions
             requiredDefs
@@ -104,6 +107,7 @@ namespace Alloy
             commandType
             predArgs
             functionArgs
+            functionReturnType
             formulas
             expressions
             requiredDefs
@@ -119,6 +123,7 @@ namespace Alloy
             commandType
             predArgs
             functionArgs
+            functionReturnType
             formulas
             _
             requiredDefs
@@ -131,6 +136,7 @@ namespace Alloy
             commandType
             predArgs
             functionArgs
+            functionReturnType
             formulas
             expressions
             requiredDefs
@@ -169,7 +175,8 @@ namespace Alloy
         { if
             cd.commandType == commandType.function
           then
-            s!"args := {cd.functionArgs},"
+            s!"args := {cd.functionArgs},
+            functionReturnType := {cd.functionReturnType}"
           else "" }
         required definitions := {cd.requiredDefs},
         required variables := {cd.requiredVars},

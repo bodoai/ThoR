@@ -196,7 +196,12 @@ private def createDefOrAxiomCommand
             `(Lean.Parser.Term.bracketedBinderF | ($[$names]* : ∷ $typeSyntax))
           let term := unhygienicUnfolder unhygienicTerm
           allArgs := allArgs.push term
-        argTerms := unhygienicUnfolder `(Lean.Parser.Command.optDeclSig| $[$allArgs]*)
+
+      -- add function arguments and function return type
+      if cd.isFunction then
+        let returnType := cd.functionReturnType.replaceCalls callableVariables
+        let returnTypeSyntax := returnType.toSyntax blockName
+        argTerms := unhygienicUnfolder `(Lean.Parser.Command.optDeclSig| $[$allArgs]* : ∷ $returnTypeSyntax)
 
       if bodyTerm != emptyTerm then
         return unhygienicUnfolder `(

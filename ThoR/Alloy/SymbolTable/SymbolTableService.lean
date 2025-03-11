@@ -655,6 +655,7 @@ to be better digestible for further computation and transformation into Lean.
             (name := declarationName)
             (commandType := commandType.function)
             (functionArgs := newArgs)
+            (functionReturnType := functionDecl.outputType)
             (expressions := functionDecl.expressions)
             (requiredVars := reqVars)
             (requiredDefs := default)
