@@ -128,19 +128,34 @@ private def createDefOrAxiomCommand
         bodyTerm := unhygienicUnfolder `($bodyTerm ∧ ($newTerm))
 
     -- define command
-    if isDefinition then
+    let tupleSetArg
+      : Array (TSyntax ``Lean.Parser.Term.bracketedBinderF) :=
+    #[
+      (unhygienicUnfolder `(Lean.Parser.Term.bracketedBinderF |
+        {$(baseType.ident) : Type}
+      )),
+      (unhygienicUnfolder `(Lean.Parser.Term.bracketedBinderF |
+        [$(mkIdent ``ThoR.TupleSet) $(baseType.ident)]
+      )),
+      (unhygienicUnfolder `(Lean.Parser.Term.bracketedBinderF |
+        [$(mkIdent s!"{blockName}.vars".toName) $(baseType.ident)]
+      ))
+    ]
 
+
+    if isDefinition then
       -- Alloy pred argument evaluation
       -- (no arguments for definition=false, as facts do not have any arguments)
       -- Alloy pred arguments are transformed into Lean function arguments.
       let mut argTerms :
         TSyntax ``Lean.Parser.Command.optDeclSig :=
-          unhygienicUnfolder `(Lean.Parser.Command.optDeclSig|)
+          unhygienicUnfolder `(Lean.Parser.Command.optDeclSig | $[$tupleSetArg]*)
+
+      let mut allArgs : Array (TSyntax ``Lean.Parser.Term.bracketedBinderF) :=
+        tupleSetArg
 
       if !(cd.args.isEmpty) then
         for arg in cd.args do
-          let mut singleArg :
-            Array (TSyntax ``Lean.Parser.Term.bracketedBinderF) := #[]
           let mut names : Array (TSyntax `ident) := #[]
 
           let argExpr :=
@@ -156,29 +171,28 @@ private def createDefOrAxiomCommand
           let argTerm := unhygienicUnfolder `(Lean.Parser.Term.bracketedBinderF |
             ($[$names]* : ∷ $t))
 
-          singleArg := singleArg.push argTerm
+          allArgs := allArgs.push argTerm
 
-          argTerms := unhygienicUnfolder `(Lean.Parser.Command.optDeclSig| $[$singleArg]*)
+        argTerms := unhygienicUnfolder `(Lean.Parser.Command.optDeclSig| $[$allArgs]*)
 
       if bodyTerm != emptyTerm then
-        return unhygienicUnfolder `(def $(mkIdent cd.name.toName) $argTerms := $bodyTerm)
+        return unhygienicUnfolder `(
+          def $(mkIdent cd.name.toName)
+          $argTerms
+          := $bodyTerm)
       else
         return unhygienicUnfolder `(
           def $(mkIdent cd.name.toName)
-          ($(baseType.ident) : Type)
-          [$(mkIdent ``ThoR.TupleSet) $(baseType.ident)]
-          [$(mkIdent s!"{blockName}.vars".toName) $(baseType.ident)]
+          $argTerms
           := True )
     else
     -- axiom command
       if bodyTerm != emptyTerm then
-        return unhygienicUnfolder `(axiom $(mkIdent cd.name.toName) : $bodyTerm)
+        return unhygienicUnfolder `(axiom $(mkIdent cd.name.toName) $[$tupleSetArg]* : $bodyTerm)
       else
         return unhygienicUnfolder `(
           axiom $(mkIdent cd.name.toName)
-          ($(baseType.ident) : Type)
-          [$(mkIdent ``ThoR.TupleSet) $(baseType.ident)]
-          [$(mkIdent s!"{blockName}.vars".toName) $(baseType.ident)]
+          $[$tupleSetArg]*
           : True )
 
 /--
@@ -454,13 +468,14 @@ private def createCommands (st : SymbolTable)
     return commandList
 
 declare_syntax_cat moduleVar
-syntax ("exactly" ident) : moduleVar
+syntax ("exactly")? ident : moduleVar
 
 private def moduleVar.getIdent
   (mv : Lean.TSyntax `moduleVar)
   : Ident :=
     match mv with
-      | `(moduleVar | exactly $i) => i
+      | `(moduleVar | exactly $i:ident) => i
+      | `(moduleVar | $i:ident) => i
       | _ => unreachable!
 
 /--
@@ -473,7 +488,7 @@ Options:
 syntax (name := alloyBlock)
   ("#" <|> "~")?
   "alloy"
-  (("module")? separatedNamespace ("[" moduleVar+ "]")?)?
+  (("module")? separatedNamespace ("[" moduleVar,+ "]")?)?
   specification*
   "end"
   : command
@@ -574,6 +589,21 @@ private def evalAlloyBlock
         s!"AST without opened Modules: \n
         {ast.toString}"
 
+    let module_variables_with_number_of_occurences :=
+      ( ast.modulVariables.map
+        fun elem => (elem, ast.modulVariables.count elem)
+      ).dedup
+
+    for module_variable in module_variables_with_number_of_occurences do
+      let module_variable_name := module_variable.1
+      let module_variable_number_of_occurences := module_variable.2
+
+      if module_variable_number_of_occurences > 1 then
+        logError s!"The Module {ast.name} has \
+        {module_variable_number_of_occurences} module variables \
+        with the name {module_variable_name}. Module variable names \
+        must be unique."
+
     -- try to open all modules
     let ast_withExcept := openModules ast monadeEnv
 
@@ -662,14 +692,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
 
           evalAlloyBlock blockName specifications
 
-      | `(alloy $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(alloy $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
           let blockName :=
             (separatedNamespace.toType blockName).representedNamespace
 
           let moduleVariables :=
-            (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+            (mvs.getElems.map
+              fun mv =>
+              (moduleVar.getIdent mv).getId.toString
+            ).toList
 
           evalAlloyBlock
             (moduleVariables := moduleVariables)
@@ -684,14 +717,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
 
           evalAlloyBlock blockName specifications
 
-      | `(alloy module $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(alloy module $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
           let blockName :=
             (separatedNamespace.toType blockName).representedNamespace
 
           let moduleVariables :=
-            (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+            (mvs.getElems.map
+              fun mv =>
+              (moduleVar.getIdent mv).getId.toString
+            ).toList
 
           evalAlloyBlock
             (moduleVariables := moduleVariables)
@@ -713,14 +749,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
               blockName
               specifications
 
-      | `(#alloy $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(#alloy $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
 
             let moduleVariables :=
-              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+              (mvs.getElems.map
+                fun mv =>
+                (moduleVar.getIdent mv).getId.toString
+              ).toList
 
             evalAlloyBlock
               (logging := true)
@@ -739,14 +778,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
               blockName
               specifications
 
-      | `(#alloy module $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(#alloy module $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
 
             let moduleVariables :=
-              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+              (mvs.getElems.map
+                fun mv =>
+                (moduleVar.getIdent mv).getId.toString
+              ).toList
 
             evalAlloyBlock
               (logging := true)
@@ -768,14 +810,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
             Lean.Elab.Command.failIfSucceeds
               (evalAlloyBlock blockName specifications)
 
-      | `(~alloy $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(~alloy $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
 
             let moduleVariables :=
-              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+              (mvs.getElems.map
+                fun mv =>
+                (moduleVar.getIdent mv).getId.toString
+              ).toList
 
             Lean.Elab.Command.failIfSucceeds
               (evalAlloyBlock
@@ -790,14 +835,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
             Lean.Elab.Command.failIfSucceeds
               (evalAlloyBlock blockName specifications)
 
-      | `(~alloy module $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(~alloy module $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
 
             let moduleVariables :=
-              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+              (mvs.getElems.map
+                fun mv =>
+                (moduleVar.getIdent mv).getId.toString
+              ).toList
 
             Lean.Elab.Command.failIfSucceeds
               (evalAlloyBlock
@@ -828,7 +876,7 @@ private def evaluateCreationCommand
 
     if let Option.some (ad : alloyData) := ads.find? dataName then
       if logging then
-        logInfo s!"Data with name {dataName} found:\n\n {ad}"
+        logInfo s!"Module data for {ident.getId.toString} found:\n\n {ad}"
 
       let st := ad.st
       let ast := ad.ast
@@ -871,7 +919,7 @@ private def evaluateCreationCommand
                 logInfo extensionAxiomCommandsString
 
     else
-      logError s!"No data found for {dataName}"
+      logError s!"Cannot create {ident.getId.toString}, it does not exist."
 
 
 @[command_elab creationSyntax]

@@ -92,7 +92,7 @@ to be better digestible for further computation and transformation into Lean.
 
         for requiredSymbol in st.requiredDecls do
           if !(availableSymbols.contains requiredSymbol) then
-            throw s!"{requiredSymbol} is not defined"
+            throw s!"{requiredSymbol} is not defined in {availableSymbols}"
 
     /-
     The duplication of module names is checked here.
@@ -103,11 +103,15 @@ to be better digestible for further computation and transformation into Lean.
       let importedVariableDeclarations :=
         st.variableDecls.filter fun vd => vd.isOpened
 
+      if importedVariableDeclarations.isEmpty then return
+
       let importedModuleNames :=
         (importedVariableDeclarations.map fun vd => vd.openedFrom).eraseDups
 
+      if importedModuleNames.isEmpty then return
+
       let alloyLikeModuleNames :=
-        importedModuleNames.map fun name => (name.splitOn "_").getLast!
+        importedModuleNames.map fun name => (name.splitOn "_").getLastD name
 
       let mut lookedAtNames := []
       for index in [:(alloyLikeModuleNames.length)] do
@@ -194,10 +198,7 @@ to be better digestible for further computation and transformation into Lean.
 
             if calledRelDecls.isEmpty then
               throw s!"The name {call} cannot be found. \
-              (In \
-              {(if location.isFact then "fact " else "")}\
-              {(if location.isAssert then "assert " else "")}\
-              {(if location.isPredicate then "predicate " else "")}\
+              (In {location.commandType}}
               {location.name})"
             continue
 
@@ -463,7 +464,7 @@ to be better digestible for further computation and transformation into Lean.
 
         let newArgs := predDecl.args.map fun a =>
           if !a.expression.isString then
-            panic! s!"invalid arg, not String"
+            (a, default)
           else
             let fv := (st.variableDecls.filter
               fun cv =>
@@ -474,7 +475,7 @@ to be better digestible for further computation and transformation into Lean.
           (
             commandDecl.mk (name := declarationName)
             (args := newArgs)
-            (isPredicate := true)
+            (commandType := commandType.pred)
             (formulas := predDecl.forms)
             (requiredVars := reqVars)
             (requiredDefs := reqDefs)
@@ -500,7 +501,7 @@ to be better digestible for further computation and transformation into Lean.
         let newPredDefDecl :=
           commandDecl.mk
             (name := predDefDecl.name)
-            (isPredicate := predDefDecl.isPredicate)
+            (commandType := predDefDecl.commandType)
             (args := predDefDecl.args)
             (formulas := predDefDecl.formulas)
             (requiredVars := predDefDecl.requiredVars)
@@ -564,7 +565,7 @@ to be better digestible for further computation and transformation into Lean.
           (
             commandDecl.mk
             (name := declarationName)
-            (isFact := true)
+            (commandType := commandType.fact)
             (formulas := factDecl.formulas)
             (requiredVars := reqVars)
             (requiredDefs := reqDefs)
@@ -631,7 +632,7 @@ to be better digestible for further computation and transformation into Lean.
           (
             commandDecl.mk
             (name := declarationName)
-            (isAssert := true)
+            (commandType := commandType.assert)
             (formulas := assertDecla.formulas)
             (requiredVars := reqVars)
             (requiredDefs := reqDefs)

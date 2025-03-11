@@ -245,7 +245,7 @@ namespace Shared.formula
           ))
 
       | formula.algebraicComparisonOperation op ae1 ae2 =>
-        return `(($(op.toTerm) $(ae1.toTerm) $(ae2.toTerm)))
+        return `(($(op.toTerm) $(ae1.toTerm blockName) $(ae2.toTerm blockName)))
 
       | formula.relationComarisonOperation op e1 e2 =>
         return `(( $(op.toTerm)

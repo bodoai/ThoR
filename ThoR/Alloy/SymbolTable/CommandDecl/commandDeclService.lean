@@ -34,7 +34,7 @@ namespace Alloy.commandDecl
 
     commandDecl.mk
       (name := cd.name)
-      (isPredicate := cd.isPredicate)
+      (commandType := cd.commandType)
       (args := args)
       (formulas := formulas)
       (requiredDefs := cd.requiredDefs)
