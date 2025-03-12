@@ -5,25 +5,25 @@ Authors: s. file CONTRIBUTORS
 -/
 import ThoR
 
-alloy single/line/empty/comment
-  //
+#alloy single/line/empty/comment
+  // a
+  sig a {}
 end
 
-alloy single/line/comment
+#alloy single/line/comment
   // this is a comment
   // a + 3
   // a +
   // //
+  sig a {}
 end
 
-alloy multi/line/empty/comment
-  /* */
+#alloy multi/line/empty/comment
   /*
-
   */
 end
 
-alloy multi/line/comment
+#alloy multi/line/comment
   /* this is a comment */
   /*
       this
