@@ -17,9 +17,9 @@ alloy single/line/comment
 end
 
 alloy multi/line/empty/comment
-  /* a + 3 * / */
+  /* */
   /*
-      p in p..[xyz]
+
   */
 end
 
@@ -30,5 +30,9 @@ alloy multi/line/comment
       is
       a
       comment
+  */
+  /* a + 3 * / */
+  /*
+      p in p..[xyz]
   */
 end
