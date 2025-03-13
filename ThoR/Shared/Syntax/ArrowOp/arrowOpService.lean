@@ -56,7 +56,7 @@ namespace Shared.arrowOp
   def toSyntax
     (ao : arrowOp)
     (blockName : Name)
-    : TSyntax `arrowOp := Unhygienic.run do
+    : ArrowOp := Unhygienic.run do
       match ao with
         | arrowOp.multArrowOpExpr e1 m1 m2 e2 =>
           `(arrowOp|
@@ -90,7 +90,7 @@ namespace Shared.arrowOp
   def toTermFromBlock
     (ao : Shared.arrowOp)
     (blockName : Name)
-    : TSyntax `term := Unhygienic.run do
+    : Term := Unhygienic.run do
 
     match ao with
       | arrowOp.multArrowOpExpr (e1 : expr) (m1 : mult) (m2 : mult) (e2 : expr) =>
@@ -133,7 +133,7 @@ namespace Shared.arrowOp
   -/
   def toTermOutsideBlock
     (ao : Shared.arrowOp)
-    : TSyntax `term := Unhygienic.run do
+    : Term := Unhygienic.run do
 
     match ao with
       | arrowOp.multArrowOpExpr (e1 : expr) (m1 : mult) (m2 : mult) (e2 : expr) =>
@@ -172,7 +172,7 @@ namespace Shared.arrowOp
   /--
   Parses the given syntax to the type
   -/
-  partial def toType (op : TSyntax `arrowOp) : arrowOp :=
+  partial def toType (op : ArrowOp) : arrowOp :=
     match op with
       -- multArrowOpExpr
       | `(arrowOp| ($ae:arrowOp)) => toType ae

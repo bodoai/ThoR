@@ -165,7 +165,7 @@ namespace Shared.expr
   def toSyntax
     (blockName : Name)
     (e : expr)
-    : TSyntax `expr := Unhygienic.run do
+    : Expression := Unhygienic.run do
       match e with
         | expr.const c => `(expr| $(c.toSyntax):constant)
         | expr.string s => `(expr| $(mkIdent s.toName):ident)
@@ -193,7 +193,7 @@ namespace Shared.expr
     (inBLock : Bool)
     (blockName : Name)
     (quantorNames : List (String) := []) -- used to know which names must be pure
-    : TSyntax `term := Unhygienic.run do
+    : Term := Unhygienic.run do
       match e with
         | expr.const c => return (c.toTerm)
 
@@ -373,7 +373,7 @@ namespace Shared.expr
   Parses the given syntax to the type
   -/
   partial def toType
-    (e : TSyntax `expr)
+    (e : Expression)
     (signatureRelationNames : List String := [])
     : expr :=
       match e with
@@ -444,10 +444,10 @@ namespace Shared.expr
               let subExpr1 := x.1
               let subExpr2 := x.2
 
-              let subE1 : TSyntax `expr := Unhygienic.run
+              let subE1 : Expression := Unhygienic.run
                 `(expr| $(mkIdent subExpr1): ident)
 
-              let subE2 : TSyntax `expr := Unhygienic.run
+              let subE2 : Expression := Unhygienic.run
                 `(expr| $(mkIdent subExpr2): ident)
 
               expr.dotjoin

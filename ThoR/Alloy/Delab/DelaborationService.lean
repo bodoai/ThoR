@@ -31,7 +31,7 @@ e.g. m1.a_φ_r to  m1/a/r (note, that there is a \quad before every full name)
 -/
 def switch_thoR_representation_to_alloy_representation
   (input : Ident)
-  : TSyntax `term := Unhygienic.run do
+  : Term := Unhygienic.run do
 
     let name := input.getId
 

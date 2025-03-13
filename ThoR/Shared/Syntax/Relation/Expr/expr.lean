@@ -45,6 +45,7 @@ namespace Shared
   This syntax represents a relation
   -/
   declare_syntax_cat expr
+  abbrev Expression := TSyntax `expr
   syntax constant : expr
   syntax ident : expr
   syntax separatedNamespace : expr -- to call opened module entries

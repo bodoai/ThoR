@@ -23,6 +23,7 @@ namespace Alloy
   A syntax repreaentation of an separatedNamespace
   -/
   declare_syntax_cat separatedNamespace
+  abbrev SeparatedNamespace := TSyntax `separatedNamespace
   declare_syntax_cat separatedNamespaceExtension
   syntax "/" extendedIdent : separatedNamespaceExtension
   syntax extendedIdent (separatedNamespaceExtension)*: separatedNamespace
@@ -38,7 +39,7 @@ namespace Alloy
 
     /-- Generates a type representation from the TSyntax -/
     def toType
-      (sn : TSyntax `separatedNamespace)
+      (sn : SeparatedNamespace)
       : separatedNamespace := Id.run do
         match sn with
           | `(separatedNamespace| $ei:extendedIdent) =>
@@ -61,12 +62,12 @@ namespace Alloy
 
     def toTerm
       (sn : separatedNamespace)
-      : TSyntax `term := Unhygienic.run do
+      : Term := Unhygienic.run do
         return ← `(term| $(sn.representedNamespace))
 
     def toSyntax
       (sn : separatedNamespace)
-      : TSyntax `separatedNamespace := Unhygienic.run do
+      : SeparatedNamespace := Unhygienic.run do
         let comps := sn.representedNamespace.getId.components
         let fc := comps.get! 0
 

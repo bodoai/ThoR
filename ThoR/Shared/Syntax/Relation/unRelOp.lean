@@ -29,6 +29,7 @@ namespace Shared
   This operation returns a relation
   -/
   declare_syntax_cat unRelOp
+  abbrev UnRelOp := TSyntax `unRelOp
   syntax "^" : unRelOp
   syntax "*" : unRelOp
   syntax "~" : unRelOp
@@ -56,7 +57,7 @@ namespace Shared
     /--
     Generates syntax corosponding to the type
     -/
-    def toSyntax (op : unRelOp) : TSyntax `unRelOp := Unhygienic.run do
+    def toSyntax (op : unRelOp) : UnRelOp := Unhygienic.run do
       match op with
         | unRelOp.transitive_closure => `(unRelOp| ^)
         | unRelOp.reflexive_closure => `(unRelOp| *)
@@ -67,7 +68,7 @@ namespace Shared
     -/
     def toTerm
       (op : unRelOp)
-      : TSyntax `term := Unhygienic.run do
+      : Term := Unhygienic.run do
         match op with
           | unRelOp.transitive_closure => `($(mkIdent ``HTransclos.hTransclos))
           | unRelOp.reflexive_closure => `($(mkIdent ``HReflTransclos.hRTransclos))
@@ -76,7 +77,7 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (op : TSyntax `unRelOp) : unRelOp :=
+    def toType (op : UnRelOp) : unRelOp :=
       match op with
         | `(unRelOp| ^) => unRelOp.transitive_closure
         | `(unRelOp| *) => unRelOp.reflexive_closure

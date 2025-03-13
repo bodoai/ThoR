@@ -68,7 +68,7 @@ def substituteBVarsWithConst (e:Expr) (bnl : List (Name)) : Expr := Id.run do
     | Expr.lam bn bt body bi => Expr.lam bn bt (substituteBVarsWithConst body (bnl)) bi
     | _ => e
 
-def termToQuant (t : TSyntax `term) : Shared.quant :=
+def termToQuant (t : Term) : Shared.quant :=
   match t with
   | `(Shared.quant.no) => Shared.quant.no
   | `(Shared.quant.lone) => Shared.quant.lone

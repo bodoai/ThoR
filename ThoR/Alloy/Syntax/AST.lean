@@ -209,7 +209,7 @@ namespace AST
   -/
   def create
     (name : Ident)
-    (specifications : Array (TSyntax `specification))
+    (specifications : Array Specification)
     (moduleVariables : List (String))
     : AST := Id.run do
 
