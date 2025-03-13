@@ -22,6 +22,7 @@ namespace Alloy
 
   /-- Syntax representation of a property -/
   declare_syntax_cat property
+  abbrev Property := TSyntax `property
   syntax "{"
     formula*
   "}" : property
@@ -32,6 +33,7 @@ namespace Alloy
             name := {p.name},
             formulas := {p.formulas}
           }"
+
 
   namespace property
 
@@ -79,7 +81,7 @@ namespace Alloy
     /-- Creates a type representation from syntax and a name-/
     def toType
       (name: Name)
-      (p:TSyntax `property)
+      (p : Property)
       (signatureName : String := "")
       (signatureRelationNames : List String := [])
       : property :=

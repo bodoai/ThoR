@@ -24,6 +24,7 @@ namespace Shared
   This syntax represents an binary operation between algebra expressions
   -/
   declare_syntax_cat binAlgOp
+  abbrev BinAlgOp := TSyntax `binAlgOp
   syntax "plus" : binAlgOp
   syntax "minus" : binAlgOp
   syntax "mul" : binAlgOp
@@ -49,7 +50,7 @@ namespace Shared
     -/
     def toTerm
     (op : binAlgOp)
-    : TSyntax `term := Unhygienic.run do
+    : Term := Unhygienic.run do
       match op with
         | binAlgOp.add => `($(mkIdent ``Add.add))
         | binAlgOp.sub => `($(mkIdent ``Sub.sub))
@@ -60,7 +61,7 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (op : TSyntax `binAlgOp) : binAlgOp :=
+    def toType (op : BinAlgOp) : binAlgOp :=
       match op with
         | `(binAlgOp| plus) => binAlgOp.add
         | `(binAlgOp| minus) => binAlgOp.sub

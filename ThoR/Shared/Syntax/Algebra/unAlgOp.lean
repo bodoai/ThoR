@@ -21,6 +21,7 @@ namespace Shared
   This syntax represents an unary algebra operator
   -/
   declare_syntax_cat unAlgOp
+  abbrev UnAlgOp := TSyntax `unAlgOp
   syntax "-" : unAlgOp
 
   instance : ToString unAlgOp where
@@ -38,14 +39,14 @@ namespace Shared
     -/
     def toTerm
     (op : unAlgOp)
-    : TSyntax `term := Unhygienic.run do
+    : Term := Unhygienic.run do
       match op with
         | unAlgOp.negation => `($(mkIdent ``Neg.neg))
 
     /--
     Parses the given syntax to the type
     -/
-    def toType (op : TSyntax `unAlgOp) : unAlgOp :=
+    def toType (op : UnAlgOp) : unAlgOp :=
       match op with
         | `(unAlgOp| -) => unAlgOp.negation
 

@@ -24,6 +24,7 @@ namespace Shared
   This syntax represents compare operations between algebra expression
   -/
   declare_syntax_cat algCompareOp
+  abbrev AlgCompareOp := TSyntax `algCompareOp
   syntax "<" : algCompareOp
   syntax ">" : algCompareOp
   syntax "=" : algCompareOp
@@ -47,7 +48,7 @@ namespace Shared
     /--
     Generates a Lean term corosponding with the type
     -/
-    def toTerm (op : algCompareOp) : TSyntax `term := Unhygienic.run do
+    def toTerm (op : algCompareOp) : Term := Unhygienic.run do
       match op with
         | algCompareOp.lt => `($(mkIdent ``LT.lt))
         | algCompareOp.gt => `($(mkIdent ``GT.gt))
@@ -58,7 +59,7 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (op: TSyntax `algCompareOp) : algCompareOp :=
+    def toType (op: AlgCompareOp) : algCompareOp :=
       match op with
         | `(algCompareOp| <) => algCompareOp.lt
         | `(algCompareOp| >) => algCompareOp.gt

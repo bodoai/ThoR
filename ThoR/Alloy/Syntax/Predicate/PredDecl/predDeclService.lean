@@ -82,7 +82,7 @@ namespace Alloy.predDecl
   /--
   Parses te given syntax to a structure of predDecl if possible
   -/
-  def toType (pd : TSyntax `predDecl) : predDecl :=
+  def toType (pd : PredDecl) : predDecl :=
     match pd with
       -- pred declaration with args
       | `(predDecl| pred $name:extendedIdent ($args:predArg,*) {

@@ -29,6 +29,7 @@ namespace Alloy
   This syntax represents an Alloy predicate declaration
   -/
   declare_syntax_cat predDecl
+  abbrev PredDecl := TSyntax `predDecl
   syntax "pred " extendedIdent ("("predArg,*")")? "{"
     formula*
   "}": predDecl

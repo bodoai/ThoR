@@ -27,6 +27,7 @@ namespace Alloy
   A syntax repreaentation of an fact declaration.
   -/
   declare_syntax_cat factDecl
+  abbrev FactDecl := TSyntax `factDecl
   syntax "fact " (extendedIdent)? property : factDecl
 
   instance : ToString factDecl where
@@ -38,7 +39,7 @@ namespace Alloy
     def toString (fd : factDecl) : String := ToString.toString fd
 
     /-- Generates a type representation from the TSyntax -/
-    def toType (defaultName : String) (fd: TSyntax `factDecl) : factDecl :=
+    def toType (defaultName : String) (fd: FactDecl) : factDecl :=
       match fd with
           --with name
         | `(factDecl| fact $name:extendedIdent $p:property) =>

@@ -30,6 +30,7 @@ namespace Shared
   This syntax represents binary operations between relations
   -/
   declare_syntax_cat binRelOp
+  abbrev BinRelOp := TSyntax `binRelOp
   syntax "+" : binRelOp
   syntax "-" : binRelOp
   syntax "&" : binRelOp
@@ -70,7 +71,7 @@ namespace Shared
     /--
     Generates a syntax representation of the type
     -/
-    def toSyntax (op : binRelOp) : TSyntax `binRelOp := Unhygienic.run do
+    def toSyntax (op : binRelOp) : BinRelOp := Unhygienic.run do
       match op with
         | binRelOp.union => `(binRelOp| +)
         | binRelOp.intersection => `(binRelOp| &)
@@ -84,7 +85,7 @@ namespace Shared
     -/
     def toTerm
       (op : binRelOp)
-      : TSyntax `term := Unhygienic.run do
+      : Term := Unhygienic.run do
         match op with
           | binRelOp.union => `($(mkIdent ``HAdd.hAdd))
           | binRelOp.intersection => `($(mkIdent ``HIntersect.hIntersect))
@@ -96,7 +97,7 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (op : TSyntax `binRelOp) : binRelOp :=
+    def toType (op : BinRelOp) : binRelOp :=
       match op with
         | `(binRelOp| +)  => binRelOp.union
         | `(binRelOp| &)  => binRelOp.intersection

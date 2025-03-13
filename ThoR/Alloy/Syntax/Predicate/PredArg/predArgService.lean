@@ -17,7 +17,7 @@ namespace Alloy.predArg
   def create
     (disjunction:Bool)
     (names: Syntax.TSepArray `ident ",")
-    (e: TSyntax `expr)
+    (e: Expression)
     : predArg := Id.run do
 
     let names := (names.getElems.map fun (elem) => elem.getId.toString).toList
@@ -32,7 +32,7 @@ namespace Alloy.predArg
   /--
   Parses the given syntax to a predArg if possible
   -/
-  def toType (arg : TSyntax `predArg) : predArg :=
+  def toType (arg : PredArg) : predArg :=
     match arg with
       | `(predArg| disj $names:ident,* : $expression:expr) =>
         create true names expression

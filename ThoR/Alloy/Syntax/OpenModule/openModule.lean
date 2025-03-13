@@ -22,6 +22,7 @@ structure openModule where
 deriving Repr
 
 declare_syntax_cat openModule
+abbrev OpenModule := TSyntax `openModule
 syntax
   "open" separatedNamespace
   ("[" (ident)+ "]")?
@@ -49,7 +50,7 @@ namespace openModule
   Creates the Type from the syntax.
   -/
   def toType
-    (om : TSyntax `openModule)
+    (om : OpenModule)
     : openModule := Id.run do
       match om with
         | `(openModule| open $sn:separatedNamespace) =>

@@ -132,7 +132,7 @@ namespace InheritanceTree
   private def product
     (e : String)
     (l : List (String))
-    : List (TSyntax `term × List (String)) := Unhygienic.run do
+    : List (Term × List (String)) := Unhygienic.run do
       match l with
         | [] => do
           return []
@@ -148,7 +148,7 @@ namespace InheritanceTree
   Combines the given List pairwise with & (Alloy operator for set intersection)
   -/
   private def pairwise_combination (input : List (String))
-  : List (TSyntax `term × List (String)) :=
+  : List (Term × List (String)) :=
     match input with
       | [] => []
       | h :: t => (product h t) ++ (pairwise_combination t)
@@ -157,8 +157,8 @@ namespace InheritanceTree
   Joins the given terms with and (∧) to create the conjunction of all subterms
   -/
   private def joinTermsWithAnd
-    (input : List (TSyntax `term × List (String)))
-    : (TSyntax `term ) := Unhygienic.run do
+    (input : List (Term × List (String)))
+    : Term := Unhygienic.run do
       if input.isEmpty then
         let result ← `($(mkIdent "".toName))
         return (result)
@@ -166,7 +166,7 @@ namespace InheritanceTree
       else
         let firstInput := input.get! 0
 
-        let mut result : TSyntax `term
+        let mut result : Term
             ← `($(firstInput.1))
 
         let mut resultMembers : List (String) := firstInput.2
@@ -188,9 +188,9 @@ namespace InheritanceTree
     (blockName : Name)
     (signatureNames rSignatureNames : List (String))
     (openedFrom : String := "this")
-    : List (TSyntax `command) := Unhygienic.run do
+    : List Command := Unhygienic.run do
 
-    let mut commands : List (TSyntax `command) := []
+    let mut commands : List Command := []
 
     if it.nodes.isEmpty then -- no need to create if not needed.
       return commands
@@ -204,7 +204,7 @@ namespace InheritanceTree
         (← `(namespace $(mkIdent namespaceName)))
 
       --Relation Base
-      let defsBaseType : TSyntax `command ←
+      let defsBaseType : Command ←
         `(variable { $(baseType.ident) : Type }
           [ $(mkIdent ``ThoR.TupleSet) $(baseType.ident) ]
           [ $(mkIdent (s!"{blockName}.vars").toName) $(baseType.ident) ]
@@ -216,7 +216,7 @@ namespace InheritanceTree
       -- - first item in pair: axiom body
       -- - second item in pair: list of all names of all signatures that appear in the axiom body
       let mut termsWithMembers
-        : List (TSyntax `term × List (String)) := []
+        : List (Term × List (String)) := []
 
       let mut allMembers : List (String) := []
 
@@ -265,7 +265,7 @@ namespace InheritanceTree
             let firstChild := allChildren.get! 0
 
             --Initialise HoldingLists
-            let mut terms : TSyntax `term
+            let mut terms : Term
               ← `((∻ $(mkIdent firstChild.toName)))
 
             let mut termMembers : List (String)
@@ -303,7 +303,7 @@ namespace InheritanceTree
 
           for child in allChildren do
 
-            let term : TSyntax `term ←
+            let term : Term ←
             `(((∻ $(mkIdent child.toName)) ⊂
               (∻ $(mkIdent parentName.toName))))
 

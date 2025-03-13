@@ -23,6 +23,8 @@ namespace Shared
   This syntax represents binary logic operations
   -/
   declare_syntax_cat binLogOp
+  abbrev BinLogOp := TSyntax `binLogOp
+
   syntax "||" : binLogOp
   syntax "or" : binLogOp
 
@@ -56,7 +58,7 @@ namespace Shared
     /--
     Generates a Lean term corosponding with the type
     -/
-    def toTerm (op : binLogOp) : TSyntax `term := Unhygienic.run do
+    def toTerm (op : binLogOp) : Term := Unhygienic.run do
       match op with
         | binLogOp.or => `($(mkIdent ``Or))
         | binLogOp.and => `($(mkIdent ``And))
@@ -66,7 +68,7 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (op : TSyntax `binLogOp) : binLogOp :=
+    def toType (op : BinLogOp) : binLogOp :=
       match op with
         | `(binLogOp| ||) => binLogOp.or
         | `(binLogOp| or) => binLogOp.or

@@ -26,6 +26,7 @@ namespace Alloy
   A syntax repreaentation of an fact declaration.
   -/
   declare_syntax_cat signatureFactDecl
+  abbrev SignatureFactDecl := TSyntax `signatureFactDecl
   syntax property : signatureFactDecl
 
   namespace signatureFactDecl
@@ -36,11 +37,11 @@ namespace Alloy
     -/
     def toType
       (defaultName : String)
-      (fd: TSyntax `signatureFactDecl)
+      (sfd: SignatureFactDecl)
       (signatureName : String)
       (signatureRelationNames : List String)
       : factDecl :=
-        match fd with
+        match sfd with
             | `(signatureFactDecl| $p:property) =>
                   property.toType
                     defaultName.toName

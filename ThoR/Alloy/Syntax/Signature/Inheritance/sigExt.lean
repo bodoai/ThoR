@@ -54,7 +54,7 @@ namespace Alloy
     Creates an 'in' extension
     -/
     def createSigExtIn
-      (name : TSyntax `ident)
+      (name : Ident)
       (type : TSyntaxArray `sigExtInType)
       := sigExt.in (sigExtIn.create name type)
 
@@ -63,7 +63,7 @@ namespace Alloy
     (else creates a 'none' extension)
     -/
     def fromOptionIn
-      (extensionName : Option (TSyntax `ident))
+      (extensionName : Option (Ident))
       (typeExtensions : Option (TSyntaxArray `sigExtInType))
       : sigExt :=
         match extensionName with
@@ -74,7 +74,7 @@ namespace Alloy
     Creates an 'extends' extension
     -/
     def createSigExtExtends
-      (name : TSyntax `ident)
+      (name : Ident)
       := sigExt.extends (sigExtExtends.create name)
 
     /--
@@ -82,7 +82,7 @@ namespace Alloy
     (else creates a 'none' extension)
     -/
     def fromOptionEx
-      (extensionName : Option (TSyntax `ident))
+      (extensionName : Option (Ident))
       : sigExt :=
         match extensionName with
           | Option.some en => (createSigExtExtends en)

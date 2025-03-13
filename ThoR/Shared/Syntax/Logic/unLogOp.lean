@@ -20,6 +20,7 @@ namespace Shared
   This syntax represents unary logic operations
   -/
   declare_syntax_cat unLogOp
+  abbrev UnLogOp := TSyntax `unLogOp
   syntax "not" : unLogOp
 
   instance : ToString unLogOp where
@@ -34,7 +35,7 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (op : TSyntax `unLogOp) : unLogOp :=
+    def toType (op : UnLogOp) : unLogOp :=
       match op with
         | `(unLogOp| not) => unLogOp.not
 
@@ -43,7 +44,7 @@ namespace Shared
     /--
     Generates a Lean term corosponding with the type
     -/
-    def toTerm (op : unLogOp) : TSyntax `term := Unhygienic.run do
+    def toTerm (op : unLogOp) : Term := Unhygienic.run do
       match op with
         | unLogOp.not => `($(mkIdent ``Not))
 

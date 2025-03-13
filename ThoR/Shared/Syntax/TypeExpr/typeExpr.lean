@@ -30,6 +30,7 @@ namespace Shared
   This syntax represents a typeExpression
   -/
   declare_syntax_cat typeExpr
+  abbrev TypeExpr := TSyntax `typeExpr
   syntax arrowOp : typeExpr
   syntax expr : typeExpr
   syntax mult expr : typeExpr

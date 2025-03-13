@@ -17,16 +17,17 @@ open Lean Lean.Elab Command Term
 namespace ThoR
 
 declare_syntax_cat rel_decl
+abbrev RelDecl := TSyntax `rel_decl
 syntax "(" ident " ∷ " typeExpr ")": rel_decl
 
 open Shared
 
 private def evaluateRelationDecl
-  (rel_decls : Array (TSyntax `rel_decl))
+  (rel_decls : Array RelDecl)
   : CommandElabM Unit := do
 
     -- Sammlung aller Commands die ausgeführt werden sollen
-    let mut allCmds : Array (TSyntax `command) := #[]
+    let mut allCmds : Array Command := #[]
 
     -- jeden Syntaxeintrag auswerten der in der "Alloy-Sektion" vorhanden ist
     for rd in rel_decls do

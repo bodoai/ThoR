@@ -7,7 +7,7 @@ import ThoR.Basic
 import ThoR.Shared.Syntax.Relation.Expr.expr
 
 open Shared
-
+open Lean
 namespace Alloy
 
   /--
@@ -23,6 +23,7 @@ namespace Alloy
   This syntax represents a predicate argument
   -/
   declare_syntax_cat predArg
+  abbrev PredArg := TSyntax `predArg
   syntax ("disj")? ident,+ ":" expr : predArg
 
   instance : ToString predArg where

@@ -25,6 +25,7 @@ namespace Shared
   This syntax represents compare operations between relations
   -/
   declare_syntax_cat relCompareOp
+  abbrev RelCompareOp := TSyntax `relCompareOp
   syntax "in" : relCompareOp
   syntax "=" : relCompareOp
   syntax "!=" :relCompareOp
@@ -45,7 +46,7 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (op : TSyntax `relCompareOp) : relCompareOp :=
+    def toType (op : RelCompareOp) : relCompareOp :=
       match op with
         | `(relCompareOp| in) => relCompareOp.in
         | `(relCompareOp| =) => relCompareOp.eq
@@ -56,7 +57,7 @@ namespace Shared
     /--
     Generates a Lean term corosponding with the type
     -/
-    def toTerm (op : relCompareOp) : TSyntax `term := Unhygienic.run do
+    def toTerm (op : relCompareOp) : Term := Unhygienic.run do
       match op with
         | relCompareOp.in => `($(mkIdent ``HSubset.hSubset))
         | relCompareOp.eq => `($(mkIdent ``HEqual.hEqual))

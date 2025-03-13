@@ -4,7 +4,7 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Shared.Syntax.Relation.Expr.expr
-
+open Lean
 namespace Shared
 
   /--
@@ -18,6 +18,7 @@ namespace Shared
   This syntax represents an cardinal expression
   -/
   declare_syntax_cat cardExpr
+  abbrev CardExpr := TSyntax `cardExpr
   syntax "# " expr : cardExpr
 
   instance : ToString cardExpr where

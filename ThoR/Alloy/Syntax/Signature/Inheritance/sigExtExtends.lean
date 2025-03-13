@@ -37,7 +37,7 @@ namespace Alloy
     /--
     Creates an empty extension strucutre with the given name.
     -/
-    def create (name : TSyntax `ident) : sigExtExtends :=
+    def create (name : Ident) : sigExtExtends :=
         {type:=
           (typeExpr.multExpr mult.set
             (expr.string name.getId.toString)

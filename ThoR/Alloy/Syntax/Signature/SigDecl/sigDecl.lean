@@ -31,6 +31,7 @@ namespace Alloy
   This Syntax represents a Alloy signature declaration.
   -/
   declare_syntax_cat sigDecl
+  abbrev SigDecl := TSyntax `sigDecl
   syntax
     (mult)?
     "sig" extendedIdent,+
@@ -130,7 +131,7 @@ namespace Alloy
     /--
     Parses the given syntax to a sigDecl (type) if possible
     -/
-    def toType (sd: TSyntax `sigDecl) : sigDecl :=
+    def toType (sd: SigDecl) : sigDecl :=
       match sd with
         -- signature with opt mult, extends, fields
         | `(sigDecl|
@@ -215,11 +216,11 @@ namespace Alloy
             fieldDecls := []
           }
 
-    def toTerm (sd : sigDecl) : TSyntax `term := Unhygienic.run do
+    def toTerm (sd : sigDecl) : Term := Unhygienic.run do
       let absTerm ← `(term | $(if sd.abs then (mkIdent `true) else (mkIdent `false)))
       let multTerm := sd.mult.toTerm
 
-      let mut namesTerm : TSyntax `term ← `(term | (List.nil))
+      let mut namesTerm : Term ← `(term | (List.nil))
       for name in sd.names.reverse do
         namesTerm  ← `(term | (List.cons $(Lean.Syntax.mkStrLit name) ($namesTerm)))
 
