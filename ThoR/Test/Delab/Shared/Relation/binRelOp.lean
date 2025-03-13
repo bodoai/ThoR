@@ -5,6 +5,7 @@ Authors: s. file CONTRIBUTORS
 -/
 
 import ThoR
+import ThoR.Alloy.Delab
 
 alloy dotjoin_sig_rel
   sig a {
@@ -105,3 +106,15 @@ end
 create range_restriction_rel_sig
 
 #check range_restriction_rel_sig.facts.f0
+
+alloy union_rel_rel_with_quantor
+  sig A {
+    r : A
+  }
+  fact {
+    some a : A | some (a.r)
+  }
+end
+create union_rel_rel_with_quantor
+
+#check union_rel_rel_with_quantor.facts.f0
