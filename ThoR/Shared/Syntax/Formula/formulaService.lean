@@ -89,6 +89,129 @@ namespace Shared.formula
     (input : Unhygienic (Term))
     : Term := Unhygienic.run do
     return ← input
+
+
+  partial def toTermOutsideBlock
+    (f : formula)
+    : Except String ((Term)) := do
+    match f with
+      | formula.string s => do
+        return unhygienicUnfolder `($(mkIdent s.toName))
+
+      | formula.pred_with_args p pa => do
+        let mut term :=
+          `((
+              ∻ $(mkIdent p.toName)
+            ))
+
+        for arg in pa do
+          term :=
+              `(term |
+                $(unhygienicUnfolder term)
+                $(arg.toTermOutsideBlock)
+              )
+
+        return unhygienicUnfolder term
+
+      | formula.unaryRelBoolOperation op e =>
+        return unhygienicUnfolder `(( $(op.toTerm)
+            $(e.toTermOutsideBlock)
+          ))
+
+      | formula.unaryLogicOperation op f =>
+        let fTerm ← f.toTermOutsideBlock
+        return unhygienicUnfolder `(term | ( $(op.toTerm) $(fTerm)))
+
+      | formula.binaryLogicOperation op f1 f2 =>
+        let f1Term ←
+          f1.toTermOutsideBlock
+        let f2Term ←
+          f2.toTermOutsideBlock
+        return unhygienicUnfolder `(( $(op.toTerm)
+            $(f1Term)
+            $(f2Term)
+          ))
+
+      | formula.tertiaryLogicOperation op f1 f2 f3 =>
+        let f1Term ←
+          f1.toTermOutsideBlock
+        let f2Term ←
+          f2.toTermOutsideBlock
+        let f3Term ←
+          f3.toTermOutsideBlock
+        return unhygienicUnfolder `(( $(op.toTerm)
+            $(f1Term)
+            $(f2Term)
+            $(f3Term)
+          ))
+
+      | formula.algebraicComparisonOperation op ae1 ae2 =>
+        return unhygienicUnfolder `(($(op.toTerm) $(ae1.toTermOutsideBlock) $(ae2.toTermOutsideBlock)))
+
+      | formula.relationComarisonOperation op e1 e2 =>
+        return unhygienicUnfolder `(( $(op.toTerm)
+            $(e1.toTermOutsideBlock)
+            $(e2.toTermOutsideBlock)
+          ))
+
+      | formula.quantification q disjunction n te f => do
+
+        let names := (n.map fun (name) => mkIdent name.toName).reverse
+
+        -- one form ist present -> see syntax (+)
+        let firstForm := f.get! 0
+        let firstFTerm ← firstForm.toTermOutsideBlock
+
+        let mut completefTerm : Unhygienic (Term) :=
+          `(term | $(firstFTerm))
+
+        for form in f.drop 1 do
+          let fTerm ←
+            form.toTermOutsideBlock
+
+          completefTerm :=
+            `(( $(unhygienicUnfolder completefTerm) ∧
+                ($(fTerm))
+              ))
+
+        completefTerm :=
+          `((
+            $(mkIdent ``Formula.prop)
+            ($(unhygienicUnfolder completefTerm))
+            ))
+
+        -- singular parameter is var constructor
+        if names.length == 1 then
+            return unhygienicUnfolder `(($(mkIdent ``Formula.var) $(q.toTerm)) (
+              fun ( $(names.get! 0) : ∷ $((te.toStringRb).toSyntaxOutsideBlock))
+                => $(unhygienicUnfolder completefTerm)))
+
+        -- multiple parameter is Group constructor
+        else
+          let mut formulaGroup :=
+            `(($(mkIdent ``Group.var) (
+              fun ( $(names.get! 0) : ∷ $((te.toStringRb).toSyntaxOutsideBlock))
+                => $(mkIdent ``Group.formula) $(unhygienicUnfolder completefTerm))))
+          for n in (names.drop 1) do
+            formulaGroup :=
+              `(($(mkIdent ``Group.var) (
+                fun ( $(n) : ∷ $((te.toStringRb).toSyntaxOutsideBlock))
+                  => $(unhygienicUnfolder formulaGroup))))
+          if disjunction then
+            formulaGroup :=
+              `(( $(mkIdent ``Formula.disj)
+                  $(mkIdent ``Shared.quant.all)
+                  $(unhygienicUnfolder formulaGroup)
+                ))
+          else
+            formulaGroup :=
+              `(( $(mkIdent ``Formula.group)
+                  $(mkIdent ``Shared.quant.all)
+                  $(unhygienicUnfolder formulaGroup)
+                ))
+
+          return unhygienicUnfolder formulaGroup
+
   /--
   Generates a Lean term corosponding with the type
   -/

@@ -947,3 +947,36 @@ private def creationImpl : CommandElab := fun stx => do
 
       | _ => return
   catch | x => throwError x.toMessageData
+
+syntax
+  (name := blockless_alloy)
+  "[" "alloy" "|"
+    formula*
+  "]"
+  : term
+
+@[term_elab blockless_alloy]
+private def alloyFormulaBlockImpl : TermElab := fun stx expectedType? => do
+  match stx with
+    | `([ alloy | $formulas:formula* ]) =>
+      if formulas.isEmpty then
+        elabTerm  (← `(term | True)) expectedType?
+      else
+        let formulas := formulas.map fun f => formula.toType f
+
+        let first_formula := formulas.get! 0
+        let except_first_formula_term := first_formula.toTermOutsideBlock
+        match except_first_formula_term with
+          | Except.error msg => panic! msg -- how to log/throw here ...
+          | Except.ok first_formula_term =>
+          let mut resulting_term := first_formula_term
+          for formula_x in (formulas.toList.drop 1) do
+            let except_formulas_term := formula_x.toTermOutsideBlock
+            match except_formulas_term with
+              | Except.error msg => panic! msg
+              | Except.ok data =>
+                resulting_term ← `($resulting_term ∧ $data)
+
+          elabTerm resulting_term expectedType?
+
+    | _ => throwUnsupportedSyntax
