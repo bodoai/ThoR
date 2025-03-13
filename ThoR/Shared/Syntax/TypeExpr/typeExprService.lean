@@ -44,6 +44,14 @@ namespace Shared.typeExpr
         | typeExpr.multExpr m e => `(typeExpr| $(m.toSyntax):mult $(e.toSyntax blockName):expr)
         | typeExpr.relExpr e => `(typeExpr| $(e.toSyntax blockName):expr)
 
+  def toSyntaxOutsideBlock
+    (te: typeExpr)
+    : TypeExpr := Unhygienic.run do
+      match te with
+        | typeExpr.arrowExpr ae => `(typeExpr| $(ae.toSyntaxOutsideBlock):arrowOp)
+        | typeExpr.multExpr m e => `(typeExpr| $(m.toSyntax):mult $(e.toSyntaxOutsideBlock):expr)
+        | typeExpr.relExpr e => `(typeExpr| $(e.toSyntaxOutsideBlock):expr)
+
   /--
   Generates a Lean term corosponding with the type
 
