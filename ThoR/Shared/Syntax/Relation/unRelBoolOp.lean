@@ -25,6 +25,7 @@ namespace Shared
   This operation returns a bool
   -/
   declare_syntax_cat unRelBoolOp
+  abbrev UnRelBoolOp := TSyntax `unRelBoolOp
   syntax "some" : unRelBoolOp
   syntax "lone" : unRelBoolOp
   syntax "one" : unRelBoolOp
@@ -47,7 +48,7 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (op : TSyntax `unRelBoolOp) : unRelBoolOp :=
+    def toType (op : UnRelBoolOp) : unRelBoolOp :=
       match op with
         | `(unRelBoolOp| some) => unRelBoolOp.some
         | `(unRelBoolOp| lone) => unRelBoolOp.lone
@@ -59,7 +60,7 @@ namespace Shared
     /--
     Generates a Lean term corosponding with the type
     -/
-    def toTerm (op : unRelBoolOp) : TSyntax `term := Unhygienic.run do
+    def toTerm (op : unRelBoolOp) : Term := Unhygienic.run do
       match op with
         | unRelBoolOp.some => `($(mkIdent `ThoR.SetMultPredicates.some))
         | unRelBoolOp.lone => `($(mkIdent `ThoR.SetMultPredicates.lone))

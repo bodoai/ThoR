@@ -11,6 +11,8 @@ import ThoR.Alloy.Syntax.OpenModule
 
 import ThoR.Alloy.Syntax.IgnoredSyntax.ignorable
 
+open Lean
+
 namespace Alloy
   /--
   This syntax category specifies what can be a specification in an alloy block
@@ -23,5 +25,7 @@ namespace Alloy
   syntax openModule : specification
 
   syntax ignorable : specification
+
+  abbrev Specification := TSyntax `specification
 
 end Alloy

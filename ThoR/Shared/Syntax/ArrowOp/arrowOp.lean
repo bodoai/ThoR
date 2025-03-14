@@ -49,6 +49,7 @@ namespace Shared
   This syntax represents an arrowOp
   -/
   declare_syntax_cat arrowOp
+  abbrev ArrowOp := TSyntax `arrowOp
 
   /--
   This syntax defines the allowed arrows

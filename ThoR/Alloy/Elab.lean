@@ -39,8 +39,8 @@ named var.
 private def createVariableCommands
   (blockName : Name)
   (variableDecls : List (varDecl))
-  : List ((TSyntax `command)) := Unhygienic.run do
-    let mut commandList : List ((TSyntax `command)) := []
+  : List Command := Unhygienic.run do
+    let mut commandList : List Command := []
 
     if variableDecls.isEmpty then
       return commandList
@@ -72,7 +72,7 @@ private def createVariableCommands
         variableFields := variableFields.push varField
 
       let id : Ident := mkIdent "vars".toName
-      let mut variableTypeclass : TSyntax `command ←
+      let mut variableTypeclass : Command ←
       `(class $id ($baseType.ident : Type) [$(mkIdent ``ThoR.TupleSet) $baseType.ident] where
           $[$variableFields]*
         )
@@ -101,13 +101,13 @@ private def createDefOrAxiomCommand
   (cd : commandDecl)
   (isDefinition : Bool)
   (callableVariables : List (varDecl))
-  : Except String (TSyntax `command) := do
+  : Except String Command := do
 
     -- formula evaluation
     -- All formulas (lines) in an Alloy pred or in an Alloy fact are
     -- transformed into a conjunction of all these formulas.
-    let emptyTerm : TSyntax `term := unhygienicUnfolder `($(mkIdent "".toName))
-    let mut bodyTerm : TSyntax `term := emptyTerm
+    let emptyTerm : Term := unhygienicUnfolder `($(mkIdent "".toName))
+    let mut bodyTerm : Term := emptyTerm
 
     if !(cd.formulas.isEmpty) then
 
@@ -156,7 +156,7 @@ private def createDefOrAxiomCommand
 
       if !(cd.args.isEmpty) then
         for arg in cd.args do
-          let mut names : Array (TSyntax `ident) := #[]
+          let mut names : Array Ident := #[]
 
           let argExpr :=
             arg.1.expression.replaceCalls callableVariables
@@ -204,7 +204,7 @@ private def createDefCommand
   (blockName : Name)
   (cd : commandDecl)
   (callableVariables : List (varDecl))
-  : Except String (TSyntax `command) :=
+  : Except String Command :=
     createDefOrAxiomCommand (isDefinition := true)
       blockName cd callableVariables
 
@@ -217,7 +217,7 @@ private def createAxiomCommand
   (blockName : Name)
   (cd : commandDecl)
   (callableVariables : List (varDecl))
-  : Except String (TSyntax `command) :=
+  : Except String Command :=
     createDefOrAxiomCommand (isDefinition := false)
       blockName cd callableVariables
 
@@ -231,8 +231,8 @@ private def createDefsCommandsWithNamespace
   (namespaceName : Name)
   (commandDecls : List (commandDecl))
   (callableVariables : List (varDecl))
-  : Except String (List ((TSyntax `command))) := do
-    let mut commandList : List ((TSyntax `command) ) := []
+  : Except String (List Command) := do
+    let mut commandList : List Command := []
 
     if commandDecls.isEmpty then
       return commandList
@@ -243,7 +243,7 @@ private def createDefsCommandsWithNamespace
         (unhygienicUnfolder `(namespace $(mkIdent namespaceName)))
 
       --BaseTypeDecl
-      let defsBaseType : TSyntax `command  :=
+      let defsBaseType : Command :=
         unhygienicUnfolder
           `(variable {$baseType.ident : Type}
             [$(mkIdent ``ThoR.TupleSet) $baseType.ident]
@@ -272,7 +272,7 @@ private def createPredDefsCommands
   (blockName : Name)
   (defDecls : List (commandDecl))
   (callableVariables : List (varDecl))
-  : Except String (List ((TSyntax `command))) :=
+  : Except String (List Command) :=
     createDefsCommandsWithNamespace
       (namespaceName := s!"{blockName}.preds".toName)
       blockName defDecls callableVariables
@@ -287,7 +287,7 @@ private def createAssertDefsCommands
   (blockName : Name)
   (defDecls : List (commandDecl))
   (callableVariables : List (varDecl))
-  : Except String (List ((TSyntax `command))) :=
+  : Except String (List Command) :=
     createDefsCommandsWithNamespace
       (namespaceName := s!"{blockName}.asserts".toName)
       blockName  defDecls callableVariables
@@ -301,8 +301,8 @@ private def createAxiomCommands
   (blockName : Name)
   (axiomDecls : List (commandDecl))
   (callableVariables : List (varDecl))
-  : Except String (List ((TSyntax `command))) := do
-    let mut commandList : List ((TSyntax `command)) := []
+  : Except String (List Command) := do
+    let mut commandList : List Command := []
 
     if axiomDecls.isEmpty then
       return commandList
@@ -315,7 +315,7 @@ private def createAxiomCommands
         ( unhygienicUnfolder `(namespace $(mkIdent namespaceName)))
 
       --BaseTypeDecl
-      let defsBaseType : TSyntax `command :=
+      let defsBaseType : Command :=
         unhygienicUnfolder
           `(variable {$(baseType.ident) : Type}
             [$(mkIdent ``ThoR.TupleSet) $(baseType.ident)]
@@ -342,8 +342,8 @@ These are intendet to offer a natural (alloy-like) way to acces these variables
 private def createVariableAliasCommands
   (blockName : Name)
   (variableDeclarations : List (varDecl))
-  : List ((TSyntax `command)) := Unhygienic.run do
-    let mut commandList : List ((TSyntax `command)) := []
+  : List Command := Unhygienic.run do
+    let mut commandList : List Command := []
     for variableDeclaration in variableDeclarations do
 
       /-
@@ -423,13 +423,13 @@ Creates commands to create all variables, definitions and axioms in Lean.
 The created commands are encapsulated in a namespaces, which are opened as the last command.
 -/
 private def createCommands (st : SymbolTable)
-  : Except String (List ((TSyntax `command))) := do
+  : Except String (List Command) := do
 
     let blockName : Name := st.name
     let mut namespacesToOpen : Array (Ident) := #[]
 
     --variables
-    let mut commandList : List ((TSyntax `command)) := []
+    let mut commandList : List Command := []
 
     let varCommands := createVariableCommands blockName st.variableDecls
     commandList := commandList.append varCommands
@@ -459,7 +459,7 @@ private def createCommands (st : SymbolTable)
       namespacesToOpen := namespacesToOpen.push (mkIdent s!"{blockName}.asserts".toName)
 
     -- open the namespaces to use all withot explicit calling
-    let openDecl : TSyntax `Lean.Parser.Command.openDecl :=
+    let openDecl : TSyntax ``Lean.Parser.Command.openDecl :=
       unhygienicUnfolder `(Lean.Parser.Command.openDecl|
         $[$(namespacesToOpen)]*
       )
@@ -469,9 +469,10 @@ private def createCommands (st : SymbolTable)
 
 declare_syntax_cat moduleVar
 syntax ("exactly")? ident : moduleVar
+abbrev ModuleVar := Lean.TSyntax `moduleVar
 
 private def moduleVar.getIdent
-  (mv : Lean.TSyntax `moduleVar)
+  (mv : ModuleVar)
   : Ident :=
     match mv with
       | `(moduleVar | exactly $i:ident) => i
@@ -575,7 +576,7 @@ Evaluates the alloy block syntax.
 -/
 private def evalAlloyBlock
   (name : Ident)
-  (specifications : Array (TSyntax `specification))
+  (specifications : Array Specification)
   (moduleVariables : List (String) := default)
   (logging: Bool := false)
   : CommandElabM Unit := do

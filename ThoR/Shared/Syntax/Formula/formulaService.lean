@@ -472,7 +472,7 @@ namespace Shared.formula
   Parses the given syntax to the type
   -/
   partial def toType
-    (f : TSyntax `formula)
+    (f : Formula)
     (signatureFactSigNames : List String := [])
     : formula :=
       match f with
