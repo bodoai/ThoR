@@ -28,6 +28,19 @@ namespace Shared.algExpr
       | algExpr.binaryAlgebraOperation op ae1 ae2 =>
         `(($(op.toTerm) $(ae1.toTerm blockName) $(ae2.toTerm blockName)))
 
+  def toTermOutsideBlock
+  (ae : algExpr)
+  : Term := Unhygienic.run do
+    match ae with
+      | algExpr.number n => `($(Lean.Syntax.mkNumLit s!"{n.natAbs}"):num)
+      | algExpr.cardExpr ce =>
+        match ce with
+          | cardExpr.cardExpression expr =>
+            `(($(mkIdent ``ThoR.Card.card) $(expr.toTermOutsideBlock)))
+      | algExpr.unaryAlgebraOperation op ae => `(($(op.toTerm) $(ae.toTermOutsideBlock)))
+      | algExpr.binaryAlgebraOperation op ae1 ae2 =>
+        `(($(op.toTerm) $(ae1.toTermOutsideBlock) $(ae2.toTermOutsideBlock)))
+
   /--
   Parses the given syntax to the type
   -/

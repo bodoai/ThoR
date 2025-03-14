@@ -82,6 +82,34 @@ namespace Shared.arrowOp
             $(m1.toSyntax):mult → $(m2.toSyntax):mult
             $(ae2.toSyntax blockName):arrowOp)
 
+  def toSyntaxOutsideBlock
+    (ao : arrowOp)
+    : ArrowOp := Unhygienic.run do
+      match ao with
+        | arrowOp.multArrowOpExpr e1 m1 m2 e2 =>
+          `(arrowOp|
+            $(e1.toSyntaxOutsideBlock):expr
+            $(m1.toSyntax):mult → $(m2.toSyntax):mult
+            $(e2.toSyntaxOutsideBlock):expr)
+
+        | arrowOp.multArrowOpExprLeft e1 m1 m2 ae2 =>
+          `(arrowOp|
+            $(e1.toSyntaxOutsideBlock):expr
+            $(m1.toSyntax):mult → $(m2.toSyntax):mult
+            $(ae2.toSyntaxOutsideBlock):arrowOp)
+
+        | arrowOp.multArrowOpExprRight ae1 m1 m2 e2 =>
+          `(arrowOp|
+            $(ae1.toSyntaxOutsideBlock):arrowOp
+            $(m1.toSyntax):mult → $(m2.toSyntax):mult
+            $(e2.toSyntaxOutsideBlock):expr)
+
+        | arrowOp.multArrowOp ae1 m1 m2 ae2 =>
+          `(arrowOp|
+            $(ae1.toSyntaxOutsideBlock):arrowOp
+            $(m1.toSyntax):mult → $(m2.toSyntax):mult
+            $(ae2.toSyntaxOutsideBlock):arrowOp)
+
   /--
   Generates a Lean term corosponding with the type
 
