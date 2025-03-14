@@ -16,6 +16,10 @@ import ThoR.Relation.Elab
 import ThoR.Relation.SubType
 import ThoR.Relation.Quantification
 
+import ThoR.Alloy.Config
+
+open Config
+
 open Alloy ThoR ThoR.Quantification
 open Lean ThoR
 
@@ -199,9 +203,18 @@ namespace Shared.formula
 
             let castCommand : Unhygienic Term :=
               `(term |
-                cast
-                ($(calledArg.toTermFromBlock blockName pureNames):term)
-                ∷ $(cast_type_as_type_expr_relExpr.toSyntax blockName))
+                -- cast
+                -- ($(calledArg.toTermFromBlock blockName pureNames):term)
+                -- : ∷ $(cast_type_as_type_expr_relExpr.toSyntax blockName))
+                (@$(mkIdent ``Subtype.cast_fun)
+                  $(baseType.ident) _ _ _
+                  $(calledArg.toTermFromBlock blockName pureNames):term
+                  ∷ $(cast_type_as_type_expr_relExpr.toTermFromBlock blockName):term)
+                  (by aesop))
+-- @Subtype.cast_fun ThoR_TupleSet _ _ _ vars.MANN (vars.MANN.getType) (
+--       by
+--         aesop
+--     )
 
             term :=
               `(term |

@@ -205,7 +205,13 @@ private def createDefOrAxiomCommand
         argTerms := unhygienicUnfolder
           `(Lean.Parser.Command.optDeclSig| $[$allArgs]* : ∷ $returnTypeSyntax)
 
-        bodyTerm := unhygienicUnfolder `(cast ($(bodyTerm)) ∷ $returnTypeSyntax)
+        -- bodyTerm := unhygienicUnfolder `(cast ($(bodyTerm)) ∷ $returnTypeSyntax)
+        bodyTerm := unhygienicUnfolder
+                `((@$(mkIdent ``Subtype.cast_fun)
+                  $(baseType.ident) _ _ _
+                  $(bodyTerm):term
+                  ∷ $(returnType.toTermFromBlock blockName):term)
+                  (by aesop))
 
       if bodyTerm != emptyTerm then
         return unhygienicUnfolder `(

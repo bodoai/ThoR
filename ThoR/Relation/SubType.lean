@@ -7,6 +7,8 @@ Authors: s. file CONTRIBUTORS
 -- import ThoR
 import ThoR.Relation
 import ThoR.Relation.Elab
+import ThoR.Alloy.Config
+open Config
 
 namespace ThoR
   namespace Subtype
@@ -82,10 +84,18 @@ namespace ThoR
       | sub (t1 t2 : RelType R arity) : subtypeP (t1 - t2) t1
       | add_r (t1 t2 : RelType R arity) : subtypeP t1 (t1 + t2)
       | add_l (t1 t2 : RelType R arity) : subtypeP t1 (t2 + t1)
+      | add_comm (t1 t2 : RelType R arity) : subtypeP (t1 + t2) (t2 + t1)
+      | add_idempotent (t : RelType R arity) : subtypeP (t + t) t
   end Subtype
 
   namespace Subtype
     variable {R : Type} [TupleSet R]
+    @[simp]
+    lemma subset_add_comm {arity : ℕ} (t1 t2 : RelType R arity) (r1 : Rel t1) (r2 : Rel t2) : (r1 + r2) ⊂ (r2 + r1) := by sorry
+
+    @[simp]
+    lemma subset_add_idempotent {arity : ℕ} (t : RelType R arity) (r : Rel t) : (r + r) ⊂ r := by sorry
+
     @[simp]
     lemma subset_add_r {arity : ℕ} (t1 t2 : RelType R arity) (r1 : Rel t1) (r2 : Rel t2) : r1 ⊂ (r1 + r2) := by sorry
 
@@ -173,6 +183,30 @@ namespace ThoR
         apply ex1
         aesop
 
+    variable (m : ∷ MANN)
+    variable (f : ∷ FRAU)
+
+    -- example should fail
+    -- example : m.getType ≺ f.getType
+    --   := by
+    --     aesop
+
+    example : m.getType ≺ m.getType
+      := by
+        unfold Rel.getType
+        aesop
+-- ThoR_TupleSet : Type
+-- inst✝¹ : TupleSet ThoR_TupleSet
+-- inst✝ : vars ThoR_TupleSet
+-- ⊢ RelType.mk.unary_rel Shared.mult.set vars.PERSON ≺ RelType.mk.unary_rel Shared.mult.set vars.PERSON
+    example : m.getType ≺ (m + m).getType
+      := by
+        aesop
+
+    example : (f + m).getType ≺ (m + f).getType
+      := by
+        aesop
+
     axiom a1 : PERSON ⊂ (MANN + FRAU)
     /- TODO : apply knowledge from inheritance tree, i.e. add inheritance tree axiom with PERSON = MANN + FRAU -/
 -- FIXME
@@ -242,31 +276,31 @@ namespace ThoR
     apply h1
     cases r with | mk relation type_pf => apply type_pf
 
-  def cast {t1 : RelType R arity} (r : Rel t1) (t2 : RelType R arity) (subtype_pf : t1 ≺ t2)
+  def cast_fun {t1 : RelType R arity} (r : Rel t1) (t2 : RelType R arity) (subtype_pf : t1 ≺ t2)
   : (Rel t2)
   := Rel.mk
     (r.relation)
-    (castable r t2 subtype_pf)
+    (@castable R _ _ _ r t2 subtype_pf)
 
-  macro "cast" varName:ident : term
-    => do `((Subtype.cast $(varName) _ (by aesop)))
+  -- macro "cast" castee:term : term
+  --   => do `((@Subtype.cast_fun $(baseType.ident) _ _ _ $(castee) _ (by aesop)))
 
-  macro "cast" varName:ident "∷" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(typeName)))
+  -- macro "cast" varName:ident "∷" typeName:typeExpr: term
+  --   => do `((@Subtype.cast_fun $(baseType.ident) _ _ _ $(varName) _ (by aesop) : ∷ $(typeName)))
 
-  macro "cast" "(" varName:term ")" : term
-    => do `((Subtype.cast $(varName) _ (by aesop)))
+  -- macro "cast" "(" varName:term ")" : term
+  --   => do `((@Subtype.cast_fun $(baseType.ident) _ _ _ $(varName) _ (by aesop)))
 
-  macro "cast" "(" varName:term ")" ":" type:typeExpr : term
-    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(type)))
+  -- macro "cast" "(" varName:term ")" ":" type:typeExpr : term
+  --   => do `((@Subtype.cast_fun $(baseType.ident) _ _ _ $(varName) _ (by aesop) : ∷ $(type)))
 
-  macro "cast" "(" varName:term ")" "∷" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(typeName)))
+  macro "cast" varName:term " : " " ∷ " typeName:typeExpr: term
+    => do `((@Subtype.cast_fun $(baseType.ident) _ _ _ $(varName) _ (by aesop) : ∷ $(typeName)))
 
   macro varName:ident "▹" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(typeName)))
+    => do `((@Subtype.cast_fun $(baseType.ident) _ _ _ $(varName) _ (by aesop) : ∷ $(typeName)))
   macro "(" varName:ident ")" "▹" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(typeName)))
+    => do `((@Subtype.cast_fun $(baseType.ident) _ _ _ $(varName) _ (by aesop) : ∷ $(typeName)))
 
 
 end Subtype
@@ -274,7 +308,7 @@ end Subtype
   section test_cast
     class  vars  (ThoR_TupleSet  :  Type)  [ThoR.TupleSet  ThoR_TupleSet] where
       PERSON : ∷ set univ
-      MANN : ∷ set PERSON
+      MANN : ∷ PERSON
       MANN' : ∷ set MANN
       FRAU : ∷ set PERSON
       m1 : ∷ lone PERSON
@@ -282,6 +316,19 @@ end Subtype
       m3 : ∷ lone MANN'
 
     variable {ThoR_TupleSet : Type} [TupleSet ThoR_TupleSet] [vars ThoR_TupleSet]
+
+    #check @Subtype.cast_fun ThoR_TupleSet _ _ _ vars.MANN (vars.MANN.getType) (
+      by
+        aesop
+    )
+
+    def M := ((∻ vars.MANN).getType)
+    def M2 := (((∻ vars.MANN)+(∻ vars.MANN)).getType)
+
+    -- #check (cast vars.MANN : ∷ (@ vars.PERSON + @ vars.PERSON))
+    -- #check (cast vars.MANN : (Rel M2))
+    -- #check (cast (∻ vars.MANN + vars.MANN) : (Rel M))
+
     namespace preds
   /- FIXME : if predicate does not depend on vars, then typeclass dependency is missing
       see example predicate p1:
@@ -302,17 +349,23 @@ end Subtype
 
     variable {ThoR_TupleSet : Type} [TupleSet ThoR_TupleSet] [vars ThoR_TupleSet]
 
+    #check (cast vars.MANN : ∷ set univ)
+    #check (vars.MANN.getType : @RelType ThoR_TupleSet _ _)
+    -- #check (cast vars.MANN : (Rel (vars.MANN.getType : @RelType ThoR_TupleSet _ _)))
+    -- #check (cast vars.MANN : (Rel (((∻ vars.MANN) +(∻ vars.MANN)).getType)))
+    -- #check (cast ((∻ vars.MANN) + (∻ vars.MANN)) : (Rel (((∻ vars.MANN) +(∻ vars.MANN)).getType)))
+
     #check (∻ preds.p1) vars.PERSON
     #check (∻ preds.p1) (cast vars.MANN : ∷ set univ)
-    #check (∻ preds.p1) (cast vars.MANN : _)
+    -- #check (∻ preds.p1) (cast vars.MANN : _)
     #check (∻ preds.p1) (vars.MANN ▹ set univ)
     #check (∻ preds.p2) (cast vars.MANN : ∷ set @ vars.PERSON)
-    #check (∻ preds.p2) (cast vars.MANN ∷ set @ vars.PERSON)
-    #check (∻ preds.p2) (cast vars.MANN : _)
+    -- #check (∻ preds.p2) (cast vars.MANN ∷ set @ vars.PERSON)
+    -- #check (∻ preds.p2) (cast vars.MANN : _)
     #check (∻ preds.p2) (cast vars.MANN' : ∷ set @ vars.PERSON)
     #check (∻ preds.p2) (vars.MANN ▹ set @ vars.PERSON)
-    #check (∻ preds.p2)
-      (cast (cast vars.MANN' ∷ set @ vars.MANN) ∷ set @ vars.PERSON)
+    -- #check (∻ preds.p2)
+    --   (cast (cast vars.MANN' ∷ set @ vars.MANN) ∷ set @ vars.PERSON)
     #check (∻ preds.p3) vars.MANN'
 
   /- FIXME : cast macro syntax problem when chaining casts in the following syntaxes:
