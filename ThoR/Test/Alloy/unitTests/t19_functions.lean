@@ -5,6 +5,7 @@ Authors: s. file CONTRIBUTORS
 -/
 
 import ThoR
+import ThoR.Alloy.Delab
 
 #alloy funTest
 sig a {}
@@ -28,6 +29,7 @@ fun ft [x : b] : a {
 }
 end
 
-#create funTest2
+-- TODO After cast has been fixed, the following of definition of `ft` should be flagged erroneous.
+~create funTest2
 #check funTest2.functions.ft
 #print funTest2.functions.ft
