@@ -33,3 +33,22 @@ end
 ~create funTest2
 #check funTest2.functions.ft
 #print funTest2.functions.ft
+
+#alloy funTest3
+sig a {}
+sig b {}
+
+pred pt {
+  some b + ft[a]
+}
+fun ft (x : a) : a {
+  pt2[x] => x + x
+  else x
+}
+
+pred pt2(x : a) {
+  x = a
+}
+
+run {}
+end
