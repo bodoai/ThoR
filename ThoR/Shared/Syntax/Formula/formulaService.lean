@@ -375,7 +375,7 @@ namespace Shared.formula
           formula.binaryLogicOperation
             (binLogOp.toType op) (toType form1) (toType form2)
 
-        | `(formula| if $form1 then $form2 else $form3) =>
+        | `(formula| $form1:formula => $form2:formula else $form3:formula) =>
           formula.tertiaryLogicOperation terLogOp.ifelse
             (toType form1) (toType form2) (toType form3)
 

@@ -38,12 +38,13 @@ end
 sig a {}
 sig b {}
 
+fun ft [x : a] : a {
+  some a => x + x
+  else x
+}
+
 pred pt {
   some b + ft[a]
-}
-fun ft (x : a) : a {
-  pt2[x] => x + x
-  else x
 }
 
 pred pt2(x : a) {

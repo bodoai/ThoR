@@ -13,6 +13,7 @@ import ThoR.Relation
 import ThoR.Shared.Syntax
 
 import ThoR.Alloy.Config
+import ThoR.Alloy.UnhygienicUnfolder
 
 import ThoR.Alloy.Syntax.AST
 import ThoR.Alloy.SymbolTable.SymbolTable
@@ -82,12 +83,6 @@ private def createVariableCommands
       commandList := commandList.concat (← `(end $blockNameIdent))
 
       return commandList
-
-private def unhygienicUnfolder
-  {type : Type}
-  (input : Unhygienic (type))
-  : type := Unhygienic.run do
-  return ← input
 
 /--
 Creates a single creation command of either a definition or an axiom from a

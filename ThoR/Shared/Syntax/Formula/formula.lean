@@ -86,7 +86,7 @@ namespace Shared
   syntax quant ("disj")? ident,+ ":" typeExpr "|" formula : formula
 
   --Special tertiariy Syntax
-  syntax "if " formula " then " formula " else " formula : formula
+  syntax formula " => " formula " else " formula : formula
 
   instance : Inhabited formula where
     default := formula.string ""

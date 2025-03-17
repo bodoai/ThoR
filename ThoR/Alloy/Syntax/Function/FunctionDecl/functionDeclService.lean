@@ -6,6 +6,7 @@ Authors: s. file CONTRIBUTORS
 
 import ThoR.Alloy.Syntax.Function.FunctionDecl.functionDecl
 import ThoR.Alloy.Syntax.Function.FunctionArg.functionArgService
+import ThoR.Alloy.Syntax.Function.FunctionIfDecl.functionIfDeclService
 import ThoR.Shared.Syntax.Relation.Expr.exprService
 import ThoR.Shared.Syntax.TypeExpr.typeExprService
 
@@ -33,26 +34,63 @@ namespace Alloy.functionDecl
           fun $name:extendedIdent
           [$arguments:functionArg,*]
           : $outputType:typeExpr {
-          $expressions:expr*
+          $funExprs:exprOfFunIfDecl*
         }) =>
+
+          let allExpressions :=
+          funExprs.foldl
+            (fun
+              (input : List (expr) × List (functionIfDecl))
+              (fe : ExprOfFunIfDecl) =>
+                match fe with
+                | `(exprOfFunIfDecl|$e:expr) =>
+                  ((input.1.concat (expr.toType e)), input.2)
+                | `(exprOfFunIfDecl|$fid:functionIfDecl) =>
+                  (input.1, input.2.concat (functionIfDecl.toType fid))
+                | _ => unreachable!
+            )
+            ([], [])
+
+          let expressions := allExpressions.1
+          let ifExpressions := allExpressions.2
+
           {
             name := (extendedIdent.toName name).toString,
             arguments := (arguments.getElems.map fun a => functionArg.toType a).toList,
             outputType := typeExpr.toType outputType,
-            expressions := (expressions.map fun e => (expr.toType e)).toList
+            expressions := expressions,
+            ifExpressions := ifExpressions
           }
 
       -- function declaration without arguments
       | `(functionDecl |
           fun $name:extendedIdent
           : $outputType:typeExpr {
-          $expressions:expr*
+          $funExprs:exprOfFunIfDecl*
         }) =>
+
+          let allExpressions :=
+          funExprs.foldl
+            (fun
+              (input : List (expr) × List (functionIfDecl))
+              (fe : ExprOfFunIfDecl) =>
+                match fe with
+                | `(exprOfFunIfDecl|$e:expr) =>
+                  ((input.1.concat (expr.toType e)), input.2)
+                | `(exprOfFunIfDecl|$fid:functionIfDecl) =>
+                  (input.1, input.2.concat (functionIfDecl.toType fid))
+                | _ => unreachable!
+            )
+            ([], [])
+
+          let expressions := allExpressions.1
+          let ifExpressions := allExpressions.2
           {
             name := (extendedIdent.toName name).toString,
             arguments := default,
             outputType := typeExpr.toType outputType,
-            expressions := (expressions.map fun e => (expr.toType e)).toList
+            expressions := expressions,
+            ifExpressions := ifExpressions
           }
 
       | _ => default
