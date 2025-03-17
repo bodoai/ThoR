@@ -28,12 +28,14 @@ namespace Alloy
   abbrev FunctionIfDecl:= TSyntax `functionIfDecl
   syntax "(" functionIfDecl ")" : functionIfDecl
 
-  declare_syntax_cat fidHack
-  syntax "=>" expr : fidHack
-  syntax "=>" expr "else" expr: fidHack
+  declare_syntax_cat connector
+  syntax "=>" : connector
 
-  syntax:100 formula " => " expr " else " expr : functionIfDecl
-  syntax:100 formula fidHack : functionIfDecl
+  declare_syntax_cat ifbody
+  syntax connector:60 expr ("else" expr)? : ifbody
+
+  syntax:60 formula_without_if:70 ifbody:60 : functionIfDecl
+  --syntax "(" formula ")" connector expr ("else" expr)? : functionIfDecl
 
   instance : ToString functionIfDecl where
     toString (fid : functionIfDecl) : String :=

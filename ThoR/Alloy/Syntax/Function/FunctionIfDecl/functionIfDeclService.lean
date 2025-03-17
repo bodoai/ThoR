@@ -42,27 +42,40 @@ namespace Alloy.functionIfDecl
         ( $fid:functionIfDecl )) => toType fid
 
       | `(functionIfDecl |
-        /-
-        since the if condition in formula has the same syntax
-        there the matching is a bit convoluted...
-        -/
-        $condition:formula $h:fidHack) =>
-          match h with
-            | `(fidHack| => $thenBody:expr) =>
-              functionIfDecl.mk
-                (condition := formula.toType condition)
-                (thenBody := expr.toType thenBody)
-                (elseBody := default)
-                (hasElse := false)
+        $condition:formula_without_if $_:connector $thenBody:expr) =>
+        functionIfDecl.mk
+          (condition := formula.toType_withoutIf condition)
+          (thenBody := expr.toType thenBody)
+          (elseBody := default)
+          (hasElse := false)
 
-            | `(fidHack| => $thenBody:expr else $elseBody:expr) =>
-              functionIfDecl.mk
-                (condition := formula.toType condition)
-                (thenBody := expr.toType thenBody)
-                (elseBody := expr.toType elseBody)
-                (hasElse := true)
+      /-
+      | `(functionIfDecl |
+        ( $condition:formula ) $_:connector $thenBody:expr) =>
+        functionIfDecl.mk
+          (condition := formula.toType condition)
+          (thenBody := expr.toType thenBody)
+          (elseBody := default)
+          (hasElse := false)
+      -/
 
-            | _ => unreachable!
+      | `(functionIfDecl |
+        $condition:formula_without_if $_:connector $thenBody:expr else $elseBody:expr) =>
+        functionIfDecl.mk
+          (condition := formula.toType_withoutIf condition)
+          (thenBody := expr.toType thenBody)
+          (elseBody := expr.toType elseBody)
+          (hasElse := true)
+
+      /-
+      | `(functionIfDecl |
+        ( $condition:formula ) $_:connector $thenBody:expr else $elseBody:expr) =>
+        functionIfDecl.mk
+          (condition := formula.toType condition)
+          (thenBody := expr.toType thenBody)
+          (elseBody := expr.toType elseBody)
+          (hasElse := true)
+      -/
 
       | _ => unreachable!
 

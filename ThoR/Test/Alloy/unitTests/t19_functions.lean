@@ -39,13 +39,14 @@ sig a {}
 sig b {}
 
 fun ft [x : a] : a {
-  some a => x + x
-  else x
+  some a => x
 }
 
+/-
 pred pt {
   some b + ft[a]
 }
+-/
 
 pred pt2(x : a) {
   x = a
