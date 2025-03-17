@@ -23,6 +23,7 @@ namespace Shared
   This syntax represents a dotjoin relations
   -/
   declare_syntax_cat dotjoin
+  abbrev Dotjoin := TSyntax `dotjoin
   syntax:60 "." : dotjoin
   syntax:60 "⋈" : dotjoin
 
@@ -44,7 +45,7 @@ namespace Shared
     /--
     Generates a syntax representation of the type
     -/
-    def toSyntax (dj : dotjoin) : TSyntax `dotjoin := Unhygienic.run do
+    def toSyntax (dj : dotjoin) : Dotjoin := Unhygienic.run do
       match dj with
         | dotjoin.dot_join => `(dotjoin| .)
 
@@ -53,14 +54,14 @@ namespace Shared
     -/
     def toTerm
       (dj : dotjoin)
-      : TSyntax `term := Unhygienic.run do
+      : Term := Unhygienic.run do
         match dj with
           | dotjoin.dot_join => `($(mkIdent ``HDotjoin.hDotjoin))
 
     /--
     Parses the given syntax to the type
     -/
-    def toType (op : TSyntax `dotjoin) : dotjoin :=
+    def toType (op : Dotjoin) : dotjoin :=
       match op with
         | `(dotjoin| .)  => dotjoin.dot_join
         | `(dotjoin| ⋈)  => dotjoin.dot_join

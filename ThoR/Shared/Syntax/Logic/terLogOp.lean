@@ -36,7 +36,7 @@ namespace Shared
     /--
     Generates a Lean term corosponding with the type
     -/
-    def toTerm (op : terLogOp) : TSyntax `term := Unhygienic.run do
+    def toTerm (op : terLogOp) : Term := Unhygienic.run do
       match op with
         | terLogOp.ifelse => `($(mkIdent ``myIfElse))
 

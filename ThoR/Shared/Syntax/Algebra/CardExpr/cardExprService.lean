@@ -14,7 +14,7 @@ namespace Shared.cardExpr
   /--
   Parses the given syntax to the type
   -/
-  def toType (ce : TSyntax `cardExpr) : cardExpr :=
+  def toType (ce : CardExpr) : cardExpr :=
     match ce with
       | `(cardExpr| # $e:expr) => (cardExpr.cardExpression (expr.toType e))
       | _ => (cardExpr.cardExpression (expr.const (constant.none))) -- unreachable

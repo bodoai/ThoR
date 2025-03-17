@@ -17,7 +17,7 @@ namespace Shared.algExpr
   def toTerm
   (ae : algExpr)
   (blockName : Name)
-  : TSyntax `term := Unhygienic.run do
+  : Term := Unhygienic.run do
     match ae with
       | algExpr.number n => `($(Lean.Syntax.mkNumLit s!"{n.natAbs}"):num)
       | algExpr.cardExpr ce =>
@@ -31,7 +31,7 @@ namespace Shared.algExpr
   /--
   Parses the given syntax to the type
   -/
-  partial def toType (ae : TSyntax `algExpr) : algExpr :=
+  partial def toType (ae : AlgExpr) : algExpr :=
     match ae with
       | `(algExpr| $number:num) =>
         algExpr.number (number.getNat : Int)

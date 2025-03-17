@@ -13,6 +13,7 @@ import ThoR.Shared.Syntax.quant
 import ThoR.Shared.Syntax.Relation
 import ThoR.Shared.Syntax.TypeExpr.typeExpr
 
+open Lean
 namespace Shared
 
   /--
@@ -66,6 +67,7 @@ namespace Shared
   This syntax represents an alloy formula
   -/
   declare_syntax_cat formula
+  abbrev Formula := TSyntax `formula
   syntax ident : formula
 
   syntax ident ( "[" expr,+ "]") : formula  -- predcall

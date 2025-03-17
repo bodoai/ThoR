@@ -8,6 +8,8 @@ import ThoR.Shared.Syntax.Algebra.unAlgOp
 import ThoR.Shared.Syntax.Algebra.binAlgOp
 import ThoR.Shared.Syntax.Algebra.CardExpr.cardExpr
 
+open Lean
+
 namespace Shared
 
   /--
@@ -31,6 +33,7 @@ namespace Shared
   This syntax represents an algebra expression
   -/
   declare_syntax_cat algExpr
+  abbrev AlgExpr := TSyntax `algExpr
   syntax num : algExpr
   syntax cardExpr : algExpr
   syntax unAlgOp algExpr : algExpr
