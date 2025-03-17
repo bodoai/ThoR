@@ -93,13 +93,11 @@ private def unhygienicUnfolder
 Creates a single creation command of either a definition or an axiom from a
 given command declaration and the blockname.
 
-Whether a definition or an axiom is created is determined by the definition parameter.
-(definition=true -> def, definition=false -> axiom)
+What is created depends on the commandType of cd
 -/
 private def createDefOrAxiomCommand
   (blockName : Name)
   (cd : commandDecl)
-  (isDefinition : Bool)
   (callableVariables : List (varDecl))
   : Except String Command := do
 
@@ -109,22 +107,36 @@ private def createDefOrAxiomCommand
     let emptyTerm : Term := unhygienicUnfolder `($(mkIdent "".toName))
     let mut bodyTerm : Term := emptyTerm
 
-    if !(cd.formulas.isEmpty) then
-
+    -- if it is not a function it has formulas
+    if !(cd.isFunction) && !(cd.formulas.isEmpty) then
       let forms :=
         (cd.formulas.map
           fun f =>
             f.replaceCalls callableVariables)
 
-      let argnames := (cd.args.map fun (arg) => arg.1.names).join
+      let argnames := (cd.predArgs.map fun (arg) => arg.1.names).join
 
       let ff := (forms.get! 0)
-      let ffTerm ← ff.toTerm blockName cd.requiredVars callableVariables cd.predCalls argnames
-
-      bodyTerm := unhygienicUnfolder `($(ffTerm))
+      bodyTerm ←
+        ff.toTerm
+          blockName cd.requiredVars callableVariables cd.predCalls argnames
 
       for formula in forms.drop 1 do
-        let newTerm ← formula.toTerm blockName cd.requiredVars callableVariables cd.predCalls argnames
+        let newTerm ←
+          formula.toTerm
+            blockName cd.requiredVars callableVariables cd.predCalls argnames
+        bodyTerm := unhygienicUnfolder `($bodyTerm ∧ ($newTerm))
+
+    -- function only has expressions
+    if cd.isFunction && !(cd.expressions.isEmpty) then
+      let expressions :=
+        cd.expressions.map fun e => e.replaceCalls callableVariables
+
+      let fe := (expressions.get! 0)
+      bodyTerm := fe.toTermFromBlock blockName
+
+      for expression in expressions.drop 1 do
+        let newTerm := expression.toTermFromBlock blockName
         bodyTerm := unhygienicUnfolder `($bodyTerm ∧ ($newTerm))
 
     -- define command
@@ -142,11 +154,18 @@ private def createDefOrAxiomCommand
       ))
     ]
 
+    -- facts only have default arguments command
+    if cd.isFact then
+      if bodyTerm != emptyTerm then
+        return unhygienicUnfolder `(axiom $(mkIdent cd.name.toName) $[$tupleSetArg]* : $bodyTerm)
+      else
+        return unhygienicUnfolder `(
+          axiom $(mkIdent cd.name.toName)
+          $[$tupleSetArg]*
+          : True )
 
-    if isDefinition then
-      -- Alloy pred argument evaluation
-      -- (no arguments for definition=false, as facts do not have any arguments)
-      -- Alloy pred arguments are transformed into Lean function arguments.
+    -- functions, asserts and predicates are similar
+    if cd.isPredicate || cd.isFunction || cd.isAssert then
       let mut argTerms :
         TSyntax ``Lean.Parser.Command.optDeclSig :=
           unhygienicUnfolder `(Lean.Parser.Command.optDeclSig | $[$tupleSetArg]*)
@@ -154,26 +173,39 @@ private def createDefOrAxiomCommand
       let mut allArgs : Array (TSyntax ``Lean.Parser.Term.bracketedBinderF) :=
         tupleSetArg
 
-      if !(cd.args.isEmpty) then
-        for arg in cd.args do
-          let mut names : Array Ident := #[]
-
-          let argExpr :=
-            arg.1.expression.replaceCalls callableVariables
-
-          let t :=
-            (typeExpr.relExpr
-              argExpr.toStringRb).toSyntax blockName
-
-          for name in arg.1.names do
-            names := names.push (mkIdent name.toName)
-
-          let argTerm := unhygienicUnfolder `(Lean.Parser.Term.bracketedBinderF |
-            ($[$names]* : ∷ $t))
-
-          allArgs := allArgs.push argTerm
-
+      -- predicate arguments
+      if cd.isPredicate && !(cd.predArgs.isEmpty) then
+        for arg in cd.predArgs do
+          let argExpr := arg.1.expression.replaceCalls callableVariables
+          let type := typeExpr.relExpr argExpr.toStringRb
+          let typeSyntax := type.toSyntax blockName
+          let names := (arg.1.names.map fun name => (mkIdent name.toName)).toArray
+          let unhygienicTerm :=
+            `(Lean.Parser.Term.bracketedBinderF | ($[$names]* : ∷ $typeSyntax))
+          let term := unhygienicUnfolder unhygienicTerm
+          allArgs := allArgs.push term
         argTerms := unhygienicUnfolder `(Lean.Parser.Command.optDeclSig| $[$allArgs]*)
+
+      -- function arguments
+      if cd.isFunction && !(cd.functionArgs.isEmpty) then
+        for arg in cd.functionArgs do
+          let type := (arg.1.type.replaceCalls callableVariables).toStringRb
+          let typeSyntax := type.toSyntax blockName
+          let names := (arg.1.names.map fun name => (mkIdent name.toName)).toArray
+          let unhygienicTerm :=
+            `(Lean.Parser.Term.bracketedBinderF | ($[$names]* : ∷ $typeSyntax))
+          let term := unhygienicUnfolder unhygienicTerm
+          allArgs := allArgs.push term
+
+      -- add function arguments and function return type
+      if cd.isFunction then
+        let returnType :=
+          (cd.functionReturnType.replaceCalls callableVariables).toStringRb
+        let returnTypeSyntax := returnType.toSyntax blockName
+        argTerms := unhygienicUnfolder
+          `(Lean.Parser.Command.optDeclSig| $[$allArgs]* : ∷ $returnTypeSyntax)
+
+        bodyTerm := unhygienicUnfolder `(cast ($(bodyTerm)) ∷ $returnTypeSyntax)
 
       if bodyTerm != emptyTerm then
         return unhygienicUnfolder `(
@@ -185,41 +217,8 @@ private def createDefOrAxiomCommand
           def $(mkIdent cd.name.toName)
           $argTerms
           := True )
-    else
-    -- axiom command
-      if bodyTerm != emptyTerm then
-        return unhygienicUnfolder `(axiom $(mkIdent cd.name.toName) $[$tupleSetArg]* : $bodyTerm)
-      else
-        return unhygienicUnfolder `(
-          axiom $(mkIdent cd.name.toName)
-          $[$tupleSetArg]*
-          : True )
 
-/--
-convenience function:
-Creates a single command which creates a definition from the given
-blockname and command declaration.
--/
-private def createDefCommand
-  (blockName : Name)
-  (cd : commandDecl)
-  (callableVariables : List (varDecl))
-  : Except String Command :=
-    createDefOrAxiomCommand (isDefinition := true)
-      blockName cd callableVariables
-
-/--
-convenience function:
-Creates a single command which creates an axiom from the given
-blockname and command declaration.
--/
-private def createAxiomCommand
-  (blockName : Name)
-  (cd : commandDecl)
-  (callableVariables : List (varDecl))
-  : Except String Command :=
-    createDefOrAxiomCommand (isDefinition := false)
-      blockName cd callableVariables
+    throw s!"Can't create {cd}. Elaboration for {cd.commandType} is not implemented"
 
 /--
 Creates commands to create Lean definitions from the given blockname and commandDecls.
@@ -253,7 +252,7 @@ private def createDefsCommandsWithNamespace
 
       --Def declaration
       for cd in commandDecls do
-        let cdCmd ← (createDefCommand blockName cd callableVariables)
+        let cdCmd ← (createDefOrAxiomCommand blockName cd callableVariables)
         commandList := commandList.concat cdCmd
 
       --NamespaceEnd
@@ -275,6 +274,21 @@ private def createPredDefsCommands
   : Except String (List Command) :=
     createDefsCommandsWithNamespace
       (namespaceName := s!"{blockName}.preds".toName)
+      blockName defDecls callableVariables
+
+/--
+Creates commands to create Lean definitions (for functions) from the given
+blockname and commandDecls.
+
+The created commands are encapsulated in a namespace named blockname.functions
+-/
+private def createFunctionDefsCommands
+  (blockName : Name)
+  (defDecls : List (commandDecl))
+  (callableVariables : List (varDecl))
+  : Except String (List ((TSyntax `command))) :=
+    createDefsCommandsWithNamespace
+      (namespaceName := s!"{blockName}.functions".toName)
       blockName defDecls callableVariables
 
 /--
@@ -325,7 +339,7 @@ private def createAxiomCommands
 
       --Axiom declaration
       for ad in axiomDecls do
-        let adCmd ← (createAxiomCommand blockName ad callableVariables)
+        let adCmd ← (createDefOrAxiomCommand blockName ad callableVariables)
         commandList := commandList.concat adCmd
 
       --NamespaceEnd
@@ -440,11 +454,17 @@ private def createCommands (st : SymbolTable)
     let aliasCommands := createVariableAliasCommands blockName st.variableDecls
     commandList := commandList.append aliasCommands
 
-    -- defs
-    let defCommands ← createPredDefsCommands blockName st.defDecls st.variableDecls
-    commandList := commandList.append defCommands
-    if !(defCommands.isEmpty) then
+    -- predicates
+    let predCommands ← createPredDefsCommands blockName (st.defDecls.filter fun dd => dd.isPredicate) st.variableDecls
+    commandList := commandList.append predCommands
+    if !(predCommands.isEmpty) then
       namespacesToOpen := namespacesToOpen.push (mkIdent s!"{blockName}.preds".toName)
+
+    -- functions
+    let functionCommands ← createFunctionDefsCommands blockName (st.defDecls.filter fun dd => dd.isFunction) st.variableDecls
+    commandList := commandList.append functionCommands
+    if !(functionCommands.isEmpty) then
+      namespacesToOpen := namespacesToOpen.push (mkIdent s!"{blockName}.functions".toName)
 
     -- axioms
     let axCommands ← createAxiomCommands blockName st.axiomDecls st.variableDecls
