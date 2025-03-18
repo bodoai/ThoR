@@ -127,11 +127,38 @@ private def createDefOrAxiomCommand
       let expressions :=
         cd.expressions.map fun e => e.replaceCalls callableVariables
 
+
       let fe := (expressions.get! 0)
       bodyTerm := fe.toTermFromBlock blockName
 
       for expression in expressions.drop 1 do
         let newTerm := expression.toTermFromBlock blockName
+        bodyTerm := unhygienicUnfolder `($bodyTerm ∧ ($newTerm))
+
+    -- and ifExpressions
+    if cd.isFunction && !(cd.ifExpressions.isEmpty) then
+      let ifExpressions :=
+        cd.ifExpressions.map fun ie =>
+          {ie with
+            condition := ie.condition.replaceCalls callableVariables,
+            thenBody := ie.thenBody.replaceCalls callableVariables,
+            elseBody := ie.elseBody.replaceCalls callableVariables
+          }
+
+      for ifExpression in ifExpressions do
+        let conditionTerm ←
+          ifExpression.condition.toTerm blockName cd.requiredVars callableVariables cd.predCalls
+
+        let thenTerm := ifExpression.thenBody.toTermFromBlock blockName
+        let elseTerm :=
+          if ifExpression.hasElse then
+            ifExpression.thenBody.toTermFromBlock blockName
+          else
+            unhygienicUnfolder `(True)
+
+        -- possibly wrong
+        let newTerm := unhygienicUnfolder `(if ( $(conditionTerm) == True) then $(thenTerm) else $(elseTerm))
+
         bodyTerm := unhygienicUnfolder `($bodyTerm ∧ ($newTerm))
 
     -- define command
