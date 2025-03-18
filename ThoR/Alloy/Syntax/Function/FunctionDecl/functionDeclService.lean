@@ -28,10 +28,24 @@ namespace Alloy.functionDecl
   -/
   def toType (pd : FunctionDecl) : functionDecl :=
     match pd with
-      -- function declaration with arguments
+      -- function declaration with [] arguments
       | `(functionDecl |
           fun $name:extendedIdent
           [$arguments:functionArg,*]
+          : $outputType:typeExpr {
+          $expressions:expr*
+        }) =>
+          {
+            name := (extendedIdent.toName name).toString,
+            arguments := (arguments.getElems.map fun a => functionArg.toType a).toList,
+            outputType := typeExpr.toType outputType,
+            expressions := (expressions.map fun e => (expr.toType e)).toList
+          }
+
+      -- function declaration with () arguments
+      | `(functionDecl |
+          fun $name:extendedIdent
+          ($arguments:functionArg,*)
           : $outputType:typeExpr {
           $expressions:expr*
         }) =>

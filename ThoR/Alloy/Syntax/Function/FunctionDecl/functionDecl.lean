@@ -29,6 +29,9 @@ namespace Alloy
   syntax "fun" extendedIdent ("["functionArg,*"]")? ":" typeExpr "{"
     expr*
   "}": functionDecl
+  syntax "fun" extendedIdent ("("functionArg,*")")? ":" typeExpr "{"
+    expr*
+  "}": functionDecl
 
   abbrev FunctionDecl := TSyntax `functionDecl
 
