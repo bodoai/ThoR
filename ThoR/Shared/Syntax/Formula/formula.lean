@@ -69,13 +69,13 @@ namespace Shared
 
   syntax ident ( "[" expr,+ "]") : formula_without_if  -- predcall
 
-  syntax "("formula_without_if")" : formula_without_if
+  syntax:50 "("formula_without_if")" : formula_without_if
 
   syntax unRelBoolOp expr : formula_without_if
 
   syntax unLogOp formula_without_if: formula_without_if
 
-  syntax:50 formula_without_if binLogOp formula_without_if : formula_without_if
+  syntax:60 formula_without_if binLogOp formula_without_if : formula_without_if
   syntax expr relCompareOp expr : formula_without_if
 
   syntax algExpr algCompareOp algExpr : formula_without_if

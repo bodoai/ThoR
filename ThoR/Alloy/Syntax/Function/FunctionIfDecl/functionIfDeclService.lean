@@ -49,7 +49,6 @@ namespace Alloy.functionIfDecl
           (elseBody := default)
           (hasElse := false)
 
-      /-
       | `(functionIfDecl |
         ( $condition:formula ) $_:connector $thenBody:expr) =>
         functionIfDecl.mk
@@ -57,7 +56,6 @@ namespace Alloy.functionIfDecl
           (thenBody := expr.toType thenBody)
           (elseBody := default)
           (hasElse := false)
-      -/
 
       | `(functionIfDecl |
         $condition:formula_without_if $_:connector $thenBody:expr else $elseBody:expr) =>
@@ -67,7 +65,6 @@ namespace Alloy.functionIfDecl
           (elseBody := expr.toType elseBody)
           (hasElse := true)
 
-      /-
       | `(functionIfDecl |
         ( $condition:formula ) $_:connector $thenBody:expr else $elseBody:expr) =>
         functionIfDecl.mk
@@ -75,8 +72,7 @@ namespace Alloy.functionIfDecl
           (thenBody := expr.toType thenBody)
           (elseBody := expr.toType elseBody)
           (hasElse := true)
-      -/
 
-      | _ => unreachable!
+      | _ => default
 
 end Alloy.functionIfDecl

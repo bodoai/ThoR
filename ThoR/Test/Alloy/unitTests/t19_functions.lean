@@ -39,6 +39,7 @@ sig a {}
 sig b {}
 
 fun ft [x : a] : a {
+  ( some a => some a ) => x
   some a => x
 }
 
