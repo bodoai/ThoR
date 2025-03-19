@@ -162,7 +162,7 @@ namespace Shared.expr
   /--
   Generates a syntax representation of the type
   -/
-  def toSyntax
+  partial def toSyntax
     (blockName : Name)
     (e : expr)
     : Expression := Unhygienic.run do
@@ -172,7 +172,7 @@ namespace Shared.expr
         | expr.callFromOpen sn => `(expr| $(sn.toSyntax):separatedNamespace)
         | expr.function_call_with_args function_name arguments =>
           let argument_array :=
-            (arguments.map fun arg => mkIdent arg.toName).toArray
+            (arguments.map fun arg => arg.toSyntax blockName).toArray
           `(expr | $(mkIdent function_name.toName):ident [$argument_array,*])
         | expr.unaryRelOperation op e => `(expr| $(op.toSyntax):unRelOp $(e.toSyntax blockName):expr)
         | expr.binaryRelOperation op e1 e2 =>
@@ -192,7 +192,7 @@ namespace Shared.expr
   /--
   Generates a Lean term corosponding with the type
   -/
-  private def toTerm
+  private partial def toTerm
     (e : expr)
     (inBlock : Bool)
     (blockName : Name)
@@ -219,16 +219,11 @@ namespace Shared.expr
             return sn.toTerm
 
         | expr.function_call_with_args called_function arguments =>
-          let argument_components := if inBlock then [blockName, `vars] else []
-
-          let firstArgumentName :=
-            Name.fromComponents (argument_components.concat (arguments.get! 0).toName)
           let mut argumentsTerm ←
-            `((∻ $(mkIdent firstArgumentName)))
+            `(($((arguments.get! 0).toTerm inBlock blockName quantorNames)))
 
           for arg in arguments.drop 1 do
-            let argument_name := Name.fromComponents (argument_components.concat arg.toName)
-            argumentsTerm ← `(argumentsTerm ( ∻ $(mkIdent argument_name)))
+            argumentsTerm ← `(argumentsTerm $(arg.toTerm inBlock blockName quantorNames))
 
           let function_name_components := if inBlock then [blockName, `funs] else []
           let basic_function_name := called_function.toName
@@ -480,11 +475,11 @@ namespace Shared.expr
 
         | `(expr |
             $called_function:ident
-            [ $arguments:ident,* ]
+            [ $arguments:expr,* ]
           ) =>
           expr.function_call_with_args
             called_function.getId.toString
-            (arguments.getElems.map fun e => e.getId.toString).toList
+            (arguments.getElems.map fun e => expr.toType e).toList
 
         | `(expr | -- Hack to allow dotjoin before ()
           $subExpr1:expr .( $subExpr2:expr )) =>
@@ -821,5 +816,61 @@ namespace Shared.expr
             (e2.replaceThisCalls moduleName)
 
         | _ => e
+
+  def getFunctionCalls
+    (e : expr)
+    (callableFunctions : List (commandDecl))
+    (callableVariables : List (varDecl))
+    : Except String
+      (List (commandDecl × List (expr × List (String × List (varDecl))))) := do
+    match e with
+      | expr.string s =>
+        let possibleFunctions := callableFunctions.filter fun cf => cf.name == s
+        if possibleFunctions.length > 1 then
+          throw s!"Call to function {s} is ambigious. Could be \
+          any of {possibleFunctions}"
+        if possibleFunctions.isEmpty then return []
+        let calledFunction := possibleFunctions.get! 0
+        if !calledFunction.isFunction then
+          throw s!"Tried to call the {calledFunction.commandType} \
+          {calledFunction.name} as a function"
+        return [(calledFunction, [])]
+
+      | expr.function_call_with_args function_name arguments =>
+        let possibleFunctions :=
+          callableFunctions.filter fun cf => cf.name == function_name
+        if possibleFunctions.length > 1 then
+          throw s!"Call to function {function_name} is ambigious. Could be \
+          any of {possibleFunctions}"
+        if possibleFunctions.isEmpty then return []
+        let calledFunction := possibleFunctions.get! 0
+        if !calledFunction.isFunction then
+          throw s!"Tried to call the {calledFunction.commandType} \
+          {calledFunction.name} as a function"
+
+        let mut calledArguments : List (String × List (varDecl)) := []
+        for argument in arguments do
+          calledArguments :=
+            calledArguments.append
+              (← (argument.getCalledVariables callableVariables))
+
+        return [(calledFunction, [(e , calledArguments)])]
+
+      | expr.unaryRelOperation _ e =>
+        e.getFunctionCalls callableFunctions callableVariables
+
+      | expr.binaryRelOperation _ e1 e2 =>
+        let e1_cf ← e1.getFunctionCalls callableFunctions callableVariables
+        let e2_c2 ← e2.getFunctionCalls callableFunctions callableVariables
+        return e1_cf ++ e2_c2
+
+      | expr.dotjoin _ e1 e2 =>
+        let e1_cf ← e1.getFunctionCalls callableFunctions callableVariables
+        let e2_c2 ← e2.getFunctionCalls callableFunctions callableVariables
+        return e1_cf ++ e2_c2
+
+      | expr.callFromOpen _ => return [] -- possibly incorrect
+      | expr.string_rb _ => return []
+      | expr.const _ => return []
 
 end Shared.expr

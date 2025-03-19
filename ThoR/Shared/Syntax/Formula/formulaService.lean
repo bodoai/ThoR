@@ -740,4 +740,54 @@ namespace Shared.formula
             f.replaceThisCalls moduleName)
       | _ => f
 
+  partial def getFunctionCalls
+    (f : formula)
+    (callableFunctions : List (commandDecl))
+    (callableVariables : List (varDecl))
+    : Except String
+      (List (commandDecl × List (expr × List (String × List (varDecl))))) := do
+      match f with
+        | formula.pred_with_args _ arguments =>
+          let mut functionCalls := []
+          for argument in arguments do
+            functionCalls :=
+              functionCalls.append
+                (← argument.getFunctionCalls callableFunctions callableVariables)
+          return functionCalls
+
+        | formula.unaryRelBoolOperation _ e =>
+          return ← e.getFunctionCalls callableFunctions callableVariables
+
+        | formula.unaryLogicOperation _ f =>
+          f.getFunctionCalls callableFunctions callableVariables
+
+        | formula.binaryLogicOperation _ f1 f2 =>
+          let f1_cf ← f1.getFunctionCalls callableFunctions callableVariables
+          let f2_cf ← f2.getFunctionCalls callableFunctions callableVariables
+          return f1_cf ++ f2_cf
+
+        | formula.tertiaryLogicOperation _ f1 f2 f3 =>
+          let f1_cf ← f1.getFunctionCalls callableFunctions callableVariables
+          let f2_cf ← f2.getFunctionCalls callableFunctions callableVariables
+          let f3_cf ← f3.getFunctionCalls callableFunctions callableVariables
+          return f1_cf ++ f2_cf ++ f3_cf
+
+        | formula.relationComarisonOperation _ e1 e2 =>
+          let e1_cf ← e1.getFunctionCalls callableFunctions callableVariables
+          let e2_cf ← e2.getFunctionCalls callableFunctions callableVariables
+          return e1_cf ++ e2_cf
+
+        | formula.quantification _ _ _ te formulas =>
+          let mut f_cf := []
+          for f in formulas do
+            f_cf :=
+              f_cf.append
+                (← f.getFunctionCalls callableFunctions callableVariables)
+
+          let te_cf ← te.getFunctionCalls callableFunctions callableVariables
+
+          return f_cf ++ te_cf
+
+        | _ => return []
+
 end Shared.formula

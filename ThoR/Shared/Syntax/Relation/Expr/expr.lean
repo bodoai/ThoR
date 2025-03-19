@@ -25,7 +25,7 @@ namespace Shared
     | string : (string : String) → expr
     | function_call_with_args :
       (functionName : String) →
-      (args : List (String)) →
+      (args : List (expr)) →
       expr
     | callFromOpen : (calledEntry : Alloy.separatedNamespace) → expr
     | unaryRelOperation :
@@ -55,7 +55,7 @@ namespace Shared
   syntax separatedNamespace : expr -- to call opened module entries
 
   --function call with argument syntax
-  syntax ident "[" ident,* "]" : expr
+  syntax ident "[" expr,* "]" : expr
 
   syntax "(" expr ")" : expr
   syntax:60 expr:60 binRelOp expr:60 : expr
@@ -75,12 +75,12 @@ namespace Shared
     /--
     Generates a string representation of the type
     -/
-    def toString (e : expr) : String :=
+    partial def toString (e : expr) : String :=
       match e with
         | expr.const c => c.toString
         | expr.string s => s
         | expr.function_call_with_args function_name args =>
-          s!"{function_name} {args}"
+          s!"{function_name} {args.map fun arg => arg.toString}"
         | expr.callFromOpen sn => sn.toString
         | expr.unaryRelOperation op e => (op.toString) ++ (e.toString)
         | expr.binaryRelOperation op e1 e2 =>
