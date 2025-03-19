@@ -38,13 +38,18 @@ end
 sig a {}
 sig b {}
 
+fun ft [x : a] : a {
+  ( some a => some a ) => x
+  else x
+  some a => x
+  else x
+}
+
+/-
 pred pt {
   some b + ft[a]
 }
-fun ft (x : a) : a {
-  pt2[x] => x + x
-  else x
-}
+-/
 
 pred pt2(x : a) {
   x = a
@@ -52,3 +57,5 @@ pred pt2(x : a) {
 
 run {}
 end
+
+#create funTest3
