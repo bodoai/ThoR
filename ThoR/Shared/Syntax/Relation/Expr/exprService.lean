@@ -170,6 +170,10 @@ namespace Shared.expr
         | expr.const c => `(expr| $(c.toSyntax):constant)
         | expr.string s => `(expr| $(mkIdent s.toName):ident)
         | expr.callFromOpen sn => `(expr| $(sn.toSyntax):separatedNamespace)
+        | expr.function_call_with_args function_name arguments =>
+          let argument_array :=
+            (arguments.map fun arg => mkIdent arg.toName).toArray
+          `(expr | $(mkIdent function_name.toName):ident [$argument_array,*])
         | expr.unaryRelOperation op e => `(expr| $(op.toSyntax):unRelOp $(e.toSyntax blockName):expr)
         | expr.binaryRelOperation op e1 e2 =>
           `(expr| $(e1.toSyntax blockName):expr $(op.toSyntax):binRelOp $(e2.toSyntax blockName):expr)
@@ -190,7 +194,7 @@ namespace Shared.expr
   -/
   private def toTerm
     (e : expr)
-    (inBLock : Bool)
+    (inBlock : Bool)
     (blockName : Name)
     (quantorNames : List (String) := []) -- used to know which names must be pure
     : Term := Unhygienic.run do
@@ -198,7 +202,7 @@ namespace Shared.expr
         | expr.const c => return (c.toTerm)
 
         | expr.string s => do
-          if inBLock && !(quantorNames.contains s) then
+          if inBlock && !(quantorNames.contains s) then
             `((
               ∻ $(mkIdent s!"{blockName}.vars.{s}".toName)
             ))
@@ -207,35 +211,54 @@ namespace Shared.expr
 
         | expr.callFromOpen sn =>
           let snt := sn.representedNamespace.getId.toString
-          if inBLock then
+          if inBlock then
             `((
               ∻ $(mkIdent s!"{blockName}.vars.{snt}".toName)
             ))
           else
             return sn.toTerm
 
+        | expr.function_call_with_args called_function arguments =>
+          let argument_components := if inBlock then [blockName, `vars] else []
+
+          let firstArgumentName :=
+            Name.fromComponents (argument_components.concat (arguments.get! 0).toName)
+          let mut argumentsTerm ←
+            `((∻ $(mkIdent firstArgumentName)))
+
+          for arg in arguments.drop 1 do
+            let argument_name := Name.fromComponents (argument_components.concat arg.toName)
+            argumentsTerm ← `(argumentsTerm ( ∻ $(mkIdent argument_name)))
+
+          let function_name_components := if inBlock then [blockName, `funs] else []
+          let basic_function_name := called_function.toName
+          let function_name := Name.fromComponents (function_name_components.concat basic_function_name)
+          `((
+            ∻ $(mkIdent function_name)
+          ) $argumentsTerm )
+
         | expr.unaryRelOperation op e =>
           `(( $(op.toTerm)
-              $(e.toTerm inBLock
+              $(e.toTerm inBlock
                 blockName quantorNames)
             ))
 
         | expr.binaryRelOperation op e1 e2 =>
           `(( $(op.toTerm)
-              $(e1.toTerm inBLock
+              $(e1.toTerm inBlock
                 blockName quantorNames
                 )
-              $(e2.toTerm inBLock
+              $(e2.toTerm inBlock
                 blockName quantorNames
                 )
             ))
 
         | expr.dotjoin dj e1 e2 =>
           `(( $(dj.toTerm)
-              $(e1.toTerm inBLock
+              $(e1.toTerm inBlock
                 blockName quantorNames
                 )
-              $(e2.toTerm inBLock
+              $(e2.toTerm inBlock
                 blockName quantorNames
                 )
             ))
@@ -454,6 +477,14 @@ namespace Shared.expr
                 dotjoin.dot_join
                 (expr.toType subE1)
                 (expr.toType subE2)
+
+        | `(expr |
+            $called_function:ident
+            [ $arguments:ident,* ]
+          ) =>
+          expr.function_call_with_args
+            called_function.getId.toString
+            (arguments.getElems.map fun e => e.getId.toString).toList
 
         | `(expr | -- Hack to allow dotjoin before ()
           $subExpr1:expr .( $subExpr2:expr )) =>

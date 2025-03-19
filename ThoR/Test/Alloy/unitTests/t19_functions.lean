@@ -41,9 +41,8 @@ sig b {}
 pred pt {
   some b + ft[a]
 }
-fun ft (x : a) : a {
-  pt2[x] => x + x
-  else x
+fun ft [x : a] : a {
+  x + x
 }
 
 pred pt2(x : a) {
