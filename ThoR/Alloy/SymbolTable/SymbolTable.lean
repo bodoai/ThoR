@@ -179,6 +179,23 @@ namespace Alloy
     def getPredicateDeclarations (st : SymbolTable) : List (commandDecl) :=
       (st.defDecls.filter fun cd => cd.isPredicate)
 
+    def getFunctionDeclarations (st : SymbolTable) : List (commandDecl) :=
+      (st.defDecls.filter fun cd => cd.isFunction)
+
+    def updatePredicateDeclarations
+      (st : SymbolTable)
+      (newPredDecls : List (commandDecl))
+      : SymbolTable :=
+      let keepDecls := (st.defDecls.filter fun cd => !cd.isPredicate)
+      {st with defDecls := (keepDecls ++ newPredDecls)}
+
+    def updateFunctionDeclarations
+      (st : SymbolTable)
+      (newFunctionDecls : List (commandDecl))
+      : SymbolTable :=
+      let keepDecls := (st.defDecls.filter fun cd => !cd.isFunction)
+      {st with defDecls := (keepDecls ++ newFunctionDecls)}
+
     end SymbolTable
 
 end Alloy

@@ -43,7 +43,7 @@ namespace Shared
         (mult2 : mult) →
         (ao2 : arrowOp) →
         arrowOp
-  deriving Repr
+  deriving Repr, BEq
 
   /--
   This syntax represents an arrowOp
@@ -77,33 +77,6 @@ namespace Shared
   namespace arrowOp
 
     /--
-    compares two arrowOps. returns bool if they are equal
-    -/
-    def compare (ae1 ae2 : arrowOp) : Bool :=
-      match ae1, ae2 with
-        | arrowOp.multArrowOpExpr e1 m1 m2 e2,
-          arrowOp.multArrowOpExpr e3 m3 m4 e4 =>
-          (e1.compare e3) && (m1 == m3)
-            && (m2 == m4) && (e2.compare e4)
-
-        | arrowOp.multArrowOpExprLeft e1 m1 m2 ao1,
-          arrowOp.multArrowOpExprLeft e2 m3 m4 ao2 =>
-          (e1.compare e2) && (m1 == m3)
-            && (m2 == m4) && (ao1.compare ao2)
-
-        | arrowOp.multArrowOpExprRight ao1 m1 m2 e1,
-          arrowOp.multArrowOpExprRight ao2 m3 m4 e2 =>
-          (ao1.compare ao2) && (m1 == m3)
-            && (m2 == m4) && (e1.compare e2)
-
-        | arrowOp.multArrowOp ao1 m1 m2 ao2,
-          arrowOp.multArrowOp ao3 m3 m4 ao4 =>
-          (ao1.compare ao3) && (m1 == m3)
-            && (m2 == m4) && (ao2.compare ao4)
-
-        | _, _ => false
-
-    /--
     Generates a string representation of the type
     -/
     def toString (ae : arrowOp) : String :=
@@ -130,9 +103,6 @@ namespace Shared
 
     instance : ToString arrowOp where
       toString : arrowOp -> String := fun ae => ae.toString
-
-    instance : BEq arrowOp where
-      beq : arrowOp -> arrowOp -> Bool := fun ae1 ae2 => ae1.compare ae2
 
     instance : Inhabited arrowOp where
       default :=
