@@ -41,8 +41,8 @@ named var.
 private def createVariableCommands
   (blockName : Name)
   (variableDecls : List (varDecl))
-  : List ((TSyntax `command)) := Unhygienic.run do
-    let mut commandList : List ((TSyntax `command)) := []
+  : List Command := Unhygienic.run do
+    let mut commandList : List Command := []
 
     if variableDecls.isEmpty then
       return commandList
@@ -74,7 +74,7 @@ private def createVariableCommands
         variableFields := variableFields.push varField
 
       let id : Ident := mkIdent "vars".toName
-      let mut variableTypeclass : TSyntax `command ←
+      let mut variableTypeclass : Command ←
       `(class $id ($baseType.ident : Type) [$(mkIdent ``ThoR.TupleSet) $baseType.ident] where
           $[$variableFields]*
         )
@@ -89,119 +89,132 @@ private def createVariableCommands
 Creates a single creation command of either a definition or an axiom from a
 given command declaration and the blockname.
 
-Whether a definition or an axiom is created is determined by the definition parameter.
-(definition=true -> def, definition=false -> axiom)
+What is created depends on the commandType of cd
 -/
 private def createDefOrAxiomCommand
   (blockName : Name)
   (cd : commandDecl)
-  (isDefinition : Bool)
   (callableVariables : List (varDecl))
-  : Except String (TSyntax `command) := do
+  : Except String Command := do
 
     -- formula evaluation
     -- All formulas (lines) in an Alloy pred or in an Alloy fact are
     -- transformed into a conjunction of all these formulas.
-    let emptyTerm : TSyntax `term := unhygienicUnfolder `($(mkIdent "".toName))
-    let mut bodyTerm : TSyntax `term := emptyTerm
+    let emptyTerm : Term := unhygienicUnfolder `($(mkIdent "".toName))
+    let mut bodyTerm : Term := emptyTerm
 
-    if !(cd.formulas.isEmpty) then
-
+    -- if it is not a function it has formulas
+    if !(cd.isFunction) && !(cd.formulas.isEmpty) then
       let forms :=
         (cd.formulas.map
           fun f =>
             f.replaceCalls callableVariables)
 
-      let argnames := (cd.args.map fun (arg) => arg.1.names).join
+      let argnames := (cd.predArgs.map fun (arg) => arg.1.names).join
 
       let ff := (forms.get! 0)
-      let ffTerm ← ff.toTerm blockName cd.requiredVars callableVariables cd.predCalls argnames
-
-      bodyTerm := unhygienicUnfolder `($(ffTerm))
+      bodyTerm ←
+        ff.toTerm
+          blockName cd.requiredVars callableVariables cd.predCalls argnames
 
       for formula in forms.drop 1 do
-        let newTerm ← formula.toTerm blockName cd.requiredVars callableVariables cd.predCalls argnames
+        let newTerm ←
+          formula.toTerm
+            blockName cd.requiredVars callableVariables cd.predCalls argnames
+        bodyTerm := unhygienicUnfolder `($bodyTerm ∧ ($newTerm))
+
+    -- function only has expressions
+    if cd.isFunction && !(cd.expressions.isEmpty) then
+      let expressions :=
+        cd.expressions.map fun e => e.replaceCalls callableVariables
+
+      let fe := (expressions.get! 0)
+      bodyTerm := fe.toTermFromBlock blockName
+
+      for expression in expressions.drop 1 do
+        let newTerm := expression.toTermFromBlock blockName
         bodyTerm := unhygienicUnfolder `($bodyTerm ∧ ($newTerm))
 
     -- define command
-    if isDefinition then
+    let tupleSetArg
+      : Array (TSyntax ``Lean.Parser.Term.bracketedBinderF) :=
+    #[
+      (unhygienicUnfolder `(Lean.Parser.Term.bracketedBinderF |
+        {$(baseType.ident) : Type}
+      )),
+      (unhygienicUnfolder `(Lean.Parser.Term.bracketedBinderF |
+        [$(mkIdent ``ThoR.TupleSet) $(baseType.ident)]
+      )),
+      (unhygienicUnfolder `(Lean.Parser.Term.bracketedBinderF |
+        [$(mkIdent s!"{blockName}.vars".toName) $(baseType.ident)]
+      ))
+    ]
 
-      -- Alloy pred argument evaluation
-      -- (no arguments for definition=false, as facts do not have any arguments)
-      -- Alloy pred arguments are transformed into Lean function arguments.
-      let mut argTerms :
-        TSyntax ``Lean.Parser.Command.optDeclSig :=
-          unhygienicUnfolder `(Lean.Parser.Command.optDeclSig|)
-
-      if !(cd.args.isEmpty) then
-        for arg in cd.args do
-          let mut singleArg :
-            Array (TSyntax ``Lean.Parser.Term.bracketedBinderF) := #[]
-          let mut names : Array (TSyntax `ident) := #[]
-
-          let argExpr :=
-            arg.1.expression.replaceCalls callableVariables
-
-          let t :=
-            (typeExpr.relExpr
-              argExpr.toStringRb).toSyntax blockName
-
-          for name in arg.1.names do
-            names := names.push (mkIdent name.toName)
-
-          let argTerm := unhygienicUnfolder `(Lean.Parser.Term.bracketedBinderF |
-            ($[$names]* : ∷ $t))
-
-          singleArg := singleArg.push argTerm
-
-          argTerms := unhygienicUnfolder `(Lean.Parser.Command.optDeclSig| $[$singleArg]*)
-
+    -- facts only have default arguments command
+    if cd.isFact then
       if bodyTerm != emptyTerm then
-        return unhygienicUnfolder `(def $(mkIdent cd.name.toName) $argTerms := $bodyTerm)
-      else
-        return unhygienicUnfolder `(
-          def $(mkIdent cd.name.toName)
-          ($(baseType.ident) : Type)
-          [$(mkIdent ``ThoR.TupleSet) $(baseType.ident)]
-          [$(mkIdent s!"{blockName}.vars".toName) $(baseType.ident)]
-          := True )
-    else
-    -- axiom command
-      if bodyTerm != emptyTerm then
-        return unhygienicUnfolder `(axiom $(mkIdent cd.name.toName) : $bodyTerm)
+        return unhygienicUnfolder `(axiom $(mkIdent cd.name.toName) $[$tupleSetArg]* : $bodyTerm)
       else
         return unhygienicUnfolder `(
           axiom $(mkIdent cd.name.toName)
-          ($(baseType.ident) : Type)
-          [$(mkIdent ``ThoR.TupleSet) $(baseType.ident)]
-          [$(mkIdent s!"{blockName}.vars".toName) $(baseType.ident)]
+          $[$tupleSetArg]*
           : True )
 
-/--
-convenience function:
-Creates a single command which creates a definition from the given
-blockname and command declaration.
--/
-private def createDefCommand
-  (blockName : Name)
-  (cd : commandDecl)
-  (callableVariables : List (varDecl))
-  : Except String (TSyntax `command) :=
-    createDefOrAxiomCommand (isDefinition := true)
-      blockName cd callableVariables
+    -- functions, asserts and predicates are similar
+    if cd.isPredicate || cd.isFunction || cd.isAssert then
+      let mut argTerms :
+        TSyntax ``Lean.Parser.Command.optDeclSig :=
+          unhygienicUnfolder `(Lean.Parser.Command.optDeclSig | $[$tupleSetArg]*)
 
-/--
-convenience function:
-Creates a single command which creates an axiom from the given
-blockname and command declaration.
--/
-private def createAxiomCommand
-  (blockName : Name)
-  (cd : commandDecl)
-  (callableVariables : List (varDecl))
-  : Except String (TSyntax `command) :=
-    createDefOrAxiomCommand (isDefinition := false)
-      blockName cd callableVariables
+      let mut allArgs : Array (TSyntax ``Lean.Parser.Term.bracketedBinderF) :=
+        tupleSetArg
+
+      -- predicate arguments
+      if cd.isPredicate && !(cd.predArgs.isEmpty) then
+        for arg in cd.predArgs do
+          let argExpr := arg.1.expression.replaceCalls callableVariables
+          let type := typeExpr.relExpr argExpr.toStringRb
+          let typeSyntax := type.toSyntax blockName
+          let names := (arg.1.names.map fun name => (mkIdent name.toName)).toArray
+          let unhygienicTerm :=
+            `(Lean.Parser.Term.bracketedBinderF | ($[$names]* : ∷ $typeSyntax))
+          let term := unhygienicUnfolder unhygienicTerm
+          allArgs := allArgs.push term
+        argTerms := unhygienicUnfolder `(Lean.Parser.Command.optDeclSig| $[$allArgs]*)
+
+      -- function arguments
+      if cd.isFunction && !(cd.functionArgs.isEmpty) then
+        for arg in cd.functionArgs do
+          let type := (arg.1.type.replaceCalls callableVariables).toStringRb
+          let typeSyntax := type.toSyntax blockName
+          let names := (arg.1.names.map fun name => (mkIdent name.toName)).toArray
+          let unhygienicTerm :=
+            `(Lean.Parser.Term.bracketedBinderF | ($[$names]* : ∷ $typeSyntax))
+          let term := unhygienicUnfolder unhygienicTerm
+          allArgs := allArgs.push term
+
+      -- add function arguments and function return type
+      if cd.isFunction then
+        let returnType :=
+          (cd.functionReturnType.replaceCalls callableVariables).toStringRb
+        let returnTypeSyntax := returnType.toSyntax blockName
+        argTerms := unhygienicUnfolder
+          `(Lean.Parser.Command.optDeclSig| $[$allArgs]* : ∷ $returnTypeSyntax)
+
+        bodyTerm := unhygienicUnfolder `(cast ($(bodyTerm)) ∷ $returnTypeSyntax)
+
+      if bodyTerm != emptyTerm then
+        return unhygienicUnfolder `(
+          def $(mkIdent cd.name.toName)
+          $argTerms
+          := $bodyTerm)
+      else
+        return unhygienicUnfolder `(
+          def $(mkIdent cd.name.toName)
+          $argTerms
+          := True )
+
+    throw s!"Can't create {cd}. Elaboration for {cd.commandType} is not implemented"
 
 /--
 Creates commands to create Lean definitions from the given blockname and commandDecls.
@@ -213,8 +226,8 @@ private def createDefsCommandsWithNamespace
   (namespaceName : Name)
   (commandDecls : List (commandDecl))
   (callableVariables : List (varDecl))
-  : Except String (List ((TSyntax `command))) := do
-    let mut commandList : List ((TSyntax `command) ) := []
+  : Except String (List Command) := do
+    let mut commandList : List Command := []
 
     if commandDecls.isEmpty then
       return commandList
@@ -225,7 +238,7 @@ private def createDefsCommandsWithNamespace
         (unhygienicUnfolder `(namespace $(mkIdent namespaceName)))
 
       --BaseTypeDecl
-      let defsBaseType : TSyntax `command  :=
+      let defsBaseType : Command :=
         unhygienicUnfolder
           `(variable {$baseType.ident : Type}
             [$(mkIdent ``ThoR.TupleSet) $baseType.ident]
@@ -235,7 +248,7 @@ private def createDefsCommandsWithNamespace
 
       --Def declaration
       for cd in commandDecls do
-        let cdCmd ← (createDefCommand blockName cd callableVariables)
+        let cdCmd ← (createDefOrAxiomCommand blockName cd callableVariables)
         commandList := commandList.concat cdCmd
 
       --NamespaceEnd
@@ -254,9 +267,24 @@ private def createPredDefsCommands
   (blockName : Name)
   (defDecls : List (commandDecl))
   (callableVariables : List (varDecl))
-  : Except String (List ((TSyntax `command))) :=
+  : Except String (List Command) :=
     createDefsCommandsWithNamespace
       (namespaceName := s!"{blockName}.preds".toName)
+      blockName defDecls callableVariables
+
+/--
+Creates commands to create Lean definitions (for functions) from the given
+blockname and commandDecls.
+
+The created commands are encapsulated in a namespace named blockname.functions
+-/
+private def createFunctionDefsCommands
+  (blockName : Name)
+  (defDecls : List (commandDecl))
+  (callableVariables : List (varDecl))
+  : Except String (List ((TSyntax `command))) :=
+    createDefsCommandsWithNamespace
+      (namespaceName := s!"{blockName}.functions".toName)
       blockName defDecls callableVariables
 
 /--
@@ -269,7 +297,7 @@ private def createAssertDefsCommands
   (blockName : Name)
   (defDecls : List (commandDecl))
   (callableVariables : List (varDecl))
-  : Except String (List ((TSyntax `command))) :=
+  : Except String (List Command) :=
     createDefsCommandsWithNamespace
       (namespaceName := s!"{blockName}.asserts".toName)
       blockName  defDecls callableVariables
@@ -283,8 +311,8 @@ private def createAxiomCommands
   (blockName : Name)
   (axiomDecls : List (commandDecl))
   (callableVariables : List (varDecl))
-  : Except String (List ((TSyntax `command))) := do
-    let mut commandList : List ((TSyntax `command)) := []
+  : Except String (List Command) := do
+    let mut commandList : List Command := []
 
     if axiomDecls.isEmpty then
       return commandList
@@ -297,7 +325,7 @@ private def createAxiomCommands
         ( unhygienicUnfolder `(namespace $(mkIdent namespaceName)))
 
       --BaseTypeDecl
-      let defsBaseType : TSyntax `command :=
+      let defsBaseType : Command :=
         unhygienicUnfolder
           `(variable {$(baseType.ident) : Type}
             [$(mkIdent ``ThoR.TupleSet) $(baseType.ident)]
@@ -307,7 +335,7 @@ private def createAxiomCommands
 
       --Axiom declaration
       for ad in axiomDecls do
-        let adCmd ← (createAxiomCommand blockName ad callableVariables)
+        let adCmd ← (createDefOrAxiomCommand blockName ad callableVariables)
         commandList := commandList.concat adCmd
 
       --NamespaceEnd
@@ -324,8 +352,8 @@ These are intendet to offer a natural (alloy-like) way to acces these variables
 private def createVariableAliasCommands
   (blockName : Name)
   (variableDeclarations : List (varDecl))
-  : List ((TSyntax `command)) := Unhygienic.run do
-    let mut commandList : List ((TSyntax `command)) := []
+  : List Command := Unhygienic.run do
+    let mut commandList : List Command := []
     for variableDeclaration in variableDeclarations do
 
       /-
@@ -405,13 +433,13 @@ Creates commands to create all variables, definitions and axioms in Lean.
 The created commands are encapsulated in a namespaces, which are opened as the last command.
 -/
 private def createCommands (st : SymbolTable)
-  : Except String (List ((TSyntax `command))) := do
+  : Except String (List Command) := do
 
     let blockName : Name := st.name
     let mut namespacesToOpen : Array (Ident) := #[]
 
     --variables
-    let mut commandList : List ((TSyntax `command)) := []
+    let mut commandList : List Command := []
 
     let varCommands := createVariableCommands blockName st.variableDecls
     commandList := commandList.append varCommands
@@ -422,11 +450,17 @@ private def createCommands (st : SymbolTable)
     let aliasCommands := createVariableAliasCommands blockName st.variableDecls
     commandList := commandList.append aliasCommands
 
-    -- defs
-    let defCommands ← createPredDefsCommands blockName st.defDecls st.variableDecls
-    commandList := commandList.append defCommands
-    if !(defCommands.isEmpty) then
+    -- predicates
+    let predCommands ← createPredDefsCommands blockName (st.defDecls.filter fun dd => dd.isPredicate) st.variableDecls
+    commandList := commandList.append predCommands
+    if !(predCommands.isEmpty) then
       namespacesToOpen := namespacesToOpen.push (mkIdent s!"{blockName}.preds".toName)
+
+    -- functions
+    let functionCommands ← createFunctionDefsCommands blockName (st.defDecls.filter fun dd => dd.isFunction) st.variableDecls
+    commandList := commandList.append functionCommands
+    if !(functionCommands.isEmpty) then
+      namespacesToOpen := namespacesToOpen.push (mkIdent s!"{blockName}.functions".toName)
 
     -- axioms
     let axCommands ← createAxiomCommands blockName st.axiomDecls st.variableDecls
@@ -441,7 +475,7 @@ private def createCommands (st : SymbolTable)
       namespacesToOpen := namespacesToOpen.push (mkIdent s!"{blockName}.asserts".toName)
 
     -- open the namespaces to use all withot explicit calling
-    let openDecl : TSyntax `Lean.Parser.Command.openDecl :=
+    let openDecl : TSyntax ``Lean.Parser.Command.openDecl :=
       unhygienicUnfolder `(Lean.Parser.Command.openDecl|
         $[$(namespacesToOpen)]*
       )
@@ -450,13 +484,15 @@ private def createCommands (st : SymbolTable)
     return commandList
 
 declare_syntax_cat moduleVar
-syntax ("exactly" ident) : moduleVar
+syntax ("exactly")? ident : moduleVar
+abbrev ModuleVar := Lean.TSyntax `moduleVar
 
 private def moduleVar.getIdent
-  (mv : Lean.TSyntax `moduleVar)
+  (mv : ModuleVar)
   : Ident :=
     match mv with
-      | `(moduleVar | exactly $i) => i
+      | `(moduleVar | exactly $i:ident) => i
+      | `(moduleVar | $i:ident) => i
       | _ => unreachable!
 
 /--
@@ -469,7 +505,7 @@ Options:
 syntax (name := alloyBlock)
   ("#" <|> "~")?
   "alloy"
-  (("module")? separatedNamespace ("[" moduleVar+ "]")?)?
+  (("module")? separatedNamespace ("[" moduleVar,+ "]")?)?
   specification*
   "end"
   : command
@@ -556,7 +592,7 @@ Evaluates the alloy block syntax.
 -/
 private def evalAlloyBlock
   (name : Ident)
-  (specifications : Array (TSyntax `specification))
+  (specifications : Array Specification)
   (moduleVariables : List (String) := default)
   (logging: Bool := false)
   : CommandElabM Unit := do
@@ -569,6 +605,21 @@ private def evalAlloyBlock
       logInfo
         s!"AST without opened Modules: \n
         {ast.toString}"
+
+    let module_variables_with_number_of_occurences :=
+      ( ast.modulVariables.map
+        fun elem => (elem, ast.modulVariables.count elem)
+      ).dedup
+
+    for module_variable in module_variables_with_number_of_occurences do
+      let module_variable_name := module_variable.1
+      let module_variable_number_of_occurences := module_variable.2
+
+      if module_variable_number_of_occurences > 1 then
+        logError s!"The Module {ast.name} has \
+        {module_variable_number_of_occurences} module variables \
+        with the name {module_variable_name}. Module variable names \
+        must be unique."
 
     -- try to open all modules
     let ast_withExcept := openModules ast monadeEnv
@@ -658,14 +709,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
 
           evalAlloyBlock blockName specifications
 
-      | `(alloy $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(alloy $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
           let blockName :=
             (separatedNamespace.toType blockName).representedNamespace
 
           let moduleVariables :=
-            (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+            (mvs.getElems.map
+              fun mv =>
+              (moduleVar.getIdent mv).getId.toString
+            ).toList
 
           evalAlloyBlock
             (moduleVariables := moduleVariables)
@@ -680,14 +734,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
 
           evalAlloyBlock blockName specifications
 
-      | `(alloy module $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(alloy module $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
           let blockName :=
             (separatedNamespace.toType blockName).representedNamespace
 
           let moduleVariables :=
-            (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+            (mvs.getElems.map
+              fun mv =>
+              (moduleVar.getIdent mv).getId.toString
+            ).toList
 
           evalAlloyBlock
             (moduleVariables := moduleVariables)
@@ -709,14 +766,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
               blockName
               specifications
 
-      | `(#alloy $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(#alloy $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
 
             let moduleVariables :=
-              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+              (mvs.getElems.map
+                fun mv =>
+                (moduleVar.getIdent mv).getId.toString
+              ).toList
 
             evalAlloyBlock
               (logging := true)
@@ -735,14 +795,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
               blockName
               specifications
 
-      | `(#alloy module $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(#alloy module $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
 
             let moduleVariables :=
-              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+              (mvs.getElems.map
+                fun mv =>
+                (moduleVar.getIdent mv).getId.toString
+              ).toList
 
             evalAlloyBlock
               (logging := true)
@@ -764,14 +827,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
             Lean.Elab.Command.failIfSucceeds
               (evalAlloyBlock blockName specifications)
 
-      | `(~alloy $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(~alloy $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
 
             let moduleVariables :=
-              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+              (mvs.getElems.map
+                fun mv =>
+                (moduleVar.getIdent mv).getId.toString
+              ).toList
 
             Lean.Elab.Command.failIfSucceeds
               (evalAlloyBlock
@@ -786,14 +852,17 @@ private def alloyBlockImpl : CommandElab := fun stx => do
             Lean.Elab.Command.failIfSucceeds
               (evalAlloyBlock blockName specifications)
 
-      | `(~alloy module $blockName:separatedNamespace [$mvs:moduleVar*]
+      | `(~alloy module $blockName:separatedNamespace [$mvs:moduleVar,*]
             $specifications:specification* end) =>
 
             let blockName :=
               (separatedNamespace.toType blockName).representedNamespace
 
             let moduleVariables :=
-              (mvs.map fun mv => (moduleVar.getIdent mv).getId.toString).toList
+              (mvs.getElems.map
+                fun mv =>
+                (moduleVar.getIdent mv).getId.toString
+              ).toList
 
             Lean.Elab.Command.failIfSucceeds
               (evalAlloyBlock
@@ -824,7 +893,7 @@ private def evaluateCreationCommand
 
     if let Option.some (ad : alloyData) := ads.find? dataName then
       if logging then
-        logInfo s!"Data with name {dataName} found:\n\n {ad}"
+        logInfo s!"Module data for {ident.getId.toString} found:\n\n {ad}"
 
       let st := ad.st
       let ast := ad.ast
@@ -867,7 +936,7 @@ private def evaluateCreationCommand
                 logInfo extensionAxiomCommandsString
 
     else
-      logError s!"No data found for {dataName}"
+      logError s!"Cannot create {ident.getId.toString}, it does not exist."
 
 
 @[command_elab creationSyntax]

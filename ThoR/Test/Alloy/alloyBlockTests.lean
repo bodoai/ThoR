@@ -30,8 +30,8 @@ end
     all t: B | some t + B.r
   }
 
-  pred p2 {
-
+  pred p2 [x : univ] {
+    x = x
   }
 
 end
@@ -151,7 +151,6 @@ end
 
 #create b2
 
-
 -- variables (ThoR_TupleSet : Type) [TupleSet ThoR_TupleSet] [b2.vars ThoR_TupleSet]
 -- def  xte'  :=
 --   (  ThoR.Quantification.Formula.var  Shared.quant.all
@@ -205,6 +204,12 @@ open b2.preds
       all p':PERSON |
         p != p' implies p in p'.^(hatVater + hatMutter)
     }
+
+  pred p1 [p : PERSON] {
+    p in p.(hatMutter+hatVater).(hatMutter+hatVater).(hatMutter+hatVater).(hatMutter+hatVater).(hatMutter+hatVater).hatVater
+    p in (hatMutter+hatVater).(hatMutter+hatVater).(hatMutter+hatVater).(hatMutter+hatVater).(hatMutter+hatVater).hatVater
+    p in (hatMutter+hatVater).(hatMutter+hatVater).(hatMutter+hatVater).(hatMutter+hatVater).(hatMutter+hatVater)
+  }
 end
 
 

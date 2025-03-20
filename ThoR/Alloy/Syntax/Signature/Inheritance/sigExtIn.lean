@@ -47,7 +47,7 @@ namespace Alloy
     Creates the extension strucutre from the given name and syntax.
     -/
     def create
-      (name : TSyntax `ident)
+      (name : Ident)
       (typeExtensions : TSyntaxArray `sigExtInType)
       : sigExtIn := Id.run do
 

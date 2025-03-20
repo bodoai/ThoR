@@ -38,7 +38,7 @@ namespace Shared.typeExpr
   def toSyntax
     (te: typeExpr)
     (blockName : Name)
-    : TSyntax `typeExpr := Unhygienic.run do
+    : TypeExpr := Unhygienic.run do
       match te with
         | typeExpr.arrowExpr ae => `(typeExpr| $(ae.toSyntax blockName):arrowOp)
         | typeExpr.multExpr m e => `(typeExpr| $(m.toSyntax):mult $(e.toSyntax blockName):expr)
@@ -52,7 +52,7 @@ namespace Shared.typeExpr
   def toTermFromBlock
     (te : Shared.typeExpr)
     (blockName : Name)
-    : TSyntax `term := Unhygienic.run do
+    : Term := Unhygienic.run do
       match te with
         | Shared.typeExpr.arrowExpr ae =>
           `($(mkIdent ``ThoR.Rel) $(ae.toTermFromBlock blockName))
@@ -73,7 +73,7 @@ namespace Shared.typeExpr
   -/
   def toTermOutsideBlock
     (te : Shared.typeExpr)
-    : TSyntax `term := Unhygienic.run do
+    : Term := Unhygienic.run do
       match te with
         | Shared.typeExpr.arrowExpr ae =>
           `($(mkIdent ``ThoR.Rel) $(ae.toTermOutsideBlock))
@@ -95,7 +95,7 @@ namespace Shared.typeExpr
   -/
   def toRelTypeTermOutsideBlock
     (te : Shared.typeExpr)
-    : TSyntax `term := Unhygienic.run do
+    : Term := Unhygienic.run do
       match te with
         | Shared.typeExpr.arrowExpr ae =>
           `($(ae.toTermOutsideBlock))
@@ -121,7 +121,7 @@ namespace Shared.typeExpr
   Parses the given syntax to the type
   -/
   def toType
-    (te : TSyntax `typeExpr)
+    (te : TypeExpr)
     : typeExpr :=
     match te with
       | `(typeExpr | $e:expr) =>
@@ -135,6 +135,16 @@ namespace Shared.typeExpr
 
       | _ => typeExpr.multExpr
         mult.one (expr.const constant.none) -- unreachable
+
+  def isString
+    | typeExpr.relExpr e => e.isString
+    | typeExpr.multExpr _ e => e.isString
+    | _ => false
+
+  def getStringData
+    | typeExpr.relExpr e => e.getStringData
+    | typeExpr.multExpr _ e => e.getStringData
+    | e => panic! s!"Tried to get String data from expr {e}"
 
   /--
   Gets the required variables for type expression to work

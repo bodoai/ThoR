@@ -27,6 +27,7 @@ namespace Alloy
   A syntax repreaentation of an assert declaration.
   -/
   declare_syntax_cat assertDecl
+  abbrev AssertDecl := TSyntax `assertDecl
   syntax "assert " extendedIdent property : assertDecl
 
   instance : ToString assertDecl where
@@ -39,7 +40,7 @@ namespace Alloy
     def toString (ad : assertDecl) : String := ToString.toString ad
 
     /-- Generates a type representation from the TSyntax -/
-    def toType (ad : TSyntax `assertDecl) : assertDecl :=
+    def toType (ad : AssertDecl) : assertDecl :=
       match ad with
         | `(assertDecl| assert $name:extendedIdent $p:property) =>
            property.toType (extendedIdent.toName name) p

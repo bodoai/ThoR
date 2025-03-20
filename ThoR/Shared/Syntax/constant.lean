@@ -24,6 +24,7 @@ namespace Shared
   This syntax represents an alloy constant
   -/
   declare_syntax_cat constant
+  abbrev Constant := TSyntax `constant
   syntax ("univ"): constant
   syntax ("none") : constant
   syntax ("iden") : constant
@@ -53,7 +54,7 @@ namespace Shared
     /--
     Generates syntax corosponding to the type
     -/
-    def toSyntax (c : constant) : TSyntax `constant := Unhygienic.run do
+    def toSyntax (c : constant) : Constant := Unhygienic.run do
       match c with
         | constant.none => `(constant| none)
         | constant.iden => `(constant| iden)
@@ -64,7 +65,7 @@ namespace Shared
     -/
     def toTerm
       (c : constant)
-      : TSyntax `term := Unhygienic.run do
+      : Term := Unhygienic.run do
         match c with
           | constant.none =>
             `($(mkIdent ``Rel.constant.none) $(baseType.ident))
@@ -76,7 +77,7 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (c : TSyntax `constant) : constant :=
+    def toType (c : Constant) : constant :=
       match c with
         | `(constant| none) => constant.none
         | `(constant| iden) => constant.iden

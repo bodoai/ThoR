@@ -15,6 +15,7 @@ namespace Shared
   This syntax represents an alloy multiplicity
   -/
   declare_syntax_cat mult
+  abbrev Mult := TSyntax `mult
   syntax "some" : mult
   syntax "one" : mult
   syntax "lone" : mult
@@ -37,7 +38,7 @@ namespace Shared
     /--
     Generates a Lean term corosponding with the type
     -/
-    def toTerm (m : mult) : TSyntax `term := Unhygienic.run do
+    def toTerm (m : mult) : Term := Unhygienic.run do
       match m with
         | mult.one => `($(mkIdent ``mult.one))
         | mult.set => `($(mkIdent ``mult.set))
@@ -51,7 +52,7 @@ namespace Shared
     /--
     Generates syntax corosponding to the type
     -/
-    def toSyntax (m : mult) : TSyntax `mult := Unhygienic.run do
+    def toSyntax (m : mult) : Mult := Unhygienic.run do
       match m with
         | mult.one => `(mult| one)
         | mult.set => `(mult| set)
@@ -61,7 +62,7 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (m : TSyntax `mult) : mult :=
+    def toType (m : Mult) : mult :=
       match m with
         | `(mult| set) => mult.set
         | `(mult| some) => mult.some
@@ -74,7 +75,7 @@ namespace Shared
     Tries to parse an mult from an option syntax and
     returns the set mult if no mult is to be found
     -/
-    def fromOption (m : Option (TSyntax `mult)) : mult :=
+    def fromOption (m : Option Mult) : mult :=
       match m with
         | Option.some mul => mult.toType mul
         | Option.none => mult.set

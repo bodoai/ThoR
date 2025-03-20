@@ -24,6 +24,7 @@ namespace Shared
   This syntax represents an alloy quantifier
   -/
   declare_syntax_cat quant
+  abbrev Quant := TSyntax `quant
   syntax "all" : quant
   syntax "some" : quant
   syntax "lone" : quant
@@ -47,7 +48,7 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (q: TSyntax `quant) : quant :=
+    def toType (q: Quant) : quant :=
       match q with
         | `(quant| all) => quant.all
         | `(quant| some) => quant.some
@@ -60,7 +61,7 @@ namespace Shared
     /--
     Generates a Lean term corosponding with the type
     -/
-    def toTerm (q: quant) : TSyntax `term := Unhygienic.run do
+    def toTerm (q: quant) : Term := Unhygienic.run do
       match q with
         | quant.all => `($(mkIdent ``quant.all))
         | quant.some => `($(mkIdent ``quant.some))
@@ -71,7 +72,7 @@ namespace Shared
     /--
     Generates syntax corosponding to the type
     -/
-    def toSyntax (q: quant) : TSyntax `quant := Unhygienic.run do
+    def toSyntax (q: quant) : Quant := Unhygienic.run do
       match q with
         | quant.all => `(quant | all)
         | quant.some => `(quant | some)

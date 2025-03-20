@@ -137,7 +137,7 @@ namespace Shared.formula
         let calledPredicate := possibleCalledPredicates.get! 0
 
         let calledArgsVarDecls :=
-          (calledPredicate.1.args.map fun cp =>
+          (calledPredicate.1.predArgs.map fun cp =>
             cp.1.names.map fun _ =>
               cp.2).join
 
@@ -245,7 +245,7 @@ namespace Shared.formula
           ))
 
       | formula.algebraicComparisonOperation op ae1 ae2 =>
-        return `(($(op.toTerm) $(ae1.toTerm) $(ae2.toTerm)))
+        return `(($(op.toTerm) $(ae1.toTerm blockName) $(ae2.toTerm blockName)))
 
       | formula.relationComarisonOperation op e1 e2 =>
         return `(( $(op.toTerm)
@@ -349,7 +349,7 @@ namespace Shared.formula
   Parses the given syntax to the type
   -/
   partial def toType
-    (f : TSyntax `formula)
+    (f : Formula)
     (signatureFactSigNames : List String := [])
     : formula :=
       match f with

@@ -7,9 +7,12 @@ import ThoR.Alloy.Syntax.Signature
 import ThoR.Alloy.Syntax.Predicate
 
 import ThoR.Alloy.Syntax.FactDecl.factDecl
+import ThoR.Alloy.Syntax.Function.FunctionDecl.functionDecl
 import ThoR.Alloy.Syntax.OpenModule
 
 import ThoR.Alloy.Syntax.IgnoredSyntax.ignorable
+
+open Lean
 
 namespace Alloy
   /--
@@ -18,10 +21,13 @@ namespace Alloy
   declare_syntax_cat specification
   syntax sigDecl (signatureFactDecl)? : specification
   syntax factDecl : specification
+  syntax functionDecl : specification
   syntax predDecl : specification
   syntax assertDecl : specification
   syntax openModule : specification
 
   syntax ignorable : specification
+
+  abbrev Specification := TSyntax `specification
 
 end Alloy

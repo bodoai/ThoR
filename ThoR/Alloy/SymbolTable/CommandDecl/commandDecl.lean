@@ -5,6 +5,7 @@ Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Shared.Syntax.Formula.formula
 import ThoR.Alloy.Syntax.Predicate.PredArg.predArg
+import ThoR.Alloy.Syntax.Function.FunctionArg.functionArg
 import ThoR.Alloy.SymbolTable.VarDecl.varDecl
 
 open Shared
@@ -12,16 +13,36 @@ open Shared
 namespace Alloy
 
   /--
-  This structure represents a (Lean) command declaration
+  This type represents the type that is created
+  that is created if you evaluate the command
+  -/
+  inductive commandType where
+    | fact
+    | assert
+    | pred
+    | function
+  deriving Repr, BEq
+
+  instance : ToString commandType where
+    toString (ct) :=
+      match ct with
+        | commandType.fact => "fact"
+        | commandType.assert => "assert"
+        | commandType.pred => "pred"
+        | commandType.function => "function"
+
+  /--
+  This inductive type represents a (Lean) command declaration
   of either an definition (def) or axiom.
   -/
   inductive commandDecl where
     | mk  (name : String)
-          (isPredicate : Bool := false)
-          (isFact : Bool := false)
-          (isAssert : Bool := false)
-          (args : List (predArg × varDecl) := []) -- empty if axiom
-          (formulas : List (formula)) -- formulas in an Alloy pred or an Alloy fact
+          (commandType : commandType := commandType.pred)
+          (predArgs : List (predArg × varDecl) := [])
+          (functionArgs : List (functionArg × varDecl) := [])
+          (functionReturnType : typeExpr := default)
+          (formulas : List (formula) := []) -- formulas (used in preds, axioms, asserts)
+          (expressions : List (expr) := []) -- expressiosn (used in functions)
           (requiredDefs : List (String)) -- only for Lean Infoview
           (requiredVars : List (String)) -- only for Lean Infoview
           /-
@@ -41,23 +62,25 @@ namespace Alloy
   deriving Repr
   namespace commandDecl
 
-    def name | mk n _ _ _ _ _ _ _ _ _ _ => n
-    def isPredicate | mk _ isPredicate _ _ _ _ _ _ _ _ _ => isPredicate
-    def isFact | mk _ _ isFact _ _ _ _ _ _ _ _ => isFact
-    def isAssert | mk _ _ _ isAssert _ _ _ _ _ _ _ => isAssert
-    def args | mk _ _ _ _ args _ _ _ _ _ _ => args
-    def formulas | mk _ _ _ _ _ formulas _ _ _ _ _ => formulas
-    def requiredDefs | mk _ _ _ _ _ _ requiredDefs _ _ _ _ => requiredDefs
-    def requiredVars | mk _ _ _ _ _ _ _ requiredVars _ _ _ => requiredVars
-    def predCalls | mk _ _ _ _ _ _ _ _ predCalls _ _ => predCalls
-    def relationCalls | mk _ _ _ _ _ _ _ _ _ relationCalls _ => relationCalls
-    def signatureCalls | mk _ _ _ _ _ _ _ _ _ _ signatureCalls => signatureCalls
+    def name | mk n _ _ _ _ _ _ _ _ _ _ _ => n
+    def commandType | mk  _ commandType _ _ _ _ _ _ _ _ _ _ => commandType
+    def predArgs | mk _ _ predArgs _ _ _ _ _ _ _ _ _ => predArgs
+    def functionArgs | mk _ _ _ functionArgs _ _ _ _ _ _ _ _ => functionArgs
+    def functionReturnType | mk _ _ _ _ functionReturnType _ _ _ _ _ _ _ => functionReturnType
+    def formulas | mk _ _ _ _ _ formulas _ _ _ _ _ _ => formulas
+    def expressions | mk _ _ _ _ _ _ expressions _ _ _ _ _ => expressions
+    def requiredDefs | mk _ _ _ _ _ _ _ requiredDefs _ _ _ _ => requiredDefs
+    def requiredVars | mk _ _ _ _ _ _ _ _ requiredVars _ _ _ => requiredVars
+    def predCalls | mk _ _ _ _ _ _ _ _ _ predCalls _ _ => predCalls
+    def relationCalls | mk _ _ _ _ _ _ _ _ _ _ relationCalls _ => relationCalls
+    def signatureCalls | mk _ _ _ _ _ _ _ _ _ _ _ signatureCalls => signatureCalls
 
     instance : Inhabited commandDecl where
       default :=
         commandDecl.mk
           (name := default)
           (formulas := default)
+          (expressions := default)
           (requiredDefs := default)
           (requiredVars := default)
           (predCalls := default)
@@ -68,10 +91,40 @@ namespace Alloy
       (formulas : List (formula))
         | mk
             name
-            isPredicate
-            isFact
-            isAssert
-            args
+            commandType
+            predArgs
+            functionArgs
+            functionReturnType
+            _
+            expressions
+            requiredDefs
+            requiredVars
+            predCalls
+            relationCalls
+            signatureCalls =>
+          mk
+            name
+            commandType
+            predArgs
+            functionArgs
+            functionReturnType
+            formulas
+            expressions
+            requiredDefs
+            requiredVars
+            predCalls
+            relationCalls
+            signatureCalls
+
+    def updateExpressions
+      (expressions : List (expr))
+        | mk
+            name
+            commandType
+            predArgs
+            functionArgs
+            functionReturnType
+            formulas
             _
             requiredDefs
             requiredVars
@@ -80,16 +133,29 @@ namespace Alloy
             signatureCalls =>
           mk
             name
-            isPredicate
-            isFact
-            isAssert
-            args
+            commandType
+            predArgs
+            functionArgs
+            functionReturnType
             formulas
+            expressions
             requiredDefs
             requiredVars
             predCalls
             relationCalls
             signatureCalls
+
+  def isPredicate (cd : commandDecl) : Bool :=
+    cd.commandType == commandType.pred
+
+  def isFact (cd : commandDecl) : Bool :=
+    cd.commandType == commandType.fact
+
+  def isAssert (cd : commandDecl) : Bool :=
+    cd.commandType == commandType.assert
+
+  def isFunction (cd : commandDecl) : Bool :=
+    cd.commandType == commandType.function
 
   /--
   Generates a String representation from the type.
@@ -99,17 +165,38 @@ namespace Alloy
       cd.predCalls.map fun pc =>
         s!"({toString pc.1} {pc.2})"
     s!"commandDeclaration : \{
-      name := {cd.name},
-      isPredicate := {cd.isPredicate},
-      isFact := {cd.isFact},
-      isAssert := {cd.isAssert},
-      args := {cd.args},
-      required definitions := {cd.requiredDefs},
-      required variables := {cd.requiredVars},
-      called predicates := {predCallsString},
-      called relations := {cd.relationCalls},
-      called signatures := {cd.signatureCalls},
-      formulas := {cd.formulas}
+        name := {cd.name},
+        commandType := {cd.commandType},
+        { if
+            cd.commandType == commandType.pred
+          then
+            s!"args := {cd.predArgs},"
+          else "" }
+        { if
+            cd.commandType == commandType.function
+          then
+            s!"args := {cd.functionArgs},
+            functionReturnType := {cd.functionReturnType}"
+          else "" }
+        required definitions := {cd.requiredDefs},
+        required variables := {cd.requiredVars},
+        { if
+            cd.commandType != commandType.function
+          then
+            s!"called predicates := {predCallsString},"
+          else "" }
+        called relations := {cd.relationCalls},
+        called signatures := {cd.signatureCalls},
+        { if
+            cd.commandType != commandType.function
+          then
+            s!"formulas := {cd.formulas},"
+          else "" }
+        { if
+            cd.commandType == commandType.function
+          then
+            s!"expressions := {cd.expressions}"
+          else "" }
     }"
 
   instance : ToString commandDecl where
