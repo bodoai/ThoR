@@ -34,18 +34,37 @@ namespace Alloy
     def updateType (vd : varDecl) (type : typeExpr) : varDecl :=
       {vd with type := type}
 
-    /-- Generates a String representation from the type -/
-    def toString (vd : varDecl) : String :=
-      s!"variableDeclaration : \{
-        name := {vd.name},
-        isOpenend := {vd.isOpened},
-        openedFrom := {vd.openedFrom},
-        isRelationOf := {vd.isRelation},
-        relationOf := {vd.relationOf},
-        isQuantor := {vd.isQuantor}
-        type := {vd.type},
-        requiredDeclarations := {vd.requiredDecls}
-      }"
+    def toString
+      (vd : varDecl)
+      (inner_space_count := 3)
+      (outer_space_count := 1)
+      (leading_new_line := false)
+      : String := Id.run do
+
+      let mut inner_spaces : String := ""
+      for _ in [0:inner_space_count] do
+        inner_spaces := inner_spaces ++ " "
+
+      let mut outer_spaces : String := ""
+      for _ in [0:outer_space_count] do
+        outer_spaces := outer_spaces ++ " "
+
+      let result :=
+        outer_spaces ++ "variable declaration : ⦃ \n" ++
+        inner_spaces ++ s!"name := {vd.name}" ++ "\n" ++
+        inner_spaces ++ s!"is openend := {vd.isOpened}," ++ "\n" ++
+        inner_spaces ++ s!"opened from := {vd.openedFrom}," ++ "\n" ++
+        inner_spaces ++ s!"is relation of := {vd.isRelation}," ++ "\n" ++
+        inner_spaces ++ s!"relation of := {vd.relationOf}," ++ "\n" ++
+        inner_spaces ++ s!"is quantor := {vd.isQuantor}," ++ "\n" ++
+        inner_spaces ++ s!"type := {vd.type}," ++ "\n" ++
+        inner_spaces ++ s!"required declarations := {vd.requiredDecls}" ++ "\n" ++
+        outer_spaces ++ "⦄"
+
+      if leading_new_line then
+        "\n" ++ result
+      else
+        result
 
     instance : ToString varDecl where
       toString := toString
