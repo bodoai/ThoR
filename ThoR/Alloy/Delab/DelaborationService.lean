@@ -48,7 +48,8 @@ def switch_thoR_representation_to_alloy_representation
 
     let split1 := lastComponentString.splitOn relationSeparator
     let split2 := split1.map fun r => r.splitOn signatureSeparator
-    let filteredSplit := (split2.join).filter fun oc => oc != "this"
+    let filteredSplit := (split2.join).filter
+      fun oc => oc != "this" && oc != "_root_"
     let splitNames := filteredSplit.map fun s => s.toName
 
     let newComponents := componentsWithoutLast ++ splitNames

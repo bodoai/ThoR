@@ -6,8 +6,10 @@ Authors: s. file CONTRIBUTORS
 
 import ThoR.Alloy.Syntax.IgnoredSyntax.run
 import ThoR.Alloy.Syntax.IgnoredSyntax.check
+import ThoR.Alloy.Syntax.IgnoredSyntax.comment
 
 declare_syntax_cat ignorable
 
 syntax runSyntax : ignorable
 syntax checkSyntax : ignorable
+syntax comment : ignorable

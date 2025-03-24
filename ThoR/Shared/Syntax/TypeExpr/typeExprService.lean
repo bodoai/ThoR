@@ -144,6 +144,16 @@ namespace Shared.typeExpr
       | _ => typeExpr.multExpr
         mult.one (expr.const constant.none) -- unreachable
 
+  def isString
+    | typeExpr.relExpr e => e.isString
+    | typeExpr.multExpr _ e => e.isString
+    | _ => false
+
+  def getStringData
+    | typeExpr.relExpr e => e.getStringData
+    | typeExpr.multExpr _ e => e.getStringData
+    | e => panic! s!"Tried to get String data from expr {e}"
+
   /--
   Gets the required variables for type expression to work
   -/

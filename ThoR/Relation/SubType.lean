@@ -249,24 +249,24 @@ namespace ThoR
     (castable r t2 subtype_pf)
 
   macro "cast" varName:ident : term
-    => do `((Subtype.cast $(varName) _ (by aesop)))
+    => do `((Subtype.cast $(varName) _ (by sorry)))
 
   macro "cast" varName:ident "∷" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(typeName)))
+    => do `((Subtype.cast $(varName) _ (by sorry) : ∷ $(typeName)))
 
   macro "cast" "(" varName:term ")" : term
-    => do `((Subtype.cast $(varName) _ (by aesop)))
+    => do `((Subtype.cast $(varName) _ (by sorry)))
 
   macro "cast" "(" varName:term ")" ":" type:typeExpr : term
-    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(type)))
+    => do `((Subtype.cast $(varName) _ (by sorry) : ∷ $(type)))
 
   macro "cast" "(" varName:term ")" "∷" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(typeName)))
+    => do `((Subtype.cast $(varName) _ (by sorry) : ∷ $(typeName)))
 
   macro varName:ident "▹" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(typeName)))
+    => do `((Subtype.cast $(varName) _ (by sorry) : ∷ $(typeName)))
   macro "(" varName:ident ")" "▹" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(typeName)))
+    => do `((Subtype.cast $(varName) _ (by sorry) : ∷ $(typeName)))
 
 
 end Subtype

@@ -88,7 +88,9 @@ to be better digestible for further computation and transformation into Lean.
           (st.axiomDecls.map  fun (ad) => ad.name) ++
           (st.defDecls.map  fun (dd) => dd.name) ++
           (st.defDecls.map  fun (dd) =>
-            (dd.args.map fun (arg) => arg.1.names).join).join
+            (dd.predArgs.map fun (arg) => arg.1.names).join).join ++
+          (st.defDecls.map  fun (dd) =>
+            (dd.functionArgs.map fun (arg) => arg.1.names).join).join
 
         for requiredSymbol in st.requiredDecls do
           if !(availableSymbols.contains requiredSymbol) then
@@ -133,7 +135,7 @@ to be better digestible for further computation and transformation into Lean.
       (signatureCalls : List (String × List (varDecl)))
 
     /-- gets relation and signature calls of formulas -/
-    private def get_relation_and_signature_calls
+    private def get_relation_and_signature_calls_from_formulas
       (formulas : List (formula))
       (callableVariables : List (varDecl))
       : Except String variableCalls
@@ -155,12 +157,35 @@ to be better digestible for further computation and transformation into Lean.
       return {  relationCalls := calledRelations,
                 signatureCalls := calledSignatures  }
 
+    /-- gets relation and signature calls of expressions -/
+    private def get_relation_and_signature_calls_from_expressions
+      (expressions : List (expr))
+      (callableVariables : List (varDecl))
+      : Except String variableCalls
+        := do
+
+      let mut calledVariables : List (String × List (varDecl)) := []
+      for expr in expressions do
+          calledVariables :=
+            calledVariables ++ (← expr.getCalledVariables callableVariables)
+
+      let calledRelations : List (String × List (varDecl)) :=
+        calledVariables.map fun elem =>
+          (elem.1, elem.2.filter fun elem => elem.isRelation)
+
+      let calledSignatures : List (String × List (varDecl)) :=
+        calledVariables.map fun elem =>
+          (elem.1, elem.2.filter fun elem => !elem.isRelation)
+
+      return {  relationCalls := calledRelations,
+                signatureCalls := calledSignatures  }
+
     private def checkRelationCalls
       (st : SymbolTable)
       : Except String Unit := do
 
         let variableCalls ←
-          get_relation_and_signature_calls st.getAllFormulas st.variableDecls
+          get_relation_and_signature_calls_from_formulas st.getAllFormulas st.variableDecls
 
         for relationCall in variableCalls.relationCalls do
 
@@ -451,7 +476,7 @@ to be better digestible for further computation and transformation into Lean.
 
         -- get relation and signature calls
         let variableCalls ←
-          get_relation_and_signature_calls predDecl.forms st.variableDecls
+          get_relation_and_signature_calls_from_formulas predDecl.forms st.variableDecls
 
         let mut declarationName := predDecl.name
         /-
@@ -474,7 +499,7 @@ to be better digestible for further computation and transformation into Lean.
         st := st.addDefDecl
           (
             commandDecl.mk (name := declarationName)
-            (args := newArgs)
+            (predArgs := newArgs)
             (commandType := commandType.pred)
             (formulas := predDecl.forms)
             (requiredVars := reqVars)
@@ -502,7 +527,7 @@ to be better digestible for further computation and transformation into Lean.
           commandDecl.mk
             (name := predDefDecl.name)
             (commandType := predDefDecl.commandType)
-            (args := predDefDecl.args)
+            (predArgs := predDefDecl.predArgs)
             (formulas := predDefDecl.formulas)
             (requiredVars := predDefDecl.requiredVars)
             (requiredDefs := predDefDecl.requiredDefs)
@@ -544,7 +569,7 @@ to be better digestible for further computation and transformation into Lean.
 
         -- get relation and signature calls
         let variableCalls ←
-          get_relation_and_signature_calls factDecl.formulas st.variableDecls
+          get_relation_and_signature_calls_from_formulas factDecl.formulas st.variableDecls
 
         -- get list of the names of the referenced signatures and signature fields
         let reqVars : List (String) := factDecl.getReqVariables.eraseDups
@@ -582,6 +607,71 @@ to be better digestible for further computation and transformation into Lean.
       return st
 
     /--
+    Adds the given function declarations in the corosponding form (commandDecl) to the ST
+    -/
+    private def addFunctions
+    (inputST : SymbolTable)
+    (functionDecls : List (functionDecl))
+    (moduleName : String := default)
+    : Except String SymbolTable := do
+
+      let mut st := inputST
+
+      for functionDecl in functionDecls do
+
+        let mut functionDecl := functionDecl.simplifyDomainRestrictions st
+
+        if moduleName != default then
+          functionDecl := functionDecl.replaceThisCalls moduleName
+
+        -- get relation and signature calls
+        let variableCalls ←
+          get_relation_and_signature_calls_from_expressions functionDecl.expressions st.variableDecls
+
+        -- get list of the names of the referenced signatures and signature fields
+        let reqVars : List (String) := functionDecl.getReqVariables.eraseDups
+
+        let mut declarationName := functionDecl.name
+        /-
+        if a moduleName is given, it is added to the
+        signature name to make it unique
+        -/
+        if moduleName != default then
+          declarationName :=
+            s!"{moduleName}{signatureSeparator}{declarationName}"
+
+        let newArgs := functionDecl.arguments.map fun a =>
+          if !a.type.isString then
+            (a, default)
+          else
+            let fv := (st.variableDecls.filter
+              fun cv =>
+                cv.name == a.type.getStringData).get! 0
+            (a, fv)
+
+        st := st.addDefDecl
+          (
+            commandDecl.mk
+            (name := declarationName)
+            (commandType := commandType.function)
+            (functionArgs := newArgs)
+            (functionReturnType := functionDecl.outputType)
+            (expressions := functionDecl.expressions)
+            (requiredVars := reqVars)
+            (requiredDefs := default)
+            (predCalls := default)
+            (relationCalls := variableCalls.relationCalls)
+            (signatureCalls := variableCalls.signatureCalls)
+          )
+
+        st :=
+          {st with requiredDecls
+            := List.eraseDups (st.requiredDecls ++ (reqVars))
+          }
+
+      return st
+
+    /--
     Adds the given assert declarations in the corosponding form (commandDecl) to the ST
 
     (analogous to addSigs, addFacts and addPreds)
@@ -611,7 +701,7 @@ to be better digestible for further computation and transformation into Lean.
 
          -- get relation and signature calls
         let variableCalls ←
-          get_relation_and_signature_calls assertDecla.formulas st.variableDecls
+          get_relation_and_signature_calls_from_formulas assertDecla.formulas st.variableDecls
 
         -- get list of the names of the referenced signatures and signature fields
         let reqVars : List (String) := assertDecla.getReqVariables.eraseDups
@@ -648,6 +738,26 @@ to be better digestible for further computation and transformation into Lean.
 
       return st
 
+    private def addElements
+      (input : SymbolTable)
+      (ast : AST)
+      (module_name : String := default)
+      : Except String SymbolTable := do
+        let mut st := input
+        if module_name == default then
+          st := st.addSigs ast.sigDecls
+          st ← st.addPreds ast.predDecls
+          st ← st.addFunctions ast.functionDecls
+          st ←  st.addFacts ast.factDecls
+          st ←  st.addAsserts ast.assertDecls
+        else
+          st := st.addSigs ast.sigDecls module_name
+          st ← st.addPreds ast.predDecls module_name
+          st ← st.addFunctions ast.functionDecls module_name
+          st ←  st.addFacts ast.factDecls module_name
+          st ←  st.addAsserts ast.assertDecls module_name
+        return st
+
     private partial def addModule
       (input : SymbolTable)
       (ast : AST)
@@ -666,10 +776,7 @@ to be better digestible for further computation and transformation into Lean.
         /-
           add all sigs, preds, facts and asserts of the current MAIN module
         -/
-        st := st.addSigs ast.sigDecls module_name
-        st ← st.addPreds ast.predDecls module_name
-        st ←  st.addFacts ast.factDecls module_name
-        st ←  st.addAsserts ast.assertDecls module_name
+        st ← st.addElements ast module_name
 
         /-
           if there are modules left, they have to be addes as well
@@ -705,17 +812,7 @@ to be better digestible for further computation and transformation into Lean.
           st ←  st.addModule openedModuleAST
 
         -- Add the elements of the CURRENT module (block)
-        -- sigs
-        st := st.addSigs ast.sigDecls
-
-        -- facts
-        st ← st.addFacts ast.factDecls
-
-        --preds
-        st ← st.addPreds ast.predDecls
-
-        --asserts
-        st ← st.addAsserts ast.assertDecls
+        st ← st.addElements ast
 
         -- CHECKS
         if let Except.error msg := st.checkSymbols ast then

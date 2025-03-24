@@ -263,7 +263,7 @@ namespace Shared.formula
         let calledPredicate := possibleCalledPredicates.get! 0
 
         let calledArgsVarDecls :=
-          (calledPredicate.1.args.map fun cp =>
+          (calledPredicate.1.predArgs.map fun cp =>
             cp.1.names.map fun _ =>
               cp.2).join
 

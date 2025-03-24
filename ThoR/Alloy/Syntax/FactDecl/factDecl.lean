@@ -17,11 +17,7 @@ namespace Alloy
   A type representation of an fact declaration. It is projected on `property`
   -/
   def factDecl := property
-  deriving Repr
-
-  -- would be prettier to call the default of property
-  instance : Inhabited factDecl where
-    default := {name := "Empty", formulas := []}
+  deriving Repr, Inhabited
 
   /--
   A syntax repreaentation of an fact declaration.
