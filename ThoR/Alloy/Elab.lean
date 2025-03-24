@@ -14,16 +14,21 @@ import ThoR.Shared.Syntax
 
 import ThoR.Alloy.Config
 
-import ThoR.Alloy.Syntax.AST
+import ThoR.Alloy.Syntax.AST.AST
+import ThoR.Alloy.Syntax.AST.ASTService
+
 import ThoR.Alloy.SymbolTable.SymbolTable
 import ThoR.Alloy.SymbolTable.SymbolTableService
+
 import ThoR.Alloy.InheritanceTree.UnTyped.InheritanceTree
 
 import ThoR.Alloy.Syntax.Signature.SigDecl.sigDeclService
 
 import ThoR.Alloy.Syntax.SeparatedNamespace
-import ThoR.Alloy.Syntax.alloyData
 import ThoR.Alloy.Syntax.OpenModule.openModuleHelper
+
+import ThoR.Alloy.Syntax.AlloyData.alloyData
+import ThoR.Alloy.Syntax.AlloyData.alloyDataService
 
 import ThoR.Shared.Syntax.TypeExpr.typeExprService
 
@@ -957,6 +962,10 @@ syntax
 
 @[term_elab blockless_alloy]
 private def alloyFormulaBlockImpl : TermElab := fun stx expectedType? => do
+  let environment ← getEnv
+  let alloyDataState := getAlloyData environment
+  let alloyDataList := alloyDataState.toList
+
   match stx with
     | `([ alloy | $formulas:formula* ]) =>
       if formulas.isEmpty then
@@ -967,16 +976,22 @@ private def alloyFormulaBlockImpl : TermElab := fun stx expectedType? => do
         let first_formula := formulas.get! 0
         let except_first_formula_term := first_formula.toTermOutsideBlock
         match except_first_formula_term with
-          | Except.error msg => panic! msg -- how to log/throw here ...
-          | Except.ok first_formula_term =>
-          let mut resulting_term := first_formula_term
-          for formula_x in (formulas.toList.drop 1) do
-            let except_formulas_term := formula_x.toTermOutsideBlock
-            match except_formulas_term with
-              | Except.error msg => panic! msg
-              | Except.ok data =>
-                resulting_term ← `($resulting_term ∧ $data)
+          | Except.error msg =>
+            logError msg
+            throwUnsupportedSyntax
 
-          elabTerm resulting_term expectedType?
+          | Except.ok first_formula_term =>
+            let mut resulting_term := first_formula_term
+            for formula_x in (formulas.toList.drop 1) do
+              let except_formulas_term := formula_x.toTermOutsideBlock
+              match except_formulas_term with
+                | Except.error msg =>
+                  logError msg
+                  throwUnsupportedSyntax
+
+                | Except.ok data =>
+                  resulting_term ← `($resulting_term ∧ $data)
+
+            elabTerm resulting_term expectedType?
 
     | _ => throwUnsupportedSyntax

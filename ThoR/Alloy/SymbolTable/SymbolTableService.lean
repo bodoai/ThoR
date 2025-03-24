@@ -5,12 +5,13 @@ Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
 import ThoR.Relation
-import ThoR.Alloy.Syntax.AST
+import ThoR.Alloy.Syntax.AST.AST
 import ThoR.Alloy.Config
 import ThoR.Alloy.SymbolTable.SymbolTable
 import ThoR.Alloy.SymbolTable.CommandDecl.commandDeclService
 import ThoR.Alloy.Syntax.FactDecl.factDeclService
 import ThoR.Alloy.Syntax.AssertDecl.assertDeclService
+import ThoR.Alloy.Syntax.Predicate.PredDecl.predDeclService
 
 open Shared Config
 
@@ -18,7 +19,6 @@ open Shared Config
 This file is used for semantic analysis of the AST and transforming its contents
 to be better digestible for further computation and transformation into Lean.
 -/
-
 
   namespace Alloy.SymbolTable
 

@@ -7,7 +7,7 @@ import ThoR.Basic
 import ThoR.Relation.Set
 
 import ThoR.Alloy.Config
-import ThoR.Alloy.Syntax.AST
+import ThoR.Alloy.Syntax.AST.AST
 import ThoR.Alloy.Syntax.Signature.Inheritance.sigExt
 import ThoR.Shared.Syntax.TypeExpr.typeExpr
 

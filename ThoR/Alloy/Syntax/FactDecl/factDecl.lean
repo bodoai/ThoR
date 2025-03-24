@@ -33,51 +33,8 @@ namespace Alloy
   instance : ToString factDecl where
     toString (fd : factDecl) : String :=
       s!"fact : {property.toString fd}"
-  namespace factDecl
 
-    /-- Generates a String representation from the type -/
-    def toString (fd : factDecl) : String := ToString.toString fd
-
-    /-- Generates a type representation from the TSyntax -/
-    def toType (defaultName : String) (fd: FactDecl) : factDecl :=
-      match fd with
-          --with name
-        | `(factDecl| fact $name:extendedIdent $p:property) =>
-              property.toType (extendedIdent.toName name) p
-
-          -- without name
-          | `(factDecl| fact $p:property) =>
-                property.toType defaultName.toName p
-
-          | _ => default
-
-    /--
-    Extracts all required definitions (i.e. references to preds)
-    from the formulas of the type
-    -/
-    def getReqDefinitions
-      (fd : factDecl)
-      : List (String) := Id.run do
-        let mut result : List (String) := []
-
-        for form in fd.formulas do
-          result := result ++ form.getReqDefinitions
-
-        return result
-
-    /--
-    Extracts all required variables from the formulas of the type
-    -/
-    def getReqVariables
-      (fd : factDecl)
-      : List (String) := Id.run do
-        let mut result : List (String) := []
-
-        for form in fd.formulas do
-          result := result ++ form.getReqVariables
-
-        return result
-
-  end factDecl
+  /-- Generates a String representation from the type -/
+  def factDecl.toString (fd : factDecl) : String := ToString.toString fd
 
 end Alloy

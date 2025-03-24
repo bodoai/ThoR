@@ -16,6 +16,8 @@ import ThoR.Relation.Elab
 import ThoR.Relation.SubType
 import ThoR.Relation.Quantification
 
+--import ThoR.Alloy.Syntax.AlloyData.alloyData
+
 open Alloy ThoR ThoR.Quantification
 open Lean ThoR
 
@@ -93,6 +95,7 @@ namespace Shared.formula
 
   partial def toTermOutsideBlock
     (f : formula)
+    --(availableAlloyData : List (alloyData) := [])
     : Except String ((Term)) := do
     match f with
       | formula.string s => do
