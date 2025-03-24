@@ -16,7 +16,7 @@ import ThoR.Relation.Elab
 import ThoR.Relation.SubType
 import ThoR.Relation.Quantification
 
---import ThoR.Alloy.Syntax.AlloyData.alloyData
+import ThoR.Alloy.Syntax.AlloyData.alloyData
 
 open Alloy ThoR ThoR.Quantification
 open Lean ThoR
