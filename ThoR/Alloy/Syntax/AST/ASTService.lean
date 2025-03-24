@@ -9,6 +9,7 @@ import ThoR.Alloy.Syntax.Predicate.PredDecl.predDeclService
 import ThoR.Alloy.Syntax.FactDecl.factDeclService
 import ThoR.Alloy.Syntax.AssertDecl.assertDeclService
 import ThoR.Alloy.Syntax.Signature.SignatureFactDecl.signatureFactDeclService
+import ThoR.Alloy.Syntax.Function.FunctionDecl.functionDeclService
 
 open Lean
 
@@ -60,6 +61,9 @@ namespace Alloy.AST
         | `(specification| $sd:sigDecl) =>
           ast := ast.addSigDecl (sigDecl.toType sd)
 
+        -- function
+        | `(specification | $fd:functionDecl) =>
+          ast := ast.addFunctionDecl (functionDecl.toType fd)
 
         --fact
         | `(specification| $fd:factDecl) =>
