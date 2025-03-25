@@ -138,10 +138,10 @@ private def createDefOrAxiomCommand
         cd.expressions.map fun e => e.replaceCalls callableVariables
 
       let fe := (expressions.get! 0)
-      bodyTerm := fe.toTermFromBlock blockName
+      bodyTerm ← fe.toTermFromBlock blockName
 
       for expression in expressions.drop 1 do
-        let newTerm := expression.toTermFromBlock blockName
+        let newTerm ← expression.toTermFromBlock blockName
         bodyTerm := unhygienicUnfolder `($bodyTerm ∧ ($newTerm))
 
     -- define command
@@ -984,7 +984,7 @@ syntax
 private def alloyFormulaBlockImpl : TermElab := fun stx expectedType? => do
   let environment ← getEnv
   let alloyDataState := getAlloyData environment
-  let alloyDataList := alloyDataState.toList
+  let alloyDataList := (alloyDataState.toList.map fun ad => ad.2)
 
   match stx with
     | `([ alloy | $formulas:formula* ]) =>
@@ -994,7 +994,7 @@ private def alloyFormulaBlockImpl : TermElab := fun stx expectedType? => do
         let formulas := formulas.map fun f => formula.toType f
 
         let first_formula := formulas.get! 0
-        let except_first_formula_term := first_formula.toTermOutsideBlock
+        let except_first_formula_term := first_formula.toTermOutsideBlock alloyDataList
         match except_first_formula_term with
           | Except.error msg =>
             logError msg

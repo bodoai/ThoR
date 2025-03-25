@@ -12,6 +12,8 @@ import ThoR.Alloy.SymbolTable.CommandDecl.commandDeclService
 import ThoR.Alloy.Syntax.FactDecl.factDeclService
 import ThoR.Alloy.Syntax.AssertDecl.assertDeclService
 import ThoR.Alloy.Syntax.Predicate.PredDecl.predDeclService
+import ThoR.Alloy.Syntax.Signature.SigDecl.sigDeclService
+import ThoR.Alloy.Syntax.Signature.Inheritance.sigExtService
 import ThoR.Alloy.Syntax.Function.FunctionDecl.functionDeclService
 
 open Shared Config

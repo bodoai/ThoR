@@ -9,10 +9,8 @@ This file is used to parse and precompile the alloy syntax.
 import ThoR.Basic
 
 import ThoR.Alloy.Syntax.Signature
-import ThoR.Alloy.Syntax.AssertDecl.assertDecl
 import ThoR.Alloy.Syntax.FactDecl.factDecl
 import ThoR.Alloy.Syntax.AssertDecl.assertDecl
-import ThoR.Alloy.Syntax.FactDecl.factDecl
 import ThoR.Alloy.Syntax.Function.FunctionDecl.functionDecl
 import ThoR.Alloy.Syntax.specification
 

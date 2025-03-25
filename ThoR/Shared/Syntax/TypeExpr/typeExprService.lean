@@ -52,6 +52,11 @@ namespace Shared.typeExpr
         | typeExpr.multExpr m e => `(typeExpr| $(m.toSyntax):mult $(e.toSyntaxOutsideBlock):expr)
         | typeExpr.relExpr e => `(typeExpr| $(e.toSyntaxOutsideBlock):expr)
 
+  private def unhygienicUnfolder
+    (input : Unhygienic (Term))
+    : Term := Unhygienic.run do
+    return ← input
+
   /--
   Generates a Lean term corosponding with the type
 
@@ -60,19 +65,23 @@ namespace Shared.typeExpr
   def toTermFromBlock
     (te : Shared.typeExpr)
     (blockName : Name)
-    : Term := Unhygienic.run do
+    : Except String Term := do
       match te with
         | Shared.typeExpr.arrowExpr ae =>
-          `($(mkIdent ``ThoR.Rel) $(ae.toTermFromBlock blockName))
+          return unhygienicUnfolder
+            `($(mkIdent ``ThoR.Rel) $(← ae.toTermFromBlock blockName))
 
         | Shared.typeExpr.multExpr m e =>
-          `($(mkIdent ``ThoR.Rel)
-            ($(mkIdent ``RelType.mk.unary_rel)
-              $(m.toTerm) $(e.toTermFromBlock blockName)))
+          return unhygienicUnfolder
+            `($(mkIdent ``ThoR.Rel)
+              ($(mkIdent ``RelType.mk.unary_rel)
+                $(m.toTerm) $(← e.toTermFromBlock blockName)))
+
         | Shared.typeExpr.relExpr e =>
-          `($(mkIdent ``ThoR.Rel)
-            ($(mkIdent ``RelType.mk.rel)
-              $(e.toTermFromBlock blockName)))
+          return unhygienicUnfolder
+            `($(mkIdent ``ThoR.Rel)
+              ($(mkIdent ``RelType.mk.rel)
+                $(← e.toTermFromBlock blockName)))
 
   /--
   Generates a Lean term corresponding to the type
@@ -81,20 +90,23 @@ namespace Shared.typeExpr
   -/
   def toTermOutsideBlock
     (te : Shared.typeExpr)
-    : Term := Unhygienic.run do
+    : Except String Term := do
       match te with
         | Shared.typeExpr.arrowExpr ae =>
-          `($(mkIdent ``ThoR.Rel) $(ae.toTermOutsideBlock))
+          return unhygienicUnfolder
+            `($(mkIdent ``ThoR.Rel) $(← ae.toTermOutsideBlock))
 
         | Shared.typeExpr.multExpr m e =>
-          `($(mkIdent ``ThoR.Rel)
-            ($(mkIdent ``RelType.mk.unary_rel)
-              $(m.toTerm) $(e.toTermOutsideBlock)))
+          return unhygienicUnfolder
+            `($(mkIdent ``ThoR.Rel)
+              ($(mkIdent ``RelType.mk.unary_rel)
+                $(m.toTerm) $(← e.toTermOutsideBlock)))
 
         | Shared.typeExpr.relExpr e =>
-          `($(mkIdent ``ThoR.Rel)
-            ($(mkIdent ``RelType.mk.rel)
-              $(e.toTermOutsideBlock)))
+          return unhygienicUnfolder
+            `($(mkIdent ``ThoR.Rel)
+              ($(mkIdent ``RelType.mk.rel)
+                $(← e.toTermOutsideBlock)))
 
   /--
   Generates a Lean term corresponding to the RelType
@@ -103,18 +115,21 @@ namespace Shared.typeExpr
   -/
   def toRelTypeTermOutsideBlock
     (te : Shared.typeExpr)
-    : Term := Unhygienic.run do
+    : Except String Term := do
       match te with
         | Shared.typeExpr.arrowExpr ae =>
-          `($(ae.toTermOutsideBlock))
+          return unhygienicUnfolder
+            `($(← ae.toTermOutsideBlock))
 
         | Shared.typeExpr.multExpr m e =>
-          `(($(mkIdent ``RelType.mk.unary_rel)
-              $(m.toTerm) $(e.toTermOutsideBlock)))
+          return unhygienicUnfolder
+            `(($(mkIdent ``RelType.mk.unary_rel)
+                $(m.toTerm) $(← e.toTermOutsideBlock)))
 
         | Shared.typeExpr.relExpr e =>
-          `(($(mkIdent ``RelType.mk.rel)
-              $(e.toTermOutsideBlock)))
+          return unhygienicUnfolder
+            `(($(mkIdent ``RelType.mk.rel)
+                $(← e.toTermOutsideBlock)))
 
   /--
   changes a string expr in the type expression to a string rb expression

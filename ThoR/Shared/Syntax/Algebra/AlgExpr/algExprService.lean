@@ -11,35 +11,66 @@ open Lean
 
 namespace Shared.algExpr
 
+  private def unhygienicUnfolder
+    (input : Unhygienic (Term))
+    : Term := Unhygienic.run do
+    return ← input
+
   /--
   Generates a Lean term corosponding with the type
   -/
   def toTerm
   (ae : algExpr)
   (blockName : Name)
-  : Term := Unhygienic.run do
+  : Except String Term := do
     match ae with
-      | algExpr.number n => `($(Lean.Syntax.mkNumLit s!"{n.natAbs}"):num)
+      | algExpr.number n =>
+        return unhygienicUnfolder
+          `($(Lean.Syntax.mkNumLit s!"{n.natAbs}"):num)
+
       | algExpr.cardExpr ce =>
         match ce with
           | cardExpr.cardExpression expr =>
-            `(($(mkIdent ``ThoR.Card.card) $(expr.toTermFromBlock blockName)))
-      | algExpr.unaryAlgebraOperation op ae => `(($(op.toTerm) $(ae.toTerm blockName)))
+            let eTerm ← expr.toTermFromBlock blockName
+            return unhygienicUnfolder
+              `(($(mkIdent ``ThoR.Card.card) $(eTerm)))
+
+      | algExpr.unaryAlgebraOperation op ae =>
+        let aeTerm ← ae.toTerm blockName
+        return unhygienicUnfolder
+          `(($(op.toTerm) $(aeTerm)))
+
       | algExpr.binaryAlgebraOperation op ae1 ae2 =>
-        `(($(op.toTerm) $(ae1.toTerm blockName) $(ae2.toTerm blockName)))
+        let ae1Term ← ae1.toTerm blockName
+        let ae2Term ← ae2.toTerm blockName
+        return unhygienicUnfolder
+          `(($(op.toTerm) $(ae1Term) $(ae2Term)))
 
   def toTermOutsideBlock
   (ae : algExpr)
-  : Term := Unhygienic.run do
+  : Except String Term := do
     match ae with
-      | algExpr.number n => `($(Lean.Syntax.mkNumLit s!"{n.natAbs}"):num)
+      | algExpr.number n =>
+        return unhygienicUnfolder
+          `($(Lean.Syntax.mkNumLit s!"{n.natAbs}"):num)
+
       | algExpr.cardExpr ce =>
         match ce with
           | cardExpr.cardExpression expr =>
-            `(($(mkIdent ``ThoR.Card.card) $(expr.toTermOutsideBlock)))
-      | algExpr.unaryAlgebraOperation op ae => `(($(op.toTerm) $(ae.toTermOutsideBlock)))
+            let eTerm ← expr.toTermOutsideBlock
+            return unhygienicUnfolder
+              `(($(mkIdent ``ThoR.Card.card) $(eTerm)))
+
+      | algExpr.unaryAlgebraOperation op ae =>
+        let aeTerm ← ae.toTermOutsideBlock
+        return unhygienicUnfolder
+          `(($(op.toTerm) $(aeTerm)))
+
       | algExpr.binaryAlgebraOperation op ae1 ae2 =>
-        `(($(op.toTerm) $(ae1.toTermOutsideBlock) $(ae2.toTermOutsideBlock)))
+        let ae1Term ← ae1.toTermOutsideBlock
+        let ae2Term ← ae2.toTermOutsideBlock
+        return unhygienicUnfolder
+          `(($(op.toTerm) $(ae1Term) $(ae2Term)))
 
   /--
   Parses the given syntax to the type

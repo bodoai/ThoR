@@ -15,11 +15,12 @@ import ThoR.Shared.Syntax.Algebra.AlgExpr.algExprService
 import ThoR.Relation.Elab
 import ThoR.Relation.SubType
 import ThoR.Relation.Quantification
+import ThoR.Alloy.Config
 
 import ThoR.Alloy.Syntax.AlloyData.alloyData
 
 open Alloy ThoR ThoR.Quantification
-open Lean ThoR
+open Lean ThoR Config
 
 namespace Shared.formula
 
@@ -92,10 +93,9 @@ namespace Shared.formula
     : Term := Unhygienic.run do
     return ← input
 
-
   partial def toTermOutsideBlock
     (f : formula)
-    --(availableAlloyData : List (alloyData) := [])
+    (availableAlloyData : List (alloyData) := [])
     : Except String ((Term)) := do
     match f with
       | formula.string s => do
@@ -111,25 +111,25 @@ namespace Shared.formula
           term :=
               `(term |
                 $(unhygienicUnfolder term)
-                $(arg.toTermOutsideBlock)
+                $(← arg.toTermOutsideBlock (availableAlloyData:= availableAlloyData))
               )
 
         return unhygienicUnfolder term
 
       | formula.unaryRelBoolOperation op e =>
         return unhygienicUnfolder `(( $(op.toTerm)
-            $(e.toTermOutsideBlock)
+            $(← e.toTermOutsideBlock (availableAlloyData:= availableAlloyData))
           ))
 
       | formula.unaryLogicOperation op f =>
-        let fTerm ← f.toTermOutsideBlock
+        let fTerm ← f.toTermOutsideBlock availableAlloyData
         return unhygienicUnfolder `(term | ( $(op.toTerm) $(fTerm)))
 
       | formula.binaryLogicOperation op f1 f2 =>
         let f1Term ←
-          f1.toTermOutsideBlock
+          f1.toTermOutsideBlock availableAlloyData
         let f2Term ←
-          f2.toTermOutsideBlock
+          f2.toTermOutsideBlock availableAlloyData
         return unhygienicUnfolder `(( $(op.toTerm)
             $(f1Term)
             $(f2Term)
@@ -137,11 +137,11 @@ namespace Shared.formula
 
       | formula.tertiaryLogicOperation op f1 f2 f3 =>
         let f1Term ←
-          f1.toTermOutsideBlock
+          f1.toTermOutsideBlock availableAlloyData
         let f2Term ←
-          f2.toTermOutsideBlock
+          f2.toTermOutsideBlock availableAlloyData
         let f3Term ←
-          f3.toTermOutsideBlock
+          f3.toTermOutsideBlock availableAlloyData
         return unhygienicUnfolder `(( $(op.toTerm)
             $(f1Term)
             $(f2Term)
@@ -149,12 +149,13 @@ namespace Shared.formula
           ))
 
       | formula.algebraicComparisonOperation op ae1 ae2 =>
-        return unhygienicUnfolder `(($(op.toTerm) $(ae1.toTermOutsideBlock) $(ae2.toTermOutsideBlock)))
+        return unhygienicUnfolder
+          `(($(op.toTerm) $(← ae1.toTermOutsideBlock) $(← ae2.toTermOutsideBlock)))
 
       | formula.relationComarisonOperation op e1 e2 =>
         return unhygienicUnfolder `(( $(op.toTerm)
-            $(e1.toTermOutsideBlock)
-            $(e2.toTermOutsideBlock)
+            $(← e1.toTermOutsideBlock (availableAlloyData:= availableAlloyData))
+            $(← e2.toTermOutsideBlock (availableAlloyData:= availableAlloyData))
           ))
 
       | formula.quantification q disjunction n te f => do
@@ -163,14 +164,14 @@ namespace Shared.formula
 
         -- one form ist present -> see syntax (+)
         let firstForm := f.get! 0
-        let firstFTerm ← firstForm.toTermOutsideBlock
+        let firstFTerm ← firstForm.toTermOutsideBlock availableAlloyData
 
         let mut completefTerm : Unhygienic (Term) :=
           `(term | $(firstFTerm))
 
         for form in f.drop 1 do
           let fTerm ←
-            form.toTermOutsideBlock
+            form.toTermOutsideBlock availableAlloyData
 
           completefTerm :=
             `(( $(unhygienicUnfolder completefTerm) ∧
@@ -318,7 +319,7 @@ namespace Shared.formula
             term :=
               `(term |
                 $(unhygienicUnfolder term)
-                $(calledArg.toTermFromBlock blockName pureNames)
+                $(← calledArg.toTermFromBlock blockName pureNames)
               )
 
           else
@@ -326,7 +327,7 @@ namespace Shared.formula
             let castCommand : Unhygienic Term :=
               `(term |
                 cast
-                ($(calledArg.toTermFromBlock blockName pureNames):term)
+                ($(← calledArg.toTermFromBlock blockName pureNames):term)
                 ∷ $(cast_type_as_type_expr_relExpr.toSyntax blockName))
 
             term :=
@@ -339,7 +340,7 @@ namespace Shared.formula
 
       | formula.unaryRelBoolOperation op e =>
         return `(( $(op.toTerm)
-            $(e.toTermFromBlock
+            $(← e.toTermFromBlock
               blockName pureNames)
           ))
 
@@ -371,13 +372,13 @@ namespace Shared.formula
           ))
 
       | formula.algebraicComparisonOperation op ae1 ae2 =>
-        return `(($(op.toTerm) $(ae1.toTerm blockName) $(ae2.toTerm blockName)))
+        return `(($(op.toTerm) $(← ae1.toTerm blockName) $(← ae2.toTerm blockName)))
 
       | formula.relationComarisonOperation op e1 e2 =>
         return `(( $(op.toTerm)
-            $(e1.toTermFromBlock
+            $(← e1.toTermFromBlock
               blockName pureNames)
-            $(e2.toTermFromBlock
+            $(← e2.toTermFromBlock
               blockName pureNames)
           ))
 

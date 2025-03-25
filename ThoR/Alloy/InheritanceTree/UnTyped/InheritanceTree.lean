@@ -10,6 +10,7 @@ import ThoR.Alloy.Config
 import ThoR.Alloy.Syntax.AST.AST
 import ThoR.Alloy.Syntax.Signature.Inheritance.sigExt
 import ThoR.Shared.Syntax.TypeExpr.typeExpr
+import ThoR.Shared.Syntax.TypeExpr.typeExprService
 
 import ThoR.Alloy.InheritanceTree.UnTyped.Node
 
