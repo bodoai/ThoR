@@ -7,6 +7,7 @@ Authors: s. file CONTRIBUTORS
 import ThoR.Alloy.SymbolTable.VarDecl.varDecl
 import ThoR.Alloy.SymbolTable.SymbolTable
 import ThoR.Alloy.Config
+import ThoR.Alloy.Syntax.AlloyData.alloyData
 
 open Alloy Config
 open Lean
@@ -206,6 +207,11 @@ namespace Shared.expr
           let identifier := mkIdent name
           `(expr| @$(identifier):ident)
 
+  private def unhygienicUnfolder
+    (input : Unhygienic (Term))
+    : Term := Unhygienic.run do
+    return ← input
+
   /--
   Generates a Lean term corosponding with the type
   -/
@@ -214,55 +220,79 @@ namespace Shared.expr
     (inBLock : Bool)
     (blockName : Name)
     (quantorNames : List (String) := []) -- used to know which names must be pure
-    : Term := Unhygienic.run do
+    (availableAlloyData : List (alloyData) := [])
+    : Except String Term := do
       match e with
-        | expr.const c => return (c.toTerm)
+        | expr.const c =>
+          return (c.toTerm)
 
         | expr.string s => do
+
+          -- check if the name is defined in the existing modules
+          if !inBLock then
+            let mut possibleVarDecls := []
+            for alloyData in availableAlloyData do
+              possibleVarDecls := possibleVarDecls.concat
+                (alloyData.st.name, alloyData.st.variableDecls.filter fun vd => vd.name == s)
+
+            if !possibleVarDecls.isEmpty then
+              if possibleVarDecls.length > 1 then
+                throw s!"The call to {s} is ambiguous. \
+                There are multiple declared variables which it could refer to ({possibleVarDecls})"
+
+              let calledVarDecl := possibleVarDecls.get! 0
+              let calledBlockName := calledVarDecl.1
+              let callNameComponents := [calledBlockName, `vars, s.toName]
+              let callName := Name.fromComponents callNameComponents
+              return unhygienicUnfolder `((@$(mkIdent callName) $(baseType.ident) _ _))
+
           if inBLock && !(quantorNames.contains s) then
-            `((
+            return unhygienicUnfolder `((
               ∻ $(mkIdent s!"{blockName}.vars.{s}".toName)
             ))
           else
-            `($(mkIdent s.toName))
+            return unhygienicUnfolder `($(mkIdent s.toName))
 
         | expr.callFromOpen sn =>
           let snt := sn.representedNamespace.getId.toString
           if inBLock then
-            `((
+            return unhygienicUnfolder `((
               ∻ $(mkIdent s!"{blockName}.vars.{snt}".toName)
             ))
           else
             return sn.toTerm
 
         | expr.unaryRelOperation op e =>
-          `(( $(op.toTerm)
-              $(e.toTerm inBLock
-                blockName quantorNames)
+          let eTerm ← e.toTerm inBLock
+            blockName quantorNames availableAlloyData
+
+          return unhygienicUnfolder `(( $(op.toTerm)
+              $(eTerm)
             ))
 
         | expr.binaryRelOperation op e1 e2 =>
-          `(( $(op.toTerm)
-              $(e1.toTerm inBLock
-                blockName quantorNames
-                )
-              $(e2.toTerm inBLock
-                blockName quantorNames
-                )
+          let e1Term ← e1.toTerm inBLock
+            blockName quantorNames availableAlloyData
+          let e2Term ← e2.toTerm inBLock
+            blockName quantorNames availableAlloyData
+          return unhygienicUnfolder `(( $(op.toTerm)
+              $(e1Term)
+              $(e2Term)
             ))
 
         | expr.dotjoin dj e1 e2 =>
-          `(( $(dj.toTerm)
-              $(e1.toTerm inBLock
-                blockName quantorNames
-                )
-              $(e2.toTerm inBLock
-                blockName quantorNames
-                )
+          let e1Term ← e1.toTerm inBLock
+            blockName quantorNames availableAlloyData
+          let e2Term ← e2.toTerm inBLock
+            blockName quantorNames availableAlloyData
+          return unhygienicUnfolder `(( $(dj.toTerm)
+              $(e1Term)
+              $(e2Term)
             ))
 
         | expr.string_rb s => do
-          `((@$(mkIdent s.toName) $(baseType.ident) _ _))
+          return unhygienicUnfolder
+            `((@$(mkIdent s.toName) $(baseType.ident) _ _))
 
   /--
   Generates a Lean term corosponding with the type from outside an alloy block
@@ -270,8 +300,9 @@ namespace Shared.expr
   def toTermOutsideBlock
     (e : expr)
     (quantorNames : List (String) := [])
+    (availableAlloyData : List (alloyData) := [])
     :=
-      toTerm e false `none quantorNames
+      toTerm e false `none quantorNames availableAlloyData
 
   /--
   Generates a Lean term corosponding with the type from inside an alloy block
