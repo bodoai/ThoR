@@ -980,6 +980,24 @@ syntax
   "]"
   : term
 
+private def evalAlloyFormulaBlock
+  (formulas : List Formula)
+  (alloyDataList : List alloyData)
+  : Except String Term := do
+    if formulas.isEmpty then
+      return (unhygienicUnfolder `(term | True))
+    else
+      let formulas := formulas.map fun f => formula.toType f
+
+      let first_formula := formulas.get! 0
+
+      let mut result_term ← first_formula.toTermOutsideBlock alloyDataList
+      for formula in (formulas.drop 1) do
+        let formula_term ← formula.toTermOutsideBlock alloyDataList
+        result_term := unhygienicUnfolder `($result_term ∧ $formula_term)
+
+      return result_term
+
 @[term_elab blockless_alloy]
 private def alloyFormulaBlockImpl : TermElab := fun stx expectedType? => do
   let environment ← getEnv
@@ -988,58 +1006,28 @@ private def alloyFormulaBlockImpl : TermElab := fun stx expectedType? => do
 
   match stx with
     | `([ alloy | $formulas:formula* ]) =>
-      if formulas.isEmpty then
-        elabTerm  (← `(term | True)) expectedType?
-      else
-        let formulas := formulas.map fun f => formula.toType f
+      let except_term_of_formulas :=
+        evalAlloyFormulaBlock formulas.toList alloyDataList
 
-        let first_formula := formulas.get! 0
-        let except_first_formula_term := first_formula.toTermOutsideBlock alloyDataList
-        match except_first_formula_term with
-          | Except.error msg =>
-            logError msg
-            throwUnsupportedSyntax
+      match except_term_of_formulas with
+        | Except.error msg =>
+          logError msg
+          elabTerm (← `(term | True)) expectedType?
 
-          | Except.ok first_formula_term =>
-            let mut resulting_term := first_formula_term
-            for formula_x in (formulas.toList.drop 1) do
-              let except_formulas_term := formula_x.toTermOutsideBlock
-              match except_formulas_term with
-                | Except.error msg =>
-                  logError msg
-                  throwUnsupportedSyntax
-
-                | Except.ok data =>
-                  resulting_term ← `($resulting_term ∧ $data)
-
-            elabTerm resulting_term expectedType?
+        | Except.ok term_of_formulas =>
+          elabTerm term_of_formulas expectedType?
 
     | `([ #alloy | $formulas:formula* ]) =>
-      if formulas.isEmpty then
-        elabTerm  (← `(term | True)) expectedType?
-      else
-        let formulas := formulas.map fun f => formula.toType f
+      let except_term_of_formulas :=
+        evalAlloyFormulaBlock formulas.toList alloyDataList
 
-        let first_formula := formulas.get! 0
-        let except_first_formula_term := first_formula.toTermOutsideBlock alloyDataList
-        match except_first_formula_term with
-          | Except.error msg =>
-            logError msg
-            throwUnsupportedSyntax
+      match except_term_of_formulas with
+        | Except.error msg =>
+          logError msg
+          elabTerm (← `(term | True)) expectedType?
 
-          | Except.ok first_formula_term =>
-            let mut resulting_term := first_formula_term
-            for formula_x in (formulas.toList.drop 1) do
-              let except_formulas_term := formula_x.toTermOutsideBlock
-              match except_formulas_term with
-                | Except.error msg =>
-                  logError msg
-                  throwUnsupportedSyntax
-
-                | Except.ok data =>
-                  resulting_term ← `($resulting_term ∧ $data)
-
-            logInfo resulting_term.raw.prettyPrint
-            elabTerm resulting_term expectedType?
+        | Except.ok term_of_formulas =>
+          logInfo term_of_formulas.raw.prettyPrint
+          elabTerm term_of_formulas expectedType?
 
     | _ => throwUnsupportedSyntax
