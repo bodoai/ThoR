@@ -983,6 +983,7 @@ syntax
 private def evalAlloyFormulaBlock
   (formulas : List Formula)
   (alloyDataList : List alloyData)
+  (localContextUserNames : List Name)
   : Except String Term := do
     if formulas.isEmpty then
       return (unhygienicUnfolder `(term | True))
@@ -991,9 +992,9 @@ private def evalAlloyFormulaBlock
 
       let first_formula := formulas.get! 0
 
-      let mut result_term ← first_formula.toTermOutsideBlock alloyDataList
+      let mut result_term ← first_formula.toTermOutsideBlock alloyDataList localContextUserNames
       for formula in (formulas.drop 1) do
-        let formula_term ← formula.toTermOutsideBlock alloyDataList
+        let formula_term ← formula.toTermOutsideBlock alloyDataList localContextUserNames
         result_term := unhygienicUnfolder `($result_term ∧ $formula_term)
 
       return result_term
@@ -1004,10 +1005,19 @@ private def alloyFormulaBlockImpl : TermElab := fun stx expectedType? => do
   let alloyDataState := getAlloyData environment
   let alloyDataList := (alloyDataState.toList.map fun ad => ad.2)
 
+  let lctxUserNames :=
+    (← getLCtx).decls.toList.foldl
+    (fun result decl =>
+      match decl with
+        | Option.some declaration => result.concat declaration.userName
+        | Option.none => result
+    )
+    []
+
   match stx with
     | `([ alloy | $formulas:formula* ]) =>
       let except_term_of_formulas :=
-        evalAlloyFormulaBlock formulas.toList alloyDataList
+        evalAlloyFormulaBlock formulas.toList alloyDataList lctxUserNames
 
       match except_term_of_formulas with
         | Except.error msg =>
@@ -1019,7 +1029,7 @@ private def alloyFormulaBlockImpl : TermElab := fun stx expectedType? => do
 
     | `([ #alloy | $formulas:formula* ]) =>
       let except_term_of_formulas :=
-        evalAlloyFormulaBlock formulas.toList alloyDataList
+        evalAlloyFormulaBlock formulas.toList alloyDataList lctxUserNames
 
       match except_term_of_formulas with
         | Except.error msg =>

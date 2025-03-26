@@ -96,6 +96,7 @@ namespace Shared.formula
   partial def toTermOutsideBlock
     (f : formula)
     (availableAlloyData : List (alloyData) := [])
+    (localContextUserNames : List Name := [])
     : Except String ((Term)) := do
     match f with
       | formula.string s => do
@@ -108,28 +109,38 @@ namespace Shared.formula
             ))
 
         for arg in pa do
+          let argTerm ←
+            arg.toTermOutsideBlock
+              (availableAlloyData:= availableAlloyData)
+              (localContextUserNames := localContextUserNames)
+
           term :=
               `(term |
                 $(unhygienicUnfolder term)
-                $(← arg.toTermOutsideBlock (availableAlloyData:= availableAlloyData))
+                $(argTerm)
               )
 
         return unhygienicUnfolder term
 
       | formula.unaryRelBoolOperation op e =>
+        let eTerm ←
+          e.toTermOutsideBlock
+            (availableAlloyData:= availableAlloyData)
+            (localContextUserNames := localContextUserNames)
+
         return unhygienicUnfolder `(( $(op.toTerm)
-            $(← e.toTermOutsideBlock (availableAlloyData:= availableAlloyData))
+            $(eTerm)
           ))
 
       | formula.unaryLogicOperation op f =>
-        let fTerm ← f.toTermOutsideBlock availableAlloyData
+        let fTerm ← f.toTermOutsideBlock availableAlloyData localContextUserNames
         return unhygienicUnfolder `(term | ( $(op.toTerm) $(fTerm)))
 
       | formula.binaryLogicOperation op f1 f2 =>
         let f1Term ←
-          f1.toTermOutsideBlock availableAlloyData
+          f1.toTermOutsideBlock availableAlloyData localContextUserNames
         let f2Term ←
-          f2.toTermOutsideBlock availableAlloyData
+          f2.toTermOutsideBlock availableAlloyData localContextUserNames
         return unhygienicUnfolder `(( $(op.toTerm)
             $(f1Term)
             $(f2Term)
@@ -137,25 +148,34 @@ namespace Shared.formula
 
       | formula.tertiaryLogicOperation op f1 f2 f3 =>
         let f1Term ←
-          f1.toTermOutsideBlock availableAlloyData
+          f1.toTermOutsideBlock availableAlloyData localContextUserNames
         let f2Term ←
-          f2.toTermOutsideBlock availableAlloyData
+          f2.toTermOutsideBlock availableAlloyData localContextUserNames
         let f3Term ←
-          f3.toTermOutsideBlock availableAlloyData
+          f3.toTermOutsideBlock availableAlloyData localContextUserNames
         return unhygienicUnfolder `(( $(op.toTerm)
             $(f1Term)
             $(f2Term)
             $(f3Term)
           ))
 
-      | formula.algebraicComparisonOperation op ae1 ae2 =>
+      | formula.algebraicComparisonOperation op algE1 algE2 =>
         return unhygienicUnfolder
-          `(($(op.toTerm) $(← ae1.toTermOutsideBlock) $(← ae2.toTermOutsideBlock)))
+          `(($(op.toTerm) $(← algE1.toTermOutsideBlock) $(← algE2.toTermOutsideBlock)))
 
       | formula.relationComarisonOperation op e1 e2 =>
+        let e1Term ←
+          e1.toTermOutsideBlock
+            (availableAlloyData:= availableAlloyData)
+            (localContextUserNames := localContextUserNames)
+        let e2Term ←
+          e2.toTermOutsideBlock
+            (availableAlloyData:= availableAlloyData)
+            (localContextUserNames := localContextUserNames)
+
         return unhygienicUnfolder `(( $(op.toTerm)
-            $(← e1.toTermOutsideBlock (availableAlloyData:= availableAlloyData))
-            $(← e2.toTermOutsideBlock (availableAlloyData:= availableAlloyData))
+            $(e1Term)
+            $(e2Term)
           ))
 
       | formula.quantification q disjunction n te f => do
@@ -164,14 +184,14 @@ namespace Shared.formula
 
         -- one form ist present -> see syntax (+)
         let firstForm := f.get! 0
-        let firstFTerm ← firstForm.toTermOutsideBlock availableAlloyData
+        let firstFTerm ← firstForm.toTermOutsideBlock availableAlloyData localContextUserNames
 
         let mut completefTerm : Unhygienic (Term) :=
           `(term | $(firstFTerm))
 
         for form in f.drop 1 do
           let fTerm ←
-            form.toTermOutsideBlock availableAlloyData
+            form.toTermOutsideBlock availableAlloyData localContextUserNames
 
           completefTerm :=
             `(( $(unhygienicUnfolder completefTerm) ∧

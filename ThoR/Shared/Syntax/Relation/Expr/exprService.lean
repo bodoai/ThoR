@@ -221,6 +221,7 @@ namespace Shared.expr
     (blockName : Name)
     (quantorNames : List (String) := []) -- used to know which names must be pure
     (availableAlloyData : List (alloyData) := [])
+    (localContextUserNames : List Name := [])
     : Except String Term := do
       match e with
         | expr.const c =>
@@ -228,8 +229,11 @@ namespace Shared.expr
 
         | expr.string s => do
 
-          -- check if the name is defined in the existing modules
-          if !inBLock then
+          /-
+          check if the name is defined in the existing modules, but only
+          if the name is not defined in a variable definition
+          -/
+          if !inBLock && !(localContextUserNames.contains s.toName) then
             let mut possibleVarDecls := []
             for alloyData in availableAlloyData do
               let possibleMatches := alloyData.st.variableDecls.filter fun vd => vd.name == s
@@ -271,7 +275,7 @@ namespace Shared.expr
 
         | expr.unaryRelOperation op e =>
           let eTerm ← e.toTerm inBLock
-            blockName quantorNames availableAlloyData
+            blockName quantorNames availableAlloyData localContextUserNames
 
           return unhygienicUnfolder `(( $(op.toTerm)
               $(eTerm)
@@ -279,9 +283,9 @@ namespace Shared.expr
 
         | expr.binaryRelOperation op e1 e2 =>
           let e1Term ← e1.toTerm inBLock
-            blockName quantorNames availableAlloyData
+            blockName quantorNames availableAlloyData localContextUserNames
           let e2Term ← e2.toTerm inBLock
-            blockName quantorNames availableAlloyData
+            blockName quantorNames availableAlloyData localContextUserNames
           return unhygienicUnfolder `(( $(op.toTerm)
               $(e1Term)
               $(e2Term)
@@ -289,9 +293,9 @@ namespace Shared.expr
 
         | expr.dotjoin dj e1 e2 =>
           let e1Term ← e1.toTerm inBLock
-            blockName quantorNames availableAlloyData
+            blockName quantorNames availableAlloyData localContextUserNames
           let e2Term ← e2.toTerm inBLock
-            blockName quantorNames availableAlloyData
+            blockName quantorNames availableAlloyData localContextUserNames
           return unhygienicUnfolder `(( $(dj.toTerm)
               $(e1Term)
               $(e2Term)
@@ -308,8 +312,9 @@ namespace Shared.expr
     (e : expr)
     (quantorNames : List (String) := [])
     (availableAlloyData : List (alloyData) := [])
+    (localContextUserNames : List Name := [])
     :=
-      toTerm e false `none quantorNames availableAlloyData
+      toTerm e false `none quantorNames availableAlloyData localContextUserNames
 
   /--
   Generates a Lean term corosponding with the type from inside an alloy block
