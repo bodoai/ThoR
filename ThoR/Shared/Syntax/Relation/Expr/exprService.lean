@@ -232,11 +232,18 @@ namespace Shared.expr
           if !inBLock then
             let mut possibleVarDecls := []
             for alloyData in availableAlloyData do
-              possibleVarDecls := possibleVarDecls.concat
-                (alloyData.st.name, alloyData.st.variableDecls.filter fun vd => vd.name == s)
+              let possibleMatches := alloyData.st.variableDecls.filter fun vd => vd.name == s
+              if !possibleMatches.isEmpty then
+                possibleVarDecls := possibleVarDecls.concat
+                  (alloyData.st.name, possibleMatches)
 
             if !possibleVarDecls.isEmpty then
-              if possibleVarDecls.length > 1 then
+              if
+                -- if there are matches in more than one module
+                possibleVarDecls.length > 1 ||
+                -- or more than one match in a module (this should be impossible)
+                possibleVarDecls.any fun pv => pv.2.length > 1
+              then
                 throw s!"The call to {s} is ambiguous. \
                 There are multiple declared variables which it could refer to ({possibleVarDecls})"
 
