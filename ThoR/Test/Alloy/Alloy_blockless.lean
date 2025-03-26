@@ -23,7 +23,7 @@ lemma l1 : 1=1 := by
 
 
 variable (y : ∷ set univ)
-#check [alloy| all x : univ | x + y + univ = univ].eval
+#check [#alloy| all x : univ | x + y + univ = univ].eval
 
 -- a -> expr.string "a"
 -- declaration of: x -> formula.quantification all "x" ...

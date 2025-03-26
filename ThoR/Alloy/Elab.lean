@@ -975,7 +975,7 @@ private def creationImpl : CommandElab := fun stx => do
 
 syntax
   (name := blockless_alloy)
-  "[" "alloy" "|"
+  "[" ("#")? "alloy" "|"
     formula*
   "]"
   : term
@@ -1012,6 +1012,34 @@ private def alloyFormulaBlockImpl : TermElab := fun stx expectedType? => do
                 | Except.ok data =>
                   resulting_term ← `($resulting_term ∧ $data)
 
+            elabTerm resulting_term expectedType?
+
+    | `([ #alloy | $formulas:formula* ]) =>
+      if formulas.isEmpty then
+        elabTerm  (← `(term | True)) expectedType?
+      else
+        let formulas := formulas.map fun f => formula.toType f
+
+        let first_formula := formulas.get! 0
+        let except_first_formula_term := first_formula.toTermOutsideBlock alloyDataList
+        match except_first_formula_term with
+          | Except.error msg =>
+            logError msg
+            throwUnsupportedSyntax
+
+          | Except.ok first_formula_term =>
+            let mut resulting_term := first_formula_term
+            for formula_x in (formulas.toList.drop 1) do
+              let except_formulas_term := formula_x.toTermOutsideBlock
+              match except_formulas_term with
+                | Except.error msg =>
+                  logError msg
+                  throwUnsupportedSyntax
+
+                | Except.ok data =>
+                  resulting_term ← `($resulting_term ∧ $data)
+
+            logInfo resulting_term.raw.prettyPrint
             elabTerm resulting_term expectedType?
 
     | _ => throwUnsupportedSyntax
