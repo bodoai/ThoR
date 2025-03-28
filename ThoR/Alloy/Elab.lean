@@ -904,6 +904,10 @@ private def evaluateCreationCommand
       if logging then
         logInfo s!"Module data for {ident.getId.toString} found:\n\n {ad}"
 
+      if ad.isCreated then
+        logError s!"The module has already been created."
+        return
+
       let st := ad.st
       let ast := ad.ast
 
@@ -943,6 +947,14 @@ private def evaluateCreationCommand
 
               if logging then
                 logInfo extensionAxiomCommandsString
+
+              let newMonadeEnv :=
+                updateAlloyData (← getEnv) {ad with isCreated := true}
+
+              match newMonadeEnv with
+                | Except.ok nme => setEnv nme
+                | Except.error msg => logError s!"Failed to set the alloy data \
+                to created: {msg}"
 
     else
       logError s!"Cannot create {ident.getId.toString}, it does not exist."
@@ -1003,7 +1015,10 @@ private def evalAlloyFormulaBlock
 private def alloyFormulaBlockImpl : TermElab := fun stx expectedType? => do
   let environment ← getEnv
   let alloyDataState := getAlloyData environment
-  let alloyDataList := (alloyDataState.toList.map fun ad => ad.2)
+
+  -- only the data of created modules
+  let alloyDataList :=
+    (alloyDataState.toList.map fun ad => ad.2).filter fun ad => ad.isCreated
 
   let lctxUserNames :=
     (← getLCtx).decls.toList.foldl

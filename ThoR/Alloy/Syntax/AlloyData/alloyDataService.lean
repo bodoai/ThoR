@@ -31,6 +31,17 @@ abbrev AlloyDataExtension :=
     : alloyDataState :=
       alloyDataExtension.getState env
 
+  def updateAlloyData
+    (env : Environment)
+    (ad : alloyData)
+    : Except String Environment := do
+      let ad' := (getAlloyData env).find? s!"{ad.ast.name}_Data".toName
+      if ad'.isSome then
+        return alloyDataExtension.addEntry env ad
+      else
+        throw s!"There is no prior entry with the name {ad.ast.name}."
+
+
   def addAlloyData
     (env : Environment)
     (ad : alloyData)

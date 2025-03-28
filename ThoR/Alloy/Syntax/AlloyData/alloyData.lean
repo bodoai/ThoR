@@ -17,6 +17,8 @@ namespace Alloy
   structure alloyData where
     (ast : AST)
     (st : SymbolTable)
+    (isCreated : Bool := false)
+  deriving Inhabited
 
   namespace alloyData
 
@@ -24,11 +26,9 @@ namespace Alloy
       toString ( ad : alloyData ) : String :=
         s!"AlloyData : \{
             abstract syntax tree := {ad.ast},
-            symbol table := {ad.st}
+            symbol table := {ad.st},
+            isCreated := {ad.isCreated}
           }"
-
-    instance : Inhabited alloyData where
-      default := {ast := default, st := default}
 
   end alloyData
 
