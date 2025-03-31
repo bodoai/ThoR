@@ -38,11 +38,13 @@ private def evaluateRelationDecl
       | `(rel_decl| ( $subrel ∷ $te:typeExpr)) => do
         -- let cmd ← `(variable ($subrel : Nat))
         let typeExpression := (Shared.typeExpr.toType te)
-        let type := typeExpression.toTermOutsideBlock
-        let cmd ← `(variable ($subrel : $type))
---            let cmd ← `(variable ($subrel : $(mkIdent (Shared.typeExpr.toType te).toString)))
---            let cmd ← `(variable ($subrel : $(mkIdent (Shared.typeExpr.toType te).typeExprToTRel₀.toString)))
-        allCmds := allCmds.push cmd
+        match typeExpression.toTermOutsideBlock with
+        | Except.error msg => logError msg
+        | Except.ok type =>
+          let cmd ← `(variable ($subrel : $type))
+  --            let cmd ← `(variable ($subrel : $(mkIdent (Shared.typeExpr.toType te).toString)))
+  --            let cmd ← `(variable ($subrel : $(mkIdent (Shared.typeExpr.toType te).typeExprToTRel₀.toString)))
+          allCmds := allCmds.push cmd
       | _ => continue -- FIX ME
 
     for command in allCmds do
@@ -52,14 +54,22 @@ private def evaluateRelationDecl
 -- ∷ <alloy type> creates corresponding (Rel <alloy type>)
 elab "∷" t:typeExpr : term => do
       let typeExpression := (Shared.typeExpr.toType t)
-      let type := typeExpression.toTermOutsideBlock
-      elabTerm type Option.none
+      match typeExpression.toTermOutsideBlock with
+        | Except.error msg =>
+          logError msg
+          throwUnsupportedSyntax
+        | Except.ok type =>
+           elabTerm type Option.none
 
 -- ◃∷ <alloy type> creates corresponding RelType value
 elab "◃∷" t:typeExpr : term => do
       let typeExpression := (Shared.typeExpr.toType t)
-      let type := typeExpression.toRelTypeTermOutsideBlock
-      elabTerm type Option.none
+      match typeExpression.toRelTypeTermOutsideBlock with
+      | Except.error msg =>
+        logError msg
+        throwUnsupportedSyntax
+      | Except.ok type =>
+          elabTerm type Option.none
 
 -- TODO: Variante von ∷ mit expliziter Angabe von R
 --       Offener Punkt: Mit oder ohne @?

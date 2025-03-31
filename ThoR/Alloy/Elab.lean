@@ -14,16 +14,21 @@ import ThoR.Shared.Syntax
 
 import ThoR.Alloy.Config
 
-import ThoR.Alloy.Syntax.AST
+import ThoR.Alloy.Syntax.AST.AST
+import ThoR.Alloy.Syntax.AST.ASTService
+
 import ThoR.Alloy.SymbolTable.SymbolTable
 import ThoR.Alloy.SymbolTable.SymbolTableService
+
 import ThoR.Alloy.InheritanceTree.UnTyped.InheritanceTree
 
 import ThoR.Alloy.Syntax.Signature.SigDecl.sigDeclService
 
 import ThoR.Alloy.Syntax.SeparatedNamespace
-import ThoR.Alloy.Syntax.alloyData
 import ThoR.Alloy.Syntax.OpenModule.openModuleHelper
+
+import ThoR.Alloy.Syntax.AlloyData.alloyData
+import ThoR.Alloy.Syntax.AlloyData.alloyDataService
 
 import ThoR.Shared.Syntax.TypeExpr.typeExprService
 
@@ -133,10 +138,10 @@ private def createDefOrAxiomCommand
         cd.expressions.map fun e => e.replaceCalls callableVariables
 
       let fe := (expressions.get! 0)
-      bodyTerm := fe.toTermFromBlock blockName
+      bodyTerm ← fe.toTermFromBlock blockName
 
       for expression in expressions.drop 1 do
-        let newTerm := expression.toTermFromBlock blockName
+        let newTerm ← expression.toTermFromBlock blockName
         bodyTerm := unhygienicUnfolder `($bodyTerm ∧ ($newTerm))
 
     -- define command
@@ -899,6 +904,10 @@ private def evaluateCreationCommand
       if logging then
         logInfo s!"Module data for {ident.getId.toString} found:\n\n {ad}"
 
+      if ad.isCreated then
+        logError s!"The module has already been created."
+        return
+
       let st := ad.st
       let ast := ad.ast
 
@@ -939,6 +948,14 @@ private def evaluateCreationCommand
               if logging then
                 logInfo extensionAxiomCommandsString
 
+              let newMonadeEnv :=
+                updateAlloyData (← getEnv) {ad with isCreated := true}
+
+              match newMonadeEnv with
+                | Except.ok nme => setEnv nme
+                | Except.error msg => logError s!"Failed to set the alloy data \
+                to created: {msg}"
+
     else
       logError s!"Cannot create {ident.getId.toString}, it does not exist."
 
@@ -967,3 +984,75 @@ private def creationImpl : CommandElab := fun stx => do
 
       | _ => return
   catch | x => throwError x.toMessageData
+
+syntax
+  (name := blockless_alloy)
+  "[" ("#")? "alloy" "|"
+    formula*
+  "]"
+  : term
+
+private def evalAlloyFormulaBlock
+  (formulas : List Formula)
+  (alloyDataList : List alloyData)
+  (localContextUserNames : List Name)
+  : Except String Term := do
+    if formulas.isEmpty then
+      return (unhygienicUnfolder `(term | True))
+    else
+      let formulas := formulas.map fun f => formula.toType f
+
+      let first_formula := formulas.get! 0
+
+      let mut result_term ← first_formula.toTermOutsideBlock alloyDataList localContextUserNames
+      for formula in (formulas.drop 1) do
+        let formula_term ← formula.toTermOutsideBlock alloyDataList localContextUserNames
+        result_term := unhygienicUnfolder `($result_term ∧ $formula_term)
+
+      return result_term
+
+@[term_elab blockless_alloy]
+private def alloyFormulaBlockImpl : TermElab := fun stx expectedType? => do
+  let environment ← getEnv
+  let alloyDataState := getAlloyData environment
+
+  -- only the data of created modules
+  let alloyDataList :=
+    (alloyDataState.toList.map fun ad => ad.2).filter fun ad => ad.isCreated
+
+  let lctxUserNames :=
+    (← getLCtx).decls.toList.foldl
+    (fun result decl =>
+      match decl with
+        | Option.some declaration => result.concat declaration.userName
+        | Option.none => result
+    )
+    []
+
+  match stx with
+    | `([ alloy | $formulas:formula* ]) =>
+      let except_term_of_formulas :=
+        evalAlloyFormulaBlock formulas.toList alloyDataList lctxUserNames
+
+      match except_term_of_formulas with
+        | Except.error msg =>
+          logError msg
+          elabTerm (← `(term | True)) expectedType?
+
+        | Except.ok term_of_formulas =>
+          elabTerm term_of_formulas expectedType?
+
+    | `([ #alloy | $formulas:formula* ]) =>
+      let except_term_of_formulas :=
+        evalAlloyFormulaBlock formulas.toList alloyDataList lctxUserNames
+
+      match except_term_of_formulas with
+        | Except.error msg =>
+          logError msg
+          elabTerm (← `(term | True)) expectedType?
+
+        | Except.ok term_of_formulas =>
+          logInfo term_of_formulas.raw.prettyPrint
+          elabTerm term_of_formulas expectedType?
+
+    | _ => throwUnsupportedSyntax

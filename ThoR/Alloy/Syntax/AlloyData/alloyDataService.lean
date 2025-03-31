@@ -3,38 +3,13 @@ Copyright (c) 2024 RheinMain University of Applied Sciences
 Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
-import ThoR.Alloy.Syntax.AST
-import ThoR.Alloy.SymbolTable
 
-open ThoR Shared Alloy
+import ThoR.Alloy.Syntax.AlloyData.alloyData
 open Lean Lean.Elab Command Term
 
-/-
-All needed Data to create Alloy Commands
--/
 namespace Alloy
 
-  structure alloyData where
-    (ast : AST)
-    (st : SymbolTable)
-
-  namespace alloyData
-
-    instance : ToString alloyData where
-      toString ( ad : alloyData ) : String :=
-        s!"AlloyData : \{
-            abstract syntax tree := {ad.ast},
-            symbol table := {ad.st}
-          }"
-
-    instance : Inhabited alloyData where
-      default := {ast := default, st := default}
-
-  end alloyData
-
-  abbrev alloyDataState := NameMap alloyData
-
-  abbrev AlloyDataExtension :=
+abbrev AlloyDataExtension :=
     SimplePersistentEnvExtension alloyData alloyDataState
 
   def alloyDataState.addEntry
@@ -55,6 +30,17 @@ namespace Alloy
     (env : Environment)
     : alloyDataState :=
       alloyDataExtension.getState env
+
+  def updateAlloyData
+    (env : Environment)
+    (ad : alloyData)
+    : Except String Environment := do
+      let ad' := (getAlloyData env).find? s!"{ad.ast.name}_Data".toName
+      if ad'.isSome then
+        return alloyDataExtension.addEntry env ad
+      else
+        throw s!"There is no prior entry with the name {ad.ast.name}."
+
 
   def addAlloyData
     (env : Environment)

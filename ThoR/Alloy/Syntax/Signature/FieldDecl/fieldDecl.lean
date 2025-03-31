@@ -32,13 +32,9 @@ namespace Alloy
             type := {fd.type}
           }"
 
-  namespace fieldDecl
-
-    /--
-    Generates a String representation from the structure
-    -/
-    def toString (fd : fieldDecl) : String := ToString.toString fd
-
-  end fieldDecl
+  /--
+  Generates a String representation from the structure
+  -/
+  def fieldDecl.toString (fd : fieldDecl) : String := ToString.toString fd
 
 end Alloy
