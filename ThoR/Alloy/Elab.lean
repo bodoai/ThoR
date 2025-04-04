@@ -15,6 +15,8 @@ import ThoR.Shared.Syntax
 import ThoR.Alloy.Config
 import ThoR.Alloy.UnhygienicUnfolder
 
+import ThoR.Shared.unhygienicUnfolder
+
 import ThoR.Alloy.Syntax.AST
 import ThoR.Alloy.SymbolTable.SymbolTable
 import ThoR.Alloy.SymbolTable.SymbolTableService

@@ -85,6 +85,13 @@ namespace Shared.formula
             (te.replaceCalls callables)
             (forms.map fun f => f.replaceCalls callables)
 
+        | formula.letDeclaration name value body =>
+          formula.letDeclaration
+            name
+            (value.replaceCalls callables)
+            (body.map fun f => f.replaceCalls callables)
+
+
   private def unhygienicUnfolder
     (input : Unhygienic (Term))
     : Term := Unhygienic.run do
@@ -331,6 +338,33 @@ namespace Shared.formula
 
           return formulaGroup
 
+      | formula.letDeclaration name value body =>
+        let nameT := mkIdent name
+        let valueT :=
+          unhygienicUnfolder
+            (← value.toTerm' blockName variableNames callableVariables callablePredicates)
+        let e_bodyT :=
+          (body.map fun e =>
+            e.toTerm' blockName variableNames callableVariables callablePredicates
+            )
+        let mut bodyTermList : List Term := []
+        for elem in e_bodyT do
+          match elem with
+            | Except.error msg => throw msg
+            | Except.ok data => bodyTermList := bodyTermList.concat (unhygienicUnfolder data)
+
+        let letTerm := `(let $(nameT):ident := $(valueT):term; ``Term)
+
+        if bodyTermList.isEmpty then return letTerm
+
+        let mut bodyTerm := `(term | ($(bodyTermList.get! 0)))
+        for elem in bodyTermList do
+          bodyTerm := `(bodyTerm ∧ ($(elem)))
+
+        let resultTerm := `($(unhygienicUnfolder letTerm) $(unhygienicUnfolder bodyTerm))
+
+        return resultTerm
+
   def toTerm
     (f: formula)
     (blockName : Name)
@@ -445,6 +479,23 @@ namespace Shared.formula
           (typeExpr.toType typeExpression)
           (form.map fun f => toType_withoutIf f).toList
 
+        -- let declaration
+        | `(formula | $alloy_let_decl:alloyLetDecl) =>
+          match alloy_let_decl with
+            | `(alloyLetDecl | let $name:ident = $value:formula | $body:formula) =>
+              formula.letDeclaration
+                (name := name.getId)
+                (value := formula.toType value)
+                (body := [formula.toType body])
+            | `(alloyLetDecl | let $name:ident = $value:formula | {$body:formula*}) =>
+              formula.letDeclaration
+                (name := name.getId)
+                (value := formula.toType value)
+                (body := (body.map fun e => formula.toType e).toList)
+            | _ => formula.unaryRelBoolOperation
+                unRelBoolOp.no
+                (expr.const constant.none) -- unreachable
+
         | _ => formula.unaryRelBoolOperation
                 unRelBoolOp.no
                 (expr.const constant.none) -- unreachable
@@ -487,6 +538,10 @@ namespace Shared.formula
           ((f.map fun form =>
             form.getReqDefinitions).join
               ).filter fun (elem) => !(n.contains elem)
+        | formula.letDeclaration _ value body =>
+          let value_rd := value.getReqDefinitions
+          let body_rds := (body.map fun e => e.getReqDefinitions).join
+          body_rds ++ value_rd
 
   /--
   Returns the required variables for the formula to work in Lean
@@ -513,6 +568,13 @@ namespace Shared.formula
             form.getReqVariables).join)
             ++ e.getReqVariables).filter
             fun (elem) => !(n.contains elem) -- quantor vars are not required
+        | formula.letDeclaration name value body =>
+          let value_rv := value.getReqVariables
+          let body_rvs :=
+            (body.map fun e => e.getReqVariables).join.filter
+              -- the name is not required in the body
+              fun elem => !(name.toString == elem)
+          body_rvs ++ value_rv
 
   /--
   Gets all calls to the `callablePredicates`
@@ -570,6 +632,14 @@ namespace Shared.formula
           for form in f do
             result := result ++ (← form.getCalledPredicates callablePredicates callableVariables)
           return result
+
+        | formula.letDeclaration _ value body =>
+          let value_cp ← value.getCalledPredicates callablePredicates callableVariables
+          let mut body_cps := []
+          for element in body do
+            let calledPreds ← element.getCalledPredicates callablePredicates callableVariables
+            body_cps := body_cps ++ calledPreds
+          return body_cps ++ value_cp
 
         | _ => return []
 
@@ -636,6 +706,14 @@ namespace Shared.formula
 
           return typeExprRelCalls ++ result
 
+        | formula.letDeclaration _ value body =>
+          let value_cp ← value.getCalledVariables callableVariables
+          let mut body_cps := []
+          for element in body do
+            let calledPreds ← element.getCalledVariables callableVariables
+            body_cps := body_cps ++ calledPreds
+          return body_cps ++ value_cp
+
         | _ => return []
 
   partial def simplifyDomainRestrictions
@@ -667,6 +745,13 @@ namespace Shared.formula
         n
         (t.simplifyDomainRestrictions st)
         (f.map fun f => f.simplifyDomainRestrictions st)
+
+      | formula.letDeclaration name value body =>
+        formula.letDeclaration
+          (name)
+          (value.simplifyDomainRestrictions st)
+          (body.map fun f => f.simplifyDomainRestrictions st)
+
       | _ => f
 
   partial def insertModuleVariables
@@ -706,6 +791,13 @@ namespace Shared.formula
         (t.insertModuleVariables moduleVariables openVariables)
         (f.map fun f =>
           f.insertModuleVariables moduleVariables openVariables)
+
+      | formula.letDeclaration name value body =>
+        formula.letDeclaration
+          (name)
+          (value.insertModuleVariables moduleVariables openVariables)
+          (body.map fun f => f.insertModuleVariables moduleVariables openVariables)
+
       | _ => f
 
   /--
@@ -749,6 +841,13 @@ namespace Shared.formula
           (t.replaceThisCalls moduleName)
           (f.map fun f =>
             f.replaceThisCalls moduleName)
+
+      | formula.letDeclaration name value body =>
+        formula.letDeclaration
+          (name)
+          (value.replaceThisCalls moduleName)
+          (body.map fun f => f.replaceThisCalls moduleName)
+
       | _ => f
 
 end Shared.formula
