@@ -6,13 +6,40 @@ Authors: s. file CONTRIBUTORS
 
 import ThoR
 
-#alloy letDeclTest
+#alloy letDeclTest1
 
-sig a {}
+sig a {
+  r: some b
+}
+sig b {}
+
 pred p1 {
   let x = a | {
     some x + x
   }
 }
+end
 
+#create letDeclTest1
+
+#alloy letDeclTest2
+
+sig a {
+  r: b
+}
+
+sig x extends a {}
+
+sig b {
+  q: a
+}
+
+sig c {}
+
+fact {
+  let y=a | {
+    y.r = b
+    x.r = b
+  }
+}
 end

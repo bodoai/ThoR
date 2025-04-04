@@ -87,6 +87,13 @@ namespace Shared
   syntax quant ("disj")? ident,+ ":" typeExpr "|" "{" (formula_without_if)+ "}" : formula_without_if
   syntax quant ("disj")? ident,+ ":" typeExpr "|" formula_without_if : formula_without_if
 
+  /-- alloy let Syntax -/
+  declare_syntax_cat alloyLetDecl
+  abbrev AlloyLetDecl := TSyntax `alloyLetDecl
+  syntax "let" ident "=" formula_without_if "|" formula_without_if : alloyLetDecl
+  syntax "let" ident "=" formula_without_if "|" "{" formula_without_if* "}" : alloyLetDecl
+  syntax alloyLetDecl : formula_without_if
+
   /--
   This syntax represents an alloy formula
   -/
@@ -98,12 +105,6 @@ namespace Shared
   --Special tertiariy Syntax
   syntax formula " => " formula " else " formula : formula
 
-  /-- alloy let Syntax -/
-  declare_syntax_cat alloyLetDecl
-  abbrev AlloyLetDecl := TSyntax `alloyLetDecl
-  syntax "let" ident "=" formula "|" formula : alloyLetDecl
-  syntax "let" ident "=" formula "|" "{" formula* "}" : alloyLetDecl
-  syntax alloyLetDecl : formula
 
   namespace formula
 
