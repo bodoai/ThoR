@@ -353,17 +353,16 @@ namespace Shared.formula
             | Except.error msg => throw msg
             | Except.ok data => bodyTermList := bodyTermList.concat (unhygienicUnfolder data)
 
-        let letTerm := `(let $(nameT):ident := $(valueT):term; ``Term)
 
-        if bodyTermList.isEmpty then return letTerm
+        if bodyTermList.isEmpty then throw s!"let {name}={value} has empty body"
 
         let mut bodyTerm := `(term | ($(bodyTermList.get! 0)))
         for elem in bodyTermList do
           bodyTerm := `(bodyTerm ∧ ($(elem)))
 
-        let resultTerm := `($(unhygienicUnfolder letTerm) $(unhygienicUnfolder bodyTerm))
+        let letTerm := `(let $(nameT):ident := $(valueT):term; $(unhygienicUnfolder bodyTerm))
 
-        return resultTerm
+        return letTerm
 
   def toTerm
     (f: formula)
@@ -482,16 +481,16 @@ namespace Shared.formula
         -- let declaration
         | `(formula | $alloy_let_decl:alloyLetDecl) =>
           match alloy_let_decl with
-            | `(alloyLetDecl | let $name:ident = $value:formula | $body:formula) =>
+            | `(alloyLetDecl | let $name:ident = $value:formula_without_if | $body:formula_without_if) =>
               formula.letDeclaration
                 (name := name.getId)
-                (value := formula.toType value)
-                (body := [formula.toType body])
-            | `(alloyLetDecl | let $name:ident = $value:formula | {$body:formula*}) =>
+                (value := formula.toType_withoutIf value)
+                (body := [formula.toType_withoutIf body])
+            | `(alloyLetDecl | let $name:ident = $value:formula_without_if | { $body:formula_without_if* }) =>
               formula.letDeclaration
                 (name := name.getId)
-                (value := formula.toType value)
-                (body := (body.map fun e => formula.toType e).toList)
+                (value := formula.toType_withoutIf value)
+                (body := (body.map fun e => formula.toType_withoutIf e).toList)
             | _ => formula.unaryRelBoolOperation
                 unRelBoolOp.no
                 (expr.const constant.none) -- unreachable
