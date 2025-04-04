@@ -13,6 +13,7 @@ import ThoR.Relation
 import ThoR.Shared.Syntax
 
 import ThoR.Alloy.Config
+import ThoR.Alloy.UnhygienicUnfolder
 
 import ThoR.Alloy.Syntax.AST
 import ThoR.Alloy.SymbolTable.SymbolTable
@@ -83,12 +84,6 @@ private def createVariableCommands
 
       return commandList
 
-private def unhygienicUnfolder
-  {type : Type}
-  (input : Unhygienic (type))
-  : type := Unhygienic.run do
-  return ← input
-
 /--
 Creates a single creation command of either a definition or an axiom from a
 given command declaration and the blockname.
@@ -132,11 +127,38 @@ private def createDefOrAxiomCommand
       let expressions :=
         cd.expressions.map fun e => e.replaceCalls callableVariables
 
+
       let fe := (expressions.get! 0)
       bodyTerm := fe.toTermFromBlock blockName
 
       for expression in expressions.drop 1 do
         let newTerm := expression.toTermFromBlock blockName
+        bodyTerm := unhygienicUnfolder `($bodyTerm ∧ ($newTerm))
+
+    -- and ifExpressions
+    if cd.isFunction && !(cd.ifExpressions.isEmpty) then
+      let ifExpressions :=
+        cd.ifExpressions.map fun ie =>
+          {ie with
+            condition := ie.condition.replaceCalls callableVariables,
+            thenBody := ie.thenBody.replaceCalls callableVariables,
+            elseBody := ie.elseBody.replaceCalls callableVariables
+          }
+
+      for ifExpression in ifExpressions do
+        let conditionTerm ←
+          ifExpression.condition.toTerm blockName cd.requiredVars callableVariables cd.predCalls
+
+        let thenTerm := ifExpression.thenBody.toTermFromBlock blockName
+        let elseTerm :=
+          if ifExpression.hasElse then
+            ifExpression.thenBody.toTermFromBlock blockName
+          else
+            unhygienicUnfolder `(True)
+
+        -- possibly wrong
+        let newTerm := unhygienicUnfolder `(if ( $(conditionTerm) == True) then $(thenTerm) else $(elseTerm))
+
         bodyTerm := unhygienicUnfolder `($bodyTerm ∧ ($newTerm))
 
     -- define command

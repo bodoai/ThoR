@@ -345,41 +345,35 @@ namespace Shared.formula
       | Except.error msg => throw msg
       | Except.ok data => return unhygienicUnfolder data
 
-  /--
-  Parses the given syntax to the type
-  -/
-  partial def toType
-    (f : Formula)
+  partial def toType_withoutIf
+    (f : Formula_without_if)
     (signatureFactSigNames : List String := [])
     : formula :=
       match f with
-        | `(formula| ( $f:formula )) => toType f
+        | `(formula_without_if| ( $fwi:formula_without_if )) =>
+          toType_withoutIf fwi
 
-        | `(formula| $name:ident) =>
+        | `(formula_without_if| $name:ident) =>
           formula.string name.getId.toString
 
-        | `(formula| $predName:ident [$predargs,*]) =>
+        | `(formula_without_if| $predName:ident [$predargs,*]) =>
           formula.pred_with_args predName.getId.toString
             (predargs.getElems.map fun (elem) =>
               expr.toType elem signatureFactSigNames).toList
 
-        | `(formula| $op:unRelBoolOp $expression:expr ) =>
+        | `(formula_without_if| $op:unRelBoolOp $expression:expr ) =>
           formula.unaryRelBoolOperation
             (unRelBoolOp.toType op) (expr.toType expression signatureFactSigNames)
 
-        | `(formula| $op:unLogOp $f:formula ) =>
+        | `(formula_without_if| $op:unLogOp $f:formula_without_if ) =>
           formula.unaryLogicOperation
-            (unLogOp.toType op) (toType f)
+            (unLogOp.toType op) (toType_withoutIf f)
 
-        | `(formula| $form1:formula $op:binLogOp $form2:formula) =>
+        | `(formula_without_if| $form1:formula_without_if $op:binLogOp $form2:formula_without_if) =>
           formula.binaryLogicOperation
-            (binLogOp.toType op) (toType form1) (toType form2)
+            (binLogOp.toType op) (toType_withoutIf form1) (toType_withoutIf form2)
 
-        | `(formula| if $form1 then $form2 else $form3) =>
-          formula.tertiaryLogicOperation terLogOp.ifelse
-            (toType form1) (toType form2) (toType form3)
-
-        | `(formula|
+        | `(formula_without_if|
             $algExpr1:algExpr
             $compOp:algCompareOp
             $algExpr2:algExpr) =>
@@ -388,7 +382,7 @@ namespace Shared.formula
             (algExpr.toType algExpr1)
             (algExpr.toType algExpr2)
 
-        | `(formula|
+        | `(formula_without_if|
             $expr1:expr
             $op:relCompareOp
             $expr2:expr) =>
@@ -397,60 +391,77 @@ namespace Shared.formula
             (expr.toType expr1 signatureFactSigNames)
             (expr.toType expr2 signatureFactSigNames)
 
-        | `(formula|
+        | `(formula_without_if|
             $q:quant
             disj
             $names:ident,* :
             $typeExpression:typeExpr |
-            $form:formula
+            $form:formula_without_if
             ) =>
           formula.quantification
           (quant.toType q)
           true
           (names.getElems.map fun (elem) => elem.getId.toString).toList
           (typeExpr.toType typeExpression)
-          ([toType form])
+          ([toType_withoutIf form])
 
-        | `(formula|
+        | `(formula_without_if|
             $q:quant
             disj
             $names:ident,* :
             $typeExpression:typeExpr |
-            { $form:formula* }
+            { $form:formula_without_if* }
             ) =>
           formula.quantification
           (quant.toType q)
           true
           (names.getElems.map fun (elem) => elem.getId.toString).toList
           (typeExpr.toType typeExpression)
-          (form.map fun f => toType f).toList
+          (form.map fun f => toType_withoutIf f).toList
 
-        | `(formula|
+        | `(formula_without_if|
             $q:quant
             $names:ident,* :
             $typeExpression:typeExpr |
-            $form:formula
+            $form:formula_without_if
             ) =>
           formula.quantification
           (quant.toType q)
           false
           (names.getElems.map fun (elem) => elem.getId.toString).toList
           (typeExpr.toType typeExpression)
-          ([toType form])
+          ([toType_withoutIf form])
 
-        | `(formula|
+        | `(formula_without_if|
             $q:quant
             $names:ident,* :
             $typeExpression:typeExpr |
-            {$form:formula*}
+            {$form:formula_without_if*}
             ) =>
           formula.quantification
           (quant.toType q)
           false
           (names.getElems.map fun (elem) => elem.getId.toString).toList
           (typeExpr.toType typeExpression)
-          (form.map fun f => toType f).toList
+          (form.map fun f => toType_withoutIf f).toList
 
+        | _ => formula.unaryRelBoolOperation
+                unRelBoolOp.no
+                (expr.const constant.none) -- unreachable
+
+  /--
+  Parses the given syntax to the type
+  -/
+  partial def toType
+    (f : Formula)
+    (signatureFactSigNames : List String := [])
+    : formula :=
+      match f with
+        | `(formula| $fwi:formula_without_if) =>
+          toType_withoutIf fwi signatureFactSigNames
+        | `(formula| $form1:formula => $form2:formula else $form3:formula) =>
+            formula.tertiaryLogicOperation terLogOp.ifelse
+              (toType form1) (toType form2) (toType form3)
         | _ => formula.unaryRelBoolOperation
                 unRelBoolOp.no
                 (expr.const constant.none) -- unreachable

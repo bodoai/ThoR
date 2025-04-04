@@ -63,30 +63,35 @@ namespace Shared
       formula
   deriving Repr
 
+  declare_syntax_cat formula_without_if
+  abbrev Formula_without_if := TSyntax `formula_without_if
+  syntax ident : formula_without_if
+
+  syntax ident ( "[" expr,+ "]") : formula_without_if  -- predcall
+
+  syntax:50 "("formula_without_if")" : formula_without_if
+
+  syntax unRelBoolOp expr : formula_without_if
+
+  syntax unLogOp formula_without_if: formula_without_if
+
+  syntax:60 formula_without_if binLogOp formula_without_if : formula_without_if
+  syntax expr relCompareOp expr : formula_without_if
+
+  syntax algExpr algCompareOp algExpr : formula_without_if
+  syntax quant ("disj")? ident,+ ":" typeExpr "|" "{" (formula_without_if)+ "}" : formula_without_if
+  syntax quant ("disj")? ident,+ ":" typeExpr "|" formula_without_if : formula_without_if
+
   /--
   This syntax represents an alloy formula
   -/
   declare_syntax_cat formula
   abbrev Formula := TSyntax `formula
-  syntax ident : formula
 
-  syntax ident ( "[" expr,+ "]") : formula  -- predcall
-
-  syntax "("formula")" : formula
-
-  syntax unRelBoolOp expr : formula
-
-  syntax unLogOp formula: formula
-
-  syntax formula binLogOp formula : formula
-  syntax expr relCompareOp expr : formula
-
-  syntax algExpr algCompareOp algExpr : formula
-  syntax quant ("disj")? ident,+ ":" typeExpr "|" "{" (formula)+ "}" : formula
-  syntax quant ("disj")? ident,+ ":" typeExpr "|" formula : formula
+  syntax formula_without_if : formula
 
   --Special tertiariy Syntax
-  syntax "if " formula " then " formula " else " formula : formula
+  syntax formula " => " formula " else " formula : formula
 
   instance : Inhabited formula where
     default := formula.string ""
