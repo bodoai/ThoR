@@ -36,12 +36,16 @@ namespace Alloy
   syntax expr : exprOfFunIfDecl
   syntax functionIfDecl : exprOfFunIfDecl
 
-  syntax "fun" extendedIdent ("["functionArg,*"]")? ":" typeExpr "{"
-    exprOfFunIfDecl*
-  "}": functionDecl
-  syntax "fun" extendedIdent ("("functionArg,*")")? ":" typeExpr "{"
-    exprOfFunIfDecl*
-  "}": functionDecl
+
+  syntax (name := function_declaration_with_brackets)
+    "fun" extendedIdent ("["functionArg,*"]")? ":" typeExpr "{"
+      exprOfFunIfDecl*
+    "}": functionDecl
+
+  syntax (name := function_declaration_with_parenthesis)
+    "fun" extendedIdent ("("functionArg,*")")? ":" typeExpr "{"
+      exprOfFunIfDecl*
+    "}": functionDecl
 
   namespace functionDecl
 
