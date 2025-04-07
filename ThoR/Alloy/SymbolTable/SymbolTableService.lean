@@ -527,20 +527,8 @@ to be better digestible for further computation and transformation into Lean.
             predicateCalls ++
             (← form.getCalledPredicates st.getPredicateDeclarations st.variableDecls)
 
-        let newPredDefDecl :=
-          commandDecl.mk
-            (name := predDefDecl.name)
-            (commandType := predDefDecl.commandType)
-            (predArgs := predDefDecl.predArgs)
-            (formulas := predDefDecl.formulas)
-            (requiredVars := predDefDecl.requiredVars)
-            (requiredDefs := predDefDecl.requiredDefs)
-            (predCalls := predicateCalls)
-            (functionCalls := predDefDecl.functionCalls)
-            (relationCalls := predDefDecl.relationCalls)
-            (signatureCalls := predDefDecl.signatureCalls)
-
-        newPredDefDecls := newPredDefDecls.concat newPredDefDecl
+        newPredDefDecls :=
+          newPredDefDecls.concat (predDefDecl.updatePredCalls predicateCalls)
 
       return st.updatePredicateDeclarations newPredDefDecls
 
@@ -689,20 +677,8 @@ to be better digestible for further computation and transformation into Lean.
             functionCalls ++
             (← expr.getFunctionCalls st.defDecls st.variableDecls)
 
-        let newFunctionDefDecl :=
-          commandDecl.mk
-            (name := functionDefDecl.name)
-            (commandType := functionDefDecl.commandType)
-            (predArgs := functionDefDecl.predArgs)
-            (formulas := functionDefDecl.formulas)
-            (requiredVars := functionDefDecl.requiredVars)
-            (requiredDefs := functionDefDecl.requiredDefs)
-            (predCalls := functionDefDecl.predCalls)
-            (functionCalls := functionCalls)
-            (relationCalls := functionDefDecl.relationCalls)
-            (signatureCalls := functionDefDecl.signatureCalls)
-
-        newFunctionDefDecls := newFunctionDefDecls.concat newFunctionDefDecl
+        newFunctionDefDecls :=
+          newFunctionDefDecls.concat (functionDefDecl.updateFunctionCalls functionCalls)
 
       return st.updateFunctionDeclarations newFunctionDefDecls
 

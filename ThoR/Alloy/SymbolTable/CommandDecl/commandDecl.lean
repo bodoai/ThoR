@@ -159,6 +159,72 @@ namespace Alloy
             relationCalls
             signatureCalls
 
+    def updatePredCalls
+      (predCalls : List (commandDecl × List (expr × List (String × List (varDecl)))))
+        | mk
+            name
+            commandType
+            predArgs
+            functionArgs
+            functionReturnType
+            formulas
+            expressions
+            ifExpressions
+            requiredDefs
+            requiredVars
+            _
+            functionCalls
+            relationCalls
+            signatureCalls =>
+          mk
+            name
+            commandType
+            predArgs
+            functionArgs
+            functionReturnType
+            formulas
+            expressions
+            ifExpressions
+            requiredDefs
+            requiredVars
+            predCalls
+            functionCalls
+            relationCalls
+            signatureCalls
+
+    def updateFunctionCalls
+      (functionCalls : List (commandDecl × List (expr × List (String × List (varDecl)))))
+        | mk
+            name
+            commandType
+            predArgs
+            functionArgs
+            functionReturnType
+            formulas
+            expressions
+            ifExpressions
+            requiredDefs
+            requiredVars
+            predCalls
+            _
+            relationCalls
+            signatureCalls =>
+          mk
+            name
+            commandType
+            predArgs
+            functionArgs
+            functionReturnType
+            formulas
+            expressions
+            ifExpressions
+            requiredDefs
+            requiredVars
+            predCalls
+            functionCalls
+            relationCalls
+            signatureCalls
+
   def isPredicate (cd : commandDecl) : Bool :=
     cd.commandType == commandType.pred
 
