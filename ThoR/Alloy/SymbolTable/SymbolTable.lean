@@ -33,15 +33,68 @@ namespace Alloy
     /--
     Generates a String representation of the ST.
     -/
-    def toString (st : SymbolTable) : String :=
-      s!"ST : \{
-        blockName := {st.name},
-        varDecls := {st.variableDecls},
-        defDecls := {st.defDecls},
-        axiomDecls := {st.axiomDecls},
-        assertDecls := {st.assertDecls},
-        requiredDecls := {st.requiredDecls},
-      }"
+    def toString
+      (st : SymbolTable)
+      (inner_space_count := 3)
+      (outer_space_count := 0)
+      (leading_new_line := false)
+      : String := Id.run do
+
+      let mut inner_spaces : String := ""
+      for _ in [0:inner_space_count] do
+        inner_spaces := inner_spaces ++ " "
+
+      let mut outer_spaces : String := ""
+      for _ in [0:outer_space_count] do
+        outer_spaces := outer_spaces ++ " "
+
+      let variableDeclString :=
+        st.variableDecls.map
+          fun vd =>
+            vd.toString
+            (inner_space_count := (inner_space_count + 3))
+            (outer_space_count := inner_space_count + 1)
+            (leading_new_line := true)
+
+      let defDeclsString :=
+        st.defDecls.map
+          fun vd =>
+            vd.toString
+            (inner_space_count := (inner_space_count + 3))
+            (outer_space_count := inner_space_count + 1)
+            (leading_new_line := true)
+
+      let axiomDeclsString :=
+        st.axiomDecls.map
+          fun cd =>
+            cd.toString
+            (inner_space_count := (inner_space_count + 3))
+            (outer_space_count := inner_space_count + 1)
+            (leading_new_line := true)
+
+      let assertDeclsString :=
+        st.assertDecls.map
+          fun cd =>
+            cd.toString
+            (inner_space_count := (inner_space_count + 3))
+            (outer_space_count := inner_space_count + 1)
+            (leading_new_line := true)
+
+      let result :=
+        outer_spaces ++ "symbol table : ⦃ \n" ++
+        inner_spaces ++ s!"blockName := {st.name}," ++ "\n" ++
+        inner_spaces ++ s!"varDecls := {variableDeclString}," ++ "\n" ++
+        inner_spaces ++ s!"defDecls := {defDeclsString}," ++ "\n" ++
+        inner_spaces ++ s!"axiomDecls := {axiomDeclsString}," ++ "\n" ++
+        inner_spaces ++ s!"assertDecls := {assertDeclsString}," ++ "\n" ++
+        inner_spaces ++ s!"requiredDecls := {st.requiredDecls}," ++ "\n" ++
+        inner_spaces ++ s!"varDecls := {st.variableDecls}," ++ "\n" ++
+        outer_spaces ++ "⦄"
+
+      if leading_new_line then
+        "\n" ++ result
+      else
+        result
 
     instance : ToString SymbolTable where
       toString := toString
