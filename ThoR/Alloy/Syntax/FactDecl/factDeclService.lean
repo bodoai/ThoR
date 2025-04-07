@@ -72,4 +72,15 @@ namespace Alloy.factDecl
       fd.formulas.map fun f => f.replaceThisCalls moduleName
     {fd with formulas := formulas}
 
+  def getFunctionCalls
+    (fd : factDecl)
+    (callableFunctions : List (commandDecl))
+    (callableVariables : List (varDecl))
+    : Except String
+      (List (commandDecl × List (Shared.expr × List (String × List (varDecl))))) := do
+      let mut result := []
+      for form in fd.formulas do
+        result := result.append (← form.getFunctionCalls callableFunctions callableVariables)
+      return result
+
 end Alloy.factDecl

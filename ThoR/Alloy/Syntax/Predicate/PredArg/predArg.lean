@@ -26,14 +26,6 @@ namespace Alloy
   abbrev PredArg := TSyntax `predArg
   syntax ("disj")? ident,+ ":" expr : predArg
 
-  instance : ToString predArg where
-    toString (pa : predArg) : String :=
-      s!"predicateArgument : \{
-          names := {pa.names},
-          disjunction := {pa.disjunction},
-          expression := {pa.expression}
-        }"
-
   instance : Inhabited predArg where
     default := {
         disjunction := false
@@ -52,7 +44,35 @@ namespace Alloy
     /--
     Generates a string representation of the structure
     -/
-    def toString (pa: predArg) : String := ToString.toString pa
+    def toString
+      (pa: predArg)
+      (inner_space_count := 3)
+      (outer_space_count := 1)
+      (leading_new_line := false)
+      : String := Id.run do
+
+      let mut inner_spaces : String := ""
+      for _ in [0:inner_space_count] do
+        inner_spaces := inner_spaces ++ " "
+
+      let mut outer_spaces : String := ""
+      for _ in [0:outer_space_count] do
+        outer_spaces := outer_spaces ++ " "
+
+      let result :=
+        outer_spaces ++ "predicate argument : ⦃" ++ "\n" ++
+        inner_spaces ++ s!"names := {pa.names}," ++ "\n" ++
+        inner_spaces ++ s!"disjunction := {pa.disjunction}," ++ "\n" ++
+        inner_spaces ++ s!"expression := {pa.expression}" ++ "\n" ++
+        outer_spaces ++ "⦄"
+
+      if leading_new_line then
+        "\n" ++ result
+      else
+        result
+
+    instance : ToString predArg where
+    toString (pa : predArg) : String := pa.toString
 
   end predArg
 

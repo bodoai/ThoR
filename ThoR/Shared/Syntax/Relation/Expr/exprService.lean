@@ -8,6 +8,7 @@ import ThoR.Alloy.SymbolTable.VarDecl.varDecl
 import ThoR.Alloy.SymbolTable.SymbolTable
 import ThoR.Alloy.Config
 import ThoR.Alloy.Syntax.AlloyData.alloyData
+import ThoR.Alloy.UnhygienicUnfolder
 
 open Alloy Config
 open Lean
@@ -163,7 +164,7 @@ namespace Shared.expr
   /--
   Generates a syntax representation of the type
   -/
-  def toSyntax
+  partial def toSyntax
     (blockName : Name)
     (e : expr)
     : Expression := Unhygienic.run do
@@ -171,6 +172,10 @@ namespace Shared.expr
         | expr.const c => `(expr| $(c.toSyntax):constant)
         | expr.string s => `(expr| $(mkIdent s.toName):ident)
         | expr.callFromOpen sn => `(expr| $(sn.toSyntax):separatedNamespace)
+        | expr.function_call_with_args function_name arguments =>
+          let argument_array :=
+            (arguments.map fun arg => arg.toSyntax blockName).toArray
+          `(expr | $(mkIdent function_name.toName):ident [$argument_array,*])
         | expr.unaryRelOperation op e => `(expr| $(op.toSyntax):unRelOp $(e.toSyntax blockName):expr)
         | expr.binaryRelOperation op e1 e2 =>
           `(expr| $(e1.toSyntax blockName):expr $(op.toSyntax):binRelOp $(e2.toSyntax blockName):expr)
@@ -186,12 +191,17 @@ namespace Shared.expr
           let identifier := mkIdent name
           `(expr| @$(identifier):ident)
 
-  def toSyntaxOutsideBlock
+  partial def toSyntaxOutsideBlock
     (e : expr)
     : Expression := Unhygienic.run do
       match e with
         | expr.const c => `(expr| $(c.toSyntax):constant)
         | expr.string s => `(expr| $(mkIdent s.toName):ident)
+        | expr.function_call_with_args functionName arguments =>
+          let argument_array :=
+            (arguments.map fun e => (e.toSyntaxOutsideBlock)).toArray
+          `(expr | $(mkIdent functionName.toName):ident [$argument_array,*])
+
         | expr.callFromOpen sn => `(expr| $(sn.toSyntax):separatedNamespace)
         | expr.unaryRelOperation op e => `(expr| $(op.toSyntax):unRelOp $(e.toSyntaxOutsideBlock):expr)
         | expr.binaryRelOperation op e1 e2 =>
@@ -207,17 +217,13 @@ namespace Shared.expr
           let identifier := mkIdent name
           `(expr| @$(identifier):ident)
 
-  private def unhygienicUnfolder
-    (input : Unhygienic (Term))
-    : Term := Unhygienic.run do
-    return ← input
 
   /--
   Generates a Lean term corosponding with the type
   -/
-  private def toTerm
+  private partial def toTerm
     (e : expr)
-    (inBLock : Bool)
+    (inBlock : Bool)
     (blockName : Name)
     (quantorNames : List (String) := []) -- used to know which names must be pure
     (availableAlloyData : List (alloyData) := [])
@@ -233,7 +239,7 @@ namespace Shared.expr
           check if the name is defined in the existing modules, but only
           if the name is not defined in a variable definition
           -/
-          if !inBLock && !(localContextUserNames.contains s.toName) then
+          if !inBlock && !(localContextUserNames.contains s.toName) then
             let mut possibleVarDecls := []
             for alloyData in availableAlloyData do
               let possibleMatches := alloyData.st.variableDecls.filter fun vd => vd.name == s
@@ -257,7 +263,7 @@ namespace Shared.expr
               let callName := Name.fromComponents callNameComponents
               return unhygienicUnfolder `((@$(mkIdent callName) $(baseType.ident) _ _))
 
-          if inBLock && !(quantorNames.contains s) then
+          if inBlock && !(quantorNames.contains s) then
             return unhygienicUnfolder `((
               ∻ $(mkIdent s!"{blockName}.vars.{s}".toName)
             ))
@@ -266,15 +272,33 @@ namespace Shared.expr
 
         | expr.callFromOpen sn =>
           let snt := sn.representedNamespace.getId.toString
-          if inBLock then
+          if inBlock then
             return unhygienicUnfolder `((
               ∻ $(mkIdent s!"{blockName}.vars.{snt}".toName)
             ))
           else
             return sn.toTerm
 
+        | expr.function_call_with_args called_function arguments =>
+          let mut argumentsTerm :=
+           unhygienicUnfolder
+            `(($(← (arguments.get! 0).toTerm inBlock blockName quantorNames)))
+
+          for arg in arguments.drop 1 do
+            argumentsTerm :=
+              unhygienicUnfolder
+                `(argumentsTerm $(← arg.toTerm inBlock blockName quantorNames))
+
+          let function_name_components := if inBlock then [blockName, `funs] else []
+          let basic_function_name := called_function.toName
+          let function_name := Name.fromComponents (function_name_components.concat basic_function_name)
+
+          return unhygienicUnfolder `((
+            ∻ $(mkIdent function_name)
+          ) $argumentsTerm )
+
         | expr.unaryRelOperation op e =>
-          let eTerm ← e.toTerm inBLock
+          let eTerm ← e.toTerm inBlock
             blockName quantorNames availableAlloyData localContextUserNames
 
           return unhygienicUnfolder `(( $(op.toTerm)
@@ -282,9 +306,9 @@ namespace Shared.expr
             ))
 
         | expr.binaryRelOperation op e1 e2 =>
-          let e1Term ← e1.toTerm inBLock
+          let e1Term ← e1.toTerm inBlock
             blockName quantorNames availableAlloyData localContextUserNames
-          let e2Term ← e2.toTerm inBLock
+          let e2Term ← e2.toTerm inBlock
             blockName quantorNames availableAlloyData localContextUserNames
           return unhygienicUnfolder `(( $(op.toTerm)
               $(e1Term)
@@ -292,9 +316,9 @@ namespace Shared.expr
             ))
 
         | expr.dotjoin dj e1 e2 =>
-          let e1Term ← e1.toTerm inBLock
+          let e1Term ← e1.toTerm inBlock
             blockName quantorNames availableAlloyData localContextUserNames
-          let e2Term ← e2.toTerm inBLock
+          let e2Term ← e2.toTerm inBlock
             blockName quantorNames availableAlloyData localContextUserNames
           return unhygienicUnfolder `(( $(dj.toTerm)
               $(e1Term)
@@ -518,6 +542,14 @@ namespace Shared.expr
                 dotjoin.dot_join
                 (expr.toType subE1)
                 (expr.toType subE2)
+
+        | `(expr |
+            $called_function:ident
+            [ $arguments:expr,* ]
+          ) =>
+          expr.function_call_with_args
+            called_function.getId.toString
+            (arguments.getElems.map fun e => expr.toType e).toList
 
         | `(expr | -- Hack to allow dotjoin before ()
           $subExpr1:expr .( $subExpr2:expr )) =>
@@ -854,5 +886,61 @@ namespace Shared.expr
             (e2.replaceThisCalls moduleName)
 
         | _ => e
+
+  def getFunctionCalls
+    (e : expr)
+    (callableFunctions : List (commandDecl))
+    (callableVariables : List (varDecl))
+    : Except String
+      (List (commandDecl × List (expr × List (String × List (varDecl))))) := do
+    match e with
+      | expr.string s =>
+        let possibleFunctions := callableFunctions.filter fun cf => cf.name == s
+        if possibleFunctions.length > 1 then
+          throw s!"Call to function {s} is ambigious. Could be \
+          any of {possibleFunctions}"
+        if possibleFunctions.isEmpty then return []
+        let calledFunction := possibleFunctions.get! 0
+        if !calledFunction.isFunction then
+          throw s!"Tried to call the {calledFunction.commandType} \
+          {calledFunction.name} as a function"
+        return [(calledFunction, [])]
+
+      | expr.function_call_with_args function_name arguments =>
+        let possibleFunctions :=
+          callableFunctions.filter fun cf => cf.name == function_name
+        if possibleFunctions.length > 1 then
+          throw s!"Call to function {function_name} is ambigious. Could be \
+          any of {possibleFunctions}"
+        if possibleFunctions.isEmpty then return []
+        let calledFunction := possibleFunctions.get! 0
+        if !calledFunction.isFunction then
+          throw s!"Tried to call the {calledFunction.commandType} \
+          {calledFunction.name} as a function"
+
+        let mut calledArguments : List (String × List (varDecl)) := []
+        for argument in arguments do
+          calledArguments :=
+            calledArguments.append
+              (← (argument.getCalledVariables callableVariables))
+
+        return [(calledFunction, [(e , calledArguments)])]
+
+      | expr.unaryRelOperation _ e =>
+        e.getFunctionCalls callableFunctions callableVariables
+
+      | expr.binaryRelOperation _ e1 e2 =>
+        let e1_cf ← e1.getFunctionCalls callableFunctions callableVariables
+        let e2_c2 ← e2.getFunctionCalls callableFunctions callableVariables
+        return e1_cf ++ e2_c2
+
+      | expr.dotjoin _ e1 e2 =>
+        let e1_cf ← e1.getFunctionCalls callableFunctions callableVariables
+        let e2_c2 ← e2.getFunctionCalls callableFunctions callableVariables
+        return e1_cf ++ e2_c2
+
+      | expr.callFromOpen _ => return [] -- possibly incorrect
+      | expr.string_rb _ => return []
+      | expr.const _ => return []
 
 end Shared.expr

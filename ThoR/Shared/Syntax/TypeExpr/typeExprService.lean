@@ -252,4 +252,18 @@ namespace Shared.typeExpr
       | relExpr e =>
         relExpr (e.replaceThisCalls moduleName)
 
+  def getFunctionCalls
+    (te : typeExpr)
+    (callableFunctions : List (commandDecl))
+    (callableVariables : List (varDecl))
+    : Except String
+      (List (commandDecl × List (expr × List (String × List (varDecl))))) := do
+      match te with
+      | arrowExpr ae =>
+        ae.getFunctionCalls callableFunctions callableVariables
+      | multExpr _ e =>
+        e.getFunctionCalls callableFunctions callableVariables
+      | relExpr e =>
+        e.getFunctionCalls callableFunctions callableVariables
+
 end Shared.typeExpr
