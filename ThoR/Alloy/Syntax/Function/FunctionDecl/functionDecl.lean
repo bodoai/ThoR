@@ -6,6 +6,8 @@ Authors: s. file CONTRIBUTORS
 import ThoR.Basic
 import ThoR.Alloy.Syntax.Function.FunctionArg.functionArg
 import ThoR.Alloy.Syntax.SeparatedNamespace.extendedIdent
+import ThoR.Shared.Syntax.Formula.formula
+import ThoR.Alloy.Syntax.Function.FunctionIfDecl.functionIfDecl
 
 open Lean
 open Shared
@@ -20,20 +22,26 @@ namespace Alloy
           (arguments : List (functionArg))
           (outputType : typeExpr)
           (expressions : List (expr))
+          (ifExpressions : List (functionIfDecl))
   deriving Repr, BEq, Inhabited
 
   /--
   This syntax represents an Alloy function declaration
   -/
   declare_syntax_cat functionDecl
+  abbrev FunctionDecl := TSyntax `functionDecl
+
+  declare_syntax_cat exprOfFunIfDecl
+  abbrev ExprOfFunIfDecl := TSyntax `exprOfFunIfDecl
+  syntax expr : exprOfFunIfDecl
+  syntax functionIfDecl : exprOfFunIfDecl
+
   syntax "fun" extendedIdent ("["functionArg,*"]")? ":" typeExpr "{"
-    expr*
+    exprOfFunIfDecl*
   "}": functionDecl
   syntax "fun" extendedIdent ("("functionArg,*")")? ":" typeExpr "{"
-    expr*
+    exprOfFunIfDecl*
   "}": functionDecl
-
-  abbrev FunctionDecl := TSyntax `functionDecl
 
   namespace functionDecl
 
@@ -43,7 +51,16 @@ namespace Alloy
             name := {fd.name},
             arguments := {fd.arguments},
             outputType := {fd.outputType},
-            expressions := {fd.expressions}
+            {
+            if !fd.expressions.isEmpty then
+              s!"expressions := {fd.expressions},"
+            else ""
+            }
+            {
+            if !fd.ifExpressions.isEmpty then
+              s!"ifExpressions := {fd.ifExpressions}"
+            else ""
+            }
           }"
 
     /--
