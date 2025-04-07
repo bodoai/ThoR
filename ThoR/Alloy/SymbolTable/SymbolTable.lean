@@ -64,13 +64,29 @@ namespace Alloy
             (outer_space_count := inner_space_count + 1)
             (leading_new_line := true)
 
+      let axiomDeclsString :=
+        st.axiomDecls.map
+          fun cd =>
+            cd.toString
+            (inner_space_count := (inner_space_count + 3))
+            (outer_space_count := inner_space_count + 1)
+            (leading_new_line := true)
+
+      let assertDeclsString :=
+        st.assertDecls.map
+          fun cd =>
+            cd.toString
+            (inner_space_count := (inner_space_count + 3))
+            (outer_space_count := inner_space_count + 1)
+            (leading_new_line := true)
+
       let result :=
         outer_spaces ++ "symbol table : ⦃ \n" ++
         inner_spaces ++ s!"blockName := {st.name}," ++ "\n" ++
         inner_spaces ++ s!"varDecls := {variableDeclString}," ++ "\n" ++
         inner_spaces ++ s!"defDecls := {defDeclsString}," ++ "\n" ++
-        inner_spaces ++ s!"axiomDecls := {st.axiomDecls}," ++ "\n" ++
-        inner_spaces ++ s!"assertDecls := {st.assertDecls}," ++ "\n" ++
+        inner_spaces ++ s!"axiomDecls := {axiomDeclsString}," ++ "\n" ++
+        inner_spaces ++ s!"assertDecls := {assertDeclsString}," ++ "\n" ++
         inner_spaces ++ s!"requiredDecls := {st.requiredDecls}," ++ "\n" ++
         inner_spaces ++ s!"varDecls := {st.variableDecls}," ++ "\n" ++
         outer_spaces ++ "⦄"
