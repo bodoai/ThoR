@@ -25,11 +25,31 @@ namespace Alloy.functionDecl
       (fd.expressions.map fun expression => expression.getReqVariables).join
 
   /--
+  Splits the input array intp a List of expr and a List of functionIfDelcs.
+  Then returns both.
+  -/
+  private def splitFunExpressions
+    (input : TSyntaxArray `exprOfFunIfDecl)
+    : List expr × List functionIfDecl :=
+      input.foldl
+        (fun
+          (input : List (expr) × List (functionIfDecl))
+          (fe : ExprOfFunIfDecl) =>
+            match fe with
+            | `(exprOfFunIfDecl|$e:expr) =>
+              ((input.1.concat (expr.toType e)), input.2)
+            | `(exprOfFunIfDecl|$fid:functionIfDecl) =>
+              (input.1, input.2.concat (functionIfDecl.toType fid))
+            | _ => unreachable!
+        )
+        ([], [])
+
+  /--
   Parses te given syntax to a structure of functionDecl if possible
   -/
   def toType (pd : FunctionDecl) : functionDecl :=
     match pd with
-      -- function declaration with arguments
+      -- function declaration with [] arguments
       | `(functionDecl |
           fun $name:extendedIdent
           [$arguments:functionArg,*]
@@ -37,29 +57,34 @@ namespace Alloy.functionDecl
           $funExprs:exprOfFunIfDecl*
         }) =>
 
-          let allExpressions :=
-          funExprs.foldl
-            (fun
-              (input : List (expr) × List (functionIfDecl))
-              (fe : ExprOfFunIfDecl) =>
-                match fe with
-                | `(exprOfFunIfDecl|$e:expr) =>
-                  ((input.1.concat (expr.toType e)), input.2)
-                | `(exprOfFunIfDecl|$fid:functionIfDecl) =>
-                  (input.1, input.2.concat (functionIfDecl.toType fid))
-                | _ => unreachable!
-            )
-            ([], [])
-
-          let expressions := allExpressions.1
-          let ifExpressions := allExpressions.2
+          let splittetExpressions :=
+            (splitFunExpressions funExprs)
 
           {
             name := (extendedIdent.toName name).toString,
             arguments := (arguments.getElems.map fun a => functionArg.toType a).toList,
             outputType := typeExpr.toType outputType,
-            expressions := expressions,
-            ifExpressions := ifExpressions
+            expressions := splittetExpressions.1,
+            ifExpressions := splittetExpressions.2
+          }
+
+      -- function declaration with () arguments
+      | `(functionDecl |
+          fun $name:extendedIdent
+          ($arguments:functionArg,*)
+          : $outputType:typeExpr {
+          $funExprs:exprOfFunIfDecl*
+        }) =>
+
+          let splittetExpressions :=
+            (splitFunExpressions funExprs)
+
+          {
+            name := (extendedIdent.toName name).toString,
+            arguments := (arguments.getElems.map fun a => functionArg.toType a).toList,
+            outputType := typeExpr.toType outputType,
+            expressions := splittetExpressions.1,
+            ifExpressions := splittetExpressions.2
           }
 
       -- function declaration without arguments
@@ -69,28 +94,15 @@ namespace Alloy.functionDecl
           $funExprs:exprOfFunIfDecl*
         }) =>
 
-          let allExpressions :=
-          funExprs.foldl
-            (fun
-              (input : List (expr) × List (functionIfDecl))
-              (fe : ExprOfFunIfDecl) =>
-                match fe with
-                | `(exprOfFunIfDecl|$e:expr) =>
-                  ((input.1.concat (expr.toType e)), input.2)
-                | `(exprOfFunIfDecl|$fid:functionIfDecl) =>
-                  (input.1, input.2.concat (functionIfDecl.toType fid))
-                | _ => unreachable!
-            )
-            ([], [])
+          let splittetExpressions :=
+            (splitFunExpressions funExprs)
 
-          let expressions := allExpressions.1
-          let ifExpressions := allExpressions.2
           {
             name := (extendedIdent.toName name).toString,
             arguments := default,
             outputType := typeExpr.toType outputType,
-            expressions := expressions,
-            ifExpressions := ifExpressions
+            expressions := splittetExpressions.1,
+            ifExpressions := splittetExpressions.2
           }
 
       | _ => default
