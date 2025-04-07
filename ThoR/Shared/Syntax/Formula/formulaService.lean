@@ -85,6 +85,13 @@ namespace Shared.formula
             (te.replaceCalls callables)
             (forms.map fun f => f.replaceCalls callables)
 
+        | formula.letDeclaration name value body =>
+          formula.letDeclaration
+            name
+            (value.replaceCalls callables)
+            (body.map fun f => f.replaceCalls callables)
+
+
   private def unhygienicUnfolder
     (input : Unhygienic (Term))
     : Term := Unhygienic.run do
@@ -331,6 +338,32 @@ namespace Shared.formula
 
           return formulaGroup
 
+      | formula.letDeclaration name value body =>
+        let nameT := mkIdent name
+        let valueT :=
+          unhygienicUnfolder
+            (← value.toTerm' blockName variableNames callableVariables callablePredicates)
+        let e_bodyT :=
+          (body.map fun e =>
+            e.toTerm' blockName variableNames callableVariables callablePredicates
+            )
+        let mut bodyTermList : List Term := []
+        for elem in e_bodyT do
+          match elem with
+            | Except.error msg => throw msg
+            | Except.ok data => bodyTermList := bodyTermList.concat (unhygienicUnfolder data)
+
+
+        if bodyTermList.isEmpty then throw s!"let {name}={value} has empty body"
+
+        let mut bodyTerm := `(term | ($(bodyTermList.get! 0)))
+        for elem in bodyTermList do
+          bodyTerm := `(bodyTerm ∧ ($(elem)))
+
+        let letTerm := `(let $(nameT):ident := $(valueT):term; $(unhygienicUnfolder bodyTerm))
+
+        return letTerm
+
   def toTerm
     (f: formula)
     (blockName : Name)
@@ -345,41 +378,35 @@ namespace Shared.formula
       | Except.error msg => throw msg
       | Except.ok data => return unhygienicUnfolder data
 
-  /--
-  Parses the given syntax to the type
-  -/
-  partial def toType
-    (f : Formula)
+  partial def toType_withoutIf
+    (f : Formula_without_if)
     (signatureFactSigNames : List String := [])
     : formula :=
       match f with
-        | `(formula| ( $f:formula )) => toType f
+        | `(formula_without_if| ( $fwi:formula_without_if )) =>
+          toType_withoutIf fwi
 
-        | `(formula| $name:ident) =>
+        | `(formula_without_if| $name:ident) =>
           formula.string name.getId.toString
 
-        | `(formula| $predName:ident [$predargs,*]) =>
+        | `(formula_without_if| $predName:ident [$predargs,*]) =>
           formula.pred_with_args predName.getId.toString
             (predargs.getElems.map fun (elem) =>
               expr.toType elem signatureFactSigNames).toList
 
-        | `(formula| $op:unRelBoolOp $expression:expr ) =>
+        | `(formula_without_if| $op:unRelBoolOp $expression:expr ) =>
           formula.unaryRelBoolOperation
             (unRelBoolOp.toType op) (expr.toType expression signatureFactSigNames)
 
-        | `(formula| $op:unLogOp $f:formula ) =>
+        | `(formula_without_if| $op:unLogOp $f:formula_without_if ) =>
           formula.unaryLogicOperation
-            (unLogOp.toType op) (toType f)
+            (unLogOp.toType op) (toType_withoutIf f)
 
-        | `(formula| $form1:formula $op:binLogOp $form2:formula) =>
+        | `(formula_without_if| $form1:formula_without_if $op:binLogOp $form2:formula_without_if) =>
           formula.binaryLogicOperation
-            (binLogOp.toType op) (toType form1) (toType form2)
+            (binLogOp.toType op) (toType_withoutIf form1) (toType_withoutIf form2)
 
-        | `(formula| if $form1 then $form2 else $form3) =>
-          formula.tertiaryLogicOperation terLogOp.ifelse
-            (toType form1) (toType form2) (toType form3)
-
-        | `(formula|
+        | `(formula_without_if|
             $algExpr1:algExpr
             $compOp:algCompareOp
             $algExpr2:algExpr) =>
@@ -388,7 +415,7 @@ namespace Shared.formula
             (algExpr.toType algExpr1)
             (algExpr.toType algExpr2)
 
-        | `(formula|
+        | `(formula_without_if|
             $expr1:expr
             $op:relCompareOp
             $expr2:expr) =>
@@ -397,60 +424,94 @@ namespace Shared.formula
             (expr.toType expr1 signatureFactSigNames)
             (expr.toType expr2 signatureFactSigNames)
 
-        | `(formula|
+        | `(formula_without_if|
             $q:quant
             disj
             $names:ident,* :
             $typeExpression:typeExpr |
-            $form:formula
+            $form:formula_without_if
             ) =>
           formula.quantification
           (quant.toType q)
           true
           (names.getElems.map fun (elem) => elem.getId.toString).toList
           (typeExpr.toType typeExpression)
-          ([toType form])
+          ([toType_withoutIf form])
 
-        | `(formula|
+        | `(formula_without_if|
             $q:quant
             disj
             $names:ident,* :
             $typeExpression:typeExpr |
-            { $form:formula* }
+            { $form:formula_without_if* }
             ) =>
           formula.quantification
           (quant.toType q)
           true
           (names.getElems.map fun (elem) => elem.getId.toString).toList
           (typeExpr.toType typeExpression)
-          (form.map fun f => toType f).toList
+          (form.map fun f => toType_withoutIf f).toList
 
-        | `(formula|
+        | `(formula_without_if|
             $q:quant
             $names:ident,* :
             $typeExpression:typeExpr |
-            $form:formula
+            $form:formula_without_if
             ) =>
           formula.quantification
           (quant.toType q)
           false
           (names.getElems.map fun (elem) => elem.getId.toString).toList
           (typeExpr.toType typeExpression)
-          ([toType form])
+          ([toType_withoutIf form])
 
-        | `(formula|
+        | `(formula_without_if|
             $q:quant
             $names:ident,* :
             $typeExpression:typeExpr |
-            {$form:formula*}
+            {$form:formula_without_if*}
             ) =>
           formula.quantification
           (quant.toType q)
           false
           (names.getElems.map fun (elem) => elem.getId.toString).toList
           (typeExpr.toType typeExpression)
-          (form.map fun f => toType f).toList
+          (form.map fun f => toType_withoutIf f).toList
 
+        -- let declaration
+        | `(formula | $alloy_let_decl:alloyLetDecl) =>
+          match alloy_let_decl with
+            | `(alloyLetDecl | let $name:ident = $value:formula_without_if | $body:formula_without_if) =>
+              formula.letDeclaration
+                (name := name.getId)
+                (value := formula.toType_withoutIf value)
+                (body := [formula.toType_withoutIf body])
+            | `(alloyLetDecl | let $name:ident = $value:formula_without_if | { $body:formula_without_if* }) =>
+              formula.letDeclaration
+                (name := name.getId)
+                (value := formula.toType_withoutIf value)
+                (body := (body.map fun e => formula.toType_withoutIf e).toList)
+            | _ => formula.unaryRelBoolOperation
+                unRelBoolOp.no
+                (expr.const constant.none) -- unreachable
+
+        | _ => formula.unaryRelBoolOperation
+                unRelBoolOp.no
+                (expr.const constant.none) -- unreachable
+
+  /--
+  Parses the given syntax to the type
+  -/
+  partial def toType
+    (f : Formula)
+    (signatureFactSigNames : List String := [])
+    : formula :=
+      match f with
+        | `(formula| $fwi:formula_without_if) =>
+          toType_withoutIf fwi signatureFactSigNames
+        | `(formula| $form1:formula => $form2:formula else $form3:formula) =>
+            formula.tertiaryLogicOperation terLogOp.ifelse
+              (toType form1) (toType form2) (toType form3)
         | _ => formula.unaryRelBoolOperation
                 unRelBoolOp.no
                 (expr.const constant.none) -- unreachable
@@ -476,6 +537,10 @@ namespace Shared.formula
           ((f.map fun form =>
             form.getReqDefinitions).join
               ).filter fun (elem) => !(n.contains elem)
+        | formula.letDeclaration _ value body =>
+          let value_rd := value.getReqDefinitions
+          let body_rds := (body.map fun e => e.getReqDefinitions).join
+          body_rds ++ value_rd
 
   /--
   Returns the required variables for the formula to work in Lean
@@ -502,6 +567,13 @@ namespace Shared.formula
             form.getReqVariables).join)
             ++ e.getReqVariables).filter
             fun (elem) => !(n.contains elem) -- quantor vars are not required
+        | formula.letDeclaration name value body =>
+          let value_rv := value.getReqVariables
+          let body_rvs :=
+            (body.map fun e => e.getReqVariables).join.filter
+              -- the name is not required in the body
+              fun elem => !(name.toString == elem)
+          body_rvs ++ value_rv
 
   /--
   Gets all calls to the `callablePredicates`
@@ -559,6 +631,14 @@ namespace Shared.formula
           for form in f do
             result := result ++ (← form.getCalledPredicates callablePredicates callableVariables)
           return result
+
+        | formula.letDeclaration _ value body =>
+          let value_cp ← value.getCalledPredicates callablePredicates callableVariables
+          let mut body_cps := []
+          for element in body do
+            let calledPreds ← element.getCalledPredicates callablePredicates callableVariables
+            body_cps := body_cps ++ calledPreds
+          return body_cps ++ value_cp
 
         | _ => return []
 
@@ -625,6 +705,14 @@ namespace Shared.formula
 
           return typeExprRelCalls ++ result
 
+        | formula.letDeclaration _ value body =>
+          let value_cp ← value.getCalledVariables callableVariables
+          let mut body_cps := []
+          for element in body do
+            let calledPreds ← element.getCalledVariables callableVariables
+            body_cps := body_cps ++ calledPreds
+          return body_cps ++ value_cp
+
         | _ => return []
 
   partial def simplifyDomainRestrictions
@@ -656,6 +744,13 @@ namespace Shared.formula
         n
         (t.simplifyDomainRestrictions st)
         (f.map fun f => f.simplifyDomainRestrictions st)
+
+      | formula.letDeclaration name value body =>
+        formula.letDeclaration
+          (name)
+          (value.simplifyDomainRestrictions st)
+          (body.map fun f => f.simplifyDomainRestrictions st)
+
       | _ => f
 
   partial def insertModuleVariables
@@ -695,6 +790,13 @@ namespace Shared.formula
         (t.insertModuleVariables moduleVariables openVariables)
         (f.map fun f =>
           f.insertModuleVariables moduleVariables openVariables)
+
+      | formula.letDeclaration name value body =>
+        formula.letDeclaration
+          (name)
+          (value.insertModuleVariables moduleVariables openVariables)
+          (body.map fun f => f.insertModuleVariables moduleVariables openVariables)
+
       | _ => f
 
   /--
@@ -738,6 +840,13 @@ namespace Shared.formula
           (t.replaceThisCalls moduleName)
           (f.map fun f =>
             f.replaceThisCalls moduleName)
+
+      | formula.letDeclaration name value body =>
+        formula.letDeclaration
+          (name)
+          (value.replaceThisCalls moduleName)
+          (body.map fun f => f.replaceThisCalls moduleName)
+
       | _ => f
 
   partial def getFunctionCalls
