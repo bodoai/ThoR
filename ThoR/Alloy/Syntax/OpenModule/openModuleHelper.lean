@@ -5,7 +5,8 @@ Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
 
-import ThoR.Alloy.Syntax.alloyData
+import ThoR.Alloy.Syntax.AlloyData.alloyData
+import ThoR.Alloy.Syntax.AlloyData.alloyDataService
 import ThoR.Alloy.Syntax.OpenModule.openModule
 
 open Lean

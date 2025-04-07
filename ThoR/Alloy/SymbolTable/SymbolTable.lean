@@ -88,7 +88,6 @@ namespace Alloy
         inner_spaces ++ s!"axiomDecls := {axiomDeclsString}," ++ "\n" ++
         inner_spaces ++ s!"assertDecls := {assertDeclsString}," ++ "\n" ++
         inner_spaces ++ s!"requiredDecls := {st.requiredDecls}," ++ "\n" ++
-        inner_spaces ++ s!"varDecls := {st.variableDecls}," ++ "\n" ++
         outer_spaces ++ "⦄"
 
       if leading_new_line then

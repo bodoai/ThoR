@@ -10,7 +10,6 @@ service functions to manage them.
 import ThoR.Basic
 
 import ThoR.Shared.Syntax.TypeExpr.typeExpr
-import ThoR.Shared.Syntax.TypeExpr.typeExprService
 
 import ThoR.Alloy.Syntax.Signature.Inheritance.sigExtExtends
 import ThoR.Alloy.Syntax.Signature.Inheritance.sigExtIn
@@ -99,15 +98,6 @@ namespace Alloy
         | sigExt.none => -- no extension is univ
             typeExpr.multExpr m
                 (expr.const constant.univ)
-
-    /--
-    Gets the required variables for the extensions
-    -/
-    def getReqVariables (se : sigExt) : List (String) :=
-      match se with
-        | sigExt.extends ext => ext.type.getReqVariables
-        | sigExt.in extIn => extIn.type.getReqVariables
-        | sigExt.none => []
 
   end sigExt
 

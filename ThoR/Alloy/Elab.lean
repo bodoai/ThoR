@@ -6,3 +6,4 @@ Authors: s. file CONTRIBUTORS
 
 import ThoR.Alloy.Elab.AlloyBlock.alloyBlock
 import ThoR.Alloy.Elab.CreateCommand.create
+import ThoR.Alloy.Elab.BlocklessAlloy.blocklessAlloy

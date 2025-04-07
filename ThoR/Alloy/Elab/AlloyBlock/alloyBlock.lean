@@ -5,7 +5,9 @@ Authors: s. file CONTRIBUTORS
 -/
 
 import ThoR.Alloy.Syntax.SeparatedNamespace
-import ThoR.Alloy.Syntax.alloyData
+import ThoR.Alloy.Syntax.AlloyData.alloyData
+import ThoR.Alloy.Syntax.AlloyData.alloyDataService
+import ThoR.Alloy.Syntax.AST.ASTService
 import ThoR.Alloy.Syntax.OpenModule.openModuleHelper
 import ThoR.Alloy.Syntax.Signature.SigDecl.sigDeclService
 

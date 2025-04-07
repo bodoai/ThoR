@@ -4,7 +4,7 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
-import ThoR.Alloy.Syntax.property
+import ThoR.Alloy.Syntax.Property.property
 
 import ThoR.Alloy.Syntax.SeparatedNamespace.extendedIdent
 
@@ -34,46 +34,7 @@ namespace Alloy
     toString (ad : assertDecl) : String :=
       s!"assert : {property.toString ad}"
 
-  namespace assertDecl
-
-    /-- Generates a String representation from the type -/
-    def toString (ad : assertDecl) : String := ToString.toString ad
-
-    /-- Generates a type representation from the TSyntax -/
-    def toType (ad : AssertDecl) : assertDecl :=
-      match ad with
-        | `(assertDecl| assert $name:extendedIdent $p:property) =>
-           property.toType (extendedIdent.toName name) p
-
-        | _ => default
-
-    /--
-    Extracts all required definitions (i.e. references to preds)
-    from the formulas of the type
-    -/
-    def getReqDefinitions
-      (ad : assertDecl)
-      : List (String) := Id.run do
-        let mut result : List (String) := []
-
-        for form in ad.formulas do
-          result := result ++ form.getReqDefinitions
-
-        return result
-
-    /--
-    Extracts all required variables from the formulas of the type
-    -/
-    def getReqVariables
-      (ad : assertDecl)
-      : List (String) := Id.run do
-        let mut result : List (String) := []
-
-        for form in ad.formulas do
-          result := result ++ form.getReqVariables
-
-        return result
-
-  end assertDecl
+  /-- Generates a String representation from the type -/
+  def assertDecl.toString (ad : assertDecl) : String := ToString.toString ad
 
 end Alloy
