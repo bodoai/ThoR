@@ -31,4 +31,15 @@ namespace Alloy.assertDecl
       ad.formulas.map fun f => f.replaceThisCalls moduleName
     {ad with formulas := formulas}
 
+  def getFunctionCalls
+    (ad : assertDecl)
+    (callableFunctions : List (commandDecl))
+    (callableVariables : List (varDecl))
+    : Except String
+      (List (commandDecl × List (Shared.expr × List (String × List (varDecl))))) := do
+      let mut result := []
+      for form in ad.formulas do
+        result := result.append (← form.getFunctionCalls callableFunctions callableVariables)
+      return result
+
 end Alloy.assertDecl

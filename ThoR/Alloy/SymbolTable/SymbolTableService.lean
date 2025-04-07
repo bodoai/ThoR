@@ -496,6 +496,9 @@ to be better digestible for further computation and transformation into Lean.
                 cv.name == a.expression.getStringData).get! 0
             (a, fv)
 
+        let functionCalls ←
+          predDecl.getFunctionCalls st.getFunctionDeclarations st.variableDecls
+
         st := st.addDefDecl
           (
             commandDecl.mk (name := declarationName)
@@ -505,6 +508,7 @@ to be better digestible for further computation and transformation into Lean.
             (requiredVars := reqVars)
             (requiredDefs := reqDefs)
             (predCalls := [])
+            (functionCalls := functionCalls)
             (relationCalls := variableCalls.relationCalls)
             (signatureCalls := variableCalls.signatureCalls)
           )
@@ -516,28 +520,17 @@ to be better digestible for further computation and transformation into Lean.
 
       -- add calls to preds only after all preds are defined
       let mut newPredDefDecls := []
-      for predDefDecl in st.defDecls do
+      for predDefDecl in st.getPredicateDeclarations do
         let mut predicateCalls := []
         for form in predDefDecl.formulas do
           predicateCalls :=
             predicateCalls ++
-            (← form.getCalledPredicates st.defDecls st.variableDecls)
+            (← form.getCalledPredicates st.getPredicateDeclarations st.variableDecls)
 
-        let newPredDefDecl :=
-          commandDecl.mk
-            (name := predDefDecl.name)
-            (commandType := predDefDecl.commandType)
-            (predArgs := predDefDecl.predArgs)
-            (formulas := predDefDecl.formulas)
-            (requiredVars := predDefDecl.requiredVars)
-            (requiredDefs := predDefDecl.requiredDefs)
-            (predCalls := predicateCalls)
-            (relationCalls := predDefDecl.relationCalls)
-            (signatureCalls := predDefDecl.signatureCalls)
+        newPredDefDecls :=
+          newPredDefDecls.concat (predDefDecl.updatePredCalls predicateCalls)
 
-        newPredDefDecls := newPredDefDecls.concat newPredDefDecl
-
-      return {st with defDecls := newPredDefDecls}
+      return st.updatePredicateDeclarations newPredDefDecls
 
     /--
     Adds the given fact declarations in the corosponding form (commandDecl) to the ST
@@ -567,6 +560,9 @@ to be better digestible for further computation and transformation into Lean.
                 st.getPredicateDeclarations
                 st.variableDecls)
 
+        let functionCalls ←
+          factDecl.getFunctionCalls st.getFunctionDeclarations st.variableDecls
+
         -- get relation and signature calls
         let variableCalls ←
           get_relation_and_signature_calls_from_formulas factDecl.formulas st.variableDecls
@@ -595,6 +591,7 @@ to be better digestible for further computation and transformation into Lean.
             (requiredVars := reqVars)
             (requiredDefs := reqDefs)
             (predCalls := predicateCalls)
+            (functionCalls := functionCalls)
             (relationCalls := variableCalls.relationCalls)
             (signatureCalls := variableCalls.signatureCalls)
           )
@@ -657,9 +654,11 @@ to be better digestible for further computation and transformation into Lean.
             (functionArgs := newArgs)
             (functionReturnType := functionDecl.outputType)
             (expressions := functionDecl.expressions)
+            (ifExpressions := functionDecl.ifExpressions)
             (requiredVars := reqVars)
             (requiredDefs := default)
             (predCalls := default)
+            (functionCalls := [])
             (relationCalls := variableCalls.relationCalls)
             (signatureCalls := variableCalls.signatureCalls)
           )
@@ -669,7 +668,19 @@ to be better digestible for further computation and transformation into Lean.
             := List.eraseDups (st.requiredDecls ++ (reqVars))
           }
 
-      return st
+      -- add calls to functions only after all functions are defined
+      let mut newFunctionDefDecls := []
+      for functionDefDecl in st.getFunctionDeclarations do
+        let mut functionCalls := []
+        for expr in functionDefDecl.expressions do
+          functionCalls :=
+            functionCalls ++
+            (← expr.getFunctionCalls st.defDecls st.variableDecls)
+
+        newFunctionDefDecls :=
+          newFunctionDefDecls.concat (functionDefDecl.updateFunctionCalls functionCalls)
+
+      return st.updateFunctionDeclarations newFunctionDefDecls
 
     /--
     Adds the given assert declarations in the corosponding form (commandDecl) to the ST
@@ -718,6 +729,9 @@ to be better digestible for further computation and transformation into Lean.
           declarationName :=
             s!"{moduleName}{signatureSeparator}{declarationName}"
 
+        let functionCalls ←
+          assertDecla.getFunctionCalls st.getFunctionDeclarations st.variableDecls
+
         st := st.addAssertDecl
           (
             commandDecl.mk
@@ -727,6 +741,7 @@ to be better digestible for further computation and transformation into Lean.
             (requiredVars := reqVars)
             (requiredDefs := reqDefs)
             (predCalls := predicateCalls)
+            (functionCalls := functionCalls)
             (relationCalls := variableCalls.relationCalls)
             (signatureCalls := variableCalls.signatureCalls)
           )
@@ -746,14 +761,14 @@ to be better digestible for further computation and transformation into Lean.
         let mut st := input
         if module_name == default then
           st := st.addSigs ast.sigDecls
-          st ← st.addPreds ast.predDecls
           st ← st.addFunctions ast.functionDecls
+          st ← st.addPreds ast.predDecls
           st ←  st.addFacts ast.factDecls
           st ←  st.addAsserts ast.assertDecls
         else
           st := st.addSigs ast.sigDecls module_name
-          st ← st.addPreds ast.predDecls module_name
           st ← st.addFunctions ast.functionDecls module_name
+          st ← st.addPreds ast.predDecls module_name
           st ←  st.addFacts ast.factDecls module_name
           st ←  st.addAsserts ast.assertDecls module_name
         return st

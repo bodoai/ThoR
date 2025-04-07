@@ -6,6 +6,7 @@ Authors: s. file CONTRIBUTORS
 
 import ThoR.Alloy.Syntax.Function.FunctionDecl.functionDecl
 import ThoR.Alloy.Syntax.Function.FunctionArg.functionArgService
+import ThoR.Alloy.Syntax.Function.FunctionIfDecl.functionIfDeclService
 import ThoR.Shared.Syntax.Relation.Expr.exprService
 import ThoR.Shared.Syntax.TypeExpr.typeExprService
 
@@ -23,36 +24,95 @@ namespace Alloy.functionDecl
       (fd.arguments.map fun argument => argument.getReqVariables).join ++
       (fd.expressions.map fun expression => expression.getReqVariables).join
 
+  def getFunctionCalls
+    (fd : functionDecl)
+    (callableFunctions : List (commandDecl))
+    (callableVariables : List (varDecl))
+    : Except String
+      (List (commandDecl × List (expr × List (String × List (varDecl))))) := do
+      let mut result := []
+      for expression in fd.expressions do
+        result := result.append (← expression.getFunctionCalls callableFunctions callableVariables)
+      return result
+  /--
+  Splits the input array intp a List of expr and a List of functionIfDelcs.
+  Then returns both.
+  -/
+  private def splitFunExpressions
+    (input : TSyntaxArray `exprOfFunIfDecl)
+    : List expr × List functionIfDecl :=
+      input.foldl
+        (fun
+          (input : List (expr) × List (functionIfDecl))
+          (fe : ExprOfFunIfDecl) =>
+            match fe with
+            | `(exprOfFunIfDecl|$e:expr) =>
+              ((input.1.concat (expr.toType e)), input.2)
+            | `(exprOfFunIfDecl|$fid:functionIfDecl) =>
+              (input.1, input.2.concat (functionIfDecl.toType fid))
+            | _ => unreachable!
+        )
+        ([], [])
+
   /--
   Parses te given syntax to a structure of functionDecl if possible
   -/
   def toType (pd : FunctionDecl) : functionDecl :=
     match pd with
-      -- function declaration with arguments
+      -- function declaration with [] arguments
       | `(functionDecl |
           fun $name:extendedIdent
           [$arguments:functionArg,*]
           : $outputType:typeExpr {
-          $expressions:expr*
+          $funExprs:exprOfFunIfDecl*
         }) =>
+
+          let splittetExpressions :=
+            (splitFunExpressions funExprs)
+
           {
             name := (extendedIdent.toName name).toString,
             arguments := (arguments.getElems.map fun a => functionArg.toType a).toList,
             outputType := typeExpr.toType outputType,
-            expressions := (expressions.map fun e => (expr.toType e)).toList
+            expressions := splittetExpressions.1,
+            ifExpressions := splittetExpressions.2
+          }
+
+      -- function declaration with () arguments
+      | `(functionDecl |
+          fun $name:extendedIdent
+          ($arguments:functionArg,*)
+          : $outputType:typeExpr {
+          $funExprs:exprOfFunIfDecl*
+        }) =>
+
+          let splittetExpressions :=
+            (splitFunExpressions funExprs)
+
+          {
+            name := (extendedIdent.toName name).toString,
+            arguments := (arguments.getElems.map fun a => functionArg.toType a).toList,
+            outputType := typeExpr.toType outputType,
+            expressions := splittetExpressions.1,
+            ifExpressions := splittetExpressions.2
           }
 
       -- function declaration without arguments
       | `(functionDecl |
           fun $name:extendedIdent
           : $outputType:typeExpr {
-          $expressions:expr*
+          $funExprs:exprOfFunIfDecl*
         }) =>
+
+          let splittetExpressions :=
+            (splitFunExpressions funExprs)
+
           {
             name := (extendedIdent.toName name).toString,
             arguments := default,
             outputType := typeExpr.toType outputType,
-            expressions := (expressions.map fun e => (expr.toType e)).toList
+            expressions := splittetExpressions.1,
+            ifExpressions := splittetExpressions.2
           }
 
       | _ => default
