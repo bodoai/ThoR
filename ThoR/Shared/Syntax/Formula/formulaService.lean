@@ -18,6 +18,7 @@ import ThoR.Relation.Quantification
 import ThoR.Alloy.Config
 
 import ThoR.Alloy.Syntax.AlloyData.alloyData
+import ThoR.Alloy.UnhygienicUnfolder
 
 open Alloy ThoR ThoR.Quantification
 open Lean ThoR Config
@@ -93,12 +94,6 @@ namespace Shared.formula
             name
             (value.replaceCalls callables)
             (body.map fun f => f.replaceCalls callables)
-
-
-  private def unhygienicUnfolder
-    (input : Unhygienic (Term))
-    : Term := Unhygienic.run do
-    return ← input
 
   partial def toTermOutsideBlock
     (f : formula)
@@ -242,6 +237,30 @@ namespace Shared.formula
                 ))
 
           return unhygienicUnfolder formulaGroup
+
+      | formula.letDeclaration name value body =>
+        let nameT := mkIdent name
+        let valueT :=
+          (← value.toTermOutsideBlock availableAlloyData localContextUserNames)
+        let e_bodyT :=
+          (body.map fun e =>
+            e.toTermOutsideBlock availableAlloyData localContextUserNames
+            )
+        let mut bodyTermList : List Term := []
+        for elem in e_bodyT do
+          match elem with
+            | Except.error msg => throw msg
+            | Except.ok data => bodyTermList := bodyTermList.concat data
+
+        if bodyTermList.isEmpty then throw s!"let {name}={value} has empty body"
+
+        let mut bodyTerm := unhygienicUnfolder `(term | ($(bodyTermList.get! 0)))
+        for elem in bodyTermList do
+          bodyTerm := unhygienicUnfolder `(bodyTerm ∧ ($(elem)))
+
+        let letTerm := unhygienicUnfolder `(let $(nameT):ident := $(valueT):term; $(bodyTerm))
+
+        return letTerm
 
   /--
   Generates a Lean term corosponding with the type

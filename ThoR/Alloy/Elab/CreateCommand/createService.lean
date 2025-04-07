@@ -4,7 +4,7 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 
-import ThoR.Alloy.Syntax.AST
+import ThoR.Alloy.Syntax.AST.AST
 import ThoR.Alloy.SymbolTable.SymbolTable
 import ThoR.Alloy.SymbolTable.SymbolTableService
 
@@ -111,10 +111,10 @@ namespace Alloy
 
 
         let fe := (expressions.get! 0)
-        bodyTerm := fe.toTermFromBlock blockName
+        bodyTerm ← fe.toTermFromBlock blockName
 
         for expression in expressions.drop 1 do
-          let newTerm := expression.toTermFromBlock blockName
+          let newTerm ← expression.toTermFromBlock blockName
           bodyTerm := unhygienicUnfolder `($bodyTerm ∧ ($newTerm))
 
       -- and ifExpressions
@@ -131,12 +131,10 @@ namespace Alloy
           let conditionTerm ←
             ifExpression.condition.toTerm blockName cd.requiredVars callableVariables cd.predCalls
 
-          let thenTerm := ifExpression.thenBody.toTermFromBlock blockName
-          let elseTerm :=
-            if ifExpression.hasElse then
-              ifExpression.thenBody.toTermFromBlock blockName
-            else
-              unhygienicUnfolder `(True)
+          let thenTerm ← ifExpression.thenBody.toTermFromBlock blockName
+          let mut elseTerm := unhygienicUnfolder `(True)
+          if ifExpression.hasElse then
+            elseTerm ← ifExpression.thenBody.toTermFromBlock blockName
 
           -- possibly wrong
           let newTerm := unhygienicUnfolder `(if ( $(conditionTerm) == True) then $(thenTerm) else $(elseTerm))

@@ -5,7 +5,8 @@ Authors: s. file CONTRIBUTORS
 -/
 
 import ThoR.Alloy.Syntax.SeparatedNamespace
-import ThoR.Alloy.Syntax.alloyData
+import ThoR.Alloy.Syntax.AlloyData.alloyData
+import ThoR.Alloy.Syntax.AlloyData.alloyDataService
 import ThoR.Alloy.Elab.CreateCommand.createService
 import ThoR.Alloy.InheritanceTree.UnTyped.InheritanceTree
 

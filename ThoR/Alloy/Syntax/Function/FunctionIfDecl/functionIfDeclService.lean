@@ -21,13 +21,13 @@ namespace Alloy.functionIfDecl
     (callablePredicates : List (commandDecl × List (expr × List (String × List varDecl))))
     : Except String Term := do
       let conditionTerm ← fid.condition.toTerm blockName variableNames callableVariables callablePredicates
-      let thenBodyTerm := fid.thenBody.toTermFromBlock blockName
+      let thenBodyTerm ← fid.thenBody.toTermFromBlock blockName
 
       let mut term : Unhygienic Term :=
         `($(conditionTerm) → $(thenBodyTerm))
 
       if fid.hasElse then
-        let elseBodyTerm := fid.elseBody.toTermFromBlock blockName
+        let elseBodyTerm ← fid.elseBody.toTermFromBlock blockName
         term :=
           `(term |
             ($(unhygienicUnfolder term)) ∧
