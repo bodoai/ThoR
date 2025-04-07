@@ -29,6 +29,10 @@ namespace Alloy
         if logging then
           logInfo s!"Module data for {ident.getId.toString} found:\n\n {ad}"
 
+        if ad.isCreated then
+          logError s!"The module has already been created."
+          return
+
         let st := ad.st
         let ast := ad.ast
 
@@ -42,32 +46,40 @@ namespace Alloy
           match except_commands with
             | Except.error msg => throwError msg
             | Except.ok commands =>
-                let mut commandString : String := ""
+              let mut commandString : String := ""
 
-                for command in commands do
-                  elabCommand command
-                  commandString := s!"{commandString} {command.raw.prettyPrint} \n\n"
+              for command in commands do
+                elabCommand command
+                commandString := s!"{commandString} {command.raw.prettyPrint} \n\n"
 
-                if logging then
-                  logInfo commandString
+              if logging then
+                logInfo commandString
 
-                let it :=  InheritanceTree.create ast
-                if logging then
-                  logInfo it.toString
+              let it :=  InheritanceTree.create ast
+              if logging then
+                logInfo it.toString
 
-                let extensionAxiomCommands :=
-                  it.createInheritanceAxiomCommands
-                    (blockName := ident.getId)
-                    st.getSignatureNames st.getSignatureRNames
+              let extensionAxiomCommands :=
+                it.createInheritanceAxiomCommands
+                  (blockName := ident.getId)
+                  st.getSignatureNames st.getSignatureRNames
 
-                let mut extensionAxiomCommandsString := ""
-                for axiomCommand in extensionAxiomCommands do
-                  elabCommand axiomCommand
-                  extensionAxiomCommandsString :=
-                    s!"{extensionAxiomCommandsString} {axiomCommand.raw.prettyPrint} \n\n"
+              let mut extensionAxiomCommandsString := ""
+              for axiomCommand in extensionAxiomCommands do
+                elabCommand axiomCommand
+                extensionAxiomCommandsString :=
+                  s!"{extensionAxiomCommandsString} {axiomCommand.raw.prettyPrint} \n\n"
 
-                if logging then
-                  logInfo extensionAxiomCommandsString
+              if logging then
+                logInfo extensionAxiomCommandsString
+
+              let newMonadeEnv :=
+              updateAlloyData (← getEnv) {ad with isCreated := true}
+
+              match newMonadeEnv with
+                | Except.ok nme => setEnv nme
+                | Except.error msg => logError s!"Failed to set the alloy data \
+                to created: {msg}"
 
       else
         logError s!"Cannot create {ident.getId.toString}, it does not exist."
