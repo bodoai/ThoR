@@ -267,8 +267,8 @@ namespace Shared.expr
             return unhygienicUnfolder `((
               ∻ $(mkIdent s!"{blockName}.vars.{s}".toName)
             ))
-          else
-            return unhygienicUnfolder `($(mkIdent s.toName))
+
+          return unhygienicUnfolder `($(mkIdent s.toName))
 
         | expr.callFromOpen sn =>
           let snt := sn.representedNamespace.getId.toString
