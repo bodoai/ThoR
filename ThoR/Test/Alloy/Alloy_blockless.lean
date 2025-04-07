@@ -14,8 +14,6 @@ startTestBlock model1
 
 lemma l1 : 1=1 := by
   have h1 : [alloy| univ = univ] := by sorry
-  -- TODO lookup a in AST in environment
-  -- This should work: have h2 : [alloy| a = univ] := by sorry
   have h2 : [alloy| @ model1.vars.a = univ] := by sorry
   have h3 : [alloy| a = univ] := by sorry
 
