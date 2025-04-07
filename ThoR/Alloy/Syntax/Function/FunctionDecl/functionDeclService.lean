@@ -24,6 +24,16 @@ namespace Alloy.functionDecl
       (fd.arguments.map fun argument => argument.getReqVariables).join ++
       (fd.expressions.map fun expression => expression.getReqVariables).join
 
+  def getFunctionCalls
+    (fd : functionDecl)
+    (callableFunctions : List (commandDecl))
+    (callableVariables : List (varDecl))
+    : Except String
+      (List (commandDecl × List (expr × List (String × List (varDecl))))) := do
+      let mut result := []
+      for expression in fd.expressions do
+        result := result.append (← expression.getFunctionCalls callableFunctions callableVariables)
+      return result
   /--
   Splits the input array intp a List of expr and a List of functionIfDelcs.
   Then returns both.

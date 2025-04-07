@@ -66,4 +66,12 @@ namespace Alloy.predArg
     {pa with expression :=
       pa.expression.replaceThisCalls moduleName}
 
+  def getFunctionCalls
+    (pa : predArg)
+    (callableFunctions : List (commandDecl))
+    (callableVariables : List (varDecl))
+    : Except String
+      (List (commandDecl × List (Shared.expr × List (String × List (varDecl))))) := do
+    pa.expression.getFunctionCalls callableFunctions callableVariables
+
 end Alloy.predArg

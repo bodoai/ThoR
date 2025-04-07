@@ -131,4 +131,18 @@ namespace Alloy.predDecl
       pd.forms.map fun f => f.replaceThisCalls moduleName
     { pd with args := args, forms := forms}
 
+  def getFunctionCalls
+    (pd : predDecl)
+    (callableFunctions : List (commandDecl))
+    (callableVariables : List (varDecl))
+    : Except String
+      (List (commandDecl × List (Shared.expr × List (String × List (varDecl))))) := do
+      let mut result := []
+      for form in pd.forms do
+        result := result.append (← form.getFunctionCalls callableFunctions callableVariables)
+      for arg in pd.args do
+        result := result.append (← arg.getFunctionCalls callableFunctions callableVariables)
+
+      return result
+
 end Alloy.predDecl

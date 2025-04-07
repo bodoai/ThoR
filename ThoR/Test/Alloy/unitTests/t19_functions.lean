@@ -45,6 +45,10 @@ fun ft [x : a] : a {
   else x
 }
 
+fun ft2 [x : a] : a {
+  x + x
+}
+
 /-
 pred pt {
   some b + ft[a]

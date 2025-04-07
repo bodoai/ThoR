@@ -59,24 +59,26 @@ namespace Alloy
           Make a Structure that conveys the meaning better?
           -/
           (predCalls : List (commandDecl × List (expr × List (String × List (varDecl)))))
+          (functionCalls : List (commandDecl × List (expr × List (String × List (varDecl)))))
           (relationCalls : List (String × List (varDecl))) -- called relations
           (signatureCalls : List (String × List (varDecl))) -- called signatures
   deriving Repr
   namespace commandDecl
 
-    def name | mk n _ _ _ _ _ _ _ _ _ _ _ _ => n
-    def commandType | mk  _ commandType _ _ _ _ _ _ _ _ _ _ _ => commandType
-    def predArgs | mk _ _ predArgs _ _ _ _ _ _ _ _ _ _ => predArgs
-    def functionArgs | mk _ _ _ functionArgs _ _ _ _ _ _ _ _ _ => functionArgs
-    def functionReturnType | mk _ _ _ _ functionReturnType _ _ _ _ _ _ _ _ => functionReturnType
-    def formulas | mk _ _ _ _ _ formulas _ _ _ _ _ _ _ => formulas
-    def expressions | mk _ _ _ _ _ _ expressions _ _ _ _ _ _ => expressions
-    def ifExpressions | mk _ _ _ _ _ _ _ ifExpressions _ _ _ _ _ => ifExpressions
-    def requiredDefs | mk _ _ _ _ _ _ _ _ requiredDefs _ _ _ _ => requiredDefs
-    def requiredVars | mk _ _ _ _ _ _ _ _ _ requiredVars _ _ _ => requiredVars
-    def predCalls | mk _ _ _ _ _ _ _ _ _ _ predCalls _ _ => predCalls
-    def relationCalls | mk _ _ _ _ _ _ _ _ _ _ _ relationCalls _ => relationCalls
-    def signatureCalls | mk _ _ _ _ _ _ _ _ _ _ _ _ signatureCalls => signatureCalls
+    def name | mk n _ _ _ _ _ _ _ _ _ _ _ _ _ => n
+    def commandType | mk  _ commandType _ _ _ _ _ _ _ _ _ _ _ _ => commandType
+    def predArgs | mk _ _ predArgs _ _ _ _ _ _ _ _ _ _ _ => predArgs
+    def functionArgs | mk _ _ _ functionArgs _ _ _ _ _ _ _ _ _ _ => functionArgs
+    def functionReturnType | mk _ _ _ _ functionReturnType _ _ _ _ _ _ _ _ _ => functionReturnType
+    def formulas | mk _ _ _ _ _ formulas _ _ _ _ _ _ _ _ => formulas
+    def expressions | mk _ _ _ _ _ _ expressions _ _ _ _ _ _ _ => expressions
+    def ifExpressions | mk _ _ _ _ _ _ _ ifExpressions _ _ _ _ _ _ => ifExpressions
+    def requiredDefs | mk _ _ _ _ _ _ _ _ requiredDefs _ _ _ _ _ => requiredDefs
+    def requiredVars | mk _ _ _ _ _ _ _ _ _ requiredVars _ _ _ _ => requiredVars
+    def predCalls | mk _ _ _ _ _ _ _ _ _ _ predCalls _ _ _ => predCalls
+    def functionCalls | mk _ _ _ _ _ _ _ _ _ _ _ functionCalls _  _ => functionCalls
+    def relationCalls | mk _ _ _ _ _ _ _ _ _ _ _ _ relationCalls _ => relationCalls
+    def signatureCalls | mk _ _ _ _ _ _ _ _ _ _ _ _ _ signatureCalls => signatureCalls
 
     instance : Inhabited commandDecl where
       default :=
@@ -87,6 +89,7 @@ namespace Alloy
           (requiredDefs := default)
           (requiredVars := default)
           (predCalls := default)
+          (functionCalls := default)
           (relationCalls := default)
           (signatureCalls := default)
 
@@ -104,6 +107,7 @@ namespace Alloy
             requiredDefs
             requiredVars
             predCalls
+            functionCalls
             relationCalls
             signatureCalls =>
           mk
@@ -118,6 +122,7 @@ namespace Alloy
             requiredDefs
             requiredVars
             predCalls
+            functionCalls
             relationCalls
             signatureCalls
 
@@ -135,6 +140,7 @@ namespace Alloy
             requiredDefs
             requiredVars
             predCalls
+            functionCalls
             relationCalls
             signatureCalls =>
           mk
@@ -149,6 +155,73 @@ namespace Alloy
             requiredDefs
             requiredVars
             predCalls
+            functionCalls
+            relationCalls
+            signatureCalls
+
+    def updatePredCalls
+      (predCalls : List (commandDecl × List (expr × List (String × List (varDecl)))))
+        | mk
+            name
+            commandType
+            predArgs
+            functionArgs
+            functionReturnType
+            formulas
+            expressions
+            ifExpressions
+            requiredDefs
+            requiredVars
+            _
+            functionCalls
+            relationCalls
+            signatureCalls =>
+          mk
+            name
+            commandType
+            predArgs
+            functionArgs
+            functionReturnType
+            formulas
+            expressions
+            ifExpressions
+            requiredDefs
+            requiredVars
+            predCalls
+            functionCalls
+            relationCalls
+            signatureCalls
+
+    def updateFunctionCalls
+      (functionCalls : List (commandDecl × List (expr × List (String × List (varDecl)))))
+        | mk
+            name
+            commandType
+            predArgs
+            functionArgs
+            functionReturnType
+            formulas
+            expressions
+            ifExpressions
+            requiredDefs
+            requiredVars
+            predCalls
+            _
+            relationCalls
+            signatureCalls =>
+          mk
+            name
+            commandType
+            predArgs
+            functionArgs
+            functionReturnType
+            formulas
+            expressions
+            ifExpressions
+            requiredDefs
+            requiredVars
+            predCalls
+            functionCalls
             relationCalls
             signatureCalls
 
@@ -171,34 +244,37 @@ namespace Alloy
     let predCallsString :=
       cd.predCalls.map fun pc =>
         s!"({toString pc.1} {pc.2})"
+    let functionCallsString :=
+      cd.functionCalls.map fun fc =>
+        s!"({toString fc.1} {fc.2})"
+
     s!"commandDeclaration : \{
         name := {cd.name},
         commandType := {cd.commandType},
-        { if
-            cd.commandType == commandType.pred
-          then
-            s!"args := {cd.predArgs},"
-          else "" }
-        { if
-            cd.commandType == commandType.function
-          then
-            s!"args := {cd.functionArgs},
-            functionReturnType := {cd.functionReturnType}"
-          else "" }
+        { if cd.commandType == commandType.pred then
+            s!"args := {cd.predArgs}, \n"
+          else "" }\
+        { if cd.commandType == commandType.function then
+            s!"args := {cd.functionArgs},\n "
+          else "" }\
+        { if cd.commandType == commandType.function then
+            s!"functionReturnType := {cd.functionReturnType}, \n"
+          else "" }\
         required definitions := {cd.requiredDefs},
         required variables := {cd.requiredVars},
         { if
             cd.commandType != commandType.function
           then
-            s!"called predicates := {predCallsString},"
-          else "" }
+            s!"called predicates := {predCallsString}, \n"
+          else "" }\
+        called functions := {functionCallsString},
         called relations := {cd.relationCalls},
         called signatures := {cd.signatureCalls},
         { if
             cd.commandType != commandType.function
           then
-            s!"formulas := {cd.formulas},"
-          else "" }
+            s!"formulas := {cd.formulas}, \n"
+          else "" }\
         { if
             cd.commandType == commandType.function &&
             !cd.expressions.isEmpty
