@@ -350,8 +350,12 @@ namespace Alloy
             inner_spaces ++ s!"formulas := {cd.formulas}," ++ "\n"
           else ""
         ) ++
-        ( if cd.commandType == commandType.function then
+        ( if cd.commandType == commandType.function && !cd.expressions.isEmpty then
             inner_spaces ++ s!"expressions := {cd.expressions}" ++ "\n"
+          else ""
+        ) ++
+        ( if cd.commandType == commandType.function && !cd.ifExpressions.isEmpty then
+            inner_spaces ++ s!"ifExpressions := {cd.ifExpressions}" ++ "\n"
           else ""
         ) ++
         outer_spaces ++ "⦄"
