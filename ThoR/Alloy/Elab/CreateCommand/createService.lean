@@ -132,11 +132,8 @@ namespace Alloy
             ifExpression.condition.toTerm blockName cd.requiredVars callableVariables cd.predCalls
 
           let thenTerm ← ifExpression.thenBody.toTermFromBlock blockName
-          let mut elseTerm := unhygienicUnfolder `(True)
-          if ifExpression.hasElse then
-            elseTerm ← ifExpression.thenBody.toTermFromBlock blockName
+          let elseTerm ← ifExpression.elseBody.toTermFromBlock blockName
 
-          -- possibly wrong
           let newTerm := unhygienicUnfolder `(if ( $(conditionTerm) == True) then $(thenTerm) else $(elseTerm))
 
           bodyTerm := unhygienicUnfolder `($bodyTerm ∧ ($newTerm))

@@ -102,7 +102,7 @@ namespace Shared
 
   syntax formula_without_if : formula
 
-  --Special tertiariy Syntax
+  --Special tertiariy Syntax (if else)
   syntax formula " => " formula " else " formula : formula
 
 
