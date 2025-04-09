@@ -125,7 +125,12 @@ namespace Alloy
       let monadeState ← get
       let monadeEnv := monadeState.env
 
-      let mut ast := AST.create name specifications moduleVariables
+      let ast_with_except := AST.create name specifications moduleVariables
+      let mut ast : AST := default
+      match ast_with_except with
+        | Except.error msg => logError msg return
+        | Except.ok data => ast := data
+
       if logging then
         logInfo
           s!"AST without opened Modules: \n
