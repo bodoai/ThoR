@@ -25,14 +25,14 @@ namespace Alloy.functionIfDecl
       let thenBodyTerm ← fid.thenBody.toTermFromBlock blockName pureNames
 
       let mut term : Unhygienic Term :=
-        `($(conditionTerm) → $(thenBodyTerm))
+        `($(conditionTerm) -> $(thenBodyTerm))
 
       if fid.hasElse then
         let elseBodyTerm ← fid.elseBody.toTermFromBlock blockName pureNames
         term :=
           `(term |
             ($(unhygienicUnfolder term)) ∧
-            (Not $(conditionTerm) → $(elseBodyTerm))
+            (Not $(conditionTerm) -> $(elseBodyTerm))
           )
 
       return unhygienicUnfolder term
