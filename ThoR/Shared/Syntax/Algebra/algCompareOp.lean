@@ -59,15 +59,19 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (op: AlgCompareOp) : algCompareOp :=
-      match op with
-        | `(algCompareOp| <) => algCompareOp.lt
-        | `(algCompareOp| >) => algCompareOp.gt
-        | `(algCompareOp| =) => algCompareOp.eq
-        | `(algCompareOp| =<) => algCompareOp.leq
-        | `(algCompareOp| >=) => algCompareOp.geq
+    def toType
+      (op: AlgCompareOp)
+      : Except String algCompareOp :=
+        match op with
+          | `(algCompareOp| <) => return algCompareOp.lt
+          | `(algCompareOp| >) => return algCompareOp.gt
+          | `(algCompareOp| =) => return algCompareOp.eq
+          | `(algCompareOp| =<) => return algCompareOp.leq
+          | `(algCompareOp| >=) => return algCompareOp.geq
 
-        | _ => algCompareOp.eq -- unreachable
+          | syntx => throw s!"No match implemented in \
+              algComapreOp.toType \
+              for '{syntx}'"
 
   end algCompareOp
 

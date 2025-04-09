@@ -48,16 +48,20 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (q: Quant) : quant :=
-      match q with
-        | `(quant| all) => quant.all
-        | `(quant| some) => quant.some
-        | `(quant| lone) => quant.lone
-        | `(quant| one) => quant.one
-        | `(quant| no) => quant.no
+    def toType
+      (q: Quant)
+      : Except String quant := do
+        match q with
+          | `(quant| all) => return quant.all
+          | `(quant| some) => return quant.some
+          | `(quant| lone) => return quant.lone
+          | `(quant| one) => return quant.one
+          | `(quant| no) => return quant.no
 
-        | _ => quant.all -- unreachable
-
+          | syntx =>
+            throw s!"No match implemented in \
+            quant.toType \
+            for '{syntx}'"
     /--
     Generates a Lean term corosponding with the type
     -/

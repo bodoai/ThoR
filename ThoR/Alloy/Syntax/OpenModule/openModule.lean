@@ -51,43 +51,43 @@ namespace openModule
   -/
   def toType
     (om : OpenModule)
-    : openModule := Id.run do
+    : Except String openModule := do
       match om with
         | `(openModule| open $sn:separatedNamespace) =>
           let name :=
-            (separatedNamespace.toType sn).representedNamespace.getId
+            (← separatedNamespace.toType sn).representedNamespace.getId
 
           let default : openModule := default
-          { default with moduleToOpen := name}
+          return { default with moduleToOpen := name}
 
         | `(openModule | open $sn:separatedNamespace as $mAlias:ident) =>
           let name :=
-            (separatedNamespace.toType sn).representedNamespace.getId
+            (← separatedNamespace.toType sn).representedNamespace.getId
           let aliasName := (mAlias.getId)
 
           let default : openModule := default
-          { default with
+          return { default with
               moduleToOpen := name,
               moduleAlias := aliasName
           }
 
         | `(openModule | open $sn:separatedNamespace [$moduleVariable:ident*]) =>
           let name :=
-            (separatedNamespace.toType sn).representedNamespace.getId
+            (← separatedNamespace.toType sn).representedNamespace.getId
           let moduleVariableNames :=
             (moduleVariable.map
               fun mv => mv.getId.lastComponentAsString
             ).toList
 
           let default : openModule := default
-          { default with
+          return { default with
               moduleToOpen := name,
               moduleVariables := moduleVariableNames
           }
 
         | `(openModule | open $sn:separatedNamespace [$moduleVariable:ident*] as $mAlias:ident) =>
           let name :=
-            (separatedNamespace.toType sn).representedNamespace.getId
+            (← separatedNamespace.toType sn).representedNamespace.getId
           let moduleVariableNames :=
             (moduleVariable.map
               fun mv => mv.getId.lastComponentAsString
@@ -95,13 +95,16 @@ namespace openModule
           let aliasName := (mAlias.getId)
 
           let default : openModule := default
-          { default with
+          return { default with
               moduleToOpen := name,
               moduleAlias := aliasName,
               moduleVariables := moduleVariableNames
           }
 
-        | _ => default
+        | syntx =>
+            throw s!"No match implemented in \
+            openModule.toType \
+            for '{syntx}'"
 
 end openModule
 

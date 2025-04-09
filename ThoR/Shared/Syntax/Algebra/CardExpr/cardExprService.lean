@@ -14,10 +14,15 @@ namespace Shared.cardExpr
   /--
   Parses the given syntax to the type
   -/
-  def toType (ce : CardExpr) : cardExpr :=
-    match ce with
-      | `(cardExpr| # $e:expr) => (cardExpr.cardExpression (expr.toType e))
-      | _ => (cardExpr.cardExpression (expr.const (constant.none))) -- unreachable
+  def toType
+    (ce : CardExpr)
+    : Except String cardExpr := do
+      match ce with
+        | `(cardExpr| # $e:expr) =>
+          return (cardExpr.cardExpression (← expr.toType e))
+        | syntx => throw s!"No match implemented in \
+            cardExprService.toType \
+            for '{syntx}'"
 
   /--
   Gets the required variables for the cardial expression.

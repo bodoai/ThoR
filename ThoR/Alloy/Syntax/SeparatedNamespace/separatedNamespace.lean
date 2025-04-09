@@ -40,7 +40,7 @@ namespace Alloy
     /-- Generates a type representation from the TSyntax -/
     def toType
       (sn : SeparatedNamespace)
-      : separatedNamespace := Id.run do
+      : Except String separatedNamespace := do
         match sn with
           | `(separatedNamespace| $ei:extendedIdent) =>
 
@@ -58,7 +58,10 @@ namespace Alloy
 
             return {representedNamespace := (mkIdent (Name.fromComponents components))}
 
-          | _ => default
+          | syntx =>
+            throw s!"No match implemented in \
+            separatedNamespace.toType \
+            for '{syntx}'"
 
     def toTerm
       (sn : separatedNamespace)

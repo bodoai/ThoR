@@ -229,49 +229,60 @@ namespace Shared.arrowOp
   /--
   Parses the given syntax to the type
   -/
-  partial def toType (op : ArrowOp) : arrowOp :=
-    match op with
-      -- multArrowOpExpr
-      | `(arrowOp| ($ae:arrowOp)) => toType ae
-      -- multArrowOpExpr
-      | `(arrowOp|
-          $subArrowExpr1:expr
-          $[$mult1:mult]? $_:allowedArrows $[$mult2:mult]?
-          $subArrowExpr2:expr) =>
-        arrowOp.multArrowOpExpr (expr.toType subArrowExpr1)
-          (mult.fromOption mult1) (mult.fromOption mult2)
-          (expr.toType subArrowExpr2)
+  partial def toType
+    (op : ArrowOp)
+    : Except String arrowOp := do
+      match op with
+        -- multArrowOpExpr
+        | `(arrowOp| ($ae:arrowOp)) => return ← toType ae
+        -- multArrowOpExpr
+        | `(arrowOp|
+            $subArrowExpr1:expr
+            $[$mult1:mult]? $_:allowedArrows $[$mult2:mult]?
+            $subArrowExpr2:expr) =>
+          return arrowOp.multArrowOpExpr
+            (← expr.toType subArrowExpr1)
+            (← mult.fromOption mult1)
+            (← mult.fromOption mult2)
+            (← expr.toType subArrowExpr2)
 
-      -- multArrowOpExprLeft
-      | `(arrowOp|
-          $subArrowExpr1:expr
-          $[$mult1:mult]? $_:allowedArrows $[$mult2:mult]?
-          $subArrowExpr2:arrowOp) =>
-        arrowOp.multArrowOpExprLeft (expr.toType subArrowExpr1)
-          (mult.fromOption mult1) (mult.fromOption mult2)
-          (toType subArrowExpr2)
+        -- multArrowOpExprLeft
+        | `(arrowOp|
+            $subArrowExpr1:expr
+            $[$mult1:mult]? $_:allowedArrows $[$mult2:mult]?
+            $subArrowExpr2:arrowOp) =>
+          return arrowOp.multArrowOpExprLeft
+            (← expr.toType subArrowExpr1)
+            (← mult.fromOption mult1)
+            (← mult.fromOption mult2)
+            (← toType subArrowExpr2)
 
-      --multArrowOpExprRight
-      | `(arrowOp|
-          $subArrowExpr1:arrowOp
-          $[$mult1:mult]? $_:allowedArrows $[$mult2:mult]?
-          $subArrowExpr2:expr) =>
-        arrowOp.multArrowOpExprRight (toType subArrowExpr1)
-          (mult.fromOption mult1) (mult.fromOption mult2)
-          (expr.toType subArrowExpr2)
+        --multArrowOpExprRight
+        | `(arrowOp|
+            $subArrowExpr1:arrowOp
+            $[$mult1:mult]? $_:allowedArrows $[$mult2:mult]?
+            $subArrowExpr2:expr) =>
+          return arrowOp.multArrowOpExprRight
+            (← toType subArrowExpr1)
+            (← mult.fromOption mult1)
+            (← mult.fromOption mult2)
+            (← expr.toType subArrowExpr2)
 
-      --multArrowOp
-      | `(arrowOp|
-          $subArrowExpr1:arrowOp
-          $[$mult1:mult]? $_:allowedArrows $[$mult2:mult]?
-          $subArrowExpr2:arrowOp) =>
-        arrowOp.multArrowOp (toType subArrowExpr1)
-          (mult.fromOption mult1) (mult.fromOption mult2)
-          (toType subArrowExpr2)
+        --multArrowOp
+        | `(arrowOp|
+            $subArrowExpr1:arrowOp
+            $[$mult1:mult]? $_:allowedArrows $[$mult2:mult]?
+            $subArrowExpr2:arrowOp) =>
+          return arrowOp.multArrowOp
+            (← toType subArrowExpr1)
+            (← mult.fromOption mult1)
+            (← mult.fromOption mult2)
+            (← toType subArrowExpr2)
 
-      | _ => arrowOp.multArrowOpExpr (expr.const constant.none)
-          (mult.set) (mult.set)
-          (expr.const constant.none) -- unreachable
+        | syntx =>
+            throw s!"No match implemented in \
+            arrowOpService.toType \
+            for '{syntx}'"
 
   /--
   Gets the required variables for the arrowOp to work (as a term)

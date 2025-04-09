@@ -18,15 +18,18 @@ namespace Alloy.signatureFactDecl
     (sfd: SignatureFactDecl)
     (signatureName : String)
     (signatureRelationNames : List String)
-    : factDecl :=
+    : Except String factDecl := do
       match sfd with
           | `(signatureFactDecl| $p:property) =>
-                property.toType
+                return ← property.toType
                   defaultName.toName
                   p
                   signatureName
                   signatureRelationNames
 
-          | _ => default
+          | syntx =>
+            throw s!"No match implemented in \
+            signatureFactDeclService.toType \
+            for '{syntx}'"
 
 end Alloy.signatureFactDecl

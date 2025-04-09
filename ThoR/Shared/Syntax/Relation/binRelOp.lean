@@ -97,16 +97,21 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (op : BinRelOp) : binRelOp :=
-      match op with
-        | `(binRelOp| +)  => binRelOp.union
-        | `(binRelOp| &)  => binRelOp.intersection
-        | `(binRelOp| -)  => binRelOp.difference
-        | `(binRelOp| ++) => binRelOp.overwrite
-        | `(binRelOp| <:) => binRelOp.domain_restriction
-        | `(binRelOp| :>) => binRelOp.range_restriction
+    def toType
+      (op : BinRelOp)
+      : Except String binRelOp :=
+        match op with
+          | `(binRelOp| +)  => return binRelOp.union
+          | `(binRelOp| &)  => return binRelOp.intersection
+          | `(binRelOp| -)  => return binRelOp.difference
+          | `(binRelOp| ++) => return binRelOp.overwrite
+          | `(binRelOp| <:) => return binRelOp.domain_restriction
+          | `(binRelOp| :>) => return binRelOp.range_restriction
 
-        | _ => binRelOp.union -- unreachable
+          | syntx =>
+            throw s!"No match implemented in \
+            binRelOp.toType \
+            for '{syntx}'"
 
   end binRelOp
 
