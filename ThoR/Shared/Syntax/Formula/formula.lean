@@ -12,6 +12,7 @@ import ThoR.Shared.Syntax.Logic
 import ThoR.Shared.Syntax.quant
 import ThoR.Shared.Syntax.Relation
 import ThoR.Shared.Syntax.TypeExpr.typeExpr
+import ThoR.Alloy.Syntax.IgnoredSyntax.comment
 
 open Lean
 namespace Shared
@@ -105,6 +106,13 @@ namespace Shared
   --Special tertiariy Syntax
   syntax formula " => " formula " else " formula : formula
 
+  /--
+  This syntax can be either a formula or a comment.
+  -/
+  declare_syntax_cat formula_with_comment
+  abbrev FormulaWithComment := TSyntax `formula_with_comment
+  syntax comment : formula_with_comment
+  syntax formula : formula_with_comment
 
   namespace formula
 

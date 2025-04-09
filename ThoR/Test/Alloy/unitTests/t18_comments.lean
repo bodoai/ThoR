@@ -36,3 +36,12 @@ end
       p in p..[xyz]
   */
 end
+
+#alloy comment/inside/predicate
+  sig a {}
+  pred p {
+    // comment
+    some a
+    /*comment*/
+  }
+end

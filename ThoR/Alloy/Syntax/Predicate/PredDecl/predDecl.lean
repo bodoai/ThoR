@@ -31,10 +31,10 @@ namespace Alloy
   declare_syntax_cat predDecl
   abbrev PredDecl := TSyntax `predDecl
   syntax "pred " extendedIdent ("("predArg,*")")? "{"
-    formula*
+    formula_with_comment*
   "}": predDecl
   syntax "pred " extendedIdent ("["predArg,*"]")? "{"
-    formula*
+    formula_with_comment*
   "}": predDecl
 
   namespace predDecl

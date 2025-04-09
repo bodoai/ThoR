@@ -47,14 +47,14 @@ namespace Alloy.predDecl
   def createWithArgs
     (name : Name)
     (args : Syntax.TSepArray `predArg ",")
-    (forms : TSyntaxArray `formula)
+    (forms : List Formula)
     : predDecl := Id.run do
 
     let args : List (predArg) :=
       (args.getElems.map fun (arg) => (predArg.toType arg)).toList
 
     let forms : List (formula) :=
-      (forms.map fun (f) => (formula.toType f)).toList
+      (forms.map fun (f) => (formula.toType f))
 
     {
       name := name.toString
@@ -67,11 +67,11 @@ namespace Alloy.predDecl
   -/
   def createWithoutArgs
     (name : Name)
-    (forms : TSyntaxArray `formula)
+    (forms : List Formula)
     : predDecl := Id.run do
 
     let forms : List (formula) :=
-      (forms.map fun (f) => (formula.toType f)).toList
+      (forms.map fun (f) => (formula.toType f))
 
     {
       name := name.toString
@@ -82,26 +82,52 @@ namespace Alloy.predDecl
   /--
   Parses te given syntax to a structure of predDecl if possible
   -/
-  def toType (pd : PredDecl) : predDecl :=
-    match pd with
-      -- pred declaration with args
-      | `(predDecl| pred $name:extendedIdent ($args:predArg,*) {
-          $forms:formula*
-        }) =>
-          predDecl.createWithArgs (extendedIdent.toName name) args forms
+  def toType
+    (pd : PredDecl) :
+    Except String predDecl := do
+      match pd with
+        -- pred declaration with args
+        | `(predDecl| pred $name:extendedIdent ($args:predArg,*) {
+            $forms:formula_with_comment*
+          }) =>
+            let forms_without_comments :=
+              (forms.filter
+                fun (f:FormulaWithComment) => !formula.isComment f)
 
-      | `(predDecl| pred $name:extendedIdent [$args:predArg,*] {
-          $forms:formula*
-        }) =>
-          predDecl.createWithArgs (extendedIdent.toName name) args forms
+            let mut forms := []
+            for f in forms_without_comments do
+              forms := forms.concat (← formula.getFormula f)
 
-      -- pred declaration without args
-      | `(predDecl| pred $name:extendedIdent {
-          $forms:formula*
-        }) =>
-          predDecl.createWithoutArgs (extendedIdent.toName name) forms
+            return predDecl.createWithArgs (extendedIdent.toName name) args forms
 
-      | _ => {name := "PANIC!", args := [], forms := []}
+        | `(predDecl| pred $name:extendedIdent [$args:predArg,*] {
+            $forms:formula_with_comment*
+          }) =>
+            let forms_without_comments :=
+              (forms.filter
+                fun (f:FormulaWithComment) => !formula.isComment f)
+
+            let mut forms := []
+            for f in forms_without_comments do
+              forms := forms.concat (← formula.getFormula f)
+
+            return predDecl.createWithArgs (extendedIdent.toName name) args forms
+
+        -- pred declaration without args
+        | `(predDecl| pred $name:extendedIdent {
+            $forms:formula_with_comment*
+          }) =>
+            let forms_without_comments :=
+              (forms.filter
+                fun (f:FormulaWithComment) => !formula.isComment f)
+
+            let mut forms := []
+            for f in forms_without_comments do
+              forms := forms.concat (← formula.getFormula f)
+
+            return predDecl.createWithoutArgs (extendedIdent.toName name) forms
+
+        | _ => throw s!""
 
   def simplifyDomainRestrictions
     (pd : predDecl)

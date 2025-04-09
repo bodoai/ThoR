@@ -23,7 +23,7 @@ namespace Alloy.AST
     (name : Ident)
     (specifications : Array Specification)
     (moduleVariables : List (String))
-    : AST := Id.run do
+    : Except String AST := do
 
       let mut ast : AST := (default)
       ast := ast.updateName name.getId
@@ -82,7 +82,7 @@ namespace Alloy.AST
 
         --Predicate
         | `(specification| $pd:predDecl) =>
-          ast := ast.addPredDecl (predDecl.toType pd)
+          ast := ast.addPredDecl (← predDecl.toType pd)
 
         -- Open Module
         | `(specification| $om:openModule) =>

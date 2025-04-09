@@ -666,6 +666,26 @@ namespace Shared.formula
                 (expr.const constant.none) -- unreachable
 
   /--
+  Returns if the FormulaWithComment is a comment
+  -/
+  def isComment
+    (f : FormulaWithComment)
+    : Bool :=
+      match f with
+        | `(formula_with_comment | $_:comment) => true
+        | _ => false
+
+  /--
+  Extracts the formula from FormulaWithComment if possible
+  -/
+  def getFormula
+    (f : FormulaWithComment)
+    : Except String Formula :=
+    match f with
+      | `(formula_with_comment | $f:formula) => return f
+      | _ => throw s!"Tried to get the formula from a comment"
+
+  /--
   Parses the given syntax to the type
   -/
   partial def toType
@@ -678,7 +698,7 @@ namespace Shared.formula
         | `(formula| $form1:formula => $form2:formula else $form3:formula) =>
             formula.tertiaryLogicOperation terLogOp.ifelse
               (toType form1) (toType form2) (toType form3)
-        | _ => formula.unaryRelBoolOperation
+        | _ =>formula.unaryRelBoolOperation
                 unRelBoolOp.no
                 (expr.const constant.none) -- unreachable
 
