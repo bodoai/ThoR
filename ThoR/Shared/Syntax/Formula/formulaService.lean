@@ -645,7 +645,7 @@ namespace Shared.formula
           (form.map fun f => toType_withoutIf f).toList
 
         -- let declaration
-        | `(formula | $alloy_let_decl:alloyLetDecl) =>
+        | `(formula_without_if | $alloy_let_decl:alloyLetDecl) =>
           match alloy_let_decl with
             | `(alloyLetDecl | let $name:ident = $value:formula_without_if | $body:formula_without_if) =>
               formula.letDeclaration
