@@ -15,6 +15,12 @@ open Shared
 
 namespace Alloy
 
+  /-- to save the needed data-/
+  structure formula_data where
+    (formulas : List formula)
+    (alloyDataList : List alloyData)
+    (localContextUserNames : List Name)
+
   syntax
     (name := blockless_alloy)
     "[" ("#")? "alloy" "|"
@@ -27,19 +33,17 @@ namespace Alloy
     (alloyDataList : List alloyData)
     (localContextUserNames : List Name)
     : Except String Term := do
-      if formulas.isEmpty then
-        return (unhygienicUnfolder `(term | True))
-      else
-        let formulas := formulas.map fun f => formula.toType f
 
-        let first_formula := formulas.get! 0
+      let formulas := formulas.map fun f => formula.toType f
 
-        let mut result_term ← first_formula.toTermOutsideBlock alloyDataList localContextUserNames
-        for formula in (formulas.drop 1) do
-          let formula_term ← formula.toTermOutsideBlock alloyDataList localContextUserNames
-          result_term := unhygienicUnfolder `($result_term ∧ $formula_term)
+      let x : formula_data := {
+          formulas := formulas,
+          alloyDataList := alloyDataList,
+          localContextUserNames := localContextUserNames
+        }
 
-        return result_term
+      return unhygienicUnfolder `(term| $x)
+
 
   @[term_elab blockless_alloy]
   private def alloyFormulaBlockImpl : TermElab := fun stx expectedType? => do
@@ -88,3 +92,24 @@ namespace Alloy
       | _ => throwUnsupportedSyntax
 
 end Alloy
+
+/-- fist try -/
+def evaluateAlloyBlocklessSyntax
+  (fd : Alloy.formula_data)
+  : Except String Term := do
+
+    let formulas := fd.formulas
+    let alloyDataList := fd.alloyDataList
+    let localContextUserNames := fd.localContextUserNames
+
+    if formulas.isEmpty then
+        throw s!"Formulas empty" -- maybe dont throw here
+
+    let first_formula := formulas.get! 0
+
+    let mut result_term ← first_formula.toTermOutsideBlock alloyDataList localContextUserNames
+    for formula in (formulas.drop 1) do
+      let formula_term ← formula.toTermOutsideBlock alloyDataList localContextUserNames
+      result_term := unhygienicUnfolder `($result_term ∧ $formula_term)
+
+    return result_term
