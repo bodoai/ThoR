@@ -277,7 +277,7 @@ namespace Shared.formula
 
       match f with
       | formula.string s => do
-        -- Quantors dont use namespaces
+        -- Quantors and args dont use namespaces
         if pureNames.contains s then
           return `($(mkIdent s.toName))
 
