@@ -46,13 +46,18 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (op : RelCompareOp) : relCompareOp :=
-      match op with
-        | `(relCompareOp| in) => relCompareOp.in
-        | `(relCompareOp| =) => relCompareOp.eq
-        | `(relCompareOp| !=) => relCompareOp.neq
+    def toType
+      (op : RelCompareOp)
+      : Except String relCompareOp :=
+        match op with
+          | `(relCompareOp| in) => return relCompareOp.in
+          | `(relCompareOp| =) => return relCompareOp.eq
+          | `(relCompareOp| !=) => return relCompareOp.neq
 
-        | _ => relCompareOp.eq -- unreachable
+          | syntx =>
+            throw s!"No match implemented in \
+            relCompareOp.toType \
+            for '{syntx}'"
 
     /--
     Generates a Lean term corosponding with the type

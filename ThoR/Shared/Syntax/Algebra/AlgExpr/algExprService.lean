@@ -75,28 +75,32 @@ namespace Shared.algExpr
   /--
   Parses the given syntax to the type
   -/
-  partial def toType (ae : AlgExpr) : algExpr :=
-    match ae with
-      | `(algExpr| $number:num) =>
-        algExpr.number (number.getNat : Int)
+  partial def toType
+    (ae : AlgExpr)
+    : Except String algExpr := do
+      match ae with
+        | `(algExpr| $number:num) =>
+          return algExpr.number (number.getNat : Int)
 
-      | `(algExpr| $ce:cardExpr) =>
-        algExpr.cardExpr (cardExpr.toType ce)
+        | `(algExpr| $ce:cardExpr) =>
+          return algExpr.cardExpr (← cardExpr.toType ce)
 
-      | `(algExpr|
-          $op:unAlgOp
-          $algExpr1:algExpr) =>
-        algExpr.unaryAlgebraOperation
-          (unAlgOp.toType op) (toType algExpr1)
+        | `(algExpr|
+            $op:unAlgOp
+            $algExpr1:algExpr) =>
+          return algExpr.unaryAlgebraOperation
+            (← unAlgOp.toType op) (← toType algExpr1)
 
-      | `(algExpr|
-          $op:binAlgOp
-          [$algExpr1:algExpr,
-          $algExpr2:algExpr]) =>
-        algExpr.binaryAlgebraOperation
-          (binAlgOp.toType op) (toType algExpr1) (toType algExpr2)
+        | `(algExpr|
+            $op:binAlgOp
+            [$algExpr1:algExpr,
+            $algExpr2:algExpr]) =>
+          return algExpr.binaryAlgebraOperation
+            (← binAlgOp.toType op) (← toType algExpr1) (← toType algExpr2)
 
-      | _ => algExpr.number (1:Int) -- unreachable
+        | syntx => throw s!"No match implemented in \
+            algExprService.toType \
+            for '{syntx}'"
 
   /--
   Gets the required variables for the algebra expression.

@@ -46,11 +46,15 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (op : UnAlgOp) : unAlgOp :=
+    def toType
+      (op : UnAlgOp)
+      : Except String unAlgOp := do
       match op with
-        | `(unAlgOp| -) => unAlgOp.negation
+        | `(unAlgOp| -) => return unAlgOp.negation
 
-        | _ => unAlgOp.negation -- unreachable
+        | syntx => throw s!"No match implemented in \
+            unAlgOp.toType \
+            for '{syntx}'"
 
   end unAlgOp
 

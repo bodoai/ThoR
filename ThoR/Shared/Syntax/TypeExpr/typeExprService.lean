@@ -145,19 +145,21 @@ namespace Shared.typeExpr
   -/
   def toType
     (te : TypeExpr)
-    : typeExpr :=
-    match te with
-      | `(typeExpr | $e:expr) =>
-        typeExpr.relExpr (expr.toType e)
+    : Except String typeExpr := do
+      match te with
+        | `(typeExpr | $e:expr) =>
+          return typeExpr.relExpr (← expr.toType e)
 
-      | `(typeExpr | $m:mult $e:expr) =>
-        typeExpr.multExpr (mult.toType m) (expr.toType e)
+        | `(typeExpr | $m:mult $e:expr) =>
+          return typeExpr.multExpr (← mult.toType m) (← expr.toType e)
 
-      | `(typeExpr | $arrowExpr:arrowOp) =>
-        typeExpr.arrowExpr (arrowOp.toType arrowExpr)
+        | `(typeExpr | $arrowExpr:arrowOp) =>
+          return typeExpr.arrowExpr (← arrowOp.toType arrowExpr)
 
-      | _ => typeExpr.multExpr
-        mult.one (expr.const constant.none) -- unreachable
+        | syntx =>
+          throw s!"No match implemented in \
+          typeExprService.toType \
+          for '{syntx}'"
 
   def isString
     | typeExpr.relExpr e => e.isString

@@ -125,7 +125,12 @@ namespace Alloy
       let monadeState ← get
       let monadeEnv := monadeState.env
 
-      let mut ast := AST.create name specifications moduleVariables
+      let ast_with_except := AST.create name specifications moduleVariables
+      let mut ast : AST := default
+      match ast_with_except with
+        | Except.error msg => logError msg return
+        | Except.ok data => ast := data
+
       if logging then
         logInfo
           s!"AST without opened Modules: \n
@@ -229,16 +234,22 @@ namespace Alloy
         | `(alloy $blockName:separatedNamespace
               $specifications:specification* end) =>
 
-            let blockName :=
-              (separatedNamespace.toType blockName).representedNamespace
+            let sn_except := separatedNamespace.toType blockName
+            let mut sn := default
+            match sn_except with
+              | Except.error msg => logError msg return
+              | Except.ok data => sn := data
 
-            evalAlloyBlock blockName specifications
+            evalAlloyBlock sn.representedNamespace specifications
 
         | `(alloy $blockName:separatedNamespace [$mvs:moduleVar,*]
               $specifications:specification* end) =>
 
-            let blockName :=
-              (separatedNamespace.toType blockName).representedNamespace
+            let sn_except := separatedNamespace.toType blockName
+            let mut sn := default
+            match sn_except with
+              | Except.error msg => logError msg return
+              | Except.ok data => sn := data
 
             let moduleVariables :=
               (mvs.getElems.map
@@ -248,22 +259,28 @@ namespace Alloy
 
             evalAlloyBlock
               (moduleVariables := moduleVariables)
-              blockName
+              sn.representedNamespace
               specifications
 
         | `(alloy module $blockName:separatedNamespace
               $specifications:specification* end) =>
 
-            let blockName :=
-              (separatedNamespace.toType blockName).representedNamespace
+            let sn_except := separatedNamespace.toType blockName
+            let mut sn := default
+            match sn_except with
+              | Except.error msg => logError msg return
+              | Except.ok data => sn := data
 
-            evalAlloyBlock blockName specifications
+            evalAlloyBlock sn.representedNamespace specifications
 
         | `(alloy module $blockName:separatedNamespace [$mvs:moduleVar,*]
               $specifications:specification* end) =>
 
-            let blockName :=
-              (separatedNamespace.toType blockName).representedNamespace
+            let sn_except := separatedNamespace.toType blockName
+            let mut sn := default
+            match sn_except with
+              | Except.error msg => logError msg return
+              | Except.ok data => sn := data
 
             let moduleVariables :=
               (mvs.getElems.map
@@ -273,7 +290,7 @@ namespace Alloy
 
             evalAlloyBlock
               (moduleVariables := moduleVariables)
-              blockName
+              sn.representedNamespace
               specifications
 
         | `(alloy $specifications:specification* end) =>
@@ -283,19 +300,25 @@ namespace Alloy
         | `(#alloy $blockName:separatedNamespace
               $specifications:specification* end) =>
 
-              let blockName :=
-                (separatedNamespace.toType blockName).representedNamespace
+              let sn_except := separatedNamespace.toType blockName
+              let mut sn := default
+              match sn_except with
+                | Except.error msg => logError msg return
+                | Except.ok data => sn := data
 
               evalAlloyBlock
                 (logging := true)
-                blockName
+                sn.representedNamespace
                 specifications
 
         | `(#alloy $blockName:separatedNamespace [$mvs:moduleVar,*]
               $specifications:specification* end) =>
 
-              let blockName :=
-                (separatedNamespace.toType blockName).representedNamespace
+              let sn_except := separatedNamespace.toType blockName
+              let mut sn := default
+              match sn_except with
+                | Except.error msg => logError msg return
+                | Except.ok data => sn := data
 
               let moduleVariables :=
                 (mvs.getElems.map
@@ -306,25 +329,31 @@ namespace Alloy
               evalAlloyBlock
                 (logging := true)
                 (moduleVariables := moduleVariables)
-                blockName
+                sn.representedNamespace
                 specifications
 
         | `(#alloy module $blockName:separatedNamespace
               $specifications:specification* end) =>
 
-              let blockName :=
-                (separatedNamespace.toType blockName).representedNamespace
+              let sn_except := separatedNamespace.toType blockName
+              let mut sn := default
+              match sn_except with
+                | Except.error msg => logError msg return
+                | Except.ok data => sn := data
 
               evalAlloyBlock
                 (logging := true)
-                blockName
+                sn.representedNamespace
                 specifications
 
         | `(#alloy module $blockName:separatedNamespace [$mvs:moduleVar,*]
               $specifications:specification* end) =>
 
-              let blockName :=
-                (separatedNamespace.toType blockName).representedNamespace
+              let sn_except := separatedNamespace.toType blockName
+              let mut sn := default
+              match sn_except with
+                | Except.error msg => logError msg return
+                | Except.ok data => sn := data
 
               let moduleVariables :=
                 (mvs.getElems.map
@@ -335,7 +364,7 @@ namespace Alloy
               evalAlloyBlock
                 (logging := true)
                 (moduleVariables := moduleVariables)
-                blockName
+                sn.representedNamespace
                 specifications
 
         | `(#alloy $specifications:specification* end) =>
@@ -347,16 +376,23 @@ namespace Alloy
 
         | `(~alloy $blockName:separatedNamespace
               $specifications:specification* end) =>
-              let blockName :=
-                (separatedNamespace.toType blockName).representedNamespace
+              let sn_except := separatedNamespace.toType blockName
+              let mut sn := default
+              match sn_except with
+                | Except.error msg => logError msg return
+                | Except.ok data => sn := data
+
               Lean.Elab.Command.failIfSucceeds
-                (evalAlloyBlock blockName specifications)
+                (evalAlloyBlock sn.representedNamespace specifications)
 
         | `(~alloy $blockName:separatedNamespace [$mvs:moduleVar,*]
               $specifications:specification* end) =>
 
-              let blockName :=
-                (separatedNamespace.toType blockName).representedNamespace
+              let sn_except := separatedNamespace.toType blockName
+              let mut sn := default
+              match sn_except with
+                | Except.error msg => logError msg return
+                | Except.ok data => sn := data
 
               let moduleVariables :=
                 (mvs.getElems.map
@@ -367,21 +403,28 @@ namespace Alloy
               Lean.Elab.Command.failIfSucceeds
                 (evalAlloyBlock
                   (moduleVariables := moduleVariables)
-                  blockName
+                  sn.representedNamespace
                   specifications )
 
         | `(~alloy module $blockName:separatedNamespace
               $specifications:specification* end) =>
-              let blockName :=
-                (separatedNamespace.toType blockName).representedNamespace
+              let sn_except := separatedNamespace.toType blockName
+              let mut sn := default
+              match sn_except with
+                | Except.error msg => logError msg return
+                | Except.ok data => sn := data
+
               Lean.Elab.Command.failIfSucceeds
-                (evalAlloyBlock blockName specifications)
+                (evalAlloyBlock sn.representedNamespace specifications)
 
         | `(~alloy module $blockName:separatedNamespace [$mvs:moduleVar,*]
               $specifications:specification* end) =>
 
-              let blockName :=
-                (separatedNamespace.toType blockName).representedNamespace
+              let sn_except := separatedNamespace.toType blockName
+              let mut sn := default
+              match sn_except with
+                | Except.error msg => logError msg return
+                | Except.ok data => sn := data
 
               let moduleVariables :=
                 (mvs.getElems.map
@@ -392,7 +435,7 @@ namespace Alloy
               Lean.Elab.Command.failIfSucceeds
                 (evalAlloyBlock
                   (moduleVariables := moduleVariables)
-                  blockName
+                  sn.representedNamespace
                   specifications)
 
         | `(~alloy $specifications:specification* end) =>

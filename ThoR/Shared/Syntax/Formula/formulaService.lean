@@ -547,48 +547,53 @@ namespace Shared.formula
   partial def toType_withoutIf
     (f : Formula_without_if)
     (signatureFactSigNames : List String := [])
-    : formula :=
+    : Except String formula := do
       match f with
         | `(formula_without_if| ( $fwi:formula_without_if )) =>
-          toType_withoutIf fwi
+          return ← toType_withoutIf fwi
 
         | `(formula_without_if| $name:ident) =>
-          formula.string name.getId.toString
+          return formula.string name.getId.toString
 
         | `(formula_without_if| $predName:ident [$predargs,*]) =>
-          formula.pred_with_args predName.getId.toString
-            (predargs.getElems.map fun (elem) =>
-              expr.toType elem signatureFactSigNames).toList
+          let mut arguments_typed := []
+          for argument in predargs.getElems do
+            arguments_typed := arguments_typed.concat
+              (← expr.toType argument signatureFactSigNames)
+
+          return formula.pred_with_args
+            predName.getId.toString
+            arguments_typed
 
         | `(formula_without_if| $op:unRelBoolOp $expression:expr ) =>
-          formula.unaryRelBoolOperation
-            (unRelBoolOp.toType op) (expr.toType expression signatureFactSigNames)
+          return formula.unaryRelBoolOperation
+            (← unRelBoolOp.toType op) (← expr.toType expression signatureFactSigNames)
 
         | `(formula_without_if| $op:unLogOp $f:formula_without_if ) =>
-          formula.unaryLogicOperation
-            (unLogOp.toType op) (toType_withoutIf f)
+          return formula.unaryLogicOperation
+            (← unLogOp.toType op) (← toType_withoutIf f)
 
         | `(formula_without_if| $form1:formula_without_if $op:binLogOp $form2:formula_without_if) =>
-          formula.binaryLogicOperation
-            (binLogOp.toType op) (toType_withoutIf form1) (toType_withoutIf form2)
+          return formula.binaryLogicOperation
+            (← binLogOp.toType op) (← toType_withoutIf form1) (← toType_withoutIf form2)
 
         | `(formula_without_if|
             $algExpr1:algExpr
             $compOp:algCompareOp
             $algExpr2:algExpr) =>
-          formula.algebraicComparisonOperation
-            (algCompareOp.toType compOp)
-            (algExpr.toType algExpr1)
-            (algExpr.toType algExpr2)
+          return formula.algebraicComparisonOperation
+            (← algCompareOp.toType compOp)
+            (← algExpr.toType algExpr1)
+            (← algExpr.toType algExpr2)
 
         | `(formula_without_if|
             $expr1:expr
             $op:relCompareOp
             $expr2:expr) =>
-          formula.relationComarisonOperation
-            (relCompareOp.toType op)
-            (expr.toType expr1 signatureFactSigNames)
-            (expr.toType expr2 signatureFactSigNames)
+          return formula.relationComarisonOperation
+            (← relCompareOp.toType op)
+            (← expr.toType expr1 signatureFactSigNames)
+            (← expr.toType expr2 signatureFactSigNames)
 
         | `(formula_without_if|
             $q:quant
@@ -597,12 +602,12 @@ namespace Shared.formula
             $typeExpression:typeExpr |
             $form:formula_without_if
             ) =>
-          formula.quantification
-          (quant.toType q)
-          true
-          (names.getElems.map fun (elem) => elem.getId.toString).toList
-          (typeExpr.toType typeExpression)
-          ([toType_withoutIf form])
+          return formula.quantification
+            (← quant.toType q)
+            true
+            (names.getElems.map fun (elem) => elem.getId.toString).toList
+            (← typeExpr.toType typeExpression)
+            ([← toType_withoutIf form])
 
         | `(formula_without_if|
             $q:quant
@@ -611,12 +616,17 @@ namespace Shared.formula
             $typeExpression:typeExpr |
             { $form:formula_without_if* }
             ) =>
-          formula.quantification
-          (quant.toType q)
-          true
-          (names.getElems.map fun (elem) => elem.getId.toString).toList
-          (typeExpr.toType typeExpression)
-          (form.map fun f => toType_withoutIf f).toList
+
+          let mut forms_typed := []
+          for f in form do
+            forms_typed := forms_typed.concat (← toType_withoutIf f)
+
+          return formula.quantification
+            (← quant.toType q)
+            true
+            (names.getElems.map fun (elem) => elem.getId.toString).toList
+            (← typeExpr.toType typeExpression)
+            forms_typed
 
         | `(formula_without_if|
             $q:quant
@@ -624,12 +634,12 @@ namespace Shared.formula
             $typeExpression:typeExpr |
             $form:formula_without_if
             ) =>
-          formula.quantification
-          (quant.toType q)
-          false
-          (names.getElems.map fun (elem) => elem.getId.toString).toList
-          (typeExpr.toType typeExpression)
-          ([toType_withoutIf form])
+          return formula.quantification
+            (← quant.toType q)
+            false
+            (names.getElems.map fun (elem) => elem.getId.toString).toList
+            (← typeExpr.toType typeExpression)
+            ([← toType_withoutIf form])
 
         | `(formula_without_if|
             $q:quant
@@ -637,33 +647,44 @@ namespace Shared.formula
             $typeExpression:typeExpr |
             {$form:formula_without_if*}
             ) =>
-          formula.quantification
-          (quant.toType q)
-          false
-          (names.getElems.map fun (elem) => elem.getId.toString).toList
-          (typeExpr.toType typeExpression)
-          (form.map fun f => toType_withoutIf f).toList
+          let mut forms_typed := []
+          for f in form do
+            forms_typed := forms_typed.concat (← toType_withoutIf f)
+          return formula.quantification
+            (← quant.toType q)
+            false
+            (names.getElems.map fun (elem) => elem.getId.toString).toList
+            (← typeExpr.toType typeExpression)
+            forms_typed
 
         -- let declaration
         | `(formula | $alloy_let_decl:alloyLetDecl) =>
           match alloy_let_decl with
             | `(alloyLetDecl | let $name:ident = $value:formula_without_if | $body:formula_without_if) =>
-              formula.letDeclaration
+              return formula.letDeclaration
                 (name := name.getId)
-                (value := formula.toType_withoutIf value)
-                (body := [formula.toType_withoutIf body])
-            | `(alloyLetDecl | let $name:ident = $value:formula_without_if | { $body:formula_without_if* }) =>
-              formula.letDeclaration
-                (name := name.getId)
-                (value := formula.toType_withoutIf value)
-                (body := (body.map fun e => formula.toType_withoutIf e).toList)
-            | _ => formula.unaryRelBoolOperation
-                unRelBoolOp.no
-                (expr.const constant.none) -- unreachable
+                (value := ← formula.toType_withoutIf value)
+                (body := [← formula.toType_withoutIf body])
+            | `(alloyLetDecl |
+                let $name:ident = $value:formula_without_if |
+                { $body:formula_without_if* }
+              ) =>
 
-        | _ => formula.unaryRelBoolOperation
-                unRelBoolOp.no
-                (expr.const constant.none) -- unreachable
+              let mut body_typed := []
+              for f in body do
+                body_typed := body_typed.concat (← formula.toType_withoutIf f)
+
+              return formula.letDeclaration
+                (name := name.getId)
+                (value := ←formula.toType_withoutIf value)
+                (body := body_typed)
+            | syntx => throw s!"No match implemented in \
+              formulaSerivce.toType (let match) \
+              for '{syntx}'"
+
+        | syntx => throw s!"No match implemented in \
+              formulaSerivce.toType \
+              for '{syntx}'"
 
   /--
   Parses the given syntax to the type
@@ -671,16 +692,17 @@ namespace Shared.formula
   partial def toType
     (f : Formula)
     (signatureFactSigNames : List String := [])
-    : formula :=
+    : Except String formula := do
       match f with
         | `(formula| $fwi:formula_without_if) =>
-          toType_withoutIf fwi signatureFactSigNames
+          return ← toType_withoutIf fwi signatureFactSigNames
         | `(formula| $form1:formula => $form2:formula else $form3:formula) =>
-            formula.tertiaryLogicOperation terLogOp.ifelse
-              (toType form1) (toType form2) (toType form3)
-        | _ => formula.unaryRelBoolOperation
-                unRelBoolOp.no
-                (expr.const constant.none) -- unreachable
+          return formula.tertiaryLogicOperation terLogOp.ifelse
+              (← toType form1) (← toType form2) (← toType form3)
+
+        | syntx => throw s!"No match implemented in \
+            formulaService.toType \
+            for '{syntx}'"
 
   /--
   Returns the required definitions for the formula to work in Lean

@@ -61,15 +61,19 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (op : BinAlgOp) : binAlgOp :=
-      match op with
-        | `(binAlgOp| plus) => binAlgOp.add
-        | `(binAlgOp| minus) => binAlgOp.sub
-        | `(binAlgOp| mul) => binAlgOp.mult
-        | `(binAlgOp| div) => binAlgOp.div
-        | `(binAlgOp| rem) => binAlgOp.rem
+    def toType
+      (op : BinAlgOp)
+      : Except String binAlgOp :=
+        match op with
+          | `(binAlgOp| plus) => return binAlgOp.add
+          | `(binAlgOp| minus) => return binAlgOp.sub
+          | `(binAlgOp| mul) => return binAlgOp.mult
+          | `(binAlgOp| div) => return binAlgOp.div
+          | `(binAlgOp| rem) => return binAlgOp.rem
 
-        | _ => binAlgOp.add -- unreachable
+          | syntx => throw s!"No match implemented in \
+            binAlgOp.toType \
+            for '{syntx}'"
 
   end binAlgOp
 

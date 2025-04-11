@@ -48,14 +48,19 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (op : UnRelBoolOp) : unRelBoolOp :=
-      match op with
-        | `(unRelBoolOp| some) => unRelBoolOp.some
-        | `(unRelBoolOp| lone) => unRelBoolOp.lone
-        | `(unRelBoolOp| one) => unRelBoolOp.one
-        | `(unRelBoolOp| no) => unRelBoolOp.no
+    def toType
+      (op : UnRelBoolOp)
+      : Except String unRelBoolOp :=
+        match op with
+          | `(unRelBoolOp| some) => return unRelBoolOp.some
+          | `(unRelBoolOp| lone) => return unRelBoolOp.lone
+          | `(unRelBoolOp| one) =>  return unRelBoolOp.one
+          | `(unRelBoolOp| no) =>   return unRelBoolOp.no
 
-        | _ => unRelBoolOp.no -- unreachable
+          | syntx =>
+              throw s!"No match implemented in \
+              unRelBoolOp.toType \
+              for '{syntx}'"
 
     /--
     Generates a Lean term corosponding with the type

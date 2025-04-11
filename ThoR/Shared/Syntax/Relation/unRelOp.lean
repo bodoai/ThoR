@@ -77,13 +77,18 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (op : UnRelOp) : unRelOp :=
-      match op with
-        | `(unRelOp| ^) => unRelOp.transitive_closure
-        | `(unRelOp| *) => unRelOp.reflexive_closure
-        | `(unRelOp| ~) => unRelOp.transposition
+    def toType
+      (op : UnRelOp)
+      : Except String unRelOp := do
+        match op with
+          | `(unRelOp| ^) => return unRelOp.transitive_closure
+          | `(unRelOp| *) => return unRelOp.reflexive_closure
+          | `(unRelOp| ~) => return unRelOp.transposition
 
-        | _ => unRelOp.transitive_closure -- unreachable
+          | syntx =>
+            throw s!"No match implemented in \
+            unRelOp.toType \
+            for '{syntx}'"
 
   end unRelOp
 

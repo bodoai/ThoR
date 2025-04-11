@@ -20,22 +20,23 @@ namespace Alloy.functionArg
 
   def toType
     (fa : FunctionArg)
-    : functionArg :=
+    : Except String functionArg := do
     match fa with
       | `(functionArg | disj $names:ident,* : $type:typeExpr) =>
-        {
+        return {
           disjunction := true,
           names := (names.getElems.map fun n => n.getId.toString).toList,
-          type := (typeExpr.toType type)
+          type := (← typeExpr.toType type)
         }
       | `(functionArg | $names:ident,* : $type:typeExpr) =>
-        {
+        return {
           disjunction := false,
           names := (names.getElems.map fun n => n.getId.toString).toList,
-          type := (typeExpr.toType type)
+          type := (← typeExpr.toType type)
         }
 
-      | _ => default
+      | syntx =>
+        throw s!"No match implemented in functionArgService.toType for '{syntx}'"
 
   def simplifyDomainRestrictions
     (fa : functionArg)

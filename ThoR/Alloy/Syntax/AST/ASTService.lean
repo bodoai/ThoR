@@ -23,7 +23,7 @@ namespace Alloy.AST
     (name : Ident)
     (specifications : Array Specification)
     (moduleVariables : List (String))
-    : AST := Id.run do
+    : Except String AST := do
 
       let mut ast : AST := (default)
       ast := ast.updateName name.getId
@@ -38,7 +38,7 @@ namespace Alloy.AST
 
         --signature WITH signatureFact
         | `(specification| $sd:sigDecl $sf:signatureFactDecl) =>
-          let sigDeclTyped := sigDecl.toType sd
+          let sigDeclTyped ← sigDecl.toType sd
           ast := ast.addSigDecl sigDeclTyped
 
           let signatureNames : List String := sigDeclTyped.names
@@ -49,7 +49,7 @@ namespace Alloy.AST
           for signatureName in signatureNames do
             let defaultName : String := s!"f{factCount}"
 
-            let factDecl :=
+            let factDecl ←
               (signatureFactDecl.toType defaultName sf
                 signatureName signatureRelationNames)
 
@@ -60,11 +60,11 @@ namespace Alloy.AST
 
         --signature
         | `(specification| $sd:sigDecl) =>
-          ast := ast.addSigDecl (sigDecl.toType sd)
+          ast := ast.addSigDecl (← sigDecl.toType sd)
 
         -- function
         | `(specification | $fd:functionDecl) =>
-          ast := ast.addFunctionDecl (functionDecl.toType fd)
+          ast := ast.addFunctionDecl (← functionDecl.toType fd)
 
         --fact
         | `(specification| $fd:factDecl) =>
@@ -72,21 +72,21 @@ namespace Alloy.AST
           -- factDecl.toType:
           -- - fact without fact names: set default fact name (f0, f1, ...)
           -- - fact with fact name: keep fact name
-          let newFactDecl := factDecl.toType defaultName fd
+          let newFactDecl := ← factDecl.toType defaultName fd
           if newFactDecl.name == defaultName then factCount := factCount + 1
           ast := ast.addFactDecl newFactDecl
 
         --assert
         | `(specification| $ad:assertDecl) =>
-          ast := ast.addAssertDecl (assertDecl.toType ad)
+          ast := ast.addAssertDecl (← assertDecl.toType ad)
 
         --Predicate
         | `(specification| $pd:predDecl) =>
-          ast := ast.addPredDecl (predDecl.toType pd)
+          ast := ast.addPredDecl (← predDecl.toType pd)
 
         -- Open Module
         | `(specification| $om:openModule) =>
-          ast := ast.addModuleToOpen (openModule.toType om)
+          ast := ast.addModuleToOpen (← openModule.toType om)
 
         | _ => continue
 

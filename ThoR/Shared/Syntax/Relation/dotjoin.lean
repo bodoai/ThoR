@@ -61,11 +61,16 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (op : Dotjoin) : dotjoin :=
-      match op with
-        | `(dotjoin| .)  => dotjoin.dot_join
-        | `(dotjoin| ⋈)  => dotjoin.dot_join
-        | _ => dotjoin.dot_join -- unreachable
+    def toType
+      (op : Dotjoin)
+      : Except String dotjoin :=
+        match op with
+          | `(dotjoin| .)  => return dotjoin.dot_join
+          | `(dotjoin| ⋈)  => return dotjoin.dot_join
+          | syntx =>
+            throw s!"No match implemented in \
+            dotjoin.toType \
+            for '{syntx}'"
 
   end dotjoin
 

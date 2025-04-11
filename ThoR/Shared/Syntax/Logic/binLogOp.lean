@@ -68,21 +68,26 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (op : BinLogOp) : binLogOp :=
+    def toType
+    (op : BinLogOp)
+    : Except String binLogOp :=
       match op with
-        | `(binLogOp| ||) => binLogOp.or
-        | `(binLogOp| or) => binLogOp.or
+        | `(binLogOp| ||) => return binLogOp.or
+        | `(binLogOp| or) => return binLogOp.or
 
-        | `(binLogOp| &&) => binLogOp.and
-        | `(binLogOp| and) => binLogOp.and
+        | `(binLogOp| &&) => return binLogOp.and
+        | `(binLogOp| and) => return binLogOp.and
 
-        | `(binLogOp| <=>) => binLogOp.equivalent
-        | `(binLogOp| equivalent) => binLogOp.equivalent
+        | `(binLogOp| <=>) => return binLogOp.equivalent
+        | `(binLogOp| equivalent) => return binLogOp.equivalent
 
-        | `(binLogOp| =>) => binLogOp.implication
-        | `(binLogOp| implies) => binLogOp.implication
+        | `(binLogOp| =>) => return binLogOp.implication
+        | `(binLogOp| implies) => return binLogOp.implication
 
-        | _ => binLogOp.or -- unreachable
+        | syntx =>
+          throw s!"No match implemented in \
+          binLogOp.toType \
+          for '{syntx}'"
 
   end binLogOp
 
