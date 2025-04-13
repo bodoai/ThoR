@@ -4,6 +4,8 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 
+import ThoR.Shared.Syntax.quant
+import ThoR.Relation.Quantification
 import ThoR.Relation.Rel
 
 namespace ThoR.Semantics
@@ -57,6 +59,11 @@ mutual
     | in {n : ℕ} {t1 t2 : RelType R n} (e1 : Expression t1) (e2 : Expression t2): Formula
     | eq {n : ℕ} {t1 t2 : RelType R n} (e1 : Expression t1) (e2 : Expression t2) : Formula
     | neq {n : ℕ} {t1 t2 : RelType R n} (e1 : Expression t1) (e2 : Expression t2) : Formula
+    | q_no {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
+    | q_lone {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
+    | q_one {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
+    | q_some {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
+    | q_all {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
 -- pred
 
   inductive TypeExpression : ℕ → Type u where
@@ -111,6 +118,11 @@ mutual
     | .in           r1 r2     => r1.eval ⊂ r2.eval
     | .eq           r1 r2     => r1.eval ≡ r2.eval
     | .neq          r1 r2     => ¬ (r1.eval ≡ r2.eval)
+    | .q_no           f         => (Quantification.Formula.var Shared.quant.no (fun r => (Quantification.Formula.prop (f r).eval))).eval
+    | .q_lone         f         => (Quantification.Formula.var Shared.quant.lone (fun r => (Quantification.Formula.prop (f r).eval))).eval
+    | .q_one          f         => (Quantification.Formula.var Shared.quant.one (fun r => (Quantification.Formula.prop (f r).eval))).eval
+    | .q_some         f         => (Quantification.Formula.var Shared.quant.some (fun r => (Quantification.Formula.prop (f r).eval))).eval
+    | .q_all          f         => (Quantification.Formula.var Shared.quant.all (fun r => (Quantification.Formula.prop (f r).eval))).eval
 
   def TypeExpression.eval {n : ℕ} (te : @TypeExpression R _ n) :=
     match te with
