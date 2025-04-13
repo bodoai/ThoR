@@ -157,3 +157,15 @@ class HNEqual (α : Type u) (β : Type v) where
   /-- `a ≢ b` computes the heterogeneous inequality of `a` and `b`. -/
   hNEqual : α → β → Prop
 infixl:50 " ≢ " => HNEqual.hNEqual
+
+class IfThenElse (α : Type u) where
+  /-- `IfThenElse p a b` evaluates to
+      - `a`, if `p`
+      - `b`, if `¬ p` -/
+  ifThenElse : Prop → α → α → α
+
+class HIfThenElse (α : Type u) (β : Type v) (γ : outParam (Type w)) where
+  /-- `IfThenElse p a b` evaluates to
+      - `a`, if `p`
+      - `b`, if `¬ p` -/
+  hIfThenElse : Prop → α → β → γ

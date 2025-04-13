@@ -25,7 +25,8 @@ class Set (R : Type u) extends
   Sub R,                -- set difference `-`
   HasCard R,            -- cardinality predicate
   SetConstants R,       -- empty set
-  SetMultPredicates R   -- set multiplicity predicates `no`, `lone`, `one`, `some`
+  SetMultPredicates R,   -- set multiplicity predicates `no`, `lone`, `one`, `some`
+  IfThenElse R
   where
   /-- inference rules --/
   -- subset
@@ -78,5 +79,9 @@ class Set (R : Type u) extends
   -- TODO geeignetes inv-Lemma zur Definition von hasCard
   card_uniq : ∀ (a : R) (n m : ℕ),
     hasCard a n → hasCard a m → n = m
+  if_then : ∀ (p : Prop) (a b : R),
+    p → IfThenElse.ifThenElse p a b = a
+  if_else : ∀ (p : Prop) (a b : R),
+    ¬ p → IfThenElse.ifThenElse p a b = b
 
 end ThoR

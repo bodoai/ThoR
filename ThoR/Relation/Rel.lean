@@ -123,6 +123,10 @@ namespace Rel
     hRangerestr r1 r2 := Rel.mk
       (r1.1 :> r2.1) (HasRelType.rangerestr_consistent r1.2 r2.2)
 
+/-- p => r1 else r2 -/
+  instance (R : Type) [TupleSet R] (p : Prop) (n : ℕ) (t1 t2 : RelType R n): HIfThenElse (Rel t1) (Rel t2) (Rel (IfThenElse.ifThenElse p t1 t2)) where
+    hIfThenElse := sorry
+
 -- cardinality
 --  def card {R : Type} [TupleSet R] {n : ℕ} {t : RelType R n} (r : Rel t): ℕ := #(r.relation)
   instance (R : Type) [TupleSet R] (n : ℕ) (t : RelType R n):

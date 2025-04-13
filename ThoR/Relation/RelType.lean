@@ -43,6 +43,7 @@ inductive RelType' (R : Type) [TupleSet R] : Type :=
       RelType' R
   | rangerestr (t1 : RelType' R) (t2 : RelType' R):
       RelType' R
+  | if_then_else (p : Prop) (t1 : RelType' R) (t2 : RelType' R) : RelType' R
 
 
 -- Why define checkArityEq as a macro and not as a function?
@@ -93,6 +94,7 @@ def RelType'.arity {R : Type} [TupleSet R] (t : RelType' R) :=
                         let n1 ← t1.arity
                         let _ ← checkArityN (arity, t2, 1)
                         return n1
+  | if_then_else p t1 t2   => checkArityEq (arity, t1, t2)
 
 def RelType (R : Type) [TupleSet R] (n : ℕ):= { r : RelType' R // r.arity = some n }
 
@@ -169,6 +171,9 @@ instance (R : Type) [TupleSet R] (n : ℕ):
     HRangeRestr (RelType R n) (RelType R 1) (outParam (RelType R n)) where
       hRangerestr (t1 : RelType R n) (t2 : RelType R 1) :=
         Subtype.mk (RelType'.rangerestr t1.1 t2.1) (by simp)
+
+instance (R : Type) [TupleSet R] (n : ℕ) : IfThenElse (RelType R n) where
+  ifThenElse p t1 t2 := Subtype.mk (RelType'.if_then_else p t1.1 t2.1) (by simp)
 
 instance [TupleSet R] {n : ℕ}: Arity (RelType R n) where
   arity             := n
