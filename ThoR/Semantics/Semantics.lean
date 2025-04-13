@@ -27,8 +27,14 @@ mutual
     | domrestr {n : ℕ} {t1 : RelType R 1} {t2 : RelType R n} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 <: t2)
     | rangerestr {n : ℕ} {t1 : RelType R n} {t2 : RelType R 1} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 :> t2)
     | if_then_else {n : ℕ} {t1 t2 : RelType R n} (f : Formula) (r1 : Rel t1) (r2 : Rel t2) : Expression (RelType.ifThenElse t1 t2)
--- function
--- let
+    | call {n1 n2 : ℕ} (t1 : RelType R n1) (t2 : RelType R n2) (f : Function t1 t2) (e : Expression t1) : Expression t2
+    | let {n1 n2 : ℕ} (t1 : RelType R n1) (t2 : RelType R n2) (l : ExpressionLet t1 t2) (e : Expression t1) : Expression t2
+
+  inductive Function : {n1 n2: ℕ} → RelType R n1 → RelType R n2 → Type u where
+    | mk {n1 n2 : ℕ} {t1 : RelType R n1} {t2 : RelType R n2} (f : (Rel t1) → Expression t2): Function t1 t2
+
+  inductive ExpressionLet : {n1 n2: ℕ} → RelType R n1 → RelType R n2 → Type u where
+    | mk {n1 n2 : ℕ} {t1 : RelType R n1} {t2 : RelType R n2} (f : (Rel t1) → Expression t2): ExpressionLet t1 t2
 
   inductive ArithmeticExpression : Type u where
     | number (z : ℤ) : ArithmeticExpression
@@ -64,7 +70,15 @@ mutual
     | q_one {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
     | q_some {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
     | q_all {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
--- pred
+    | call {n : ℕ} (t : RelType R n) (p : Predicate t) (e : Expression t) : Formula
+    | let {n : ℕ} (t : RelType R n) (l : FormulaLet t) (e : Expression t) : Formula
+
+  inductive Predicate : {n: ℕ} → RelType R n → Type u where
+    | mk {n : ℕ} {t : RelType R n} (p : (Rel t) → Formula): Predicate t
+
+  inductive FormulaLet : {n: ℕ} → RelType R n → Type u where
+    | mk {n : ℕ} {t : RelType R n} (p : (Rel t) → Formula): FormulaLet t
+
 
   inductive TypeExpression : ℕ → Type u where
     | type {n : ℕ} (t : RelType R n) : TypeExpression n
@@ -86,6 +100,16 @@ mutual
     | .domrestr      r1 r2   => r1 <: r2
     | .rangerestr    r1 r2   => r1 :> r2
     | .if_then_else  f r1 r2 => HIfThenElse.hIfThenElse f.eval r1 r2
+    | .call          t1 t2 f e     => (f.eval : Rel t1 → Rel t2) e.eval
+    | .let           t1 t2 l e     => (l.eval : Rel t1 → Rel t2) e.eval
+
+  def Function.eval {n1 n2 : ℕ } {t1 : RelType R n1} {t2 : RelType R n2} (f : @Function R _ _ _ t1 t2) :=
+      match f with
+      | .mk f => (fun (r : Rel t1) => (f r).eval : Rel t1 → Rel t2)
+
+  def ExpressionLet.eval {n1 n2 : ℕ } {t1 : RelType R n1} {t2 : RelType R n2} (l : @ExpressionLet R _ _ _ t1 t2) :=
+      match l with
+      | .mk f => (fun (r : Rel t1) => (f r).eval : Rel t1 → Rel t2)
 
   def ArithmeticExpression.eval (a : @ArithmeticExpression R _) :=
     match a with
@@ -118,11 +142,21 @@ mutual
     | .in           r1 r2     => r1.eval ⊂ r2.eval
     | .eq           r1 r2     => r1.eval ≡ r2.eval
     | .neq          r1 r2     => ¬ (r1.eval ≡ r2.eval)
-    | .q_no           f         => (Quantification.Formula.var Shared.quant.no (fun r => (Quantification.Formula.prop (f r).eval))).eval
-    | .q_lone         f         => (Quantification.Formula.var Shared.quant.lone (fun r => (Quantification.Formula.prop (f r).eval))).eval
-    | .q_one          f         => (Quantification.Formula.var Shared.quant.one (fun r => (Quantification.Formula.prop (f r).eval))).eval
-    | .q_some         f         => (Quantification.Formula.var Shared.quant.some (fun r => (Quantification.Formula.prop (f r).eval))).eval
-    | .q_all          f         => (Quantification.Formula.var Shared.quant.all (fun r => (Quantification.Formula.prop (f r).eval))).eval
+    | .q_no         f         => (Quantification.Formula.var Shared.quant.no (fun r => (Quantification.Formula.prop (f r).eval))).eval
+    | .q_lone       f         => (Quantification.Formula.var Shared.quant.lone (fun r => (Quantification.Formula.prop (f r).eval))).eval
+    | .q_one        f         => (Quantification.Formula.var Shared.quant.one (fun r => (Quantification.Formula.prop (f r).eval))).eval
+    | .q_some       f         => (Quantification.Formula.var Shared.quant.some (fun r => (Quantification.Formula.prop (f r).eval))).eval
+    | .q_all        f         => (Quantification.Formula.var Shared.quant.all (fun r => (Quantification.Formula.prop (f r).eval))).eval
+    | .call          t p e    => (p.eval : Rel t → Prop) e.eval
+    | .let           t l e    => (l.eval : Rel t → Prop) e.eval
+
+  def Predicate.eval {n : ℕ } {t : RelType R n} (p : @Predicate R _ _ t) :=
+    match p with
+    | .mk pred => (fun (r : Rel t) => (pred r).eval : Rel t → Prop)
+
+  def FormulaLet.eval {n : ℕ } {t : RelType R n} (p : @FormulaLet R _ _ t) :=
+    match p with
+    | .mk pred => (fun (r : Rel t) => (pred r).eval : Rel t → Prop)
 
   def TypeExpression.eval {n : ℕ} (te : @TypeExpression R _ n) :=
     match te with
