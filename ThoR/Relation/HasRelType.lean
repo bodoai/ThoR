@@ -116,7 +116,7 @@ inductive hasType' {R: Type} [TupleSet R]: R → (RelType' R) → Type :=
   -- p => r1' else r2' : p => t1 else t2
   | if_then_else (p : Prop) (n : ℕ) (t1 : RelType' R) (t2 : RelType' R):
     ∀ (r1' r2' : R), hasType' r1' t1 → hasType' r2' t2
-    → hasType' (IfThenElse.ifThenElse p r1' r2') (RelType'.if_then_else p t1 t2)
+    → hasType' (IfThenElse.ifThenElse p r1' r2') (RelType'.if_then_else t1 t2)
 
 
 local macro "checkArityEqN" "(" t1:term ", " t2:term ", " n:term ")": term =>
@@ -254,8 +254,7 @@ namespace HasRelType
 
     theorem if_then_else_consistent {R : Type} [TupleSet R] {p : Prop} {n : ℕ}
       {r1 r2 : R} {t1 t2 : RelType R n}:
-      r1 ∷ t1 → r2 ∷ t2 → IfThenElse.ifThenElse p r1 r2 ∷ IfThenElse.ifThenElse p t1 t2 := by sorry
-
+      r1 ∷ t1 → r2 ∷ t2 → IfThenElse.ifThenElse p r1 r2 ∷ (RelType.ifThenElse t1 t2) := by sorry
     namespace sig
       lemma isUnary (a : R) (m : Shared.mult):
         a ∷ RelType.sig R m → HasArity.hasArity a 1
