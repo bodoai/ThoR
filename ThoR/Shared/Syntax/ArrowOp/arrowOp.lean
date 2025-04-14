@@ -9,41 +9,11 @@ An arrowOp ist an operation between relations (expr) or other arrow operations
 
 -/
 import ThoR.Basic
-import ThoR.Shared.Syntax.mult
 import ThoR.Shared.Syntax.Relation.Expr.expr
+import ThoR.Shared.Syntax.Mutuals.mutuals
 
 open Lean
 namespace Shared
-
-  /--
-  This inductive type represents an arrowOp
-  -/
-  inductive arrowOp
-    | multArrowOpExpr :
-        (e1 : expr) →
-        (mult1 : mult) →
-        (mult2 : mult) →
-        (e2 : expr) →
-        arrowOp
-    | multArrowOpExprLeft :
-        (e : expr) →
-        (mult1 : mult) →
-        (mult2 : mult) →
-        (ao : arrowOp) →
-        arrowOp
-    | multArrowOpExprRight :
-        (ao : arrowOp) →
-        (mult1 : mult) →
-        (mult2 : mult) →
-        (e : expr) →
-        arrowOp
-    | multArrowOp :
-        (ao1 : arrowOp) →
-        (mult1 : mult) →
-        (mult2 : mult) →
-        (ao2 : arrowOp) →
-        arrowOp
-  deriving Repr, BEq
 
   /--
   This syntax represents an arrowOp

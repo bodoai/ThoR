@@ -5,43 +5,11 @@ Authors: s. file CONTRIBUTORS
 -/
 
 import ThoR.Basic
-import ThoR.Shared.Syntax.constant
-import ThoR.Shared.Syntax.Relation.unRelOp
-import ThoR.Shared.Syntax.Relation.binRelOp
-import ThoR.Shared.Syntax.Relation.dotjoin
-import ThoR.Alloy.Syntax.SeparatedNamespace
+import ThoR.Shared.Syntax.Mutuals.mutuals
 
 open Lean
 
 namespace Shared
-
-  /--
-  This inductive type represents a relation
-  -/
-  inductive expr where
-    | const : (const: constant) → expr
-    | string : (string : String) → expr
-    | function_call_with_args :
-      (functionName : String) →
-      (args : List (expr)) →
-      expr
-    | callFromOpen : (calledEntry : Alloy.separatedNamespace) → expr
-    | unaryRelOperation :
-        (operator : unRelOp) →
-        (expression : expr) →
-        expr
-    | binaryRelOperation :
-        (operator : binRelOp) →
-        (expression1 : expr) →
-        (expression2 : expr) →
-        expr
-    | dotjoin :
-        (dj : dotjoin) →
-        (expression1 : expr) →
-        (expression2 : expr) →
-        expr
-    | string_rb : (string : String) → expr
-  deriving Repr, BEq
 
   /--
   This syntax represents a relation

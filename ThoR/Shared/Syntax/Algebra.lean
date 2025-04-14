@@ -10,4 +10,3 @@ import ThoR.Shared.Syntax.Algebra.unAlgOp
 import ThoR.Shared.Syntax.Algebra.binAlgOp
 import ThoR.Shared.Syntax.Algebra.algCompareOp
 import ThoR.Shared.Syntax.Algebra.AlgExpr.algExpr
-import ThoR.Shared.Syntax.Algebra.CardExpr.cardExpr

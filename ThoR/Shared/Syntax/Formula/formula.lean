@@ -7,66 +7,13 @@ Authors: s. file CONTRIBUTORS
 an alloy formula is used as the body of predicates, facts and asserts
 -/
 
-import ThoR.Shared.Syntax.Algebra
-import ThoR.Shared.Syntax.Logic
-import ThoR.Shared.Syntax.quant
-import ThoR.Shared.Syntax.Relation
+import ThoR.Shared.Syntax.Mutuals.mutuals
+import ThoR.Shared.Syntax.Relation.Expr.expr
+import ThoR.Shared.Syntax.Algebra.AlgExpr.algExpr
 import ThoR.Shared.Syntax.TypeExpr.typeExpr
 
 open Lean
 namespace Shared
-
-  /--
-  This inductive type represents an alloy formula
-  -/
-  inductive formula
-    | string : (string : String) → formula
-    | pred_with_args :
-      (ident : String) →
-      (args : List (expr))
-      →  formula
-    | unaryRelBoolOperation :
-      (operator : unRelBoolOp) →
-      (expr : expr) →
-      formula
-    | unaryLogicOperation :
-      (operator : unLogOp) →
-      (form : formula) →
-      formula
-    | binaryLogicOperation :
-      (operator : binLogOp) →
-      (form1 : formula) →
-      (form2 : formula) →
-      formula
-    | tertiaryLogicOperation :
-      (operator : terLogOp) →
-      (form1 : formula) →
-      (form2 : formula) →
-      (form3 : formula) →
-      formula
-    | algebraicComparisonOperation :
-      (operator : algCompareOp) →
-      (algExpr1 : algExpr) →
-      (algExpr2 : algExpr) →
-      formula
-    | relationComarisonOperation :
-      (operator : relCompareOp) →
-      (expression1 : expr) →
-      (expression2 : expr) →
-      formula
-    | quantification :
-      (quantifier : quant) →
-      (disjunction : Bool) →
-      (names : List (String)) →
-      (typeExpression : typeExpr) →
-      (formulas : List formula) →
-      formula
-    | letDeclaration :
-      (name : Name) →
-      (value : formula) →
-      (body : List (formula)) →
-      formula
-  deriving Repr, Inhabited, BEq
 
   declare_syntax_cat formula_without_if
   abbrev Formula_without_if := TSyntax `formula_without_if

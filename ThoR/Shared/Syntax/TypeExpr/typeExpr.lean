@@ -4,27 +4,13 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
-import ThoR.Shared.Syntax.mult
 import ThoR.Shared.Syntax.ArrowOp.arrowOp
+import ThoR.Shared.Syntax.Mutuals.mutuals
 
 open ThoR
 open Lean
 
 namespace Shared
-
-  /--
-  This inductive type represents a typeExpression
-  -/
-  inductive typeExpr
-    | arrowExpr : (arrowExpr : arrowOp) → typeExpr
-    | multExpr :
-        (m : mult) →
-        (expr : expr) →
-        typeExpr
-    | relExpr :
-        (expr : expr) →
-        typeExpr
-  deriving Repr
 
   /--
   This syntax represents a typeExpression

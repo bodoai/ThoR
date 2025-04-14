@@ -4,30 +4,12 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
-import ThoR.Shared.Syntax.Algebra.unAlgOp
-import ThoR.Shared.Syntax.Algebra.binAlgOp
+import ThoR.Shared.Syntax.Mutuals.mutuals
 import ThoR.Shared.Syntax.Relation.Expr.expr
 
 open Lean
 
 namespace Shared
-
-  /--
-  This inductive type represents an algebra expression
-  -/
-  inductive algExpr
-    | number : (num : Int) → algExpr
-    | cardExpression : (expression : expr) → algExpr
-    | unaryAlgebraOperation :
-      (operator : unAlgOp) →
-      (algExpr1 : algExpr) →
-      algExpr
-    | binaryAlgebraOperation :
-      (operator : binAlgOp) →
-      (algExpr1 : algExpr) →
-      (algExpr2 : algExpr) →
-      algExpr
-  deriving Repr, BEq
 
   /--
   This syntax represents an algebra expression
