@@ -18,10 +18,10 @@ namespace Alloy.predArg
     (disjunction:Bool)
     (names: Syntax.TSepArray `ident ",")
     (e: Expression)
-    : predArg := Id.run do
+    : Except String predArg := do
 
     let names := (names.getElems.map fun (elem) => elem.getId.toString).toList
-    let e := (expr.toType e)
+    let e ← (expr.toType e)
 
     return {
       disjunction := disjunction
@@ -32,19 +32,20 @@ namespace Alloy.predArg
   /--
   Parses the given syntax to a predArg if possible
   -/
-  def toType (arg : PredArg) : predArg :=
-    match arg with
-      | `(predArg| disj $names:ident,* : $expression:expr) =>
-        create true names expression
+  def toType
+    (arg : PredArg)
+    : Except String predArg := do
+      match arg with
+        | `(predArg| disj $names:ident,* : $expression:expr) =>
+          return ← create true names expression
 
-      | `(predArg| $names:ident,* : $expression:expr) =>
-        create False names expression
+        | `(predArg| $names:ident,* : $expression:expr) =>
+          return ← create False names expression
 
-      | _ => {
-          disjunction := false
-          expression := expr.const constant.none
-          names:= ["panic"]
-        } -- unreachable
+        | syntx =>
+            throw s!"No match implemented in \
+            predArgService.toType \
+            for '{syntx}'"
 
   def simplifyDomainRestrictions
     (pa : predArg)

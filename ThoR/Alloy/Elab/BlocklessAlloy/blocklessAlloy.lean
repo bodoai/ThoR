@@ -30,12 +30,14 @@ namespace Alloy
       if formulas.isEmpty then
         return (unhygienicUnfolder `(term | True))
       else
-        let formulas := formulas.map fun f => formula.toType f
+        let mut formulas_typed := []
+        for f in formulas do
+          formulas_typed := formulas_typed.concat (← formula.toType f)
 
-        let first_formula := formulas.get! 0
+        let first_formula := formulas_typed.get! 0
 
         let mut result_term ← first_formula.toTermOutsideBlock alloyDataList localContextUserNames
-        for formula in (formulas.drop 1) do
+        for formula in (formulas_typed.drop 1) do
           let formula_term ← formula.toTermOutsideBlock alloyDataList localContextUserNames
           result_term := unhygienicUnfolder `($result_term ∧ $formula_term)
 

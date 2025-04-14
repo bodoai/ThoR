@@ -463,42 +463,43 @@ namespace Shared.expr
   partial def toType
     (e : Expression)
     (signatureRelationNames : List String := [])
-    : expr :=
+    : Except String expr := do
       match e with
-        | `(expr | ( $e:expr )) => expr.toType e
+        | `(expr | ( $e:expr )) =>
+          return ← expr.toType e
         | `(expr |
             $op:unRelOp
             $subExpr: expr) =>
-            expr.unaryRelOperation
-            (unRelOp.toType op)
-            (expr.toType subExpr)
+            return expr.unaryRelOperation
+              (← unRelOp.toType op)
+              (← expr.toType subExpr)
 
         | `(expr |
             $subExpr1:expr
             $op:binRelOp
             $subExpr2:expr) =>
-            expr.binaryRelOperation
-              (binRelOp.toType op)
-              (expr.toType subExpr1)
-              (expr.toType subExpr2)
+            return expr.binaryRelOperation
+              (← binRelOp.toType op)
+              (← expr.toType subExpr1)
+              (← expr.toType subExpr2)
 
         | `(expr |
             $subExpr1:expr
             $dj:dotjoin
             $subExpr2:expr) =>
-            expr.dotjoin
-            (dotjoin.toType dj)
-            (expr.toType subExpr1)
-            (expr.toType subExpr2)
+            return expr.dotjoin
+              (← dotjoin.toType dj)
+              (← expr.toType subExpr1)
+              (← expr.toType subExpr2)
 
         | `(expr | $const:constant) =>
-            expr.const (constant.toType const)
+            return expr.const (← constant.toType const)
 
-        | `(expr | @$name:ident) => Id.run do
-            expr.string_rb name.getId.toString
+        | `(expr | @$name:ident) =>
+            return expr.string_rb name.getId.toString
 
-        | `(expr | $sn:separatedNamespace) => Id.run do
-          let sn := Alloy.separatedNamespace.toType sn
+        | `(expr | $sn:separatedNamespace) =>
+          let sn ← Alloy.separatedNamespace.toType sn
           let components := sn.representedNamespace.getId.components
           let lastComponent := components.getLast!
           let lastComponentString := lastComponent.toString
@@ -510,7 +511,7 @@ namespace Shared.expr
           let newIdent := mkIdent newName
           return expr.callFromOpen (Alloy.separatedNamespace.mk newIdent)
 
-        | `(expr | $name:ident) => Id.run do
+        | `(expr | $name:ident) =>
             let parsedName := name.getId
 
             if parsedName.isAtomic then
@@ -519,13 +520,13 @@ namespace Shared.expr
 
               -- If the string (name) of the expr is a sigField in a sigFact
               if (signatureRelationNames.contains exprStringName) then
-                expr.dotjoin
+                return expr.dotjoin
                   dotjoin.dot_join
                   (expr.string "this")
                   (expr.string exprStringName)
 
               else
-                expr.string exprStringName
+                return expr.string exprStringName
 
             else -- ident contains . which must be parsed as dotjoin
               let x := (parsedName.splitAt (parsedName.components.length - 1))
@@ -538,38 +539,44 @@ namespace Shared.expr
               let subE2 : Expression := Unhygienic.run
                 `(expr| $(mkIdent subExpr2): ident)
 
-              expr.dotjoin
+              return expr.dotjoin
                 dotjoin.dot_join
-                (expr.toType subE1)
-                (expr.toType subE2)
+                (← expr.toType subE1)
+                (← expr.toType subE2)
 
         | `(expr |
             $called_function:ident
             [ $arguments:expr,* ]
           ) =>
-          expr.function_call_with_args
+          let mut arguments_typed := []
+          for argument in arguments.getElems do
+            arguments_typed := arguments_typed.concat (← expr.toType argument)
+
+          return expr.function_call_with_args
             called_function.getId.toString
-            (arguments.getElems.map fun e => expr.toType e).toList
+            arguments_typed
 
         | `(expr | -- Hack to allow dotjoin before ()
           $subExpr1:expr .( $subExpr2:expr )) =>
-          expr.dotjoin
+          return expr.dotjoin
             dotjoin.dot_join
-            (expr.toType subExpr1)
-            (expr.toType subExpr2)
+            (← expr.toType subExpr1)
+            (← expr.toType subExpr2)
 
         | `(expr |
           $subExpr1:expr .( $subExpr2:expr ). $subExpr3:expr) =>
-          expr.dotjoin
+          return expr.dotjoin
             dotjoin.dot_join
-            (expr.toType subExpr1)
+            (← expr.toType subExpr1)
             (expr.dotjoin
               dotjoin.dot_join
-              (expr.toType subExpr2)
-              (expr.toType subExpr3))
+              (← expr.toType subExpr2)
+              (← expr.toType subExpr3))
 
-
-        | _ => expr.const constant.none -- unreachable
+        | syntx =>
+            throw s!"No match implemented in \
+            exprService.toType \
+            for '{syntx}'"
 
   /--
   Gets the required variables for the type

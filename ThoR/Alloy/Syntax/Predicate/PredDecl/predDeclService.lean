@@ -46,20 +46,22 @@ namespace Alloy.predDecl
   -/
   def createWithArgs
     (name : Name)
-    (args : Syntax.TSepArray `predArg ",")
+    (input_arguments : Syntax.TSepArray `predArg ",")
     (forms : TSyntaxArray `formula)
-    : predDecl := Id.run do
+    : Except String predDecl := do
 
-    let args : List (predArg) :=
-      (args.getElems.map fun (arg) => (predArg.toType arg)).toList
+    let mut arguments : List (predArg) := []
+    for argument in input_arguments.getElems do
+      arguments := arguments.concat (← predArg.toType argument)
 
-    let forms : List (formula) :=
-      (forms.map fun (f) => (formula.toType f)).toList
+    let mut forms_typed := []
+    for f in forms do
+      forms_typed := forms_typed.concat (← formula.toType f)
 
-    {
+    return {
       name := name.toString
-      args := args
-      forms := forms
+      args := arguments
+      forms := forms_typed
     }
 
   /--
@@ -68,40 +70,46 @@ namespace Alloy.predDecl
   def createWithoutArgs
     (name : Name)
     (forms : TSyntaxArray `formula)
-    : predDecl := Id.run do
+    : Except String predDecl := do
 
-    let forms : List (formula) :=
-      (forms.map fun (f) => (formula.toType f)).toList
+    let mut forms_typed := []
+    for f in forms do
+      forms_typed := forms_typed.concat (← formula.toType f)
 
-    {
+    return {
       name := name.toString
       args := []
-      forms := forms
+      forms := forms_typed
     }
 
   /--
   Parses te given syntax to a structure of predDecl if possible
   -/
-  def toType (pd : PredDecl) : predDecl :=
-    match pd with
-      -- pred declaration with args
-      | `(predDecl| pred $name:extendedIdent ($args:predArg,*) {
-          $forms:formula*
-        }) =>
-          predDecl.createWithArgs (extendedIdent.toName name) args forms
+  def toType
+    (pd : PredDecl)
+    : Except String predDecl := do
+      match pd with
+        -- pred declaration with args
+        | `(predDecl| pred $name:extendedIdent ($args:predArg,*) {
+            $forms:formula*
+          }) =>
+            return ← predDecl.createWithArgs (extendedIdent.toName name) args forms
 
-      | `(predDecl| pred $name:extendedIdent [$args:predArg,*] {
-          $forms:formula*
-        }) =>
-          predDecl.createWithArgs (extendedIdent.toName name) args forms
+        | `(predDecl| pred $name:extendedIdent [$args:predArg,*] {
+            $forms:formula*
+          }) =>
+            return ← predDecl.createWithArgs (extendedIdent.toName name) args forms
 
-      -- pred declaration without args
-      | `(predDecl| pred $name:extendedIdent {
-          $forms:formula*
-        }) =>
-          predDecl.createWithoutArgs (extendedIdent.toName name) forms
+        -- pred declaration without args
+        | `(predDecl| pred $name:extendedIdent {
+            $forms:formula*
+          }) =>
+            return ← predDecl.createWithoutArgs (extendedIdent.toName name) forms
 
-      | _ => {name := "PANIC!", args := [], forms := []}
+        | syntx =>
+            throw s!"No match implemented in \
+            predDeclService.toType \
+            for '{syntx}'"
 
   def simplifyDomainRestrictions
     (pd : predDecl)

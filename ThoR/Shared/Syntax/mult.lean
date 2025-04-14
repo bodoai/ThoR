@@ -62,23 +62,29 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (m : Mult) : mult :=
-      match m with
-        | `(mult| set) => mult.set
-        | `(mult| some) => mult.some
-        | `(mult| lone) => mult.lone
-        | `(mult| one) => mult.one
+    def toType
+      (m : Mult)
+      : Except String mult := do
+        match m with
+          | `(mult| set) => return mult.set
+          | `(mult| some) => return mult.some
+          | `(mult| lone) => return mult.lone
+          | `(mult| one) => return mult.one
 
-        | _ => mult.one -- unreachable
+          | syntx => throw s!"No match implemented in \
+            mult.toType \
+            for '{syntx}'"
 
     /--
     Tries to parse an mult from an option syntax and
     returns the set mult if no mult is to be found
     -/
-    def fromOption (m : Option Mult) : mult :=
+    def fromOption
+      (m : Option Mult)
+      : Except String mult :=
       match m with
-        | Option.some mul => mult.toType mul
-        | Option.none => mult.set
+        | Option.some mul => return ← mult.toType mul
+        | Option.none => return mult.set
 
   end mult
 

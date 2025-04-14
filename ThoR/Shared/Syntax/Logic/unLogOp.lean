@@ -35,11 +35,16 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (op : UnLogOp) : unLogOp :=
-      match op with
-        | `(unLogOp| not) => unLogOp.not
+    def toType
+      (op : UnLogOp)
+      : Except String unLogOp :=
+        match op with
+          | `(unLogOp| not) => return unLogOp.not
 
-        | _ => unLogOp.not -- unreachable
+          | syntx =>
+              throw s!"No match implemented in \
+              unLogOp.toType \
+              for '{syntx}'"
 
     /--
     Generates a Lean term corosponding with the type
