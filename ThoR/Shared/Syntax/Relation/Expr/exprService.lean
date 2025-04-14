@@ -9,6 +9,7 @@ import ThoR.Alloy.SymbolTable.SymbolTable
 import ThoR.Alloy.Config
 import ThoR.Alloy.Syntax.AlloyData.alloyData
 import ThoR.Alloy.UnhygienicUnfolder
+import ThoR.Relation.ElabCallMacro
 
 open Alloy Config
 open Lean

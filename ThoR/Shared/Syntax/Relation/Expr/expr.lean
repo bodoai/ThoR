@@ -9,11 +9,9 @@ import ThoR.Shared.Syntax.constant
 import ThoR.Shared.Syntax.Relation.unRelOp
 import ThoR.Shared.Syntax.Relation.binRelOp
 import ThoR.Shared.Syntax.Relation.dotjoin
-import ThoR.Relation.ElabCallMacro
-import ThoR.Alloy.Config
 import ThoR.Alloy.Syntax.SeparatedNamespace
 
-open Lean Config
+open Lean
 
 namespace Shared
 
