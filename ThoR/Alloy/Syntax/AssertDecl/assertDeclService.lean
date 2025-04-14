@@ -10,12 +10,15 @@ import ThoR.Alloy.Syntax.Property.propertyService
 namespace Alloy.assertDecl
 
   /-- Generates a type representation from the TSyntax -/
-  def toType (ad : AssertDecl) : assertDecl :=
-    match ad with
-      | `(assertDecl| assert $name:extendedIdent $p:property) =>
-          property.toType (extendedIdent.toName name) p
+  def toType
+    (ad : AssertDecl)
+    : Except String assertDecl := do
+      match ad with
+        | `(assertDecl| assert $name:extendedIdent $p:property) =>
+            return ← property.toType (extendedIdent.toName name) p
 
-      | _ => default
+        | syntx =>
+          throw s!"No match implemented in assertDeclService.toType for '{syntx}'"
 
   /--
   Extracts all required definitions (i.e. references to preds)

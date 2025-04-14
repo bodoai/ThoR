@@ -18,11 +18,12 @@ namespace Alloy.property
     (formulas : TSyntaxArray `formula)
     (signatureName : String := "")
     (signatureRelationNames : List String := [])
-    : property := Id.run do
+    : Except String property := do
 
-    let formulas : List (formula) :=
-      (formulas.map fun (f) =>
-        (formula.toType f signatureRelationNames)).toList
+    let mut formulas_typed := []
+    for f in formulas do
+      formulas_typed :=
+        formulas_typed.concat (← formula.toType f signatureRelationNames)
 
     if !(signatureName.isEmpty) &&
         !(signatureRelationNames.isEmpty) &&
@@ -37,13 +38,13 @@ namespace Alloy.property
             (names := ["this"])
             (typeExpression :=
               typeExpr.relExpr (expr.string (signatureName)))
-            (formulas := (formulas))
+            (formulas := formulas_typed)
         ]
       }
     else
       return {
         name:= name.toString,
-        formulas := formulas
+        formulas := formulas_typed
       }
 
   /-- Creates a type representation from syntax and a name-/
@@ -52,10 +53,13 @@ namespace Alloy.property
     (p : Property)
     (signatureName : String := "")
     (signatureRelationNames : List String := [])
-    : property :=
+    : Except String property :=
     match p with
       | `(property | { $formulas:formula*}) =>
-        create name formulas signatureName signatureRelationNames
-      | _ => default
+        return ← create name formulas signatureName signatureRelationNames
+      | syntx =>
+          throw s!"No match implemented in \
+          propertyService.toType \
+          for '{syntx}'"
 
 end Alloy.property

@@ -37,7 +37,13 @@ private def evaluateRelationDecl
       -- (subrel : te)
       | `(rel_decl| ( $subrel ∷ $te:typeExpr)) => do
         -- let cmd ← `(variable ($subrel : Nat))
-        let typeExpression := (Shared.typeExpr.toType te)
+
+        let typeExpression_with_exception := (Shared.typeExpr.toType te)
+        let mut typeExpression : typeExpr := default
+        match typeExpression_with_exception with
+          | Except.error msg => logError msg return
+          | Except.ok data => typeExpression := data
+
         match typeExpression.toTermOutsideBlock with
         | Except.error msg => logError msg
         | Except.ok type =>
@@ -53,23 +59,33 @@ private def evaluateRelationDecl
 
 -- ∷ <alloy type> creates corresponding (Rel <alloy type>)
 elab "∷" t:typeExpr : term => do
-      let typeExpression := (Shared.typeExpr.toType t)
-      match typeExpression.toTermOutsideBlock with
+      let typeExpression_with_exception := (Shared.typeExpr.toType t)
+      match typeExpression_with_exception with
         | Except.error msg =>
           logError msg
           throwUnsupportedSyntax
-        | Except.ok type =>
-           elabTerm type Option.none
+        | Except.ok data =>
+          match data.toTermOutsideBlock with
+            | Except.error msg =>
+              logError msg
+              throwUnsupportedSyntax
+            | Except.ok type =>
+              elabTerm type Option.none
 
 -- ◃∷ <alloy type> creates corresponding RelType value
 elab "◃∷" t:typeExpr : term => do
-      let typeExpression := (Shared.typeExpr.toType t)
-      match typeExpression.toRelTypeTermOutsideBlock with
-      | Except.error msg =>
-        logError msg
-        throwUnsupportedSyntax
-      | Except.ok type =>
-          elabTerm type Option.none
+      let typeExpression_with_exception := (Shared.typeExpr.toType t)
+      match typeExpression_with_exception with
+        | Except.error msg =>
+          logError msg
+          throwUnsupportedSyntax
+        | Except.ok data =>
+          match data.toRelTypeTermOutsideBlock with
+          | Except.error msg =>
+            logError msg
+            throwUnsupportedSyntax
+          | Except.ok type =>
+              elabTerm type Option.none
 
 -- TODO: Variante von ∷ mit expliziter Angabe von R
 --       Offener Punkt: Mit oder ohne @?

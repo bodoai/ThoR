@@ -84,30 +84,48 @@ namespace Alloy
       else
         logError s!"Cannot create {ident.getId.toString}, it does not exist."
 
-
   @[command_elab creationSyntax]
   private def creationImpl : CommandElab := fun stx => do
     try
       match stx with
         | `(create $name:separatedNamespace) =>
+          let sn_except := separatedNamespace.toType name
+          let mut sn := default
+          match sn_except with
+            | Except.error msg => logError msg return
+            | Except.ok data => sn := data
+
           evaluateCreationCommand
-            (separatedNamespace.toType name).representedNamespace
+            sn.representedNamespace
             false
 
         | `(#create $name:separatedNamespace) =>
+          let sn_except := separatedNamespace.toType name
+          let mut sn := default
+          match sn_except with
+            | Except.error msg => logError msg return
+            | Except.ok data => sn := data
+
           evaluateCreationCommand
-            (separatedNamespace.toType name).representedNamespace
+            sn.representedNamespace
             true
 
         | `(~create $name:separatedNamespace) =>
+          let sn_except := separatedNamespace.toType name
+          let mut sn := default
+          match sn_except with
+            | Except.error msg => logError msg return
+            | Except.ok data => sn := data
+
           Lean.Elab.Command.failIfSucceeds
             (
               evaluateCreationCommand
-                (separatedNamespace.toType name).representedNamespace
+                sn.representedNamespace
                 false
             )
 
         | _ => return
+
     catch | x => throwError x.toMessageData
 
 end Alloy

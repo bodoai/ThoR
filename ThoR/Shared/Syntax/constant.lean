@@ -77,13 +77,17 @@ namespace Shared
     /--
     Parses the given syntax to the type
     -/
-    def toType (c : Constant) : constant :=
-      match c with
-        | `(constant| none) => constant.none
-        | `(constant| iden) => constant.iden
-        | `(constant| univ) => constant.univ
+    def toType
+      (c : Constant)
+      : Except String constant :=
+        match c with
+          | `(constant| none) => return constant.none
+          | `(constant| iden) => return constant.iden
+          | `(constant| univ) => return constant.univ
 
-        | _ => constant.none -- unreachable
+          | syntx => throw s!"No match implemented in \
+            constant.toType \
+            for '{syntx}'"
 
   end constant
 

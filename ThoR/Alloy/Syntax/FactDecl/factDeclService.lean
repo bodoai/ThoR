@@ -10,17 +10,21 @@ import ThoR.Alloy.Syntax.Property.propertyService
 namespace Alloy.factDecl
 
   /-- Generates a type representation from the TSyntax -/
-  def toType (defaultName : String) (fd: FactDecl) : factDecl :=
-    match fd with
-        --with name
-      | `(factDecl| fact $name:extendedIdent $p:property) =>
-            property.toType (extendedIdent.toName name) p
+  def toType
+    (defaultName : String)
+    (fd: FactDecl)
+    : Except String factDecl := do
+      match fd with
+          --with name
+        | `(factDecl| fact $name:extendedIdent $p:property) =>
+              return ← property.toType (extendedIdent.toName name) p
 
-        -- without name
-        | `(factDecl| fact $p:property) =>
-              property.toType defaultName.toName p
+          -- without name
+          | `(factDecl| fact $p:property) =>
+              return ← property.toType defaultName.toName p
 
-        | _ => default
+          | syntx =>
+            throw s!"No match implemented in factDeclService.toType for '{syntx}'"
 
   /--
   Extracts all required definitions (i.e. references to preds)

@@ -28,7 +28,7 @@ namespace Alloy.sigDecl
     (abstr : Bool)
     (extension : sigExt)
     (fields : Syntax.TSepArray `fieldDecl ",")
-    : sigDecl := Id.run do
+    : Except String sigDecl := do
       --Extended Identifier to String
       let stringNames : List (String) :=
         ( names.getElems.map fun (elem) =>
@@ -52,7 +52,7 @@ namespace Alloy.sigDecl
               (extendedIdent.toName elem).toString
             ).toList
 
-          let type := typeExpr.toType te
+          let type ← typeExpr.toType te
 
           newSigDecl := addFieldDecl newSigDecl
                   ({names:= stringNames,
@@ -66,90 +66,97 @@ namespace Alloy.sigDecl
   /--
   Parses the given syntax to a sigDecl (type) if possible
   -/
-  def toType (sd: SigDecl) : sigDecl :=
-    match sd with
-      -- signature with opt mult, extends, fields
-      | `(sigDecl|
-          $m:mult sig $sigNames:extendedIdent,*
-          $[extends $extensionName]?
-            { $fields:fieldDecl,* }
-        ) =>
-        create sigNames (mult.toType m)
-        false (sigExt.fromOptionEx extensionName) fields
+  def toType
+    (sd: SigDecl)
+    : Except String sigDecl := do
+      match sd with
+        -- signature with opt mult, extends, fields
+        | `(sigDecl|
+            $m:mult sig $sigNames:extendedIdent,*
+            $[extends $extensionName]?
+              { $fields:fieldDecl,* }
+          ) =>
+          return ← create
+              sigNames
+              (← mult.toType m)
+              false
+              (sigExt.fromOptionEx extensionName)
+              fields
 
-      -- abstract signature, extends, fields
-      | `(sigDecl|
-          abstract
-          sig $sigNames:extendedIdent,*
-          $[extends $extensionName]?
-            { $fields:fieldDecl,* }
-        ) =>
-        create sigNames (mult.set)
-        true (sigExt.fromOptionEx extensionName) fields
+        -- abstract signature, extends, fields
+        | `(sigDecl|
+            abstract
+            sig $sigNames:extendedIdent,*
+            $[extends $extensionName]?
+              { $fields:fieldDecl,* }
+          ) =>
+          return ← create
+              sigNames
+              (mult.set)
+              true
+              (sigExt.fromOptionEx extensionName)
+              fields
 
-      -- abstract signature with mult, extends, fields
-      | `(sigDecl|
-          abstract $m:mult sig $sigNames:extendedIdent,*
-          $[extends $extensionName]?
-            { $fields:fieldDecl,* }
-        ) =>
-        create sigNames (mult.toType m)
-        false (sigExt.fromOptionEx extensionName) fields
+        -- abstract signature with mult, extends, fields
+        | `(sigDecl|
+            abstract $m:mult sig $sigNames:extendedIdent,*
+            $[extends $extensionName]?
+              { $fields:fieldDecl,* }
+          ) =>
+          return ← create sigNames (← mult.toType m)
+            false (sigExt.fromOptionEx extensionName) fields
 
-      -- simple sig with extends
-      | `(sigDecl|
-          sig $sigNames:extendedIdent,*
-          $[extends $extensionName]?
-            { $fields:fieldDecl,* }
-        ) =>
-        create sigNames (mult.set)
-        false (sigExt.fromOptionEx extensionName) fields
+        -- simple sig with extends
+        | `(sigDecl|
+            sig $sigNames:extendedIdent,*
+            $[extends $extensionName]?
+              { $fields:fieldDecl,* }
+          ) =>
+          return ← create sigNames (mult.set)
+            false (sigExt.fromOptionEx extensionName) fields
 
-      -- signature with opt mult, in, fields
-      | `(sigDecl|
-          $m:mult sig $sigNames:extendedIdent,*
-          $[in $extensionName $typeExtensions*]?
-            { $fields:fieldDecl,* }
-        ) =>
-        create sigNames (mult.toType m)
-        false (sigExt.fromOptionIn extensionName typeExtensions) fields
+        -- signature with opt mult, in, fields
+        | `(sigDecl|
+            $m:mult sig $sigNames:extendedIdent,*
+            $[in $extensionName $typeExtensions*]?
+              { $fields:fieldDecl,* }
+          ) =>
+          return ← create sigNames (← mult.toType m)
+            false (sigExt.fromOptionIn extensionName typeExtensions) fields
 
-      -- abstract signature with in, fields
-      | `(sigDecl|
-          abstract
-          sig $sigNames:extendedIdent,*
-          $[in $extensionName $typeExtensions*]?
-            { $fields:fieldDecl,* }
-        ) =>
-        create sigNames (mult.set)
-        true (sigExt.fromOptionIn extensionName typeExtensions) fields
+        -- abstract signature with in, fields
+        | `(sigDecl|
+            abstract
+            sig $sigNames:extendedIdent,*
+            $[in $extensionName $typeExtensions*]?
+              { $fields:fieldDecl,* }
+          ) =>
+          return ← create sigNames (mult.set)
+            true (sigExt.fromOptionIn extensionName typeExtensions) fields
 
-      -- abstract signature with mult in, fields
-      | `(sigDecl|
-          abstract $m:mult sig $sigNames:extendedIdent,*
-          $[in $extensionName $typeExtensions*]?
-            { $fields:fieldDecl,* }
-        ) =>
-        create sigNames (mult.toType m)
-        true (sigExt.fromOptionIn extensionName typeExtensions) fields
+        -- abstract signature with mult in, fields
+        | `(sigDecl|
+            abstract $m:mult sig $sigNames:extendedIdent,*
+            $[in $extensionName $typeExtensions*]?
+              { $fields:fieldDecl,* }
+          ) =>
+          return ← create sigNames (← mult.toType m)
+            true (sigExt.fromOptionIn extensionName typeExtensions) fields
 
-      -- simple sig with in
-      | `(sigDecl|
-          sig $sigNames:extendedIdent,*
-          $[in $extensionName $typeExtensions*]?
-            { $fields:fieldDecl,* }
-        ) =>
-        create sigNames (mult.set)
-        true (sigExt.fromOptionIn extensionName typeExtensions) fields
+        -- simple sig with in
+        | `(sigDecl|
+            sig $sigNames:extendedIdent,*
+            $[in $extensionName $typeExtensions*]?
+              { $fields:fieldDecl,* }
+          ) =>
+          return ← create sigNames (mult.set)
+            true (sigExt.fromOptionIn extensionName typeExtensions) fields
 
 
-      | _ => {
-          abs := false,
-          mult := mult.lone,
-          names := ["PANIC! PARSING ERROR"],
-          extension := sigExt.none,
-          fieldDecls := []
-        }
+        | syntx =>
+            throw s!"No match implemented in \
+            sigDeclService.toType \
+            for '{syntx}'"
 
   def toTerm (sd : sigDecl) : Term := Unhygienic.run do
     let absTerm ← `(term | $(if sd.abs then (mkIdent `true) else (mkIdent `false)))
