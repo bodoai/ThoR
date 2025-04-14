@@ -44,44 +44,4 @@ namespace Shared
           (mult)? allowedArrows (mult)?
           arrowOp : arrowOp
 
-  namespace arrowOp
-
-    /--
-    Generates a string representation of the type
-    -/
-    def toString (ae : arrowOp) : String :=
-      match ae with
-        | arrowOp.multArrowOpExpr ae1 m1 m2 ae2 =>
-          (ae1.toString) ++ " " ++ (m1.toString)
-          ++ " → " ++
-          (m2.toString) ++ " " ++ (ae2.toString)
-
-        | arrowOp.multArrowOpExprLeft ae1 m1 m2 ae2 =>
-          (ae1.toString) ++ " " ++ (m1.toString)
-          ++ " → " ++
-          (m2.toString) ++ " " ++ (ae2.toString)
-
-        | arrowOp.multArrowOpExprRight ae1 m1 m2 ae2 =>
-          (ae1.toString) ++ " " ++ (m1.toString)
-          ++ " → " ++
-          (m2.toString) ++ " " ++ (ae2.toString)
-
-        | arrowOp.multArrowOp ae1 m1 m2 ae2 =>
-          (ae1.toString) ++ " " ++ (m1.toString)
-          ++ " → " ++
-          (m2.toString) ++ " " ++ (ae2.toString)
-
-    instance : ToString arrowOp where
-      toString : arrowOp -> String := fun ae => ae.toString
-
-    instance : Inhabited arrowOp where
-      default :=
-        arrowOp.multArrowOpExpr
-          (expr.const constant.none)
-          (mult.set)
-          (mult.set)
-          (expr.const constant.none)
-
-  end arrowOp
-
 end Shared

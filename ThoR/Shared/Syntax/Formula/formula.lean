@@ -41,50 +41,9 @@ namespace Shared
   syntax "let" ident "=" formula_without_if "|" "{" formula_without_if* "}" : alloyLetDecl
   syntax alloyLetDecl : formula_without_if
 
-  /--
-  This syntax represents an alloy formula
-  -/
-  declare_syntax_cat formula
-  abbrev Formula := TSyntax `formula
-
   syntax formula_without_if : formula
 
   --Special tertiariy Syntax (if else)
   syntax formula " => " formula " else " formula : formula
-
-
-  namespace formula
-
-    /--
-    Generates a string representation of the type
-    -/
-    partial def toString (f : formula) : String :=
-      match f with
-        | formula.string s => s
-        | formula.pred_with_args p pa => Id.run do
-          let mut pas := ""
-          for a in pa do
-            pas := pas.append s!"{a} "
-          s!"{p} ({pas})"
-        | formula.unaryRelBoolOperation op e => s!"{op} {e}"
-        | formula.unaryLogicOperation op f => s!"{op} {toString f}"
-        | formula.binaryLogicOperation op f1 f2 =>
-          s!"{toString f1} {op} {toString f2}"
-        | formula.tertiaryLogicOperation op f1 f2 f3 =>
-          s!"{op} {toString f1} {toString f2} {toString f3}"
-        | formula.algebraicComparisonOperation op ae1 ae2 =>
-          s!"{ae1} {op} {ae2}"
-        | formula.relationComarisonOperation op e1 e2 =>
-          s!"{e1} {op} {e2}"
-        | formula.quantification q d n te f =>
-          s!"{q} {if d then "disj" else ""} {n} : {te} | {f.map fun e => e.toString}"
-        | formula.letDeclaration name value body =>
-          let bodyString := body.map fun e => e.toString
-          s!"let {name} := {value.toString} | ⦃{bodyString}⦄"
-
-    instance : ToString formula where
-      toString := toString
-
-  end formula
 
 end Shared

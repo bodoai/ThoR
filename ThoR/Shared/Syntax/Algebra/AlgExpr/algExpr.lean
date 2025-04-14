@@ -23,20 +23,6 @@ namespace Shared
 
   namespace algExpr
 
-    /--
-    Generates a string representation of the type
-    -/
-    def toString (ae : algExpr) : String :=
-      match ae with
-        | algExpr.number n => ToString.toString n
-        | algExpr.cardExpression e => s!"# {e}"
-        | algExpr.unaryAlgebraOperation op ae => s!"{op} {toString ae}"
-        | algExpr.binaryAlgebraOperation op ae1 ae2 =>
-          s!"{op} [{toString ae1}, {toString ae2}]"
-
-    instance : ToString algExpr where
-      toString := toString
-
     instance : Inhabited algExpr where
       default := algExpr.number (1:Int)
 
