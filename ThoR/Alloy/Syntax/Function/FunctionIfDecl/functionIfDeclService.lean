@@ -26,13 +26,12 @@ namespace Alloy.functionIfDecl
       let mut term : Unhygienic Term :=
         `($(conditionTerm) → $(thenBodyTerm))
 
-      if fid.hasElse then
-        let elseBodyTerm ← fid.elseBody.toTermFromBlock blockName
-        term :=
-          `(term |
-            ($(unhygienicUnfolder term)) ∧
-            (Not $(conditionTerm) → $(elseBodyTerm))
-          )
+      let elseBodyTerm ← fid.elseBody.toTermFromBlock blockName
+      term :=
+        `(term |
+          ($(unhygienicUnfolder term)) ∧
+          (Not $(conditionTerm) → $(elseBodyTerm))
+        )
 
       return unhygienicUnfolder term
 
@@ -44,28 +43,11 @@ namespace Alloy.functionIfDecl
           ( $fid:functionIfDecl )) => toType fid
 
         | `(functionIfDecl |
-          $condition:formula_without_if $_:connector $thenBody:expr) =>
-          return functionIfDecl.mk
-            (condition := ← formula.toType_withoutIf condition)
-            (thenBody := ← expr.toType thenBody)
-            (elseBody := default)
-            (hasElse := false)
-
-        | `(functionIfDecl |
-          ( $condition:formula ) $_:connector $thenBody:expr) =>
-          return functionIfDecl.mk
-            (condition := ← formula.toType condition)
-            (thenBody := ← expr.toType thenBody)
-            (elseBody := default)
-            (hasElse := false)
-
-        | `(functionIfDecl |
           $condition:formula_without_if $_:connector $thenBody:expr else $elseBody:expr) =>
           return functionIfDecl.mk
             (condition := ← formula.toType_withoutIf condition)
             (thenBody := ← expr.toType thenBody)
             (elseBody := ← expr.toType elseBody)
-            (hasElse := true)
 
         | `(functionIfDecl |
           ( $condition:formula ) $_:connector $thenBody:expr else $elseBody:expr) =>
@@ -73,10 +55,8 @@ namespace Alloy.functionIfDecl
             (condition := ← formula.toType condition)
             (thenBody := ← expr.toType thenBody)
             (elseBody := ← expr.toType elseBody)
-            (hasElse := true)
 
         | syntx =>
           throw s!"No match implemented in functionIfDeclService.toType for '{syntx}'"
-
 
 end Alloy.functionIfDecl

@@ -21,7 +21,6 @@ namespace Alloy
     (condition : formula)
     (thenBody : expr)
     (elseBody : expr)
-    (hasElse : Bool)
   deriving Repr, BEq, Inhabited
 
   declare_syntax_cat functionIfDecl
@@ -30,11 +29,11 @@ namespace Alloy
   declare_syntax_cat connector
   syntax "=>" : connector
 
-  declare_syntax_cat ifbody
-  syntax expr ("else" expr)? : ifbody
+  declare_syntax_cat ifBody
+  syntax expr "else" expr : ifBody
 
-  syntax:80 formula_without_if:80 connector:70 ifbody : functionIfDecl
-  syntax:70 "(" formula:80 ")" connector:70 ifbody : functionIfDecl
+  syntax:80 formula_without_if:80 connector:70 ifBody : functionIfDecl
+  syntax:70 "(" formula:80 ")" connector:70 ifBody : functionIfDecl
   syntax:60 "(" functionIfDecl ")" : functionIfDecl
 
   instance : ToString functionIfDecl where
@@ -42,11 +41,7 @@ namespace Alloy
       s!"(function) if declaration : \{
         condition := {fid.condition},
         thenBody := {fid.thenBody},
-        {
-          if fid.hasElse then
-            s!"elseBody := {fid.elseBody}"
-          else ""
-        }
+        elseBody := {fid.elseBody}
       }"
 
 end Alloy
