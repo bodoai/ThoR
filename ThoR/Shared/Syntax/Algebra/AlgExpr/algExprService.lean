@@ -5,7 +5,7 @@ Authors: s. file CONTRIBUTORS
 -/
 
 import ThoR.Shared.Syntax.Algebra
-import ThoR.Shared.Syntax.Algebra.CardExpr.cardExprService
+import ThoR.Shared.Syntax.Relation.Expr.exprService
 
 open Lean
 
@@ -28,12 +28,10 @@ namespace Shared.algExpr
         return unhygienicUnfolder
           `($(Lean.Syntax.mkNumLit s!"{n.natAbs}"):num)
 
-      | algExpr.cardExpr ce =>
-        match ce with
-          | cardExpr.cardExpression expr =>
-            let eTerm ← expr.toTermFromBlock blockName
-            return unhygienicUnfolder
-              `(($(mkIdent ``ThoR.Card.card) $(eTerm)))
+      | algExpr.cardExpression e =>
+        let eTerm ← e.toTermFromBlock blockName
+        return unhygienicUnfolder
+          `(($(mkIdent ``ThoR.Card.card) $(eTerm)))
 
       | algExpr.unaryAlgebraOperation op ae =>
         let aeTerm ← ae.toTerm blockName
@@ -54,12 +52,10 @@ namespace Shared.algExpr
         return unhygienicUnfolder
           `($(Lean.Syntax.mkNumLit s!"{n.natAbs}"):num)
 
-      | algExpr.cardExpr ce =>
-        match ce with
-          | cardExpr.cardExpression expr =>
-            let eTerm ← expr.toTermOutsideBlock
-            return unhygienicUnfolder
-              `(($(mkIdent ``ThoR.Card.card) $(eTerm)))
+      | algExpr.cardExpression e =>
+        let eTerm ← e.toTermOutsideBlock
+        return unhygienicUnfolder
+          `(($(mkIdent ``ThoR.Card.card) $(eTerm)))
 
       | algExpr.unaryAlgebraOperation op ae =>
         let aeTerm ← ae.toTermOutsideBlock
@@ -82,8 +78,8 @@ namespace Shared.algExpr
         | `(algExpr| $number:num) =>
           return algExpr.number (number.getNat : Int)
 
-        | `(algExpr| $ce:cardExpr) =>
-          return algExpr.cardExpr (← cardExpr.toType ce)
+        | `(algExpr| # $e:expr) =>
+          return (algExpr.cardExpression (← expr.toType e))
 
         | `(algExpr|
             $op:unAlgOp
@@ -112,7 +108,7 @@ namespace Shared.algExpr
     : List (String) := Id.run do
       match ae with
         | algExpr.number _ => []
-        | algExpr.cardExpr ce => ce.getReqVariables
+        | algExpr.cardExpression e => e.getReqVariables
         | algExpr.unaryAlgebraOperation _ ae => ae.getReqVariables
         | algExpr.binaryAlgebraOperation _ ae1 ae2 =>
             ae1.getReqVariables ++  ae2.getReqVariables
