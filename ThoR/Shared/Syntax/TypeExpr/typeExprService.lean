@@ -5,32 +5,12 @@ Authors: s. file CONTRIBUTORS
 -/
 
 import ThoR.Shared.Syntax.ArrowOp.arrowOpService
+import ThoR.Shared.Syntax.Mutuals.mutualsService
 
 open Alloy ThoR
 open Lean
 
 namespace Shared.typeExpr
-
-  /--
-  Replaces all calls to the callables from the List `callables`
-  with their respective replacement
-  in the given typeExpr `te`
-  -/
-  def replaceCalls
-    (te: typeExpr)
-    (callables : List (varDecl))
-    : typeExpr := Id.run do
-      match te with
-        | arrowExpr ae =>
-          arrowExpr
-            (ae.replaceCalls callables)
-        | multExpr m e =>
-          multExpr
-            m
-            (e.replaceCalls callables)
-        | relExpr e =>
-          relExpr
-            (e.replaceCalls callables)
 
   /--
   Generates syntax corosponding to the type

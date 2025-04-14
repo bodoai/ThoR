@@ -34,8 +34,5 @@ namespace Shared
 
 -- used to call an expr (function) with implicit parameters explicitly (see string_rb)
   syntax "@" ident : expr
-  namespace expr
-
-  end expr
 
 end Shared
