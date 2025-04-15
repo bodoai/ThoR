@@ -157,7 +157,13 @@ namespace Shared
             )
             `(formula | $letSyntax:alloyLetDecl)
 
-          | _ => default
+          | formula.relationComarisonOperation op expr1 expr2 =>
+            `(formula |
+              rc
+              $(expr1.toSyntax blockName):expr
+              $(op.toSyntax):relCompareOp
+              $(expr2.toSyntax blockName):expr
+            )
 
     /--
     Generates syntax corosponding to the type arrowOp

@@ -43,6 +43,12 @@ namespace Shared
     -/
     def toString (op : relCompareOp) : String := ToString.toString op
 
+    def toSyntax (op : relCompareOp) : RelCompareOp := Unhygienic.run do
+      match op with
+        | relCompareOp.in => `(relCompareOp | in)
+        | relCompareOp.eq => `(relCompareOp | =)
+        | relCompareOp.neq => `(relCompareOp | !=)
+
     /--
     Parses the given syntax to the type
     -/
