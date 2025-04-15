@@ -27,7 +27,9 @@ namespace Shared
 
   syntax:60 formula binLogOp formula : formula
 
-  --syntax expr relCompareOp expr : formula
+  declare_syntax_cat relComparison
+  syntax expr relCompareOp expr : relComparison
+  --syntax relComparison : formula -- enabeling this causes stack overflow ?
 
   syntax algExpr algCompareOp algExpr : formula
   syntax quant ("disj")? ident,+ ":" typeExpr "|" "{" (formula)+ "}" : formula
@@ -44,7 +46,5 @@ namespace Shared
   declare_syntax_cat formula_if_connector
   syntax "=>" : formula_if_connector
   syntax formula formula_if_connector formula " else " formula : formula
-  /-
-  -/
 
 end Shared
