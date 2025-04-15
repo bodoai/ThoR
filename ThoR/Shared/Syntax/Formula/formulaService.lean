@@ -627,7 +627,7 @@ namespace Shared.formula
       match f with
         | `(formula| $fwi:formula_without_if) =>
           return ← toType_withoutIf fwi signatureFactSigNames
-        | `(formula| $form1:formula => $form2:formula else $form3:formula) =>
+        | `(formula| $form1:formula _:formula_if_connector $form2:formula else $form3:formula) =>
           return formula.tertiaryLogicOperation terLogOp.ifelse
               (← toType form1) (← toType form2) (← toType form3)
 

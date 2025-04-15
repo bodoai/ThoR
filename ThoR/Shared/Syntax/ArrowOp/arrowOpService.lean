@@ -12,38 +12,6 @@ open Lean
 
 namespace Shared.arrowOp
 
-  /--
-  Generates syntax corosponding to the type
-  -/
-  def toSyntax
-    (ao : arrowOp)
-    (blockName : Name)
-    : ArrowOp := Unhygienic.run do
-      match ao with
-        | arrowOp.multArrowOpExpr e1 m1 m2 e2 =>
-          `(arrowOp|
-            $(e1.toSyntax blockName):expr
-            $(m1.toSyntax):mult → $(m2.toSyntax):mult
-            $(e2.toSyntax blockName):expr)
-
-        | arrowOp.multArrowOpExprLeft e1 m1 m2 ae2 =>
-          `(arrowOp|
-            $(e1.toSyntax blockName):expr
-            $(m1.toSyntax):mult → $(m2.toSyntax):mult
-            $(ae2.toSyntax blockName):arrowOp)
-
-        | arrowOp.multArrowOpExprRight ae1 m1 m2 e2 =>
-          `(arrowOp|
-            $(ae1.toSyntax blockName):arrowOp
-            $(m1.toSyntax):mult → $(m2.toSyntax):mult
-            $(e2.toSyntax blockName):expr)
-
-        | arrowOp.multArrowOp ae1 m1 m2 ae2 =>
-          `(arrowOp|
-            $(ae1.toSyntax blockName):arrowOp
-            $(m1.toSyntax):mult → $(m2.toSyntax):mult
-            $(ae2.toSyntax blockName):arrowOp)
-
   def toSyntaxOutsideBlock
     (ao : arrowOp)
     : ArrowOp := Unhygienic.run do

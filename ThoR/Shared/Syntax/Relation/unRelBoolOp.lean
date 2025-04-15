@@ -45,6 +45,13 @@ namespace Shared
     -/
     def toString (op: unRelBoolOp) : String := ToString.toString op
 
+    def toSyntax (op : unRelBoolOp) : UnRelBoolOp := Unhygienic.run do
+      match op with
+        | unRelBoolOp.some => `(unRelBoolOp| some)
+        | unRelBoolOp.lone => `(unRelBoolOp| lone)
+        | unRelBoolOp.one => `(unRelBoolOp| one)
+        | unRelBoolOp.no => `(unRelBoolOp| no)
+
     /--
     Parses the given syntax to the type
     -/

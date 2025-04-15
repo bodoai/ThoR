@@ -45,6 +45,14 @@ namespace Shared
     -/
     def toString (op : binAlgOp) : String := ToString.toString op
 
+    def toSyntax (op : binAlgOp) : BinAlgOp := Unhygienic.run do
+      match op with
+        | binAlgOp.add => `(binAlgOp | plus)
+        | binAlgOp.sub => `(binAlgOp | minus)
+        | binAlgOp.mult => `(binAlgOp | mul)
+        | binAlgOp.div => `(binAlgOp | div)
+        | binAlgOp.rem => `(binAlgOp | rem)
+
     /--
     Generates a Lean term corosponding with the type
     -/

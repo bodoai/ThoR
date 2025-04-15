@@ -24,8 +24,11 @@ namespace Shared
   -- dotjoin has higher precendence
   syntax:70 expr:70 dotjoin expr:70 : expr
 
+  declare_syntax_cat expr_if_connector
+  syntax "=>" : expr_if_connector
+
   /-- If else in expression -/
-  syntax formula " => " expr " else " expr : expr
+  syntax formula expr_if_connector expr " else " expr : expr
 
   syntax:80 unRelOp expr:80 : expr
 

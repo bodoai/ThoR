@@ -12,18 +12,6 @@ open Lean
 
 namespace Shared.typeExpr
 
-  /--
-  Generates syntax corosponding to the type
-  -/
-  def toSyntax
-    (te: typeExpr)
-    (blockName : Name)
-    : TypeExpr := Unhygienic.run do
-      match te with
-        | typeExpr.arrowExpr ae => `(typeExpr| $(ae.toSyntax blockName):arrowOp)
-        | typeExpr.multExpr m e => `(typeExpr| $(m.toSyntax):mult $(e.toSyntax blockName):expr)
-        | typeExpr.relExpr e => `(typeExpr| $(e.toSyntax blockName):expr)
-
   def toSyntaxOutsideBlock
     (te: typeExpr)
     : TypeExpr := Unhygienic.run do

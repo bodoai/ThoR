@@ -37,36 +37,6 @@ namespace Shared.expr
         expr.ifElse condition (thenBody.toStringRb) (elseBody.toStringRb)
       | _ => e
 
-  /--
-  Generates a syntax representation of the type
-  -/
-  partial def toSyntax
-    (blockName : Name)
-    (e : expr)
-    : Expression := Unhygienic.run do
-      match e with
-        | expr.const c => `(expr| $(c.toSyntax):constant)
-        | expr.string s => `(expr| $(mkIdent s.toName):ident)
-        | expr.callFromOpen sn => `(expr| $(sn.toSyntax):separatedNamespace)
-        | expr.function_call_with_args function_name arguments =>
-          let argument_array :=
-            (arguments.map fun arg => arg.toSyntax blockName).toArray
-          `(expr | $(mkIdent function_name.toName):ident [$argument_array,*])
-        | expr.unaryRelOperation op e => `(expr| $(op.toSyntax):unRelOp $(e.toSyntax blockName):expr)
-        | expr.binaryRelOperation op e1 e2 =>
-          `(expr| $(e1.toSyntax blockName):expr $(op.toSyntax):binRelOp $(e2.toSyntax blockName):expr)
-        | expr.dotjoin dj e1 e2 =>
-          `(expr|$(e1.toSyntax blockName):expr $(dj.toSyntax):dotjoin $(e2.toSyntax blockName):expr)
-        -- FIXME In der folgenden Zeile fehlt noch das $rb -> Macht das Probleme?
-        | expr.string_rb s =>
-          let components :=
-            [blockName, `vars] ++
-            (s.splitOn ".").map fun n => n.toName
-
-          let name := Name.fromComponents components
-          let identifier := mkIdent name
-          `(expr| @$(identifier):ident)
-
   partial def toSyntaxOutsideBlock
     (e : expr)
     : Expression := Unhygienic.run do

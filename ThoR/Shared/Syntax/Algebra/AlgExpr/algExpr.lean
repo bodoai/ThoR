@@ -21,11 +21,4 @@ namespace Shared
   syntax unAlgOp algExpr : algExpr
   syntax binAlgOp "[" algExpr "," algExpr "]" : algExpr
 
-  namespace algExpr
-
-    instance : Inhabited algExpr where
-      default := algExpr.number (1:Int)
-
-  end algExpr
-
 end Shared

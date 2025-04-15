@@ -32,6 +32,10 @@ namespace Shared
     -/
     def toString (op : unLogOp) : String := ToString.toString op
 
+    def toSyntax (op : unLogOp) : UnLogOp := Unhygienic.run do
+      match op with
+        | unLogOp.not => `(unLogOp | not)
+
     /--
     Parses the given syntax to the type
     -/

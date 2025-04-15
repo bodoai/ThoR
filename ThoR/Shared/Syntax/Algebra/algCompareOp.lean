@@ -45,6 +45,14 @@ namespace Shared
     -/
     def toString (op : algCompareOp) : String := ToString.toString op
 
+    def toSyntax (op : algCompareOp) : AlgCompareOp := Unhygienic.run do
+      match op with
+        | algCompareOp.lt => `(algCompareOp | <)
+        | algCompareOp.gt => `(algCompareOp | >)
+        | algCompareOp.eq => `(algCompareOp | =)
+        | algCompareOp.leq => `(algCompareOp | =<)
+        | algCompareOp.geq => `(algCompareOp | >=)
+
     /--
     Generates a Lean term corosponding with the type
     -/
