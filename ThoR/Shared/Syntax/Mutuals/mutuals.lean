@@ -198,10 +198,22 @@ namespace Shared
   abbrev Formula := TSyntax `formula
 
   /--
+  This syntax represents an  alloy formula (without if else)
+  -/
+  declare_syntax_cat formula_without_if
+  abbrev Formula_without_if := TSyntax `formula_without_if
+
+  /--
   This syntax represents a relation
   -/
   declare_syntax_cat expr
   abbrev Expression := TSyntax `expr
+
+  /--
+  This syntax represents an  alloy expr (without if else)
+  -/
+  declare_syntax_cat expr_without_if
+  abbrev Expr_without_if := TSyntax `expr_without_if
 
   mutual
     /--

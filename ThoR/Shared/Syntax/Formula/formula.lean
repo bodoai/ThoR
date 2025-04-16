@@ -15,36 +15,38 @@ import ThoR.Shared.Syntax.TypeExpr.typeExpr
 open Lean
 namespace Shared
 
-  syntax ident : formula
+  syntax "("formula")" : formula
+  syntax "("formula")" : formula_without_if
+  syntax "("formula_without_if")" : formula_without_if
+  syntax formula_without_if : formula
 
-  syntax ident ( "[" expr,+ "]") : formula  -- predcall
+  syntax ident : formula_without_if
 
-  syntax:50 "("formula")" : formula
+  syntax ident ( "[" expr,+ "]") : formula_without_if  -- predcall
 
-  syntax unRelBoolOp expr : formula
+  syntax unRelBoolOp expr : formula_without_if
 
-  syntax unLogOp formula: formula
+  syntax unLogOp formula_without_if: formula_without_if
 
-  syntax:60 formula binLogOp formula : formula
+  syntax:60 formula_without_if binLogOp formula_without_if : formula_without_if
 
-  declare_syntax_cat relComparison
-  syntax "rc" expr relCompareOp expr : relComparison
-  syntax relComparison : formula -- enabeling this causes stack overflow ?
+  syntax expr_without_if relCompareOp expr_without_if : formula_without_if
 
-  syntax algExpr algCompareOp algExpr : formula
-  syntax quant ("disj")? ident,+ ":" typeExpr "|" "{" (formula)+ "}" : formula
-  syntax quant ("disj")? ident,+ ":" typeExpr "|" formula : formula
+  syntax algExpr algCompareOp algExpr : formula_without_if
+
+  syntax quant ("disj")? ident,+ ":" typeExpr "|" "{" (formula_without_if)+ "}" : formula_without_if
+  syntax quant ("disj")? ident,+ ":" typeExpr "|" formula_without_if : formula_without_if
 
   /-- alloy let Syntax -/
   declare_syntax_cat alloyLetDecl
   abbrev AlloyLetDecl := TSyntax `alloyLetDecl
-  syntax "let" ident "=" formula "|" formula : alloyLetDecl
-  syntax "let" ident "=" formula "|" "{" formula* "}" : alloyLetDecl
-  syntax alloyLetDecl : formula
+  syntax "let" ident "=" formula_without_if "|" formula_without_if : alloyLetDecl
+  syntax "let" ident "=" formula_without_if "|" "{" formula_without_if* "}" : alloyLetDecl
+  syntax alloyLetDecl : formula_without_if
 
   --Special tertiariy Syntax (if else)
   declare_syntax_cat formula_if_connector
   syntax "=>" : formula_if_connector
-  syntax formula formula_if_connector formula " else " formula : formula
+  syntax formula_without_if formula_if_connector formula_without_if " else " formula_without_if : formula
 
 end Shared
