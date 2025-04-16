@@ -43,6 +43,6 @@ namespace Shared
   syntax "=>" : expr_if_connector
 
   /-- If else in expression -/
-  syntax formula_without_if expr_if_connector expr " else " expr : expr
+  syntax formula expr_if_connector expr " else " expr : expr
 
 end Shared

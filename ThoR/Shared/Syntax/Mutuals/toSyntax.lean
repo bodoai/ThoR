@@ -101,44 +101,39 @@ namespace Shared
       : Formula := Unhygienic.run do
         match f with
           | formula.string s =>
-            let fwi ← `(formula_without_if | $(mkIdent s.toName):ident)
-            `(formula | $fwi:formula_without_if)
+            `(formula | $(mkIdent s.toName):ident)
 
           | formula.pred_with_args pred_name arguments =>
             let arguments :=
               (arguments.map fun a => a.toSyntax blockName).toArray
-            let fwi ← `(formula_without_if |
+            `(formula |
               $(mkIdent pred_name.toName):ident [ $[$arguments:expr],* ])
-            `(formula | $fwi:formula_without_if)
 
           | formula.unaryRelBoolOperation op expression =>
-            let fwi ← `(formula_without_if |
+            `(formula |
               $(op.toSyntax):unRelBoolOp $(expression.toSyntax blockName):expr)
-            `(formula | $fwi:formula_without_if)
 
           | formula.unaryLogicOperation op formula' =>
-            let fwi ← `(formula_without_if |
+            `(formula |
               $(op.toSyntax):unLogOp
               ($(formula'.toSyntax blockName):formula))
-            `(formula | $fwi:formula_without_if)
 
           | formula.binaryLogicOperation op formula1 formula2 =>
-            let fwi ← `(formula_without_if |
+            `(formula |
               ($(formula1.toSyntax blockName):formula)
               $(op.toSyntax):binLogOp
               ($(formula2.toSyntax blockName):formula)
             )
-            `(formula | $fwi:formula_without_if)
 
           -- currently only ifElse
           | formula.tertiaryLogicOperation _ formula1 formula2 formula3 =>
             let c ← `(formula_if_connector | =>)
             `(formula |
-              ($(formula1.toSyntax blockName):formula)
+              $(formula1.toSyntax blockName):formula
               $c:formula_if_connector
-              ($(formula2.toSyntax blockName):formula)
+              $(formula2.toSyntax blockName):formula
               else
-              ($(formula3.toSyntax blockName):formula)
+              $(formula3.toSyntax blockName):formula
             )
 
           | formula.algebraicComparisonOperation op algExpr1 algExpr2 =>
@@ -156,12 +151,7 @@ namespace Shared
             formulas =>
             let names := (names.map fun n => mkIdent n.toName).toArray
             let formulas :=
-              (formulas.map fun f => f.toSyntax blockName)
-            let mut formula_array := #[]
-            for f in formulas do
-              formula_array :=
-                formula_array.push
-                  (← `(formula_without_if | ($f:formula)))
+              (formulas.map fun f => f.toSyntax blockName).toArray
 
             if disjunction then
               `(formula |
@@ -169,27 +159,22 @@ namespace Shared
                 disj
                 $[$names:ident],* :
                 $(typeExpression.toSyntax blockName):typeExpr |
-                { $[$formula_array:formula_without_if]* }
+                { $[$formulas:formula]* }
               )
             else
               `(formula |
                 $(quantifier.toSyntax):quant
                 $[$names:ident],* :
                 $(typeExpression.toSyntax blockName):typeExpr |
-                { $[$formula_array:formula_without_if]* }
+                { $[$formulas:formula]* }
               )
 
           | formula.letDeclaration name value body =>
-            let body := (body.map fun f => f.toSyntax blockName)
-            let mut body_array := #[]
-            for f in body do
-              body_array :=
-                body_array.push
-                  (← `(formula_without_if | ($f:formula)))
+            let body := (body.map fun f => f.toSyntax blockName).toArray
 
             let letSyntax ← `(alloyLetDecl |
               let $(mkIdent name) = ($(value.toSyntax blockName):formula) |
-              { $[$body_array:formula_without_if]* }
+              { $[$body:formula]* }
             )
             `(formula | $letSyntax:alloyLetDecl)
 
