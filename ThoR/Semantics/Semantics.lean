@@ -12,8 +12,9 @@ namespace ThoR.Semantics
 
 variable {R : Type} [TupleSet R]
 
--- TODO: Speaking variable names
+-- TODO: self-explaining variable names
 -- TODO: possibly add an option to give arguments as an Array or List
+--       -> heterogeneous lists
 mutual
   inductive Expression : {n: ℕ} → RelType R n → Type u where
     | rel {n : ℕ} {t : RelType R n} (r : Rel t) : Expression t
