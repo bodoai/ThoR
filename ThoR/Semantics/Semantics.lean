@@ -12,6 +12,9 @@ namespace ThoR.Semantics
 
 variable {R : Type} [TupleSet R]
 
+-- TODO: Speaking variable names
+-- TODO: 32, 33, ... type params implicit (if possible)
+-- TODO: possibly add an option to give arguments as an Array or List
 mutual
   inductive Expression : {n: ℕ} → RelType R n → Type u where
     | rel {n : ℕ} {t : RelType R n} (r : Rel t) : Expression t
@@ -27,7 +30,7 @@ mutual
     | domrestr {n : ℕ} {t1 : RelType R 1} {t2 : RelType R n} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 <: t2)
     | rangerestr {n : ℕ} {t1 : RelType R n} {t2 : RelType R 1} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 :> t2)
     | if_then_else {n : ℕ} {t1 t2 : RelType R n} (f : Formula) (r1 : Rel t1) (r2 : Rel t2) : Expression (RelType.ifThenElse t1 t2)
-    | call {n1 n2 : ℕ} (t1 : RelType R n1) (t2 : RelType R n2) (f : Function t1 t2) (e : Expression t1) : Expression t2
+    | call {n1 n2 : ℕ} (parameter_type : RelType R n1) (return_type : RelType R n2) (f : Function parameter_type return_type) (parameter : Expression parameter_type) : Expression return_type
     | let {n1 n2 : ℕ} (t1 : RelType R n1) (t2 : RelType R n2) (l : ExpressionLet t1 t2) (e : Expression t1) : Expression t2
 
   inductive Function : {n1 n2: ℕ} → RelType R n1 → RelType R n2 → Type u where
@@ -78,7 +81,6 @@ mutual
 
   inductive FormulaLet : {n: ℕ} → RelType R n → Type u where
     | mk {n : ℕ} {t : RelType R n} (p : (Rel t) → Formula): FormulaLet t
-
 
   inductive TypeExpression : ℕ → Type u where
     | type {n : ℕ} (t : RelType R n) : TypeExpression n
