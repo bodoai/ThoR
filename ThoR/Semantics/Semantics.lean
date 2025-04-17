@@ -13,7 +13,6 @@ namespace ThoR.Semantics
 variable {R : Type} [TupleSet R]
 
 -- TODO: Speaking variable names
--- TODO: 32, 33, ... type params implicit (if possible)
 -- TODO: possibly add an option to give arguments as an Array or List
 mutual
   inductive Expression : {n: ℕ} → RelType R n → Type u where
@@ -30,8 +29,8 @@ mutual
     | domrestr {n : ℕ} {t1 : RelType R 1} {t2 : RelType R n} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 <: t2)
     | rangerestr {n : ℕ} {t1 : RelType R n} {t2 : RelType R 1} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 :> t2)
     | if_then_else {n : ℕ} {t1 t2 : RelType R n} (f : Formula) (r1 : Rel t1) (r2 : Rel t2) : Expression (RelType.ifThenElse t1 t2)
-    | call {n1 n2 : ℕ} (parameter_type : RelType R n1) (return_type : RelType R n2) (f : Function parameter_type return_type) (parameter : Expression parameter_type) : Expression return_type
-    | let {n1 n2 : ℕ} (t1 : RelType R n1) (t2 : RelType R n2) (l : ExpressionLet t1 t2) (e : Expression t1) : Expression t2
+    | call {n1 n2 : ℕ} {parameter_type : RelType R n1} {return_type : RelType R n2} (f : Function parameter_type return_type) (parameter : Expression parameter_type) : Expression return_type
+    | let {n1 n2 : ℕ} {parameter_type : RelType R n1} {return_type : RelType R n2} (l : ExpressionLet parameter_type return_type) (e : Expression parameter_type) : Expression return_type
 
   inductive Function : {n1 n2: ℕ} → RelType R n1 → RelType R n2 → Type u where
     | mk {n1 n2 : ℕ} {t1 : RelType R n1} {t2 : RelType R n2} (f : (Rel t1) → Expression t2): Function t1 t2
@@ -73,8 +72,8 @@ mutual
     | q_one {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
     | q_some {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
     | q_all {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
-    | call {n : ℕ} (t : RelType R n) (p : Predicate t) (e : Expression t) : Formula
-    | let {n : ℕ} (t : RelType R n) (l : FormulaLet t) (e : Expression t) : Formula
+    | call {n : ℕ} {t : RelType R n} (p : Predicate t) (e : Expression t) : Formula
+    | let {n : ℕ} {t : RelType R n} (l : FormulaLet t) (e : Expression t) : Formula
 
   inductive Predicate : {n: ℕ} → RelType R n → Type u where
     | mk {n : ℕ} {t : RelType R n} (p : (Rel t) → Formula): Predicate t
@@ -89,21 +88,21 @@ end
 mutual
   def Expression.eval {n : ℕ } {t : RelType R n} (e : @Expression R _ _ t) :=
     match e with
-    | .rel           r       => r
-    | .intersect     r1 r2   => r1 & r2
-    | .union         r1 r2   => r1 + r2
-    | .diff          r1 r2   => r1 -r2
-    | .cartprod      r1 r2   => r1 ⟶ r2
-    | .dotjoin       r1 r2   => r1 ⋈ r2
-    | .transclos     r       => ^ r
-    | .reftransclos  r       => * r
-    | .transpose     r       => ~ r
-    | .append        r1 r2   => r1 ++ r2
-    | .domrestr      r1 r2   => r1 <: r2
-    | .rangerestr    r1 r2   => r1 :> r2
-    | .if_then_else  f r1 r2 => HIfThenElse.hIfThenElse f.eval r1 r2
-    | .call          t1 t2 f e     => (f.eval : Rel t1 → Rel t2) e.eval
-    | .let           t1 t2 l e     => (l.eval : Rel t1 → Rel t2) e.eval
+    | .rel              r       => r
+    | .intersect        r1 r2   => r1 & r2
+    | .union            r1 r2   => r1 + r2
+    | .diff             r1 r2   => r1 -r2
+    | .cartprod         r1 r2   => r1 ⟶ r2
+    | .dotjoin          r1 r2   => r1 ⋈ r2
+    | .transclos        r       => ^ r
+    | .reftransclos     r       => * r
+    | .transpose        r       => ~ r
+    | .append           r1 r2   => r1 ++ r2
+    | .domrestr         r1 r2   => r1 <: r2
+    | .rangerestr       r1 r2   => r1 :> r2
+    | .if_then_else     f r1 r2 => HIfThenElse.hIfThenElse f.eval r1 r2
+    | @Expression.call  _ _ _ _ t1 t2 f e     => (f.eval : Rel t1 → Rel t2) e.eval
+    | @Expression.let   _ _ _ _ t1 t2 l e     => (l.eval : Rel t1 → Rel t2) e.eval
 
   def Function.eval {n1 n2 : ℕ } {t1 : RelType R n1} {t2 : RelType R n2} (f : @Function R _ _ _ t1 t2) :=
       match f with
@@ -149,8 +148,8 @@ mutual
     | .q_one        f         => (Quantification.Formula.var Shared.quant.one (fun r => (Quantification.Formula.prop (f r).eval))).eval
     | .q_some       f         => (Quantification.Formula.var Shared.quant.some (fun r => (Quantification.Formula.prop (f r).eval))).eval
     | .q_all        f         => (Quantification.Formula.var Shared.quant.all (fun r => (Quantification.Formula.prop (f r).eval))).eval
-    | .call          t p e    => (p.eval : Rel t → Prop) e.eval
-    | .let           t l e    => (l.eval : Rel t → Prop) e.eval
+    | @Formula.call _ _ _ t p e    => (p.eval : Rel t → Prop) e.eval
+    | @Formula.let  _ _ _ t l e    => (l.eval : Rel t → Prop) e.eval
 
   def Predicate.eval {n : ℕ } {t : RelType R n} (p : @Predicate R _ _ t) :=
     match p with
