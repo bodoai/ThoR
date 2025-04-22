@@ -16,5 +16,8 @@ import ThoR.Shared.Syntax.Mutuals.toSyntaxOutsideBlock
 /- imports the toStringRb function -/
 import ThoR.Shared.Syntax.Mutuals.toStringRb
 
+/- imports the toTerm function -/
+import ThoR.Shared.Syntax.Mutuals.toTerm
+
 /- imports the toTermOutsideBlock function -/
 import ThoR.Shared.Syntax.Mutuals.toTermOutsideBlock

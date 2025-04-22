@@ -493,6 +493,125 @@ namespace Shared
               `($(mkIdent ``ThoR.Rel)
                 ($(mkIdent ``RelType.mk.rel) $(eTerm)))
 
+    /--
+    Generates a Lean term corosponding to the type arrowOp
+    -/
+    partial def arrowOp.toTerm
+      (ao : arrowOp)
+      (blockName : Name)
+      (variableNames : List (String)) -- to check if var or pred
+      (callableVariables : List (varDecl))
+      (callablePredicates : List (commandDecl × List (expr × List (String × List varDecl))))
+      -- names that have to be pure with no namespace (quantors and args)
+      (pureNames : List (String) := [])
+      : Except String Term := do
+
+      match ao with
+        | arrowOp.multArrowOpExpr
+          (e1 : expr) (m1 : mult) (m2 : mult) (e2 : expr) =>
+          let e1Term ← e1.toTerm blockName
+            variableNames callableVariables callablePredicates pureNames
+
+          let e2Term ← e2.toTerm blockName
+            variableNames callableVariables callablePredicates pureNames
+
+          return unhygienicUnfolder
+            `(
+              $(mkIdent ``RelType.complex)
+                ($(mkIdent ``ThoR.Rel.getType) ($(e1Term)))
+                ($(m1.toTerm))
+                ($(m2.toTerm))
+                ($(mkIdent ``ThoR.Rel.getType) ($(e2Term)))
+          )
+        | arrowOp.multArrowOpExprLeft (e1 : expr) (m1 : mult) (m2 : mult) (ae2 : arrowOp) =>
+          let e1Term ← e1.toTerm blockName
+            variableNames callableVariables callablePredicates pureNames
+
+          let ae2Term ← ae2.toTerm blockName
+            variableNames callableVariables callablePredicates pureNames
+
+          return unhygienicUnfolder
+            `(
+              $(mkIdent ``RelType.complex)
+                ($(mkIdent ``ThoR.Rel.getType) ($(e1Term)))
+                ($(m1.toTerm))
+                ($(m2.toTerm))
+                $(ae2Term)
+          )
+
+        | arrowOp.multArrowOpExprRight (ae1 : arrowOp) (m1 : mult) (m2 : mult) (e2 : expr) =>
+          let ae1Term ← ae1.toTerm blockName
+            variableNames callableVariables callablePredicates pureNames
+
+          let e2Term ← e2.toTerm blockName
+            variableNames callableVariables callablePredicates pureNames
+
+          return unhygienicUnfolder
+            `(
+              $(mkIdent ``RelType.complex)
+                $(ae1Term)
+                ($(m1.toTerm))
+                ($(m2.toTerm))
+                ($(mkIdent ``ThoR.Rel.getType) ($(e2Term)))
+            )
+
+        | arrowOp.multArrowOp (ae1 : arrowOp) (m1 : mult) (m2 : mult) (ae2 : arrowOp) =>
+          let ae1Term ← ae1.toTerm blockName
+            variableNames callableVariables callablePredicates pureNames
+
+          let ae2Term ← ae2.toTerm blockName
+            variableNames callableVariables callablePredicates pureNames
+
+          return unhygienicUnfolder
+            `(
+              $(mkIdent ``RelType.complex)
+                $(ae1Term)
+                ($(m1.toTerm))
+                ($(m2.toTerm))
+                $(ae2Term)
+            )
+
+    /--
+    Generates a Lean term corosponding with the type
+    -/
+    partial def algExpr.toTerm
+    (ae : algExpr)
+    (blockName : Name)
+    (variableNames : List (String)) -- to check if var or pred
+    (callableVariables : List (varDecl))
+    (callablePredicates : List (commandDecl × List (expr × List (String × List varDecl))))
+    -- names that have to be pure with no namespace (quantors and args)
+    (pureNames : List (String) := [])
+    : Except String Term := do
+      match ae with
+        | algExpr.number n =>
+          return unhygienicUnfolder
+            `($(Lean.Syntax.mkNumLit s!"{n.natAbs}"):num)
+
+        | algExpr.cardExpression e =>
+          let eTerm ← e.toTerm blockName
+            variableNames callableVariables callablePredicates pureNames
+
+          return unhygienicUnfolder
+            `(($(mkIdent ``ThoR.Card.card) $(eTerm)))
+
+        | algExpr.unaryAlgebraOperation op ae =>
+          let aeTerm ← ae.toTerm blockName
+            variableNames callableVariables callablePredicates pureNames
+
+          return unhygienicUnfolder
+            `(($(op.toTerm) $(aeTerm)))
+
+        | algExpr.binaryAlgebraOperation op ae1 ae2 =>
+          let ae1Term ← ae1.toTerm blockName
+            variableNames callableVariables callablePredicates pureNames
+
+          let ae2Term ← ae2.toTerm blockName
+            variableNames callableVariables callablePredicates pureNames
+
+          return unhygienicUnfolder
+            `(($(op.toTerm) $(ae1Term) $(ae2Term)))
+
   end
 
 end Shared

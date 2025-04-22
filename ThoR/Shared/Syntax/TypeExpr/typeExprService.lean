@@ -18,32 +18,6 @@ namespace Shared.typeExpr
     return ← input
 
   /--
-  Generates a Lean term corosponding with the type
-
-  to be called from an alloy block
-  -/
-  def toTermFromBlock
-    (te : Shared.typeExpr)
-    (blockName : Name)
-    : Except String Term := do
-      match te with
-        | Shared.typeExpr.arrowExpr ae =>
-          return unhygienicUnfolder
-            `($(mkIdent ``ThoR.Rel) $(← ae.toTermFromBlock blockName))
-
-        | Shared.typeExpr.multExpr m e =>
-          return unhygienicUnfolder
-            `($(mkIdent ``ThoR.Rel)
-              ($(mkIdent ``RelType.mk.unary_rel)
-                $(m.toTerm) $(← e.toTermFromBlock blockName)))
-
-        | Shared.typeExpr.relExpr e =>
-          return unhygienicUnfolder
-            `($(mkIdent ``ThoR.Rel)
-              ($(mkIdent ``RelType.mk.rel)
-                $(← e.toTermFromBlock blockName)))
-
-  /--
   Generates a Lean term corresponding to the RelType
 
   to be called from outside of an alloy block

@@ -17,34 +17,6 @@ namespace Shared.algExpr
     return ← input
 
   /--
-  Generates a Lean term corosponding with the type
-  -/
-  def toTerm
-  (ae : algExpr)
-  (blockName : Name)
-  : Except String Term := do
-    match ae with
-      | algExpr.number n =>
-        return unhygienicUnfolder
-          `($(Lean.Syntax.mkNumLit s!"{n.natAbs}"):num)
-
-      | algExpr.cardExpression e =>
-        let eTerm ← e.toTermFromBlock blockName
-        return unhygienicUnfolder
-          `(($(mkIdent ``ThoR.Card.card) $(eTerm)))
-
-      | algExpr.unaryAlgebraOperation op ae =>
-        let aeTerm ← ae.toTerm blockName
-        return unhygienicUnfolder
-          `(($(op.toTerm) $(aeTerm)))
-
-      | algExpr.binaryAlgebraOperation op ae1 ae2 =>
-        let ae1Term ← ae1.toTerm blockName
-        let ae2Term ← ae2.toTerm blockName
-        return unhygienicUnfolder
-          `(($(op.toTerm) $(ae1Term) $(ae2Term)))
-
-  /--
   Parses the given syntax to the type
   -/
   partial def toType

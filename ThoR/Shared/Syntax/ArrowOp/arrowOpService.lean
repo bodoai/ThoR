@@ -16,62 +16,6 @@ namespace Shared.arrowOp
     (input : Unhygienic (Term))
     : Term := Unhygienic.run do
     return ← input
-  /--
-  Generates a Lean term corosponding with the type
-
-  this is to be calles from an alloy block to add the namespaces
-  -/
-  def toTermFromBlock
-    (ao : Shared.arrowOp)
-    (blockName : Name)
-    : Except String Term := do
-
-    match ao with
-      | arrowOp.multArrowOpExpr
-        (e1 : expr) (m1 : mult) (m2 : mult) (e2 : expr) =>
-        let e1Term ← e1.toTermFromBlock blockName
-        let e2Term ← e2.toTermFromBlock blockName
-        return unhygienicUnfolder
-          `(
-            $(mkIdent ``RelType.complex)
-              ($(mkIdent ``ThoR.Rel.getType) ($(e1Term)))
-              ($(m1.toTerm))
-              ($(m2.toTerm))
-              ($(mkIdent ``ThoR.Rel.getType) ($(e2Term)))
-        )
-      | arrowOp.multArrowOpExprLeft (e1 : expr) (m1 : mult) (m2 : mult) (ae2 : arrowOp) =>
-        let e1Term ← e1.toTermFromBlock blockName
-        let ae2Term ← ae2.toTermFromBlock blockName
-        return unhygienicUnfolder
-          `(
-            $(mkIdent ``RelType.complex)
-              ($(mkIdent ``ThoR.Rel.getType) ($(e1Term)))
-              ($(m1.toTerm))
-              ($(m2.toTerm))
-              $(ae2Term)
-        )
-      | arrowOp.multArrowOpExprRight (ae1 : arrowOp) (m1 : mult) (m2 : mult) (e2 : expr) =>
-        let ae1Term ← ae1.toTermFromBlock blockName
-        let e2Term ← e2.toTermFromBlock blockName
-        return unhygienicUnfolder
-          `(
-            $(mkIdent ``RelType.complex)
-              $(ae1Term)
-              ($(m1.toTerm))
-              ($(m2.toTerm))
-              ($(mkIdent ``ThoR.Rel.getType) ($(e2Term)))
-          )
-      | arrowOp.multArrowOp (ae1 : arrowOp) (m1 : mult) (m2 : mult) (ae2 : arrowOp) =>
-        let ae1Term ← ae1.toTermFromBlock blockName
-        let ae2Term ← ae2.toTermFromBlock blockName
-        return unhygienicUnfolder
-          `(
-            $(mkIdent ``RelType.complex)
-              $(ae1Term)
-              ($(m1.toTerm))
-              ($(m2.toTerm))
-              $(ae2Term)
-          )
 
   /--
   Parses the given syntax to the type
