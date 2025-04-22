@@ -34,8 +34,6 @@ namespace Alloy
   declare_syntax_cat exprOfFunIfDecl
   abbrev ExprOfFunIfDecl := TSyntax `exprOfFunIfDecl
   syntax expr : exprOfFunIfDecl
-  syntax functionIfDecl : exprOfFunIfDecl
-
 
   syntax (name := function_declaration_with_brackets)
     "fun" extendedIdent ("["functionArg,*"]")? ":" typeExpr "{"
