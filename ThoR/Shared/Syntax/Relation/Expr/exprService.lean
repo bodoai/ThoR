@@ -37,33 +37,6 @@ namespace Shared.expr
         expr.ifElse condition (thenBody.toStringRb) (elseBody.toStringRb)
       | _ => e
 
-  partial def toSyntaxOutsideBlock
-    (e : expr)
-    : Expression := Unhygienic.run do
-      match e with
-        | expr.const c => `(expr| $(c.toSyntax):constant)
-        | expr.string s => `(expr| $(mkIdent s.toName):ident)
-        | expr.function_call_with_args functionName arguments =>
-          let argument_array :=
-            (arguments.map fun e => (e.toSyntaxOutsideBlock)).toArray
-          `(expr | $(mkIdent functionName.toName):ident [$argument_array,*])
-
-        | expr.callFromOpen sn => `(expr| $(sn.toSyntax):separatedNamespace)
-        | expr.unaryRelOperation op e => `(expr| $(op.toSyntax):unRelOp $(e.toSyntaxOutsideBlock):expr)
-        | expr.binaryRelOperation op e1 e2 =>
-          `(expr| $(e1.toSyntaxOutsideBlock):expr $(op.toSyntax):binRelOp $(e2.toSyntaxOutsideBlock):expr)
-        | expr.dotjoin dj e1 e2 =>
-          `(expr|$(e1.toSyntaxOutsideBlock):expr $(dj.toSyntax):dotjoin $(e2.toSyntaxOutsideBlock):expr)
-        -- FIXME In der folgenden Zeile fehlt noch das $rb -> Macht das Probleme?
-        | expr.string_rb s =>
-          let components :=
-            (s.splitOn ".").map fun n => n.toName
-
-          let name := Name.fromComponents components
-          let identifier := mkIdent name
-          `(expr| @$(identifier):ident)
-
-
   /--
   Generates a Lean term corosponding with the type
   -/

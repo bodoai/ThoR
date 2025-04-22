@@ -9,3 +9,9 @@ import ThoR.Shared.Syntax.Mutuals.replaceCalls
 
 /- imports the toSyntax function -/
 import ThoR.Shared.Syntax.Mutuals.toSyntax
+
+/- imports the toSyntaxOutsideBlock function -/
+import ThoR.Shared.Syntax.Mutuals.toSyntaxOutsideBlock
+
+/- imports the toStringRb function -/
+import ThoR.Shared.Syntax.Mutuals.toStringRb

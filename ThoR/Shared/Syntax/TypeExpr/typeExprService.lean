@@ -12,14 +12,6 @@ open Lean
 
 namespace Shared.typeExpr
 
-  def toSyntaxOutsideBlock
-    (te: typeExpr)
-    : TypeExpr := Unhygienic.run do
-      match te with
-        | typeExpr.arrowExpr ae => `(typeExpr| $(ae.toSyntaxOutsideBlock):arrowOp)
-        | typeExpr.multExpr m e => `(typeExpr| $(m.toSyntax):mult $(e.toSyntaxOutsideBlock):expr)
-        | typeExpr.relExpr e => `(typeExpr| $(e.toSyntaxOutsideBlock):expr)
-
   private def unhygienicUnfolder
     (input : Unhygienic (Term))
     : Term := Unhygienic.run do
