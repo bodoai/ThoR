@@ -12,11 +12,6 @@ open Lean
 
 namespace Shared.arrowOp
 
-  private def unhygienicUnfolder
-    (input : Unhygienic (Term))
-    : Term := Unhygienic.run do
-    return ← input
-
   /--
   Parses the given syntax to the type
   -/

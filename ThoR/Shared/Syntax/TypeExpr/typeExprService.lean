@@ -12,11 +12,6 @@ open Lean
 
 namespace Shared.typeExpr
 
-  private def unhygienicUnfolder
-    (input : Unhygienic (Term))
-    : Term := Unhygienic.run do
-    return ← input
-
   /--
   Generates a Lean term corresponding to the RelType
 
