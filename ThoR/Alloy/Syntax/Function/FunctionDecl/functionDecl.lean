@@ -7,7 +7,6 @@ import ThoR.Basic
 import ThoR.Alloy.Syntax.Function.FunctionArg.functionArg
 import ThoR.Alloy.Syntax.SeparatedNamespace.extendedIdent
 import ThoR.Shared.Syntax.Formula.formula
-import ThoR.Alloy.Syntax.Function.FunctionIfDecl.functionIfDecl
 
 open Lean
 open Shared
