@@ -127,6 +127,15 @@ namespace Shared.expr
       | _ => e
 
   /--
+  Transforms an expr_without_if to an expr via the
+  shortcut of adding parenthesis
+  -/
+  private def expr_without_if_to_expr
+    (e : Expression_without_if)
+    : Expression := Unhygienic.run do
+      return ← `(expr | ( $e:expr_without_if ))
+
+  /--
   Parses the given syntax to the type
   -/
   partial def toType
@@ -136,26 +145,30 @@ namespace Shared.expr
       match e with
         | `(expr | ( $e:expr )) =>
           return ← expr.toType e
+
+        | `(expr | ( $e:expr_without_if )) =>
+          return ← expr.toType (expr_without_if_to_expr e)
+
         | `(expr |
             $op:unRelOp
-            $subExpr: expr) =>
+            $subExpr: expr_without_if) =>
             return expr.unaryRelOperation
               (← unRelOp.toType op)
               (← expr.toType subExpr)
 
         | `(expr |
-            $subExpr1:expr
+            $subExpr1:expr_without_if
             $op:binRelOp
-            $subExpr2:expr) =>
+            $subExpr2:expr_without_if) =>
             return expr.binaryRelOperation
               (← binRelOp.toType op)
               (← expr.toType subExpr1)
               (← expr.toType subExpr2)
 
         | `(expr |
-            $subExpr1:expr
+            $subExpr1:expr_without_if
             $dj:dotjoin
-            $subExpr2:expr) =>
+            $subExpr2:expr_without_if) =>
             return expr.dotjoin
               (← dotjoin.toType dj)
               (← expr.toType subExpr1)
@@ -215,7 +228,7 @@ namespace Shared.expr
 
         | `(expr |
             $called_function:ident
-            [ $arguments:expr,* ]
+            [ $arguments:expr_without_if,* ]
           ) =>
           let mut arguments_typed := []
           for argument in arguments.getElems do
@@ -226,14 +239,14 @@ namespace Shared.expr
             arguments_typed
 
         | `(expr | -- Hack to allow dotjoin before ()
-          $subExpr1:expr .( $subExpr2:expr )) =>
+          $subExpr1:expr_without_if .( $subExpr2:expr_without_if )) =>
           return expr.dotjoin
             dotjoin.dot_join
             (← expr.toType subExpr1)
             (← expr.toType subExpr2)
 
         | `(expr |
-          $subExpr1:expr .( $subExpr2:expr ). $subExpr3:expr) =>
+          $subExpr1:expr_without_if .( $subExpr2:expr_without_if ). $subExpr3:expr_without_if) =>
           return expr.dotjoin
             dotjoin.dot_join
             (← expr.toType subExpr1)

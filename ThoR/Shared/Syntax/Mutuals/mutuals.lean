@@ -207,7 +207,7 @@ namespace Shared
   This syntax represents an  alloy expr (without if else)
   -/
   declare_syntax_cat expr_without_if
-  abbrev Expr_without_if := TSyntax `expr_without_if
+  abbrev Expression_without_if := TSyntax `expr_without_if
 
   mutual
     /--
