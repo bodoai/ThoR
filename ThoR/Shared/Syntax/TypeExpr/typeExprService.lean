@@ -44,31 +44,6 @@ namespace Shared.typeExpr
                 $(← e.toTermFromBlock blockName)))
 
   /--
-  Generates a Lean term corresponding to the type
-
-  to be called from outside of an alloy block
-  -/
-  def toTermOutsideBlock
-    (te : Shared.typeExpr)
-    : Except String Term := do
-      match te with
-        | Shared.typeExpr.arrowExpr ae =>
-          return unhygienicUnfolder
-            `($(mkIdent ``ThoR.Rel) $(← ae.toTermOutsideBlock))
-
-        | Shared.typeExpr.multExpr m e =>
-          return unhygienicUnfolder
-            `($(mkIdent ``ThoR.Rel)
-              ($(mkIdent ``RelType.mk.unary_rel)
-                $(m.toTerm) $(← e.toTermOutsideBlock)))
-
-        | Shared.typeExpr.relExpr e =>
-          return unhygienicUnfolder
-            `($(mkIdent ``ThoR.Rel)
-              ($(mkIdent ``RelType.mk.rel)
-                $(← e.toTermOutsideBlock)))
-
-  /--
   Generates a Lean term corresponding to the RelType
 
   to be called from outside of an alloy block
@@ -90,15 +65,6 @@ namespace Shared.typeExpr
           return unhygienicUnfolder
             `(($(mkIdent ``RelType.mk.rel)
                 $(← e.toTermOutsideBlock)))
-
-  /--
-  changes a string expr in the type expression to a string rb expression
-  -/
-  def toStringRb (te: typeExpr) : typeExpr :=
-    match te with
-      | typeExpr.relExpr e => typeExpr.relExpr (e.toStringRb)
-      | typeExpr.multExpr m e => typeExpr.multExpr m (e.toStringRb)
-      | typeExpr.arrowExpr ae => typeExpr.arrowExpr (ae.toStringRb)
 
   /--
   Parses the given syntax to the type
@@ -145,26 +111,6 @@ namespace Shared.typeExpr
       | typeExpr.multExpr _ e => e.getStringExpr
       | typeExpr.relExpr e => e.getStringExpr
       | typeExpr.arrowExpr _ => default
-
-  /--
-  Gets all calls to the `callableVariables` which includes signatures and relations
-
-  The result is a list of the call (in string from) and a (possibly empty) list
-  of the concrete possible called variables (in form of varDecls). If the inner
-  list contains more than one varDecl, called variable is ambiguous and could
-  be either.
-  -/
-  def getCalledVariables
-    (te : typeExpr)
-    (callableVariables : List (varDecl))
-    : Except String (List (String × List (varDecl))) :=
-      match te with
-        | arrowExpr ae =>
-          (ae.getCalledVariables callableVariables)
-        | multExpr _ e =>
-          (e.getCalledVariables callableVariables)
-        | relExpr e =>
-          (e.getCalledVariables callableVariables)
 
   /--
   If possible replace domain restrictions with relations.

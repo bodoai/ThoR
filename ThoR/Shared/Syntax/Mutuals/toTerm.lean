@@ -8,28 +8,30 @@ Authors: s. file CONTRIBUTORS
 import ThoR.Shared.Syntax.Mutuals.mutuals
 
 import ThoR.Alloy.UnhygienicUnfolder
-import ThoR.Relation.ElabCallMacro
 import ThoR.Alloy.Syntax.AlloyData.alloyData
 import ThoR.Alloy.Config
-import Lean
+
+import ThoR.Relation.ElabCallMacro
+import ThoR.Relation.Quantification
 
 open Lean
-open Alloy Config
+open ThoR Quantification Alloy Config
 
 namespace Shared
 
   mutual
 
     /--
-    Generates a Lean term corosponding with the type
+    Generates a Lean term corosponding to the type expr
     -/
-    private partial def toTerm
+    partial def expr.toTerm
       (e : expr)
-      (inBlock : Bool)
       (blockName : Name)
-      (quantorNames : List (String) := []) -- used to know which names must be pure
-      (availableAlloyData : List (alloyData) := [])
-      (localContextUserNames : List Name := [])
+      (variableNames : List (String)) -- to check if var or pred
+      (callableVariables : List (varDecl))
+      (callablePredicates : List (commandDecl × List (expr × List (String × List varDecl))))
+      -- used to know which names must be pure
+      (pureNames : List (String) := [])
       : Except String Term := do
         match e with
           | expr.const c =>
@@ -37,35 +39,7 @@ namespace Shared
 
           | expr.string s => do
 
-            /-
-            check if the name is defined in the existing modules, but only
-            if the name is not defined in a variable definition
-            -/
-            if !inBlock && !(localContextUserNames.contains s.toName) then
-              let mut possibleVarDecls := []
-              for alloyData in availableAlloyData do
-                let possibleMatches := alloyData.st.variableDecls.filter fun vd => vd.name == s
-                if !possibleMatches.isEmpty then
-                  possibleVarDecls := possibleVarDecls.concat
-                    (alloyData.st.name, possibleMatches)
-
-              if !possibleVarDecls.isEmpty then
-                if
-                  -- if there are matches in more than one module
-                  possibleVarDecls.length > 1 ||
-                  -- or more than one match in a module (this should be impossible)
-                  possibleVarDecls.any fun pv => pv.2.length > 1
-                then
-                  throw s!"The call to {s} is ambiguous. \
-                  There are multiple declared variables which it could refer to ({possibleVarDecls})"
-
-                let calledVarDecl := possibleVarDecls.get! 0
-                let calledBlockName := calledVarDecl.1
-                let callNameComponents := [calledBlockName, `vars, s.toName]
-                let callName := Name.fromComponents callNameComponents
-                return unhygienicUnfolder `((@$(mkIdent callName) $(baseType.ident) _ _))
-
-            if inBlock && !(quantorNames.contains s) then
+            if !(pureNames.contains s) then
               return unhygienicUnfolder `((
                 ∻ $(mkIdent s!"{blockName}.vars.{s}".toName)
               ))
@@ -74,62 +48,363 @@ namespace Shared
 
           | expr.callFromOpen sn =>
             let snt := sn.representedNamespace.getId.toString
-            if inBlock then
-              return unhygienicUnfolder `((
-                ∻ $(mkIdent s!"{blockName}.vars.{snt}".toName)
-              ))
-            else
-              return sn.toTerm
+            return unhygienicUnfolder `((
+              ∻ $(mkIdent s!"{blockName}.vars.{snt}".toName)
+            ))
 
           | expr.function_call_with_args called_function arguments =>
-            let mut argumentsTerm :=
-            unhygienicUnfolder
-              `(($(← (arguments.get! 0).toTerm inBlock blockName quantorNames)))
+            let mut argumentsTerm
+              ← (arguments.get! 0).toTerm blockName
+                variableNames callableVariables callablePredicates pureNames
 
             for arg in arguments.drop 1 do
+              let argTerm ← arg.toTerm blockName
+                variableNames callableVariables callablePredicates pureNames
+
               argumentsTerm :=
                 unhygienicUnfolder
-                  `(argumentsTerm $(← arg.toTerm inBlock blockName quantorNames))
+                  `(argumentsTerm $argTerm)
 
-            let function_name_components := if inBlock then [blockName, `funs] else []
+            let function_name_components := [blockName, `funs]
+
             let basic_function_name := called_function.toName
-            let function_name := Name.fromComponents (function_name_components.concat basic_function_name)
 
-            return unhygienicUnfolder `((
-              ∻ $(mkIdent function_name)
-            ) $argumentsTerm )
+            let function_name :=
+              Name.fromComponents
+                (function_name_components.concat basic_function_name)
+
+            return unhygienicUnfolder
+              `(
+                (
+                  ∻ $(mkIdent function_name)
+                ) $argumentsTerm
+              )
 
           | expr.unaryRelOperation op e =>
-            let eTerm ← e.toTerm inBlock
-              blockName quantorNames availableAlloyData localContextUserNames
+            let eTerm ← e.toTerm blockName
+              variableNames callableVariables callablePredicates pureNames
 
             return unhygienicUnfolder `(( $(op.toTerm)
                 $(eTerm)
               ))
 
           | expr.binaryRelOperation op e1 e2 =>
-            let e1Term ← e1.toTerm inBlock
-              blockName quantorNames availableAlloyData localContextUserNames
-            let e2Term ← e2.toTerm inBlock
-              blockName quantorNames availableAlloyData localContextUserNames
+            let e1Term ← e1.toTerm blockName
+              variableNames callableVariables callablePredicates pureNames
+
+            let e2Term ← e2.toTerm blockName
+              variableNames callableVariables callablePredicates pureNames
+
             return unhygienicUnfolder `(( $(op.toTerm)
                 $(e1Term)
                 $(e2Term)
               ))
 
           | expr.dotjoin dj e1 e2 =>
-            let e1Term ← e1.toTerm inBlock
-              blockName quantorNames availableAlloyData localContextUserNames
-            let e2Term ← e2.toTerm inBlock
-              blockName quantorNames availableAlloyData localContextUserNames
+            let e1Term ← e1.toTerm blockName
+              variableNames callableVariables callablePredicates pureNames
+
+            let e2Term ← e2.toTerm blockName
+              variableNames callableVariables callablePredicates pureNames
+
             return unhygienicUnfolder `(( $(dj.toTerm)
                 $(e1Term)
                 $(e2Term)
               ))
 
+          | expr.ifElse condition thenBody elseBody =>
+            let conditionTerm ← condition.toTerm blockName
+              variableNames callableVariables callablePredicates pureNames
+
+            let thenBodyTerm ← thenBody.toTerm blockName
+              variableNames callableVariables callablePredicates pureNames
+
+            let elseBodyTerm ← elseBody.toTerm blockName
+              variableNames callableVariables callablePredicates pureNames
+
+            return unhygienicUnfolder
+              `(
+                $(conditionTerm) -> $(thenBodyTerm)
+                ∧
+                (Not $(conditionTerm)) → $(elseBodyTerm)
+              )
+
           | expr.string_rb s => do
             return unhygienicUnfolder
               `((@$(mkIdent s.toName) $(baseType.ident) _ _))
+
+    /--
+    Generates a Lean term corosponding to the type formula
+    -/
+    partial def formula.toTerm
+      (f: formula)
+      (blockName : Name)
+      (variableNames : List (String)) -- to check if var or pred
+      (callableVariables : List (varDecl))
+      (callablePredicates : List (commandDecl × List (expr × List (String × List varDecl))))
+      -- names that have to be pure with no namespace (quantors and args)
+      (pureNames : List (String) := [])
+      : Except String Term := do
+
+        match f with
+        | formula.string s => do
+          -- Quantors and args dont use namespaces
+          if pureNames.contains s then
+            return unhygienicUnfolder `($(mkIdent s.toName))
+
+          else
+            -- check if the ident is a variable or def
+            if variableNames.contains s then
+              return `((
+                        ∻ $(mkIdent s!"{blockName}.vars.{s}".toName)
+                      ))
+
+            else
+              return `((
+                        ∻ $(mkIdent s!"{blockName}.preds.{s}".toName)
+                      ))
+
+        | formula.pred_with_args p pa => do
+          let mut term :=
+            `((
+                ∻ $(mkIdent s!"{blockName}.preds.{p}".toName)
+              ))
+
+          let possibleCalledPredicates :=
+            (callablePredicates.filter fun cp => cp.1.name == p)
+
+          if possibleCalledPredicates.isEmpty || possibleCalledPredicates.length > 1 then
+            panic!
+              s!"Called Preds is Empty or more than one \
+              in formulaService {possibleCalledPredicates}"
+
+          let calledPredicate := possibleCalledPredicates.get! 0
+
+          let calledArgsVarDecls :=
+            (calledPredicate.1.predArgs.map fun cp =>
+              cp.1.names.map fun _ =>
+                cp.2).join
+
+          for index in [0:pa.length] do
+
+            --let definedArg := calledPredArgs.get! index
+
+            let vd := calledArgsVarDecls.get! index
+
+            let typeName :=
+              (if vd.isRelation then
+                vd.getFullRelationName
+              else
+                vd.getFullSignatureName)
+
+            let typeReplacementName :=
+              (if vd.isRelation then
+                vd.getRelationReplacementName
+              else
+                vd.getSignatureReplacementName)
+
+            let calledArg := pa.get! index
+            let calledVarDecls_of_arg_to_cast ←
+              calledArg.getCalledVariables callableVariables
+
+            let calledVarDecls_of_arg_to_cast_joined :=
+              (calledVarDecls_of_arg_to_cast.map fun a => a.2).join
+
+            let cast_type_as_expr_string := expr.string typeName.toString
+            let cast_type_as_expr_string_rb := cast_type_as_expr_string.toStringRb
+            let cast_type_as_type_expr_relExpr := typeExpr.relExpr cast_type_as_expr_string_rb
+
+            let cast_type_equals_called_var_type :=
+              -- the type must be clear (only one called var)
+              (calledVarDecls_of_arg_to_cast_joined.length == 1) &&
+              /-
+              get the type, stringify it and compare it to the
+              replacerName of the type we try to cast to
+              (the replacer is only needed because its "prettier"
+              to use the alias for casting, otherwise you could use
+              the replacer on both sides (its the actual name))
+              -/
+              (
+                let cv := (calledVarDecls_of_arg_to_cast_joined.get! 0)
+                cv.type.toString == typeReplacementName
+              )
+
+            if
+              cast_type_as_expr_string == calledArg ||
+              cast_type_as_expr_string_rb == calledArg ||
+              cast_type_equals_called_var_type
+            then
+              term :=
+                `(term |
+                  $(unhygienicUnfolder term)
+                  $(← calledArg.toTermFromBlock blockName pureNames)
+                )
+
+            else
+
+              let castCommand : Unhygienic Term :=
+                `(term |
+                  cast
+                  ($(← calledArg.toTermFromBlock blockName pureNames):term)
+                  ∷ $(cast_type_as_type_expr_relExpr.toSyntax blockName))
+
+              term :=
+                `(term |
+                  $(unhygienicUnfolder term)
+                  $(unhygienicUnfolder castCommand)
+                )
+
+          return term
+
+        | formula.unaryRelBoolOperation op e =>
+          return `(( $(op.toTerm)
+              $(← e.toTermFromBlock
+                blockName pureNames)
+            ))
+
+        | formula.unaryLogicOperation op f =>
+          let fTerm ← f.toTerm' blockName variableNames callableVariables callablePredicates pureNames
+          return `(term | ( $(op.toTerm) $(unhygienicUnfolder fTerm)))
+
+        | formula.binaryLogicOperation op f1 f2 =>
+          let f1Term ←
+            f1.toTerm' blockName variableNames callableVariables callablePredicates pureNames
+          let f2Term ←
+            f2.toTerm' blockName variableNames callableVariables callablePredicates pureNames
+          return `(( $(op.toTerm)
+              $(unhygienicUnfolder f1Term)
+              $(unhygienicUnfolder f2Term)
+            ))
+
+        | formula.tertiaryLogicOperation op f1 f2 f3 =>
+          let f1Term ←
+            f1.toTerm' blockName variableNames callableVariables callablePredicates pureNames
+          let f2Term ←
+            f2.toTerm' blockName variableNames callableVariables callablePredicates pureNames
+          let f3Term ←
+            f3.toTerm' blockName variableNames callableVariables callablePredicates pureNames
+          return `(( $(op.toTerm)
+              $(unhygienicUnfolder f1Term)
+              $(unhygienicUnfolder f2Term)
+              $(unhygienicUnfolder f3Term)
+            ))
+
+        | formula.algebraicComparisonOperation op ae1 ae2 =>
+          return `(($(op.toTerm) $(← ae1.toTerm blockName) $(← ae2.toTerm blockName)))
+
+        | formula.relationComarisonOperation op e1 e2 =>
+          let e1Term ← e1.toTerm
+            blockName variableNames callableVariables callablePredicates pureNames
+          let e2Term ← e2.toTerm
+                blockName variableNames callableVariables callablePredicates pureNames
+          return `(
+              ( $(op.toTerm)
+                $(e1Term)
+                $(e2Term)
+              )
+            )
+
+        | formula.quantification q disjunction n te f => do
+
+          let names := (n.map fun (name) => mkIdent name.toName).reverse
+
+          /-add quant vars here so you can get their type later-/
+          let quantVarDecls :=
+            n.map fun nam =>
+              varDecl.mk
+                (name := nam)
+                (isQuantor := true)
+                (isOpened := false)
+                (openedFrom := "this")
+                (isRelation := false)
+                (relationOf := default)
+                (type := te)
+                (requiredDecls := [])
+
+          -- one form ist present -> see syntax (+)
+          let firstForm := f.get! 0
+          let firstFTerm ←
+            firstForm.toTerm
+              blockName variableNames (callableVariables ++ quantVarDecls) callablePredicates
+              (pureNames.append n)
+
+          let mut completefTerm : Unhygienic (Term) :=
+            `(term | $(firstFTerm))
+
+          for form in f.drop 1 do
+            let fTerm ←
+              form.toTerm
+                blockName variableNames (callableVariables ++ quantVarDecls) callablePredicates
+                (pureNames.append n)
+
+            completefTerm :=
+              `(( $(unhygienicUnfolder completefTerm) ∧
+                  ($(unhygienicUnfolder fTerm))
+                ))
+
+          completefTerm :=
+            `((
+              $(mkIdent ``Formula.prop)
+              ($(unhygienicUnfolder completefTerm))
+              ))
+
+          -- singular parameter is var constructor
+          if names.length == 1 then
+              return `(($(mkIdent ``Formula.var) $(q.toTerm)) (
+                fun ( $(names.get! 0) : $(te.toTerm blockName))
+                  => $(unhygienicUnfolder completefTerm)))
+
+          -- multiple parameter is Group constructor
+          else
+            let mut formulaGroup :=
+              `(($(mkIdent ``Group.var) (
+                fun ( $(names.get! 0) : $(te.toTerm blockName))
+                  => $(mkIdent ``Group.formula) $(unhygienicUnfolder completefTerm))))
+            for n in (names.drop 1) do
+              formulaGroup :=
+                `(($(mkIdent ``Group.var) (
+                  fun ( $(n) : $(te.toTerm blockName))
+                    => $(unhygienicUnfolder formulaGroup))))
+            if disjunction then
+              formulaGroup :=
+                `(( $(mkIdent ``Formula.disj)
+                    $(mkIdent ``Shared.quant.all)
+                    $(unhygienicUnfolder formulaGroup)
+                  ))
+            else
+              formulaGroup :=
+                `(( $(mkIdent ``Formula.group)
+                    $(mkIdent ``Shared.quant.all)
+                    $(unhygienicUnfolder formulaGroup)
+                  ))
+
+            return formulaGroup
+
+        | formula.letDeclaration name value body =>
+          let nameT := mkIdent name
+          let valueT :=
+            unhygienicUnfolder
+              (← value.toTerm' blockName variableNames callableVariables callablePredicates)
+          let e_bodyT :=
+            (body.map fun e =>
+              e.toTerm' blockName variableNames callableVariables callablePredicates
+              )
+          let mut bodyTermList : List Term := []
+          for elem in e_bodyT do
+            match elem with
+              | Except.error msg => throw msg
+              | Except.ok data => bodyTermList := bodyTermList.concat (unhygienicUnfolder data)
+
+
+          if bodyTermList.isEmpty then throw s!"let {name}={value} has empty body"
+
+          let mut bodyTerm := `(term | ($(bodyTermList.get! 0)))
+          for elem in bodyTermList do
+            bodyTerm := `(bodyTerm ∧ ($(elem)))
+
+          let letTerm := `(let $(nameT):ident := $(valueT):term; $(unhygienicUnfolder bodyTerm))
+
+          return letTerm
 
   end
 

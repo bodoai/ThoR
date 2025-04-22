@@ -142,56 +142,6 @@ namespace Shared.arrowOp
       | arrowOp.multArrowOp ae1 _ _ ae2 => ae1.getReqVariables ++ ae2.getReqVariables
 
   /--
-  Gets all calls to the `callableVariables` which includes signatures and relations
-
-  The result is a list of the call (in string from) and a (possibly empty) list
-  of the concrete possible called variables (in form of varDecls). If the inner
-  list contains more than one varDecl, called variable is ambiguous and could
-  be either.
-  -/
-  def getCalledVariables
-    (ao : arrowOp)
-    (callableVariables : List (varDecl))
-    : Except String (List (String × List (varDecl))) := do
-      match ao with
-        | multArrowOpExpr e1 _ _ e2 =>
-          let e1_calls ← (e1.getCalledVariables callableVariables)
-          let e2_calls ← (e2.getCalledVariables callableVariables)
-          return e1_calls ++ e2_calls
-
-        | multArrowOpExprLeft e _ _ ao =>
-          let e_calls ← (e.getCalledVariables callableVariables)
-          let ao_calls ← (ao.getCalledVariables callableVariables)
-          return e_calls ++ ao_calls
-
-        | multArrowOpExprRight ao _ _ e =>
-          let ao_calls ← (ao.getCalledVariables callableVariables)
-          let e_calls ← (e.getCalledVariables callableVariables)
-          return ao_calls ++ e_calls
-
-        | multArrowOp ao1 _ _ ao2 =>
-          let ao1_calls ← (ao1.getCalledVariables callableVariables)
-          let ao2_calls ← (ao2.getCalledVariables callableVariables)
-          return ao1_calls ++ ao2_calls
-
-  /--
-  changes a string expr in the arrowOp to a string rb expression
-  -/
-  def toStringRb (ae : arrowOp) : arrowOp :=
-    match ae with
-      | arrowOp.multArrowOpExpr e1 m1 m2 e2 =>
-        arrowOp.multArrowOpExpr (e1.toStringRb) m1 m2 (e2.toStringRb)
-
-      | arrowOp.multArrowOpExprLeft e1 m1 m2 ae2 =>
-        arrowOp.multArrowOpExprLeft (e1.toStringRb) m1 m2 (ae2.toStringRb)
-
-      | arrowOp.multArrowOpExprRight ae1 m1 m2 e2 =>
-        arrowOp.multArrowOpExprRight (ae1.toStringRb) m1 m2 (e2.toStringRb)
-
-      | arrowOp.multArrowOp ae1 m1 m2 ae2 =>
-        arrowOp.multArrowOp (ae1.toStringRb) m1 m2 (ae2.toStringRb)
-
-  /--
   If possible replace domain restrictions with relations.
 
   This is only possible, if the relation is restricted from the
