@@ -21,7 +21,6 @@ namespace Alloy
           (arguments : List (functionArg))
           (outputType : typeExpr)
           (expressions : List (expr))
-          (ifExpressions : List (functionIfDecl))
   deriving Repr, BEq, Inhabited
 
   /--
@@ -55,11 +54,6 @@ namespace Alloy
             {
             if !fd.expressions.isEmpty then
               s!"expressions := {fd.expressions},"
-            else ""
-            }
-            {
-            if !fd.ifExpressions.isEmpty then
-              s!"ifExpressions := {fd.ifExpressions}"
             else ""
             }
           }"

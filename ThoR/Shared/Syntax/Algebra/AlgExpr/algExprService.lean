@@ -44,30 +44,6 @@ namespace Shared.algExpr
         return unhygienicUnfolder
           `(($(op.toTerm) $(ae1Term) $(ae2Term)))
 
-  def toTermOutsideBlock
-  (ae : algExpr)
-  : Except String Term := do
-    match ae with
-      | algExpr.number n =>
-        return unhygienicUnfolder
-          `($(Lean.Syntax.mkNumLit s!"{n.natAbs}"):num)
-
-      | algExpr.cardExpression e =>
-        let eTerm ← e.toTermOutsideBlock
-        return unhygienicUnfolder
-          `(($(mkIdent ``ThoR.Card.card) $(eTerm)))
-
-      | algExpr.unaryAlgebraOperation op ae =>
-        let aeTerm ← ae.toTermOutsideBlock
-        return unhygienicUnfolder
-          `(($(op.toTerm) $(aeTerm)))
-
-      | algExpr.binaryAlgebraOperation op ae1 ae2 =>
-        let ae1Term ← ae1.toTermOutsideBlock
-        let ae2Term ← ae2.toTermOutsideBlock
-        return unhygienicUnfolder
-          `(($(op.toTerm) $(ae1Term) $(ae2Term)))
-
   /--
   Parses the given syntax to the type
   -/
