@@ -68,7 +68,10 @@ namespace Shared
               (f3.replaceCalls callables)
 
           | formula.algebraicComparisonOperation op ae1 ae2 =>
-            formula.algebraicComparisonOperation op ae1 ae2
+            formula.algebraicComparisonOperation
+              op
+              (ae1.replaceCalls callables)
+              (ae2.replaceCalls callables)
 
           | formula.relationComarisonOperation op e1 e2 =>
             formula.relationComarisonOperation
@@ -89,6 +92,30 @@ namespace Shared
               name
               (value.replaceCalls callables)
               (body.map fun f => f.replaceCalls callables)
+
+    /--
+    Replaces all calls to the callables from the List `callables`
+    with their respective replacement
+    in the given algExpr `ae`
+    -/
+    partial def algExpr.replaceCalls
+      (ae : algExpr)
+      (callables : List (varDecl))
+      : algExpr := Id.run do
+        match ae with
+          | algExpr.number _ => ae
+
+          | algExpr.cardExpression e =>
+            algExpr.cardExpression (e.replaceCalls callables)
+
+          | algExpr.unaryAlgebraOperation op ae =>
+            algExpr.unaryAlgebraOperation op (ae.replaceCalls callables)
+
+          | algExpr.binaryAlgebraOperation op ae1 ae2 =>
+            algExpr.binaryAlgebraOperation
+              op
+              (ae1.replaceCalls callables)
+              (ae2.replaceCalls callables)
 
     /--
     Replaces all calls to the callables from the List `callables`
