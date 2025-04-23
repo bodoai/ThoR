@@ -56,24 +56,6 @@ namespace Shared.typeExpr
           typeExprService.toType \
           for '{syntx}'"
 
-  def isString
-    | typeExpr.relExpr e => e.isString
-    | typeExpr.multExpr _ e => e.isString
-    | _ => false
-
-  def getStringData
-    | typeExpr.relExpr e => e.getStringData
-    | typeExpr.multExpr _ e => e.getStringData
-    | e => panic! s!"Tried to get String data from expr {e}"
-
-
-
-  def getStringExpr (te:typeExpr) : String :=
-    match te with
-      | typeExpr.multExpr _ e => e.getStringExpr
-      | typeExpr.relExpr e => e.getStringExpr
-      | typeExpr.arrowExpr _ => default
-
   def insertModuleVariables
     (te : typeExpr)
     (moduleVariables openVariables : List (String))
@@ -85,19 +67,5 @@ namespace Shared.typeExpr
           multExpr m (e.insertModuleVariables moduleVariables openVariables)
         | relExpr e =>
           relExpr (e.insertModuleVariables moduleVariables openVariables)
-
-  def getFunctionCalls
-    (te : typeExpr)
-    (callableFunctions : List (commandDecl))
-    (callableVariables : List (varDecl))
-    : Except String
-      (List (commandDecl × List (expr × List (String × List (varDecl))))) := do
-      match te with
-      | arrowExpr ae =>
-        ae.getFunctionCalls callableFunctions callableVariables
-      | multExpr _ e =>
-        e.getFunctionCalls callableFunctions callableVariables
-      | relExpr e =>
-        e.getFunctionCalls callableFunctions callableVariables
 
 end Shared.typeExpr
