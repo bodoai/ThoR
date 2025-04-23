@@ -99,31 +99,4 @@ namespace Shared.arrowOp
           m1 m2
           (ae2.insertModuleVariables moduleVariables openVariables)
 
-  def getFunctionCalls
-    (ao : arrowOp)
-    (callableFunctions : List (commandDecl))
-    (callableVariables : List (varDecl))
-    : Except String
-      (List (commandDecl × List (expr × List (String × List (varDecl))))) := do
-      match ao with
-      | arrowOp.multArrowOpExpr e1 _ _ e2 =>
-        let e1_cf ← e1.getFunctionCalls callableFunctions callableVariables
-        let e2_cf ← e2.getFunctionCalls callableFunctions callableVariables
-        return e1_cf ++ e2_cf
-
-      | arrowOp.multArrowOpExprLeft e1 _ _ ae2 =>
-        let e1_cf ← e1.getFunctionCalls callableFunctions callableVariables
-        let ae2_cf ← ae2.getFunctionCalls callableFunctions callableVariables
-        return e1_cf ++ ae2_cf
-
-      | arrowOp.multArrowOpExprRight ae1 _ _ e2 =>
-        let ae1_cf ← ae1.getFunctionCalls callableFunctions callableVariables
-        let e2_cf ← e2.getFunctionCalls callableFunctions callableVariables
-        return ae1_cf ++ e2_cf
-
-      | arrowOp.multArrowOp ae1 _ _ ae2 =>
-        let ae1_cf ← ae1.getFunctionCalls callableFunctions callableVariables
-        let ae2_cf ← ae2.getFunctionCalls callableFunctions callableVariables
-        return ae1_cf ++ ae2_cf
-
 end Shared.arrowOp

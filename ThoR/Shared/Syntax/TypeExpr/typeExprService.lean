@@ -6,6 +6,7 @@ Authors: s. file CONTRIBUTORS
 
 import ThoR.Shared.Syntax.ArrowOp.arrowOpService
 import ThoR.Shared.Syntax.Mutuals.mutualsService
+import ThoR.Shared.Syntax.TypeExpr.typeExprHelper
 
 open Alloy ThoR
 open Lean

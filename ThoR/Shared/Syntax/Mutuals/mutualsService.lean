@@ -30,3 +30,9 @@ import ThoR.Shared.Syntax.Mutuals.getReqVariables
 
 /- imports the simplyfyDomainRestrictions function -/
 import ThoR.Shared.Syntax.Mutuals.simplifyDomainRestrictions
+
+/- imports the getCalledVariables function -/
+import ThoR.Shared.Syntax.Mutuals.getCalledVariables
+
+/- imports the getFunctionCalls function -/
+import ThoR.Shared.Syntax.Mutuals.getFunctionCalls
