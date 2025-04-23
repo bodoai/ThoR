@@ -163,7 +163,32 @@ namespace Shared
           let ident := mkIdent (Name.fromComponents components)
           return expr.callFromOpen (Alloy.separatedNamespace.mk ident)
 
-        | _ => e
+        | expr.dotjoin op e1 e2 =>
+          expr.dotjoin
+            op
+            (e1.simplifyDomainRestrictions st)
+            (e2.simplifyDomainRestrictions st)
+
+        | expr.unaryRelOperation op e1 =>
+          expr.unaryRelOperation
+            op
+            (e1.simplifyDomainRestrictions st)
+
+        | expr.function_call_with_args functionName args =>
+          expr.function_call_with_args
+            functionName
+            (args.map fun a => a.simplifyDomainRestrictions st)
+
+        | expr.ifElse condition thenBody elseBody =>
+          expr.ifElse
+            (condition.simplifyDomainRestrictions st)
+            (thenBody.simplifyDomainRestrictions st)
+            (elseBody.simplifyDomainRestrictions st)
+
+        | expr.callFromOpen _ => e
+        | expr.string _ => e
+        | expr.string_rb _ => e
+        | expr.const _ => e
 
     /--
     If possible replace domain restrictions with relations.
