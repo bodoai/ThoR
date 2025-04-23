@@ -26,7 +26,6 @@ namespace Shared
       (f : formula)
       (callableVariables : List (varDecl))
       : Except String (List (String × List (varDecl))) := do
-
         match f with
           | formula.pred_with_args _ predicate_arguments =>
             let mut result : List (String × List varDecl) := []
@@ -85,7 +84,12 @@ namespace Shared
               body_cps := body_cps ++ calledPreds
             return body_cps ++ value_cp
 
-          | _ => return []
+          | formula.algebraicComparisonOperation _ ae1 ae2 =>
+            let ae1_cv ← ae1.getCalledVariables callableVariables
+            let ae2_cv ← ae2.getCalledVariables callableVariables
+            return ae1_cv ++ ae2_cv
+
+          | formula.string _ => return []
 
     /--
     Gets all calls to the `callableVariables` which includes signatures and
@@ -309,7 +313,21 @@ namespace Shared
 
           return leftSideCalls ++ rightSideCalls
 
-        | _ => return []
+        | expr.function_call_with_args _ arguments =>
+          let mut cvs := []
+          for argument in arguments do
+            cvs := cvs.append (← argument.getCalledVariables callableVariables)
+          return cvs
+
+        | expr.ifElse condition thenBody elseBody =>
+          let conditon_cv ← condition.getCalledVariables callableVariables
+          let thenBody_cv ← thenBody.getCalledVariables callableVariables
+          let elseBody_cv ← elseBody.getCalledVariables callableVariables
+
+          return conditon_cv ++ thenBody_cv ++ elseBody_cv
+
+        | expr.string_rb _ => return []
+        | expr.const _ => return []
 
     /--
     Gets all calls to the `callableVariables` which includes signatures and relations
@@ -363,5 +381,27 @@ namespace Shared
             let ao1_calls ← (ao1.getCalledVariables callableVariables)
             let ao2_calls ← (ao2.getCalledVariables callableVariables)
             return ao1_calls ++ ao2_calls
+
+    /--
+    Gets all calls to the `callableVariables` which includes signatures and relations
+
+    The result is a list of the call (in string from) and a (possibly empty) list
+    of the concrete possible called variables (in form of varDecls). If the inner
+    list contains more than one varDecl, called variable is ambiguous and could
+    be either.
+    -/
+    partial def algExpr.getCalledVariables
+      (ae : algExpr)
+      (callableVariables : List (varDecl))
+      : Except String (List (String × List (varDecl))) := do
+        match ae with
+          | algExpr.number _ => return []
+          | algExpr.cardExpression e => e.getCalledVariables callableVariables
+          | algExpr.unaryAlgebraOperation _ ae =>
+            ae.getCalledVariables callableVariables
+          | algExpr.binaryAlgebraOperation _ ae1 ae2 =>
+            let ae1_cv ← ae1.getCalledVariables callableVariables
+            let ae2_cv ← ae2.getCalledVariables callableVariables
+            return ae1_cv ++ ae2_cv
   end
 end Shared
