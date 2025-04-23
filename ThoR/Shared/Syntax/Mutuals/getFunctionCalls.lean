@@ -69,7 +69,24 @@ namespace Shared
 
             return f_cf ++ te_cf
 
-          | _ => return []
+          | formula.letDeclaration _ value body =>
+            let value_cf ←
+              value.getFunctionCalls callableFunctions callableVariables
+
+            let mut body_cf := []
+            for f in body do
+              body_cf :=
+                body_cf.append
+                  (← f.getFunctionCalls callableFunctions callableVariables)
+
+            return value_cf ++ body_cf
+
+          | formula.algebraicComparisonOperation _ ae1 ae2 =>
+            let ae1_cf ← ae1.getFunctionCalls callableFunctions callableVariables
+            let ae2_cf ← ae2.getFunctionCalls callableFunctions callableVariables
+            return ae1_cf ++ ae2_cf
+
+          | formula.string _ => return []
 
     /--
     Get all function calls that are present in the expr
@@ -195,6 +212,28 @@ namespace Shared
         let ae1_cf ← ae1.getFunctionCalls callableFunctions callableVariables
         let ae2_cf ← ae2.getFunctionCalls callableFunctions callableVariables
         return ae1_cf ++ ae2_cf
+
+    /--
+    Get all function calls that are present in the expr
+    -/
+    partial def algExpr.getFunctionCalls
+      (ae : algExpr)
+      (callableFunctions : List (commandDecl))
+      (callableVariables : List (varDecl))
+      : Except String
+        (List (commandDecl × List (expr × List (String × List (varDecl))))) := do
+      match ae with
+        | algExpr.number _ => return []
+        | algExpr.cardExpression e =>
+          e.getFunctionCalls callableFunctions callableVariables
+
+        | algExpr.unaryAlgebraOperation _ ae =>
+          ae.getFunctionCalls callableFunctions callableVariables
+
+        | algExpr.binaryAlgebraOperation _ ae1 ae2 =>
+          let ae1_cf ← ae1.getFunctionCalls callableFunctions callableVariables
+          let ae2_cf ← ae2.getFunctionCalls callableFunctions callableVariables
+          return ae1_cf ++ ae2_cf
 
   end
 end Shared
