@@ -214,39 +214,6 @@ namespace Shared.formula
           body_rds ++ value_rd
 
   /--
-  Returns the required variables for the formula to work in Lean
-  -/
-  partial def getReqVariables
-    (f : formula)
-    : List (String) := Id.run do
-      match f with
-        | formula.string _ => []
-        | formula.pred_with_args _ pa =>
-          (pa.map fun (e) => e.getReqVariables).join
-        | formula.unaryRelBoolOperation _ e => e.getReqVariables
-        | formula.unaryLogicOperation _ f => f.getReqVariables
-        | formula.binaryLogicOperation _ f1 f2 =>
-          f1.getReqVariables ++ f2.getReqVariables
-        | formula.tertiaryLogicOperation _ f1 f2 f3 =>
-          f1.getReqVariables ++ f2.getReqVariables ++ f3.getReqVariables
-        | formula.algebraicComparisonOperation _ ae1 ae2 =>
-          ae1.getReqVariables ++ ae2.getReqVariables
-        | formula.relationComarisonOperation _ e1 e2 =>
-          e1.getReqVariables ++ e2.getReqVariables
-        | formula.quantification _ _ n e f =>
-          (((f.map fun form =>
-            form.getReqVariables).join)
-            ++ e.getReqVariables).filter
-            fun (elem) => !(n.contains elem) -- quantor vars are not required
-        | formula.letDeclaration name value body =>
-          let value_rv := value.getReqVariables
-          let body_rvs :=
-            (body.map fun e => e.getReqVariables).join.filter
-              -- the name is not required in the body
-              fun elem => !(name.toString == elem)
-          body_rvs ++ value_rv
-
-  /--
   Gets all calls to the `callablePredicates`
 
   The result takes the form of a List of Tuples which contain called Predicates
@@ -313,44 +280,6 @@ namespace Shared.formula
 
         | _ => return []
 
-  partial def simplifyDomainRestrictions
-    (f : formula)
-    (st : SymbolTable)
-    : formula :=
-    match f with
-      | formula.pred_with_args p args =>
-        pred_with_args p (args.map fun arg => arg.simplifyDomainRestrictions st)
-      | formula.unaryRelBoolOperation op e =>
-        formula.unaryRelBoolOperation op (e.simplifyDomainRestrictions st)
-      | formula.unaryLogicOperation op f =>
-        formula.unaryLogicOperation op (f.simplifyDomainRestrictions st)
-      | formula.binaryLogicOperation op f1 f2 =>
-        formula.binaryLogicOperation
-          op
-          (f1.simplifyDomainRestrictions st)
-          (f2.simplifyDomainRestrictions st)
-      | formula.tertiaryLogicOperation op f1 f2 f3 =>
-        formula.tertiaryLogicOperation
-        op
-        (f1.simplifyDomainRestrictions st)
-        (f2.simplifyDomainRestrictions st)
-        (f3.simplifyDomainRestrictions st)
-      | formula.quantification q d n t f =>
-        formula.quantification
-        q
-        d
-        n
-        (t.simplifyDomainRestrictions st)
-        (f.map fun f => f.simplifyDomainRestrictions st)
-
-      | formula.letDeclaration name value body =>
-        formula.letDeclaration
-          (name)
-          (value.simplifyDomainRestrictions st)
-          (body.map fun f => f.simplifyDomainRestrictions st)
-
-      | _ => f
-
   partial def insertModuleVariables
     (f : formula)
     (moduleVariables openVariables : List (String))
@@ -394,56 +323,6 @@ namespace Shared.formula
           (name)
           (value.insertModuleVariables moduleVariables openVariables)
           (body.map fun f => f.insertModuleVariables moduleVariables openVariables)
-
-      | _ => f
-
-  /--
-  replaces calls to "this" (current module), with a call to the given module
-  name.
-  -/
-  partial def replaceThisCalls
-    (f : formula)
-    (moduleName : String)
-    : formula := Id.run do
-    match f with
-      | formula.pred_with_args p args =>
-        pred_with_args
-          p
-          (args.map fun arg =>
-            arg.replaceThisCalls moduleName)
-      | formula.unaryRelBoolOperation op e =>
-        formula.unaryRelBoolOperation
-          op
-          (e.replaceThisCalls moduleName)
-      | formula.unaryLogicOperation op f =>
-        formula.unaryLogicOperation
-          op
-          (f.replaceThisCalls moduleName)
-      | formula.binaryLogicOperation op f1 f2 =>
-        formula.binaryLogicOperation
-          op
-          (f1.replaceThisCalls moduleName)
-          (f2.replaceThisCalls moduleName)
-      | formula.tertiaryLogicOperation op f1 f2 f3 =>
-        formula.tertiaryLogicOperation
-          op
-          (f1.replaceThisCalls moduleName)
-          (f2.replaceThisCalls moduleName)
-          (f3.replaceThisCalls moduleName)
-      | formula.quantification q d n t f =>
-        formula.quantification
-          q
-          d
-          n
-          (t.replaceThisCalls moduleName)
-          (f.map fun f =>
-            f.replaceThisCalls moduleName)
-
-      | formula.letDeclaration name value body =>
-        formula.letDeclaration
-          (name)
-          (value.replaceThisCalls moduleName)
-          (body.map fun f => f.replaceThisCalls moduleName)
 
       | _ => f
 

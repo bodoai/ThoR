@@ -41,19 +41,4 @@ namespace Shared.algExpr
             algExprService.toType \
             for '{syntx}'"
 
-  /--
-  Gets the required variables for the algebra expression.
-
-  Only needed for cardinal expression here.
-  -/
-  def getReqVariables
-    (ae : algExpr)
-    : List (String) := Id.run do
-      match ae with
-        | algExpr.number _ => []
-        | algExpr.cardExpression e => e.getReqVariables
-        | algExpr.unaryAlgebraOperation _ ae => ae.getReqVariables
-        | algExpr.binaryAlgebraOperation _ ae1 ae2 =>
-            ae1.getReqVariables ++  ae2.getReqVariables
-
 end Shared.algExpr

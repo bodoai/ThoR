@@ -70,53 +70,6 @@ namespace Shared.arrowOp
             arrowOpService.toType \
             for '{syntx}'"
 
-  /--
-  Gets the required variables for the arrowOp to work (as a term)
-  -/
-  def getReqVariables (ae : arrowOp) : List (String) :=
-    match ae with
-      | arrowOp.multArrowOpExpr e1 _ _ e2 => e1.getReqVariables ++ e2.getReqVariables
-      | arrowOp.multArrowOpExprLeft e1 _ _ ae2 => e1.getReqVariables ++ ae2.getReqVariables
-      | arrowOp.multArrowOpExprRight ae1 _ _ e2 => ae1.getReqVariables ++ e2.getReqVariables
-      | arrowOp.multArrowOp ae1 _ _ ae2 => ae1.getReqVariables ++ ae2.getReqVariables
-
-  /--
-  If possible replace domain restrictions with relations.
-
-  This is only possible, if the relation is restricted from the
-  signature it is defined in.
-
-  E.g. m1/a<:r gets simplified to the relation r IF r is a relation of a
-  -/
-  def simplifyDomainRestrictions
-    (ao : arrowOp)
-    (st : SymbolTable)
-    : arrowOp :=
-      match ao with
-        | arrowOp.multArrowOpExpr e1 m1 m2 e2 =>
-          arrowOp.multArrowOpExpr
-            (e1.simplifyDomainRestrictions st)
-            m1 m2
-            (e2.simplifyDomainRestrictions st)
-
-        | arrowOp.multArrowOpExprLeft e1 m1 m2 ae2 =>
-          arrowOp.multArrowOpExprLeft
-            (e1.simplifyDomainRestrictions st)
-            m1 m2
-            (ae2.simplifyDomainRestrictions st)
-
-        | arrowOp.multArrowOpExprRight ae1 m1 m2 e2 =>
-          arrowOp.multArrowOpExprRight
-            (ae1.simplifyDomainRestrictions st)
-            m1 m2
-            (e2.simplifyDomainRestrictions st)
-
-        | arrowOp.multArrowOp ae1 m1 m2 ae2 =>
-          arrowOp.multArrowOp
-            (ae1.simplifyDomainRestrictions st)
-            m1 m2
-            (ae2.simplifyDomainRestrictions st)
-
   def insertModuleVariables
     (ao : arrowOp)
     (moduleVariables openVariables : List (String))
@@ -145,40 +98,6 @@ namespace Shared.arrowOp
           (ae1.insertModuleVariables moduleVariables openVariables)
           m1 m2
           (ae2.insertModuleVariables moduleVariables openVariables)
-
-
-  /--
-  replaces calls to "this" (current module), with a call to the given module
-  name.
-  -/
-  def replaceThisCalls
-    (ao : arrowOp)
-    (moduleName : String)
-    : arrowOp :=
-    match ao with
-      | arrowOp.multArrowOpExpr e1 m1 m2 e2 =>
-        arrowOp.multArrowOpExpr
-          (e1.replaceThisCalls moduleName)
-          m1 m2
-          (e2.replaceThisCalls moduleName)
-
-      | arrowOp.multArrowOpExprLeft e1 m1 m2 ae2 =>
-        arrowOp.multArrowOpExprLeft
-          (e1.replaceThisCalls moduleName)
-          m1 m2
-          (ae2.replaceThisCalls moduleName)
-
-      | arrowOp.multArrowOpExprRight ae1 m1 m2 e2 =>
-        arrowOp.multArrowOpExprRight
-          (ae1.replaceThisCalls moduleName)
-          m1 m2
-          (e2.replaceThisCalls moduleName)
-
-      | arrowOp.multArrowOp ae1 m1 m2 ae2 =>
-        arrowOp.multArrowOp
-          (ae1.replaceThisCalls moduleName)
-          m1 m2
-          (ae2.replaceThisCalls moduleName)
 
   def getFunctionCalls
     (ao : arrowOp)

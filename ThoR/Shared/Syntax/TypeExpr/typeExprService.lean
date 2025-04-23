@@ -66,40 +66,13 @@ namespace Shared.typeExpr
     | typeExpr.multExpr _ e => e.getStringData
     | e => panic! s!"Tried to get String data from expr {e}"
 
-  /--
-  Gets the required variables for type expression to work
-  -/
-  def getReqVariables (te : typeExpr) : List (String) :=
-    match te with
-      | typeExpr.arrowExpr ae => ae.getReqVariables
-      | typeExpr.multExpr _ e => e.getReqVariables
-      | typeExpr.relExpr e => e.getReqVariables
+
 
   def getStringExpr (te:typeExpr) : String :=
     match te with
       | typeExpr.multExpr _ e => e.getStringExpr
       | typeExpr.relExpr e => e.getStringExpr
       | typeExpr.arrowExpr _ => default
-
-  /--
-  If possible replace domain restrictions with relations.
-
-  This is only possible, if the relation is restricted from the
-  signature it is defined in.
-
-  E.g. m1/a<:r gets simplified to the relation r IF r is a relation of a
-  -/
-  def simplifyDomainRestrictions
-    (te : typeExpr)
-    (st : SymbolTable)
-    : typeExpr :=
-      match te with
-        | arrowExpr ae =>
-          arrowExpr (ae.simplifyDomainRestrictions st)
-        | multExpr m e =>
-          multExpr m (e.simplifyDomainRestrictions st)
-        | relExpr e =>
-          relExpr (e.simplifyDomainRestrictions st)
 
   def insertModuleVariables
     (te : typeExpr)
@@ -112,22 +85,6 @@ namespace Shared.typeExpr
           multExpr m (e.insertModuleVariables moduleVariables openVariables)
         | relExpr e =>
           relExpr (e.insertModuleVariables moduleVariables openVariables)
-
-  /--
-  replaces calls to "this" (current module), with a call to the given module
-  name.
-  -/
-  def replaceThisCalls
-    (te : typeExpr)
-    (moduleName : String)
-    : typeExpr :=
-    match te with
-      | arrowExpr ae =>
-        arrowExpr (ae.replaceThisCalls moduleName)
-      | multExpr m e =>
-        multExpr m (e.replaceThisCalls moduleName)
-      | relExpr e =>
-        relExpr (e.replaceThisCalls moduleName)
 
   def getFunctionCalls
     (te : typeExpr)

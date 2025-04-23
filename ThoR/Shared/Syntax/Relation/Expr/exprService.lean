@@ -11,120 +11,17 @@ import ThoR.Alloy.Config
 import ThoR.Alloy.Syntax.AlloyData.alloyData
 import ThoR.Alloy.UnhygienicUnfolder
 import ThoR.Relation.ElabCallMacro
+
+/- import all dependent functions -/
 import ThoR.Shared.Syntax.Mutuals.mutualsService
+
+/- import all independent functions -/
+import ThoR.Shared.Syntax.Relation.Expr.exprHelper
 
 open Alloy Config
 open Lean
 
 namespace Shared.expr
-
-  def isCallFromOpen (e : expr) : Bool :=
-    match e with
-      | expr.callFromOpen _ => true
-      | _ => false
-
-  def getCalledFromOpenData (e : expr) : separatedNamespace :=
-    match e with
-      | expr.callFromOpen data => data
-      | _ => panic! s!"Tried to get callFromOpenData from expr {e}"
-
-  def isString (e : expr) : Bool :=
-    match e with
-      | expr.string _ => true
-      | _ => false
-
-  def getStringData (e : expr) : String :=
-    match e with
-      | expr.string data => data
-      | _ => panic! s!"Tried to get String data from expr {e}"
-
-  /--
-  If possible replace domain restrictions with relations.
-
-  This is only possible, if the relation is restricted from the
-  signature it is defined in.
-
-  E.g. m1/a<:r gets simplified to the relation r IF r is a relation of a
-  -/
-  def simplifyDomainRestrictions
-    (e : expr)
-    (st : SymbolTable)
-    : expr := Id.run do
-    match e with
-      | expr.binaryRelOperation operator leftSide rightSide =>
-        -- needs to be domain restriction
-        if !operator.isDomainRestriction then return e
-
-        -- the right side needs to be a string for simplification
-        if !rightSide.isString then return e
-
-        let rightSideData := rightSide.getStringData
-        let possibleRelations :=
-          st.variableDecls.filter
-            fun vd => vd.isRelation && vd.name == rightSideData
-
-        /-
-        if left and right sides are strings then it could be a call
-        to a LOCAL relation
-        -/
-        if leftSide.isString then
-          let leftSideData := leftSide.getStringData
-          let matchingRelations :=
-            possibleRelations.filter
-              fun pr =>
-                pr.relationOf == leftSideData &&
-                !pr.isOpened
-
-          -- if there is one matching relation use it
-          if
-            !matchingRelations.isEmpty &&
-            !matchingRelations.length > 1
-          then
-            let components := [`this, leftSideData.toName, rightSideData.toName]
-            let ident := mkIdent (Name.fromComponents components)
-            return expr.callFromOpen (Alloy.separatedNamespace.mk ident)
-
-        /-
-        if the left side is a call to another module, then it has to
-        be a relation from this module
-        -/
-        if !leftSide.isCallFromOpen then return e
-
-        let leftSideData := leftSide.getCalledFromOpenData
-
-        let leftSideComponents :=
-          leftSideData.representedNamespace.getId.components
-
-        if leftSideComponents.isEmpty then return e
-
-        let moduleNameComponents :=
-          leftSideComponents.take (leftSideComponents.length - 1)
-        let moduleName :=
-          (moduleNameComponents.drop 1).foldl
-          (fun result component => s!"{result}_{component.toString}")
-          (moduleNameComponents.get! 0).toString
-
-        let signatureName := leftSideComponents.getLast!
-
-        let matchingRelations :=
-          possibleRelations.filter
-            fun pr =>
-              pr.relationOf == signatureName.toString &&
-              pr.isOpened &&
-              pr.openedFrom == moduleName
-
-        -- if matching relations are not exactly one return e
-        if
-          matchingRelations.isEmpty ||
-          matchingRelations.length > 1
-        then
-          return e
-
-        let components := leftSideComponents.concat rightSideData.toName
-        let ident := mkIdent (Name.fromComponents components)
-        return expr.callFromOpen (Alloy.separatedNamespace.mk ident)
-
-      | _ => e
 
   /--
   Transforms an expr_without_if to an expr via the
@@ -260,32 +157,6 @@ namespace Shared.expr
             exprService.toType \
             for '{syntx}'"
 
-  /--
-  Gets the required variables for the type
-  -/
-  def getReqVariables
-    (e : expr)
-    : List (String) :=
-      match e with
-        | expr.string s => [s]
-        | expr.callFromOpen sn => Id.run do
-          -- this String can be something like m1.A
-          let sns := sn.representedNamespace.getId.toString
-          let snsSplit := sns.splitOn "."
-          if snsSplit.isEmpty then
-            return [sns]
-          else
-            [snsSplit.getLast!]
-        | expr.unaryRelOperation _ e => e.getReqVariables
-        | expr.binaryRelOperation _ e1 e2 => (e1.getReqVariables) ++ (e2.getReqVariables)
-        | expr.dotjoin _ e1 e2 => (e1.getReqVariables) ++ (e2.getReqVariables)
-        | _ => []
-
-  def getStringExpr (e:expr) : String :=
-    match e with
-      | expr.string s => s
-      | _ => default
-
   def insertModuleVariables
     (e : expr)
     (moduleVariables openVariables : List (String))
@@ -312,43 +183,6 @@ namespace Shared.expr
             dj
             (e1.insertModuleVariables moduleVariables openVariables)
             (e2.insertModuleVariables moduleVariables openVariables)
-
-        | _ => e
-
-  /--
-  replaces calls to "this" (current module), with a call to the given module
-  name.
-  -/
-  def replaceThisCalls
-    (e : expr)
-    (moduleName : String)
-    : expr := Id.run do
-      match e with
-
-        | expr.callFromOpen sn =>
-          let components := sn.representedNamespace.getId.components
-          if !components.get! 0 == `this then return e
-          let moduleName := (moduleName.splitOn "_").getLast!
-          let new_components := [moduleName.toName] ++ (components.drop 1)
-          let new_ident := mkIdent (Name.fromComponents new_components)
-
-          expr.callFromOpen
-            (separatedNamespace.mk new_ident)
-
-        | expr.unaryRelOperation op e =>
-          expr.unaryRelOperation
-            op
-            (e.replaceThisCalls moduleName)
-        | expr.binaryRelOperation op e1 e2 =>
-          expr.binaryRelOperation
-            op
-            (e1.replaceThisCalls moduleName)
-            (e2.replaceThisCalls moduleName)
-        | expr.dotjoin dj e1 e2 =>
-          expr.dotjoin
-            dj
-            (e1.replaceThisCalls moduleName)
-            (e2.replaceThisCalls moduleName)
 
         | _ => e
 
