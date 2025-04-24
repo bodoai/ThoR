@@ -57,16 +57,4 @@ namespace Shared.typeExpr
           typeExprService.toType \
           for '{syntx}'"
 
-  def insertModuleVariables
-    (te : typeExpr)
-    (moduleVariables openVariables : List (String))
-    : typeExpr :=
-      match te with
-        | arrowExpr ae =>
-          arrowExpr (ae.insertModuleVariables moduleVariables openVariables)
-        | multExpr m e =>
-          multExpr m (e.insertModuleVariables moduleVariables openVariables)
-        | relExpr e =>
-          relExpr (e.insertModuleVariables moduleVariables openVariables)
-
 end Shared.typeExpr
