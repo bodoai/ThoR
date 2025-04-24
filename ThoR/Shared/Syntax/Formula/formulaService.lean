@@ -186,31 +186,6 @@ namespace Shared.formula
             formulaService.toType \
             for '{syntx}'"
 
-  /--
-  Returns the required definitions for the formula to work in Lean
-  -/
-  partial def getReqDefinitions
-    (f : formula)
-    : List (String) := Id.run do
-      match f with
-        | formula.string s => [s]
-        | formula.pred_with_args p _ => [p]
-        | formula.unaryRelBoolOperation _ _ => []
-        | formula.unaryLogicOperation _ f => f.getReqDefinitions
-        | formula.binaryLogicOperation _ f1 f2 =>
-          f1.getReqDefinitions.append f2.getReqDefinitions
-        | formula.tertiaryLogicOperation _ f1 f2 f3 =>
-          (f1.getReqDefinitions.append f2.getReqDefinitions).append f3.getReqDefinitions
-        | formula.algebraicComparisonOperation _ _ _ => []
-        | formula.relationComarisonOperation _ _ _ => []
-        | formula.quantification _ _ n _ f =>
-          ((f.map fun form =>
-            form.getReqDefinitions).join
-              ).filter fun (elem) => !(n.contains elem)
-        | formula.letDeclaration _ value body =>
-          let value_rd := value.getReqDefinitions
-          let body_rds := (body.map fun e => e.getReqDefinitions).join
-          body_rds ++ value_rd
 
   /--
   Gets all calls to the `callablePredicates`
