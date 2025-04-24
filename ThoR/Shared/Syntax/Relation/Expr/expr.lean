@@ -37,7 +37,7 @@ namespace Shared
   syntax:60 expr_without_if ".(" expr_without_if ")" "." expr_without_if : expr_without_if -- dotjoin helper syntax
 
 -- used to call an expr (function) with implicit parameters explicitly (see string_rb)
-  syntax "@" ident : expr
+  syntax "@" ident : expr_without_if
 
   declare_syntax_cat expr_if_connector
   syntax "=>" : expr_if_connector

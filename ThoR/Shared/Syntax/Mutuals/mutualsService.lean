@@ -19,6 +19,9 @@ import ThoR.Shared.Syntax.Mutuals.toSyntaxOutsideBlock
 /- imports the toStringRb function -/
 import ThoR.Shared.Syntax.Mutuals.toStringRb
 
+/- imports the toType function -/
+import ThoR.Shared.Syntax.Mutuals.toType
+
 /- imports the toTerm function -/
 import ThoR.Shared.Syntax.Mutuals.toTerm
 
@@ -28,6 +31,9 @@ import ThoR.Shared.Syntax.Mutuals.toTermOutsideBlock
 /- imports the getReqVariables function -/
 import ThoR.Shared.Syntax.Mutuals.getReqVariables
 
+/- imports the getReqDefinitions function -/
+import ThoR.Shared.Syntax.Mutuals.getReqDefinitions
+
 /- imports the simplyfyDomainRestrictions function -/
 import ThoR.Shared.Syntax.Mutuals.simplifyDomainRestrictions
 
@@ -36,3 +42,9 @@ import ThoR.Shared.Syntax.Mutuals.getCalledVariables
 
 /- imports the getFunctionCalls function -/
 import ThoR.Shared.Syntax.Mutuals.getFunctionCalls
+
+/- imports the getCalledPredicates function -/
+import ThoR.Shared.Syntax.Mutuals.getCalledPredicates
+
+/- imports the insertModuleVariables function -/
+import ThoR.Shared.Syntax.Mutuals.insertModuleVariables
