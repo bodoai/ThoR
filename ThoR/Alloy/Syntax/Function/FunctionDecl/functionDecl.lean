@@ -29,18 +29,14 @@ namespace Alloy
   declare_syntax_cat functionDecl
   abbrev FunctionDecl := TSyntax `functionDecl
 
-  declare_syntax_cat exprOfFunIfDecl
-  abbrev ExprOfFunIfDecl := TSyntax `exprOfFunIfDecl
-  syntax expr : exprOfFunIfDecl
-
   syntax (name := function_declaration_with_brackets)
     "fun" extendedIdent ("["functionArg,*"]")? ":" typeExpr "{"
-      exprOfFunIfDecl*
+      expr*
     "}": functionDecl
 
   syntax (name := function_declaration_with_parenthesis)
     "fun" extendedIdent ("("functionArg,*")")? ":" typeExpr "{"
-      exprOfFunIfDecl*
+      expr*
     "}": functionDecl
 
   namespace functionDecl
