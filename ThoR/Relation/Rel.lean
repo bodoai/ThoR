@@ -11,7 +11,7 @@ import ThoR.Relation.HasRelType
 
 namespace ThoR
 
-structure Rel {R : Type} [TupleSet R]
+structure Rel {R : Type u} [TupleSet R]
   {arity : ℕ} (type : RelType R arity) where
   mk ::
     (relation : R)

@@ -10,7 +10,38 @@ import ThoR.Relation.Rel
 
 namespace ThoR.Semantics
 
+#check RelType
+#check Rel
+
+inductive RelTypeList (R : Type u) [TupleSet R] : List ℕ → Type u
+  | nil : RelTypeList R []
+  | cons : {n : ℕ} → (RelType R n) → (ns : List ℕ) → (RelTypeList R ns) → RelTypeList R (n::ns)
+
+inductive RelList (R : Type u) [TupleSet R] : {arities : List ℕ} → RelTypeList R arities→ Type u
+  | nil : RelList R RelTypeList.nil
+  | cons : {n : ℕ} → {type : RelType R n} → (r : ThoR.Rel type) → {arities : List ℕ} → (types : RelTypeList arities) → (rs : RelList R types) → RelList R (type::types)
+
+#print List
+
+
 variable {R : Type} [TupleSet R]
+
+-- #check R
+-- #check @RList.nil R
+
+-- variable (t1 : RelType R 1) (t2 : RelType R 7)
+-- def l1 := RList.cons t1 RList.nil
+
+
+
+-- inductive MyList (α : Type) :=
+--   | nil : MyList α
+--   | cons : α → MyList α → MyList α
+
+-- inductive MyHList {α : Type v}: List (Type α) → Type v
+--   | nil : MyHList []
+--   | cons (h_type : Type u) (h : h_type) (t_type : List (Type (max u v))) (MyHList t_type) : MyHList (h_type :: t_type)
+
 
 -- TODO: self-explaining variable names
 -- TODO: possibly add an option to give arguments as an Array or List
@@ -33,8 +64,8 @@ mutual
     | call {n1 n2 : ℕ} {parameter_type : RelType R n1} {return_type : RelType R n2} (f : Function parameter_type return_type) (parameter : Expression parameter_type) : Expression return_type
     | let {n1 n2 : ℕ} {parameter_type : RelType R n1} {return_type : RelType R n2} (l : ExpressionLet parameter_type return_type) (e : Expression parameter_type) : Expression return_type
 
-  inductive Function : {n1 n2: ℕ} → RelType R n1 → RelType R n2 → Type u where
-    | mk {n1 n2 : ℕ} {t1 : RelType R n1} {t2 : RelType R n2} (f : (Rel t1) → Expression t2): Function t1 t2
+  inductive Function : {arg_arities : List ℕ} → {res_arity: ℕ} → RList R arg_arities → RelType R res_arity → Type u where
+    | mk {arg_arities : List ℕ} {res_arity: ℕ}  {res_type : RelType R res_arity} (f : RList R arg_arities → Expression res_type): Function t1 t2
 
   inductive ExpressionLet : {n1 n2: ℕ} → RelType R n1 → RelType R n2 → Type u where
     | mk {n1 n2 : ℕ} {t1 : RelType R n1} {t2 : RelType R n2} (f : (Rel t1) → Expression t2): ExpressionLet t1 t2

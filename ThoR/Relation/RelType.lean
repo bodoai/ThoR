@@ -17,7 +17,7 @@ namespace ThoR
 --      true -> (∀ (r ∷ t1), (r ∷ t2)) → t1 ⊑ t2
 --      test stub: true -> t1 = t2
 
-inductive RelType' (R : Type) [TupleSet R] : Type :=
+inductive RelType' (R : Type u) [TupleSet R] : Type u :=
   | sig (m : Shared.mult) : RelType' R
   | unary_rel (m : Shared.mult) (r : R) : HasArity.hasArity r 1 -> RelType' R
   | rel (r : R) (n : ℕ): HasArity.hasArity r n → RelType' R
@@ -65,7 +65,7 @@ local macro "checkArityN" "(" arity:term ", " t:term ", " n:term ")": term =>
     else none)
 
 @[simp]
-def RelType'.arity {R : Type} [TupleSet R] (t : RelType' R) :=
+def RelType'.arity {R : Type u} [TupleSet R] (t : RelType' R) :=
   match t with
   | RelType'.sig _    => some 1
   | unary_rel _ _ _   => some 1
@@ -96,7 +96,7 @@ def RelType'.arity {R : Type} [TupleSet R] (t : RelType' R) :=
                         return n1
   | if_then_else t1 t2   => checkArityEq (arity, t1, t2)
 
-def RelType (R : Type) [TupleSet R] (n : ℕ):= { r : RelType' R // r.arity = some n }
+def RelType (R : Type u) [TupleSet R] (n : ℕ):= { r : RelType' R // r.arity = some n }
 
 -- lemma RelType'.sig.cons {R : Type} [TupleSet R] {m : Shared.mult} :
 --   (@RelType'.sig R _ m).arity = some 1 := by dsimp[RelType'.arity]
