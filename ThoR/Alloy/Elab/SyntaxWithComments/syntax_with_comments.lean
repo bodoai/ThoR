@@ -84,3 +84,9 @@ def x (i : TSyntax `xxxlll) : Bool :=
   match i with
     | `(xxxlll | $[$_:comment]? lolkekcd $[$_:comment]?) => true
     | _ => false
+
+def zz : Bool := Unhygienic.run do
+  let try1 ← `(xxxlll | /*kek*/ lolkekcd)
+  return x try1
+
+#eval zz
