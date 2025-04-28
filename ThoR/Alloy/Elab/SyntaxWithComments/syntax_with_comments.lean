@@ -30,7 +30,7 @@ namespace Alloy
   : Command
   := Unhygienic.run do
 
-  let comment_stx ← `(stx | $(mkIdent `comment):ident)
+  let comment_stx ← `(stx | ($(mkIdent `comment):ident)?)
 
   let mut elements_as_stx : Array (TSyntax `stx) := #[comment_stx]
   for element in elements do
@@ -76,3 +76,11 @@ namespace Alloy
     catch | x => throwError x.toMessageData
 
 end Alloy
+
+
+declare_syntax_cat xxxlll
+#syntax_with_comments "lolkekcd" : xxxlll
+def x (i : TSyntax `xxxlll) : Bool :=
+  match i with
+    | `(xxxlll | $[$_:comment]? lolkekcd $[$_:comment]?) => true
+    | _ => false
