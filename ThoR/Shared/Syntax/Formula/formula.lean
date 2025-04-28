@@ -44,6 +44,6 @@ namespace Shared
   --Special tertiariy Syntax (if else)
   declare_syntax_cat formula_if_connector
   syntax "=>" : formula_if_connector
-  syntax formula formula_if_connector formula " else " formula : formula
+  syntax "if" formula formula_if_connector formula " else " formula : formula
 
 end Shared

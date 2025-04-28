@@ -77,6 +77,7 @@ namespace Shared
             let connector ← `(expr_if_connector | =>)
 
             `(expr |
+              if
               ($(condition.toSyntax blockName):formula)
               $connector:expr_if_connector
               $(thenBody.toSyntax blockName):expr
@@ -131,6 +132,7 @@ namespace Shared
           | formula.tertiaryLogicOperation _ formula1 formula2 formula3 =>
             let c ← `(formula_if_connector | =>)
             `(formula |
+              if
               $(formula1.toSyntax blockName):formula
               $c:formula_if_connector
               $(formula2.toSyntax blockName):formula

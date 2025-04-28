@@ -170,10 +170,14 @@ namespace Shared
         | `(expr | ( $e:expr )) =>
           return ← expr.toType e signatureRelationNames
 
+        | `(expr | ( $e:expr_without_if )) =>
+          return ← expr.toType_without_if e signatureRelationNames
+
         | `(expr | $e:expr_without_if) =>
           return ← expr.toType_without_if e signatureRelationNames
 
         | `(expr |
+          if
           $f:formula
           $_:expr_if_connector
           $expr1:expr
@@ -335,6 +339,7 @@ namespace Shared
               for '{syntx}'"
 
         | `(formula |
+          if
           $form1:formula
           $_:formula_if_connector
           $form2:formula
