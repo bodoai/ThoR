@@ -22,7 +22,7 @@ namespace Alloy
   -/
   syntax
     (name := syntax_with_comments_stx)
-    "syntax_with_comments" (syntax_with_comments_element)* ":" ident : command
+    ("#")? "syntax_with_comments" (syntax_with_comments_element)* ":" ident : command
 
   private def evaluate
   (elements :TSyntaxArray `syntax_with_comments_element)
@@ -54,13 +54,22 @@ namespace Alloy
     try
       match stx with
         | `(
-            syntax_with_comments
+            # syntax_with_comments
             $elements:syntax_with_comments_element*
             : $stx_cat:ident
           ) =>
 
           let s := (evaluate elements stx_cat)
           logInfo s
+          elabCommand s
+
+        | `(
+            syntax_with_comments
+            $elements:syntax_with_comments_element*
+            : $stx_cat:ident
+          ) =>
+
+          let s := (evaluate elements stx_cat)
           elabCommand s
 
         | _ => return
