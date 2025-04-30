@@ -24,7 +24,7 @@ namespace Alloy
     (name := syntax_with_comments_stx)
     ("#")? "syntax_with_comments" (syntax_with_comments_element)* ":" ident : command
 
-  private def evaluate
+  private def evaluate_syntax_creation
   (elements :TSyntaxArray `syntax_with_comments_element)
   (stx_cat : Ident)
   : Command
@@ -59,7 +59,7 @@ namespace Alloy
             : $stx_cat:ident
           ) =>
 
-          let s := (evaluate elements stx_cat)
+          let s := (evaluate_syntax_creation elements stx_cat)
           logInfo s
           elabCommand s
 
@@ -69,7 +69,7 @@ namespace Alloy
             : $stx_cat:ident
           ) =>
 
-          let s := (evaluate elements stx_cat)
+          let s := (evaluate_syntax_creation elements stx_cat)
           elabCommand s
 
         | _ => return
@@ -77,16 +77,90 @@ namespace Alloy
 
 end Alloy
 
+syntax
+  (name := syntax_match_with_comments_stx)
+  ("#")? "syntax_match_with_comments"
+  Parser.Term.dynamicQuot : term
 
-declare_syntax_cat xxxlll
-#syntax_with_comments "lolkekcd" : xxxlll
-def x (i : TSyntax `xxxlll) : Bool :=
+@[term_elab syntax_match_with_comments_stx]
+private def syntax_match_with_comments_implementation
+: TermElab := fun stx expectedType? => do
+    match stx with
+      | `(
+          # syntax_match_with_comments
+          $syntax_match_quote:dynamicQuot
+        ) =>
+
+        /-
+        --let snk : TSyntax `ident := `a
+
+        let q ←  `(Parser.Term.quot | `(x))
+        let qq ←  `(Parser.Term.dynamicQuot | `(term | a))
+        --let qqq ←  `(Parser.Term.dynamicQuot | `($snk | a))
+
+        let a ← `(term | `(t))
+
+        let first_element := syntax_match_elements.get! 0
+        let mut elements_stx ← `(stx| $first_element:ident)
+        for element in syntax_match_elements.toList.drop 1 do
+          elements_stx :=
+            (← `(stx| $element:ident))
+
+        let syntax_quot ←
+          Lean.Elab.Term.Quotation.mkSyntaxQuotation
+            elements_stx
+            syntax_match_name.getId
+
+
+         let syntax_quot ←
+          Lean.Elab.Term.Quotation.mkSyntaxQuotation
+            elements_stx
+            syntax_match_name.getId
+        -/
+
+        logInfo syntax_match_quote
+
+        elabTerm
+          syntax_match_quote
+          expectedType?
+
+      | `(
+            syntax_match_with_comments
+            $syntax_match_quote:dynamicQuot
+        ) =>
+
+        /-
+        let first_element := syntax_match_elements.get! 0
+        let mut elements_stx ← `(stx| $first_element:ident)
+        for element in syntax_match_elements.toList.drop 1 do
+          elements_stx :=
+            (← `(stx| $element:ident))
+
+        let syntax_quot ←
+          Lean.Elab.Term.Quotation.mkSyntaxQuotation
+            elements_stx
+            syntax_match_name.getId
+        -/
+
+        elabTerm
+          syntax_match_quote
+          expectedType?
+
+      | syntx =>
+        throwError s!"Could not create Syntax match for syntax '{syntx}'"
+
+declare_syntax_cat example_stx_cat
+#syntax_with_comments  "example_stx"  : example_stx_cat
+
+#check (# syntax_match_with_comments `(example_stx_cat | example_stx ))
+
+def canMatch (i : TSyntax `example_stx_cat) : Bool :=
   match i with
-    | `(xxxlll | $[$_:comment]? lolkekcd $[$_:comment]?) => true
+    | `(example_stx_cat | $[$_:comment]? example_stx $[$_:comment]?) => true
     | _ => false
 
 def zz : Bool := Unhygienic.run do
-  let try1 ← `(xxxlll | /*kek*/ lolkekcd)
-  return x try1
+  let try1 ← `(example_stx_cat | /*kek*/ example_stx)
+  return canMatch try1
 
 #eval zz
