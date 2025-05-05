@@ -97,12 +97,12 @@ namespace Alloy
 
         let ff := (forms.get! 0)
         bodyTerm ←
-          ff.toTerm
+          ff.toSemanticsTerm
             blockName cd.requiredVars callableVariables cd.predCalls argnames
 
         for formula in forms.drop 1 do
           let newTerm ←
-            formula.toTerm
+            formula.toSemanticsTerm
               blockName cd.requiredVars callableVariables cd.predCalls argnames
           bodyTerm := unhygienicUnfolder `($bodyTerm ∧ ($newTerm))
 
