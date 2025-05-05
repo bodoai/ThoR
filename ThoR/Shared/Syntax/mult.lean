@@ -45,10 +45,6 @@ namespace Shared
         | mult.some => `($(mkIdent ``mult.some))
         | mult.lone => `($(mkIdent ``mult.lone))
 
-    instance : BEq mult where
-      beq : mult -> mult -> Bool
-        | m1, m2 => m1.toString == m2.toString
-
     /--
     Generates syntax corosponding to the type
     -/

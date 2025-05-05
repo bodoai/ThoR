@@ -34,6 +34,10 @@ namespace Shared
     -/
     def toString (op : unAlgOp) : String := ToString.toString op
 
+    def toSyntax (op : unAlgOp) : UnAlgOp := Unhygienic.run do
+      match op with
+        | unAlgOp.negation => `(unAlgOp| -)
+
     /--
     Generates a Lean term corosponding with the type
     -/

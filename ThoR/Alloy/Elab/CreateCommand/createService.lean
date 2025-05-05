@@ -76,12 +76,14 @@ namespace Alloy
     (blockName : Name)
     (cd : commandDecl)
     (callableVariables : List (varDecl))
+    (callablePredicates : List (commandDecl × List (expr × List (String × List varDecl))))
     : Except String Command := do
 
       -- formula evaluation
       -- All formulas (lines) in an Alloy pred or in an Alloy fact are
       -- transformed into a conjunction of all these formulas.
-      let emptyTerm : Term := unhygienicUnfolder `($(mkIdent "".toName))
+      let emptyTerm : Term :=
+        unhygienicUnfolder `(term | $(mkIdent `error.in.creation.service))
       let mut bodyTerm : Term := emptyTerm
 
       -- if it is not a function it has formulas
@@ -109,35 +111,15 @@ namespace Alloy
         let expressions :=
           cd.expressions.map fun e => e.replaceCalls callableVariables
 
+        let argNames := (cd.functionArgs.map fun fa => fa.1.names).join
 
         let fe := (expressions.get! 0)
-        bodyTerm ← fe.toTermFromBlock blockName
+        bodyTerm ← fe.toTerm blockName cd.requiredVars callableVariables cd.predCalls argNames
 
         for expression in expressions.drop 1 do
-          let newTerm ← expression.toTermFromBlock blockName
-          bodyTerm := unhygienicUnfolder `($bodyTerm ∧ ($newTerm))
-
-      -- and ifExpressions
-      if cd.isFunction && !(cd.ifExpressions.isEmpty) then
-        let ifExpressions :=
-          cd.ifExpressions.map fun ie =>
-            {ie with
-              condition := ie.condition.replaceCalls callableVariables,
-              thenBody := ie.thenBody.replaceCalls callableVariables,
-              elseBody := ie.elseBody.replaceCalls callableVariables
-            }
-
-        for ifExpression in ifExpressions do
-          let conditionTerm ←
-            ifExpression.condition.toTerm blockName cd.requiredVars callableVariables cd.predCalls
-
-          let thenTerm ← ifExpression.thenBody.toTermFromBlock blockName
-          let mut elseTerm := unhygienicUnfolder `(True)
-          if ifExpression.hasElse then
-            elseTerm ← ifExpression.thenBody.toTermFromBlock blockName
-
-          -- possibly wrong
-          let newTerm := unhygienicUnfolder `(if ( $(conditionTerm) == True) then $(thenTerm) else $(elseTerm))
+          let newTerm ←
+            expression.toTerm blockName cd.requiredVars
+              callableVariables cd.predCalls argNames
 
           bodyTerm := unhygienicUnfolder `($bodyTerm ∧ ($newTerm))
 
@@ -204,10 +186,13 @@ namespace Alloy
           let returnType :=
             (cd.functionReturnType.replaceCalls callableVariables).toStringRb
           let returnTypeSyntax := returnType.toSyntax blockName
+          let argNames := (cd.functionArgs.map fun fa => fa.1.names).join
+          let returnTypeTerm ← returnType.toTerm blockName cd.requiredVars callableVariables cd.predCalls argNames
           argTerms := unhygienicUnfolder
             `(Lean.Parser.Command.optDeclSig| $[$allArgs]* : ∷ $returnTypeSyntax)
 
-          bodyTerm := unhygienicUnfolder `(cast ($(bodyTerm)) ∷ $returnTypeSyntax)
+
+          bodyTerm := unhygienicUnfolder `(cast ($(bodyTerm)) ∷ $returnTypeTerm)
 
         if bodyTerm != emptyTerm then
           return unhygienicUnfolder `(
@@ -232,6 +217,7 @@ namespace Alloy
     (namespaceName : Name)
     (commandDecls : List (commandDecl))
     (callableVariables : List (varDecl))
+    (callablePredicates : List (commandDecl × List (expr × List (String × List varDecl))))
     : Except String (List Command) := do
       let mut commandList : List Command := []
 
@@ -254,7 +240,7 @@ namespace Alloy
 
         --Def declaration
         for cd in commandDecls do
-          let cdCmd ← (createDefOrAxiomCommand blockName cd callableVariables)
+          let cdCmd ← (createDefOrAxiomCommand blockName cd callableVariables callablePredicates)
           commandList := commandList.concat cdCmd
 
         --NamespaceEnd
@@ -273,10 +259,11 @@ namespace Alloy
     (blockName : Name)
     (defDecls : List (commandDecl))
     (callableVariables : List (varDecl))
+    (callablePredicates : List (commandDecl × List (expr × List (String × List varDecl))))
     : Except String (List Command) :=
       createDefsCommandsWithNamespace
         (namespaceName := s!"{blockName}.preds".toName)
-        blockName defDecls callableVariables
+        blockName defDecls callableVariables callablePredicates
 
   /--
   Creates commands to create Lean definitions (for functions) from the given
@@ -288,10 +275,11 @@ namespace Alloy
     (blockName : Name)
     (defDecls : List (commandDecl))
     (callableVariables : List (varDecl))
+    (callablePredicates : List (commandDecl × List (expr × List (String × List varDecl))))
     : Except String (List ((TSyntax `command))) :=
       createDefsCommandsWithNamespace
         (namespaceName := s!"{blockName}.functions".toName)
-        blockName defDecls callableVariables
+        blockName defDecls callableVariables callablePredicates
 
   /--
   Creates commands to create Lean definitions (for asserts) from the given
@@ -303,10 +291,11 @@ namespace Alloy
     (blockName : Name)
     (defDecls : List (commandDecl))
     (callableVariables : List (varDecl))
+    (callablePredicates : List (commandDecl × List (expr × List (String × List varDecl))))
     : Except String (List Command) :=
       createDefsCommandsWithNamespace
         (namespaceName := s!"{blockName}.asserts".toName)
-        blockName  defDecls callableVariables
+        blockName  defDecls callableVariables callablePredicates
 
   /--
   Creates commands to create Lean axioms from the given blockname and commandDecls.
@@ -317,6 +306,7 @@ namespace Alloy
     (blockName : Name)
     (axiomDecls : List (commandDecl))
     (callableVariables : List (varDecl))
+    (callablePredicates : List (commandDecl × List (expr × List (String × List varDecl))))
     : Except String (List Command) := do
       let mut commandList : List Command := []
 
@@ -341,7 +331,7 @@ namespace Alloy
 
         --Axiom declaration
         for ad in axiomDecls do
-          let adCmd ← (createDefOrAxiomCommand blockName ad callableVariables)
+          let adCmd ← (createDefOrAxiomCommand blockName ad callableVariables callablePredicates)
           commandList := commandList.concat adCmd
 
         --NamespaceEnd
@@ -457,26 +447,28 @@ namespace Alloy
       let aliasCommands := createVariableAliasCommands blockName st.variableDecls
       commandList := commandList.append aliasCommands
 
+      let callablePredicates := (st.getPredicateDeclarations.map fun pd => pd.predCalls).join
+
       -- predicates
-      let predCommands ← createPredDefsCommands blockName (st.defDecls.filter fun dd => dd.isPredicate) st.variableDecls
+      let predCommands ← createPredDefsCommands blockName (st.defDecls.filter fun dd => dd.isPredicate) st.variableDecls callablePredicates
       commandList := commandList.append predCommands
       if !(predCommands.isEmpty) then
         namespacesToOpen := namespacesToOpen.push (mkIdent s!"{blockName}.preds".toName)
 
       -- functions
-      let functionCommands ← createFunctionDefsCommands blockName (st.defDecls.filter fun dd => dd.isFunction) st.variableDecls
+      let functionCommands ← createFunctionDefsCommands blockName (st.defDecls.filter fun dd => dd.isFunction) st.variableDecls callablePredicates
       commandList := commandList.append functionCommands
       if !(functionCommands.isEmpty) then
         namespacesToOpen := namespacesToOpen.push (mkIdent s!"{blockName}.functions".toName)
 
       -- axioms
-      let axCommands ← createAxiomCommands blockName st.axiomDecls st.variableDecls
+      let axCommands ← createAxiomCommands blockName st.axiomDecls st.variableDecls callablePredicates
       commandList := commandList.append axCommands
       if !(axCommands.isEmpty) then
         namespacesToOpen := namespacesToOpen.push (mkIdent s!"{blockName}.facts".toName)
 
       -- asserts
-      let assertCommands ← createAssertDefsCommands blockName st.assertDecls st.variableDecls
+      let assertCommands ← createAssertDefsCommands blockName st.assertDecls st.variableDecls callablePredicates
       commandList := commandList.append assertCommands
       if !(assertCommands.isEmpty) then
         namespacesToOpen := namespacesToOpen.push (mkIdent s!"{blockName}.asserts".toName)
