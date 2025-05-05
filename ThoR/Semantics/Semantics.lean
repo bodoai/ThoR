@@ -166,3 +166,6 @@ mutual
 end
 
 end ThoR.Semantics
+
+instance {R : Type} [ThoR.TupleSet R]: CoeSort.{u+1} (@ThoR.Semantics.Formula.{u} R _) Prop where
+  coe f := ThoR.Semantics.Formula.eval.{u,u+1} f
