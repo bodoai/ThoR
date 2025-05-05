@@ -8,6 +8,8 @@ import ThoR
 import ThoR.Relation.SubType
 import ThoR.Relation.RelType
 
+import ThoR.Test.Alloy.test_macro
+
 alloy empty
 end
 
@@ -261,3 +263,54 @@ end
 #check buch.vars.Buch.prequel
 #print buch.preds.EntwederPrequelOderSequel
 open Shared.quant
+
+
+
+
+namespace testrrr
+ namespace  rel_test_fs
+
+  class  vars  (  ThoR_TupleSet  :  Type  )  [  ThoR.TupleSet  ThoR_TupleSet  ]  where  (  this_φ_a  :  ∷  set  univ  )
+
+  end  rel_test_fs
+
+  alias  rel_test_fs.vars.a  :=  rel_test_fs.vars.this_φ_a
+
+  namespace  rel_test_fs.preds
+
+  variable  {  ThoR_TupleSet  :  Type  }  [  ThoR.TupleSet  ThoR_TupleSet  ]  [  rel_test_fs.vars  ThoR_TupleSet  ]
+
+  def  p1  {  ThoR_TupleSet  :  Type  }  [  ThoR.TupleSet  ThoR_TupleSet  ]
+    [  rel_test_fs.vars  ThoR_TupleSet  ]  :=
+    ( ThoR.Semantics.Formula.some ( (ThoR.Semantics.Expression.rel  (  ∻  rel_test_fs.vars.this_φ_a  )  )  ))
+
+  end rel_test_fs.preds
+end testrrr
+
+-- TODO: 292 - 299 as two macro
+
+--m1
+variable (ThoR_TupleSet : Type)
+@[default_instance]
+instance : ThoR.TupleSet ThoR_TupleSet := by sorry
+
+-- m2
+@[default_instance]
+instance : testrrr.rel_test_fs.vars ThoR_TupleSet := by sorry
+
+--startTestBlock testrrr.rel_test_fs
+#check testrrr.rel_test_fs.preds.p1
+#check (testrrr.rel_test_fs.preds.p1 : Prop)
+
+
+#alloy rel_test_fs
+  sig a {}
+  pred p1 {
+    some a
+  }
+end
+
+#create rel_test_fs
+
+#check rel_test_fs.preds.p1
+#print rel_test_fs.preds.p1

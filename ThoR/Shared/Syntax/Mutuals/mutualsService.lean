@@ -48,3 +48,6 @@ import ThoR.Shared.Syntax.Mutuals.getCalledPredicates
 
 /- imports the insertModuleVariables function -/
 import ThoR.Shared.Syntax.Mutuals.insertModuleVariables
+
+/- imports the toSemanticsTerm function -/
+import ThoR.Shared.Syntax.Mutuals.toSemanticsTerm
