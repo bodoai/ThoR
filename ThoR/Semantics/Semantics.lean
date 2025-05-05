@@ -167,5 +167,18 @@ end
 
 end ThoR.Semantics
 
-instance {R : Type} [ThoR.TupleSet R]: CoeSort.{u+1} (@ThoR.Semantics.Formula.{u} R _) Prop where
-  coe f := ThoR.Semantics.Formula.eval.{u,u+1} f
+open ThoR
+-- Coercion Formula -> Prop
+instance {R : Type} [ThoR.TupleSet R]:
+  CoeSort.{u+1} (@ThoR.Semantics.Formula.{u} R _) Prop where
+    coe f := ThoR.Semantics.Formula.eval.{u,u+1} f
+
+-- Coercion Expression t -> Rel t
+instance {R : Type} [ThoR.TupleSet R] {n : ℕ} {t : ThoR.RelType R n}:
+  CoeSort.{u+1} (@ThoR.Semantics.Expression.{u} R _ _ t) (ThoR.Rel t) where
+    coe e := ThoR.Semantics.Expression.eval.{u,u+1} e
+
+-- Coercion Function
+instance {R : Type} [ThoR.TupleSet R] {n1 n2 : ℕ} {t1 : RelType R n1} {t2 : RelType R n2}:
+  CoeSort.{u+1} (ThoR.Semantics.Function.{u} t1 t2) (Rel t1 → Rel t2) where
+    coe e := ThoR.Semantics.Function.eval.{u,u+1} e
