@@ -168,6 +168,13 @@ end
 end ThoR.Semantics
 
 open ThoR
+-- TODO Coercions for
+-- [ ] ExpressionLet
+-- [ ] ArithmeticExpression
+-- [ ] Predicate
+-- [ ] FormulaLet
+-- [ ] TypeExpression
+
 -- Coercion Formula -> Prop
 instance {R : Type} [ThoR.TupleSet R]:
   CoeSort.{u+1} (@ThoR.Semantics.Formula.{u} R _) Prop where
