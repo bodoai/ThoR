@@ -10,6 +10,7 @@ import ThoR.Shared.Syntax.Mutuals.mutuals
 /- import needed functions -/
 import ThoR.Shared.Syntax.Mutuals.getCalledVariables
 import ThoR.Shared.Syntax.Mutuals.toStringRb
+import ThoR.Shared.Syntax.Mutuals.toTerm
 
 /- import the Semantics to be used (in the resulting Term) -/
 import ThoR.Semantics.Semantics
@@ -43,6 +44,7 @@ namespace Shared
         match e with
           | expr.const c =>
             return (c.toTerm)
+            -- missing in semantics
 
           | expr.string s => do
 
@@ -59,11 +61,13 @@ namespace Shared
 
           | expr.callFromOpen sn =>
             let snt := sn.representedNamespace.getId.toString
-            return unhygienicUnfolder `((
-              ∻ $(mkIdent s!"{blockName}.vars.{snt}".toName)
-            ))
+            return unhygienicUnfolder `(
+              $(mkIdent ``ThoR.Semantics.Expression.rel)
+              (∻ $(mkIdent s!"{blockName}.vars.{snt}".toName))
+            )
 
           | expr.function_call_with_args called_function arguments =>
+            -- TODO : How to implement with semantics
             let mut argumentsTerm
               ← (arguments.get! 0).toSemanticsTerm blockName
                 variableNames callableVariables callablePredicates pureNames
@@ -92,6 +96,7 @@ namespace Shared
               )
 
           | expr.unaryRelOperation op e =>
+            -- TODO: Missing in Semantics
             let eTerm ← e.toSemanticsTerm blockName
               variableNames callableVariables callablePredicates pureNames
 
@@ -100,25 +105,56 @@ namespace Shared
               ))
 
           | expr.binaryRelOperation op e1 e2 =>
+
             let e1Term ← e1.toSemanticsTerm blockName
               variableNames callableVariables callablePredicates pureNames
 
             let e2Term ← e2.toSemanticsTerm blockName
               variableNames callableVariables callablePredicates pureNames
 
-            return unhygienicUnfolder `(( $(op.toTerm)
+            let binRelOpTerm :=
+              match op with
+                | binRelOp.intersection =>
+                  unhygienicUnfolder `(
+                    $(mkIdent ``ThoR.Semantics.Expression.intersect)
+                  )
+
+                | binRelOp.union =>
+                  unhygienicUnfolder `(
+                        $(mkIdent ``ThoR.Semantics.Expression.union)
+                      )
+
+                | binRelOp.difference => unhygienicUnfolder `(
+                    $(mkIdent ``ThoR.Semantics.Expression.diff)
+                  )
+
+                | binRelOp.overwrite => unhygienicUnfolder `(
+                    $(mkIdent ``ThoR.Semantics.Expression.append)
+                  )
+
+                | binRelOp.domain_restriction => unhygienicUnfolder `(
+                    $(mkIdent ``ThoR.Semantics.Expression.domrestr)
+                  )
+
+                | binRelOp.range_restriction => unhygienicUnfolder `(
+                    $(mkIdent ``ThoR.Semantics.Expression.rangerestr)
+                  )
+
+            return unhygienicUnfolder `((
+                $(binRelOpTerm)
                 $(e1Term)
                 $(e2Term)
               ))
 
-          | expr.dotjoin dj e1 e2 =>
+          | expr.dotjoin _ e1 e2 =>
             let e1Term ← e1.toSemanticsTerm blockName
               variableNames callableVariables callablePredicates pureNames
 
             let e2Term ← e2.toSemanticsTerm blockName
               variableNames callableVariables callablePredicates pureNames
 
-            return unhygienicUnfolder `(( $(dj.toTerm)
+            return unhygienicUnfolder `((
+                $(mkIdent ``ThoR.Semantics.Expression.dotjoin)
                 $(e1Term)
                 $(e2Term)
               ))
@@ -135,12 +171,14 @@ namespace Shared
 
             return unhygienicUnfolder
               `(
-                $(conditionTerm) -> $(thenBodyTerm)
-                ∧
-                (Not $(conditionTerm)) → $(elseBodyTerm)
+                $(mkIdent ``ThoR.Semantics.Expression.if_then_else)
+                $(conditionTerm)
+                $(thenBodyTerm)
+                $(elseBodyTerm)
               )
 
           | expr.string_rb s => do
+            -- TODO: What to do here
             return unhygienicUnfolder
               `((@$(mkIdent s.toName) $(baseType.ident) _ _))
 
@@ -161,27 +199,39 @@ namespace Shared
         | formula.string s => do
           -- Quantors and args dont use namespaces
           if pureNames.contains s then
+            -- TODO: Needed as Semantics in formula ?
             return unhygienicUnfolder `($(mkIdent s.toName))
 
           else
             -- check if the ident is a variable or def
             if variableNames.contains s then
+              -- TODO: Can this happen ?
               return unhygienicUnfolder
                 `((
                   ∻ $(mkIdent s!"{blockName}.vars.{s}".toName)
                 ))
 
             else
+            -- TODO: How to apply correctly
               return unhygienicUnfolder
-                `((
-                  ∻ $(mkIdent s!"{blockName}.preds.{s}".toName)
-                ))
+                `(
+                  $(mkIdent ``ThoR.Semantics.Formula.call)
+                  (
+                    $(mkIdent ``ThoR.Semantics.Predicate)
+                    (∻ $(mkIdent s!"{blockName}.preds.{s}".toName))
+                  )
+                )
 
         | formula.pred_with_args p pa => do
           let mut term := unhygienicUnfolder
-            `((
-                ∻ $(mkIdent s!"{blockName}.preds.{p}".toName)
-              ))
+            -- TODO: How to apply args and pred
+             `(
+                $(mkIdent ``ThoR.Semantics.Formula.call)
+                (
+                  $(mkIdent ``ThoR.Semantics.Predicate)
+                  (∻ $(mkIdent s!"{blockName}.preds.{p}".toName))
+                )
+              )
 
           let possibleCalledPredicates :=
             (callablePredicates.filter fun cp => cp.1.name == p)
@@ -278,10 +328,32 @@ namespace Shared
           return term
 
         | formula.unaryRelBoolOperation op e =>
+          let unRelBoolOpTerm :=
+            match op with
+              | unRelBoolOp.no =>
+                 unhygienicUnfolder `(
+                    $(mkIdent ``ThoR.Semantics.Formula.no)
+                  )
+
+              | unRelBoolOp.one =>
+                unhygienicUnfolder `(
+                    $(mkIdent ``ThoR.Semantics.Formula.one)
+                  )
+
+              | unRelBoolOp.lone =>
+                unhygienicUnfolder `(
+                    $(mkIdent ``ThoR.Semantics.Formula.lone)
+                  )
+
+              | unRelBoolOp.some =>
+                unhygienicUnfolder `(
+                    $(mkIdent ``ThoR.Semantics.Formula.some)
+                  )
+
           return unhygienicUnfolder
             `(
               (
-                $(op.toTerm)
+                $(unRelBoolOpTerm)
                 $(← e.toSemanticsTerm
                   blockName variableNames callableVariables
                   callablePredicates pureNames)
@@ -292,7 +364,16 @@ namespace Shared
           let fTerm ← f.toSemanticsTerm blockName variableNames
             callableVariables callablePredicates pureNames
 
-          return unhygienicUnfolder `(term | ( $(op.toTerm) $(fTerm)))
+          let unLogOpTerm :=
+            match op with
+              | unLogOp.not =>
+                unhygienicUnfolder `(
+                  $(mkIdent ``ThoR.Semantics.Formula.not)
+                )
+
+          return unhygienicUnfolder `(term |
+            ( $(unLogOpTerm) $(fTerm))
+          )
 
         | formula.binaryLogicOperation op f1 f2 =>
           let f1Term ←
@@ -303,15 +384,38 @@ namespace Shared
             f2.toSemanticsTerm blockName variableNames
               callableVariables callablePredicates pureNames
 
+          let binLogOpTerm :=
+            match op with
+              | binLogOp.and =>
+                unhygienicUnfolder `(
+                  $(mkIdent ``ThoR.Semantics.Formula.and)
+                )
+
+              | binLogOp.or =>
+                unhygienicUnfolder `(
+                  $(mkIdent ``ThoR.Semantics.Formula.or)
+                )
+
+              | binLogOp.implication =>
+                unhygienicUnfolder `(
+                  $(mkIdent ``ThoR.Semantics.Formula.implication)
+                )
+
+              | binLogOp.equivalent =>
+                unhygienicUnfolder `(
+                  $(mkIdent ``ThoR.Semantics.Formula.equivalent)
+                )
+
           return unhygienicUnfolder
             `(
-              ( $(op.toTerm)
+              ( $(binLogOpTerm)
                 $(f1Term)
                 $(f2Term)
               )
             )
 
-        | formula.tertiaryLogicOperation op f1 f2 f3 =>
+        | formula.tertiaryLogicOperation _ f1 f2 f3 =>
+          -- currently only if else
           let f1Term ←
             f1.toSemanticsTerm blockName variableNames
               callableVariables callablePredicates pureNames
@@ -324,9 +428,10 @@ namespace Shared
             f3.toSemanticsTerm blockName variableNames
               callableVariables callablePredicates pureNames
 
+
           return unhygienicUnfolder
             `(
-              ( $(op.toTerm)
+              ( $(mkIdent ``ThoR.Semantics.Formula.if_then_else)
                 $(f1Term)
                 $(f2Term)
                 $(f3Term)
@@ -334,10 +439,37 @@ namespace Shared
             )
 
         | formula.algebraicComparisonOperation op ae1 ae2 =>
+          let algCompOpTerm :=
+            match op with
+              | algCompareOp.leq =>
+                unhygienicUnfolder `(
+                  $(mkIdent ``ThoR.Semantics.Formula.a_leq)
+                )
+
+              | algCompareOp.geq =>
+                unhygienicUnfolder `(
+                  $(mkIdent ``ThoR.Semantics.Formula.a_geq)
+                )
+
+              | algCompareOp.lt =>
+                unhygienicUnfolder `(
+                  $(mkIdent ``ThoR.Semantics.Formula.a_lt)
+                )
+
+              | algCompareOp.gt =>
+                unhygienicUnfolder `(
+                  $(mkIdent ``ThoR.Semantics.Formula.a_gt)
+                )
+
+              | algCompareOp.eq =>
+                unhygienicUnfolder `(
+                  $(mkIdent ``ThoR.Semantics.Formula.a_eq)
+                )
+
           return unhygienicUnfolder
             `(
               (
-                $(op.toTerm)
+                $(algCompOpTerm)
                 $(← ae1.toSemanticsTerm blockName variableNames callableVariables
                   callablePredicates pureNames)
                 $(← ae2.toSemanticsTerm blockName variableNames callableVariables
@@ -346,6 +478,22 @@ namespace Shared
             )
 
         | formula.relationComarisonOperation op e1 e2 =>
+
+          let relCompareOpTerm :=
+            match op with
+              | relCompareOp.in =>
+                unhygienicUnfolder `(
+                  $(mkIdent ``ThoR.Semantics.Formula.in)
+                )
+              | relCompareOp.eq =>
+                unhygienicUnfolder `(
+                  $(mkIdent ``ThoR.Semantics.Formula.eq)
+                )
+              | relCompareOp.neq =>
+                unhygienicUnfolder `(
+                  $(mkIdent ``ThoR.Semantics.Formula.neq)
+                )
+
           let e1Term ← e1.toSemanticsTerm
             blockName variableNames callableVariables
               callablePredicates pureNames
@@ -356,13 +504,14 @@ namespace Shared
 
           return unhygienicUnfolder
             `(
-              ( $(op.toTerm)
+              ( $(relCompareOpTerm)
                 $(e1Term)
                 $(e2Term)
               )
             )
 
         | formula.quantification q disjunction n te f => do
+          -- TODO: How to translate to semantics
 
           let names := (n.map fun (name) => mkIdent name.toName).reverse
 
@@ -439,6 +588,7 @@ namespace Shared
             return formulaGroup
 
         | formula.letDeclaration name value body =>
+          -- TODO: How to translate to semantics
           let nameT := mkIdent name
           let valueT ← value.toSemanticsTerm blockName variableNames callableVariables callablePredicates
           let e_bodyT :=
@@ -477,106 +627,46 @@ namespace Shared
       : Except String Term := do
         match te with
           | Shared.typeExpr.arrowExpr ae =>
-            let aeTerm ← ae.toSemanticsTerm blockName
+            let aeTerm ← ae.toTerm blockName
               variableNames callableVariables callablePredicates pureNames
 
             return unhygienicUnfolder
-              `($(mkIdent ``ThoR.Rel) $(aeTerm))
+              `(
+                $(mkIdent ``ThoR.Semantics.TypeExpression.type)
+                (
+                  $(mkIdent ``ThoR.Rel)
+                  $(aeTerm)
+                )
+              )
 
           | Shared.typeExpr.multExpr m e =>
             let eTerm ← e.toSemanticsTerm blockName
               variableNames callableVariables callablePredicates pureNames
 
             return unhygienicUnfolder
-              `($(mkIdent ``ThoR.Rel)
-                ($(mkIdent ``RelType.mk.unary_rel)
-                  $(m.toTerm) $(eTerm)))
+              `(
+                $(mkIdent ``ThoR.Semantics.TypeExpression.type)
+                (
+                  $(mkIdent ``ThoR.Rel)
+                  (
+                    $(mkIdent ``RelType.mk.unary_rel)
+                    $(m.toTerm) $(eTerm)
+                  )
+                )
+              )
 
           | Shared.typeExpr.relExpr e =>
             let eTerm ← e.toSemanticsTerm blockName
               variableNames callableVariables callablePredicates pureNames
 
             return unhygienicUnfolder
-              `($(mkIdent ``ThoR.Rel)
-                ($(mkIdent ``RelType.mk.rel) $(eTerm)))
-
-    /--
-    Generates a Lean term corosponding to the type arrowOp
-    -/
-    partial def arrowOp.toSemanticsTerm
-      (ao : arrowOp)
-      (blockName : Name)
-      (variableNames : List (String)) -- to check if var or pred
-      (callableVariables : List (varDecl))
-      (callablePredicates : List (commandDecl × List (expr × List (String × List varDecl))))
-      -- names that have to be pure with no namespace (quantors and args)
-      (pureNames : List (String) := [])
-      : Except String Term := do
-
-      match ao with
-        | arrowOp.multArrowOpExpr
-          (e1 : expr) (m1 : mult) (m2 : mult) (e2 : expr) =>
-          let e1Term ← e1.toSemanticsTerm blockName
-            variableNames callableVariables callablePredicates pureNames
-
-          let e2Term ← e2.toSemanticsTerm blockName
-            variableNames callableVariables callablePredicates pureNames
-
-          return unhygienicUnfolder
-            `(
-              $(mkIdent ``RelType.complex)
-                ($(mkIdent ``ThoR.Rel.getType) ($(e1Term)))
-                ($(m1.toTerm))
-                ($(m2.toTerm))
-                ($(mkIdent ``ThoR.Rel.getType) ($(e2Term)))
-          )
-        | arrowOp.multArrowOpExprLeft (e1 : expr) (m1 : mult) (m2 : mult) (ae2 : arrowOp) =>
-          let e1Term ← e1.toSemanticsTerm blockName
-            variableNames callableVariables callablePredicates pureNames
-
-          let ae2Term ← ae2.toSemanticsTerm blockName
-            variableNames callableVariables callablePredicates pureNames
-
-          return unhygienicUnfolder
-            `(
-              $(mkIdent ``RelType.complex)
-                ($(mkIdent ``ThoR.Rel.getType) ($(e1Term)))
-                ($(m1.toTerm))
-                ($(m2.toTerm))
-                $(ae2Term)
-          )
-
-        | arrowOp.multArrowOpExprRight (ae1 : arrowOp) (m1 : mult) (m2 : mult) (e2 : expr) =>
-          let ae1Term ← ae1.toSemanticsTerm blockName
-            variableNames callableVariables callablePredicates pureNames
-
-          let e2Term ← e2.toSemanticsTerm blockName
-            variableNames callableVariables callablePredicates pureNames
-
-          return unhygienicUnfolder
-            `(
-              $(mkIdent ``RelType.complex)
-                $(ae1Term)
-                ($(m1.toTerm))
-                ($(m2.toTerm))
-                ($(mkIdent ``ThoR.Rel.getType) ($(e2Term)))
-            )
-
-        | arrowOp.multArrowOp (ae1 : arrowOp) (m1 : mult) (m2 : mult) (ae2 : arrowOp) =>
-          let ae1Term ← ae1.toSemanticsTerm blockName
-            variableNames callableVariables callablePredicates pureNames
-
-          let ae2Term ← ae2.toSemanticsTerm blockName
-            variableNames callableVariables callablePredicates pureNames
-
-          return unhygienicUnfolder
-            `(
-              $(mkIdent ``RelType.complex)
-                $(ae1Term)
-                ($(m1.toTerm))
-                ($(m2.toTerm))
-                $(ae2Term)
-            )
+              `(
+                $(mkIdent ``ThoR.Semantics.TypeExpression.type)
+                (
+                  $(mkIdent ``ThoR.Rel)
+                  ($(mkIdent ``RelType.mk.rel) $(eTerm))
+                )
+              )
 
     /--
     Generates a Lean term corosponding with the type
@@ -593,23 +683,63 @@ namespace Shared
       match ae with
         | algExpr.number n =>
           return unhygienicUnfolder
-            `($(Lean.Syntax.mkNumLit s!"{n.natAbs}"):num)
+            `(
+              $(mkIdent ``ThoR.Semantics.ArithmeticExpression.number)
+              $(Lean.Syntax.mkNumLit s!"{n.natAbs}"):num
+            )
 
         | algExpr.cardExpression e =>
           let eTerm ← e.toSemanticsTerm blockName
             variableNames callableVariables callablePredicates pureNames
 
           return unhygienicUnfolder
-            `(($(mkIdent ``ThoR.Card.card) $(eTerm)))
+            `(
+              (
+                $(mkIdent ``ThoR.Semantics.ArithmeticExpression.card)
+                $(eTerm)
+              )
+            )
 
         | algExpr.unaryAlgebraOperation op ae =>
+
+          let unAlgOpTerm :=
+            match op with
+              | unAlgOp.negation =>
+                unhygienicUnfolder `(
+                  $(mkIdent ``ThoR.Semantics.ArithmeticExpression.negation)
+                )
+
           let aeTerm ← ae.toSemanticsTerm blockName
             variableNames callableVariables callablePredicates pureNames
 
           return unhygienicUnfolder
-            `(($(op.toTerm) $(aeTerm)))
+            `(($(unAlgOpTerm) $(aeTerm)))
 
         | algExpr.binaryAlgebraOperation op ae1 ae2 =>
+
+          let binAlgOpTerm :=
+            match op with
+              | binAlgOp.add =>
+                unhygienicUnfolder `(
+                  $(mkIdent ``ThoR.Semantics.ArithmeticExpression.add)
+                )
+              | binAlgOp.sub =>
+                unhygienicUnfolder `(
+                  $(mkIdent ``ThoR.Semantics.ArithmeticExpression.sub)
+                )
+              | binAlgOp.div =>
+                unhygienicUnfolder `(
+                  $(mkIdent ``ThoR.Semantics.ArithmeticExpression.div)
+                )
+              | binAlgOp.mult =>
+                unhygienicUnfolder `(
+                  $(mkIdent ``ThoR.Semantics.ArithmeticExpression.mult)
+                )
+              | binAlgOp.rem =>
+                unhygienicUnfolder `(
+                  $(mkIdent ``ThoR.Semantics.ArithmeticExpression.rem)
+                )
+
           let ae1Term ← ae1.toSemanticsTerm blockName
             variableNames callableVariables callablePredicates pureNames
 
@@ -617,7 +747,7 @@ namespace Shared
             variableNames callableVariables callablePredicates pureNames
 
           return unhygienicUnfolder
-            `(($(op.toTerm) $(ae1Term) $(ae2Term)))
+            `(($(binAlgOpTerm) $(ae1Term) $(ae2Term)))
 
   end
 
