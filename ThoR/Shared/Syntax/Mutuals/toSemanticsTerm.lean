@@ -354,9 +354,11 @@ namespace Shared
             `(
               (
                 $(unRelBoolOpTerm)
-                $(← e.toSemanticsTerm
-                  blockName variableNames callableVariables
-                  callablePredicates pureNames)
+                (
+                  $(← e.toSemanticsTerm
+                    blockName variableNames callableVariables
+                    callablePredicates pureNames)
+                )
               )
             )
 
