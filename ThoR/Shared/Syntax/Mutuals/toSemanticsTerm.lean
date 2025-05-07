@@ -102,13 +102,32 @@ namespace Shared
               )
 
           | expr.unaryRelOperation op e =>
-            -- TODO: Missing in Semantics
+            let unRelOpTerm :=
+              match op with
+                | unRelOp.transposition =>
+                  unhygienicUnfolder `(
+                    $(mkIdent ``ThoR.Semantics.Expression.transpose)
+                  )
+
+                | unRelOp.transitive_closure =>
+                  unhygienicUnfolder `(
+                    $(mkIdent ``ThoR.Semantics.Expression.transclos)
+                  )
+
+                | unRelOp.reflexive_closure =>
+                  unhygienicUnfolder `(
+                    $(mkIdent ``ThoR.Semantics.Expression.reftransclos)
+                  )
+
             let eTerm ← e.toSemanticsTerm blockName
               variableNames callableVariables callablePredicates pureNames
 
-            return unhygienicUnfolder `(( $(op.toTerm)
-                $(eTerm)
-              ))
+            return unhygienicUnfolder `(
+                (
+                  $(unRelOpTerm)
+                  $(eTerm)
+                )
+              )
 
           | expr.binaryRelOperation op e1 e2 =>
 
