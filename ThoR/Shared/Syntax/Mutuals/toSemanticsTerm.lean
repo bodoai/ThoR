@@ -50,20 +50,26 @@ namespace Shared
 
             if !(pureNames.contains s) then
               return unhygienicUnfolder `(
-                $(mkIdent ``ThoR.Semantics.Expression.rel)
-                (∻ $(mkIdent s!"{blockName}.vars.{s}".toName))
+                (
+                  $(mkIdent ``ThoR.Semantics.Expression.rel)
+                  (∻ $(mkIdent s!"{blockName}.vars.{s}".toName))
+                )
               )
 
             return unhygienicUnfolder `(
-                $(mkIdent ``ThoR.Semantics.Expression.rel)
-                $(mkIdent s.toName)
+                (
+                  $(mkIdent ``ThoR.Semantics.Expression.rel)
+                  $(mkIdent s.toName)
+                )
               )
 
           | expr.callFromOpen sn =>
             let snt := sn.representedNamespace.getId.toString
             return unhygienicUnfolder `(
-              $(mkIdent ``ThoR.Semantics.Expression.rel)
-              (∻ $(mkIdent s!"{blockName}.vars.{snt}".toName))
+              (
+                $(mkIdent ``ThoR.Semantics.Expression.rel)
+                (∻ $(mkIdent s!"{blockName}.vars.{snt}".toName))
+              )
             )
 
           | expr.function_call_with_args called_function arguments =>
@@ -140,11 +146,13 @@ namespace Shared
                     $(mkIdent ``ThoR.Semantics.Expression.rangerestr)
                   )
 
-            return unhygienicUnfolder `((
-                $(binRelOpTerm)
-                $(e1Term)
-                $(e2Term)
-              ))
+            return unhygienicUnfolder `(
+                (
+                  $(binRelOpTerm)
+                  $(e1Term)
+                  $(e2Term)
+                )
+              )
 
           | expr.dotjoin _ e1 e2 =>
             let e1Term ← e1.toSemanticsTerm blockName
@@ -153,11 +161,13 @@ namespace Shared
             let e2Term ← e2.toSemanticsTerm blockName
               variableNames callableVariables callablePredicates pureNames
 
-            return unhygienicUnfolder `((
-                $(mkIdent ``ThoR.Semantics.Expression.dotjoin)
-                $(e1Term)
-                $(e2Term)
-              ))
+            return unhygienicUnfolder `(
+                (
+                  $(mkIdent ``ThoR.Semantics.Expression.dotjoin)
+                  $(e1Term)
+                  $(e2Term)
+                )
+              )
 
           | expr.ifElse condition thenBody elseBody =>
             let conditionTerm ← condition.toSemanticsTerm blockName
@@ -171,10 +181,12 @@ namespace Shared
 
             return unhygienicUnfolder
               `(
-                $(mkIdent ``ThoR.Semantics.Expression.if_then_else)
-                $(conditionTerm)
-                $(thenBodyTerm)
-                $(elseBodyTerm)
+                (
+                  $(mkIdent ``ThoR.Semantics.Expression.if_then_else)
+                  $(conditionTerm)
+                  $(thenBodyTerm)
+                  $(elseBodyTerm)
+                )
               )
 
           | expr.string_rb s => do
@@ -205,20 +217,24 @@ namespace Shared
           else
             -- check if the ident is a variable or def
             if variableNames.contains s then
-              -- TODO: Can this happen ?
+              -- TODO: Can this happen? What to do here?
               return unhygienicUnfolder
-                `((
-                  ∻ $(mkIdent s!"{blockName}.vars.{s}".toName)
-                ))
+                `(
+                  (
+                    (∻ $(mkIdent s!"{blockName}.vars.{s}".toName))
+                  )
+                )
 
             else
             -- TODO: How to apply correctly
               return unhygienicUnfolder
                 `(
-                  $(mkIdent ``ThoR.Semantics.Formula.call)
                   (
-                    $(mkIdent ``ThoR.Semantics.Predicate)
-                    (∻ $(mkIdent s!"{blockName}.preds.{s}".toName))
+                    $(mkIdent ``ThoR.Semantics.Formula.call)
+                    (
+                      $(mkIdent ``ThoR.Semantics.Predicate)
+                      (∻ $(mkIdent s!"{blockName}.preds.{s}".toName))
+                    )
                   )
                 )
 
@@ -226,10 +242,12 @@ namespace Shared
           let mut term := unhygienicUnfolder
             -- TODO: How to apply args and pred
              `(
-                $(mkIdent ``ThoR.Semantics.Formula.call)
                 (
-                  $(mkIdent ``ThoR.Semantics.Predicate)
-                  (∻ $(mkIdent s!"{blockName}.preds.{p}".toName))
+                  $(mkIdent ``ThoR.Semantics.Formula.call)
+                  (
+                    $(mkIdent ``ThoR.Semantics.Predicate)
+                    (∻ $(mkIdent s!"{blockName}.preds.{p}".toName))
+                  )
                 )
               )
 
@@ -354,11 +372,9 @@ namespace Shared
             `(
               (
                 $(unRelBoolOpTerm)
-                (
-                  $(← e.toSemanticsTerm
-                    blockName variableNames callableVariables
-                    callablePredicates pureNames)
-                )
+                $(← e.toSemanticsTerm
+                  blockName variableNames callableVariables
+                  callablePredicates pureNames)
               )
             )
 
@@ -410,7 +426,8 @@ namespace Shared
 
           return unhygienicUnfolder
             `(
-              ( $(binLogOpTerm)
+              (
+                $(binLogOpTerm)
                 $(f1Term)
                 $(f2Term)
               )
@@ -433,7 +450,8 @@ namespace Shared
 
           return unhygienicUnfolder
             `(
-              ( $(mkIdent ``ThoR.Semantics.Formula.if_then_else)
+              (
+                $(mkIdent ``ThoR.Semantics.Formula.if_then_else)
                 $(f1Term)
                 $(f2Term)
                 $(f3Term)
@@ -506,7 +524,8 @@ namespace Shared
 
           return unhygienicUnfolder
             `(
-              ( $(relCompareOpTerm)
+              (
+                $(relCompareOpTerm)
                 $(e1Term)
                 $(e2Term)
               )
@@ -634,10 +653,12 @@ namespace Shared
 
             return unhygienicUnfolder
               `(
-                $(mkIdent ``ThoR.Semantics.TypeExpression.type)
                 (
-                  $(mkIdent ``ThoR.Rel)
-                  $(aeTerm)
+                  $(mkIdent ``ThoR.Semantics.TypeExpression.type)
+                  (
+                    $(mkIdent ``ThoR.Rel)
+                    $(aeTerm)
+                  )
                 )
               )
 
@@ -647,12 +668,14 @@ namespace Shared
 
             return unhygienicUnfolder
               `(
-                $(mkIdent ``ThoR.Semantics.TypeExpression.type)
                 (
-                  $(mkIdent ``ThoR.Rel)
+                  $(mkIdent ``ThoR.Semantics.TypeExpression.type)
                   (
-                    $(mkIdent ``RelType.mk.unary_rel)
-                    $(m.toTerm) $(eTerm)
+                    $(mkIdent ``ThoR.Rel)
+                    (
+                      $(mkIdent ``RelType.mk.unary_rel)
+                      $(m.toTerm) $(eTerm)
+                    )
                   )
                 )
               )
@@ -663,10 +686,12 @@ namespace Shared
 
             return unhygienicUnfolder
               `(
-                $(mkIdent ``ThoR.Semantics.TypeExpression.type)
                 (
-                  $(mkIdent ``ThoR.Rel)
-                  ($(mkIdent ``RelType.mk.rel) $(eTerm))
+                  $(mkIdent ``ThoR.Semantics.TypeExpression.type)
+                  (
+                    $(mkIdent ``ThoR.Rel)
+                    ($(mkIdent ``RelType.mk.rel) $(eTerm))
+                  )
                 )
               )
 
@@ -686,8 +711,10 @@ namespace Shared
         | algExpr.number n =>
           return unhygienicUnfolder
             `(
-              $(mkIdent ``ThoR.Semantics.ArithmeticExpression.number)
-              $(Lean.Syntax.mkNumLit s!"{n.natAbs}"):num
+              (
+                $(mkIdent ``ThoR.Semantics.ArithmeticExpression.number)
+                $(Lean.Syntax.mkNumLit s!"{n.natAbs}"):num
+              )
             )
 
         | algExpr.cardExpression e =>
@@ -715,7 +742,12 @@ namespace Shared
             variableNames callableVariables callablePredicates pureNames
 
           return unhygienicUnfolder
-            `(($(unAlgOpTerm) $(aeTerm)))
+            `(
+              (
+                $(unAlgOpTerm)
+                $(aeTerm)
+              )
+            )
 
         | algExpr.binaryAlgebraOperation op ae1 ae2 =>
 
@@ -749,7 +781,13 @@ namespace Shared
             variableNames callableVariables callablePredicates pureNames
 
           return unhygienicUnfolder
-            `(($(binAlgOpTerm) $(ae1Term) $(ae2Term)))
+            `(
+              (
+                $(binAlgOpTerm)
+                $(ae1Term)
+                $(ae2Term)
+              )
+            )
 
   end
 
