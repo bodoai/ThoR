@@ -10,6 +10,8 @@ import ThoR.Relation.RelType
 
 import ThoR.Test.Alloy.test_macro
 
+import ThoR.Macros
+
 alloy empty
 end
 
@@ -291,17 +293,10 @@ namespace testrrr
 end testrrr
 
 /-
--- TODO: 292 - 299 as two macro
---m1
 variable (ThoR_TupleSet : Type)
-@[default_instance]
-instance : ThoR.TupleSet ThoR_TupleSet := by sorry
+create_default_thor_tuple_set
+create_default_block_vars_tuple_set testrrr.rel_test_fs
 
--- m2
-@[default_instance]
-instance : testrrr.rel_test_fs.vars ThoR_TupleSet := by sorry
-
---startTestBlock testrrr.rel_test_fs
 #check testrrr.rel_test_fs.preds.p1
 #check (testrrr.rel_test_fs.preds.p1 : Prop)
 -/
