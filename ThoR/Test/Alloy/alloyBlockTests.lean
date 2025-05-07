@@ -264,9 +264,6 @@ end
 #print buch.preds.EntwederPrequelOderSequel
 open Shared.quant
 
-
-
-
 namespace testrrr
  namespace  rel_test_fs
 
@@ -280,15 +277,21 @@ namespace testrrr
 
   variable  {  ThoR_TupleSet  :  Type  }  [  ThoR.TupleSet  ThoR_TupleSet  ]  [  rel_test_fs.vars  ThoR_TupleSet  ]
 
-  def  p1  {  ThoR_TupleSet  :  Type  }  [  ThoR.TupleSet  ThoR_TupleSet  ]
+  def  p1  {  ThoR_TupleSet  :  Type  }
+    [  ThoR.TupleSet  ThoR_TupleSet  ]
     [  rel_test_fs.vars  ThoR_TupleSet  ]  :=
-    ( ThoR.Semantics.Formula.some ( (ThoR.Semantics.Expression.rel  (  ∻  rel_test_fs.vars.this_φ_a  )  )  ))
+    ( ThoR.Semantics.Formula.some
+      ( ThoR.Semantics.Expression.rel
+        (  ∻  rel_test_fs.vars.this_φ_a  )
+      )
+    )
 
   end rel_test_fs.preds
+
 end testrrr
 
+/-
 -- TODO: 292 - 299 as two macro
-
 --m1
 variable (ThoR_TupleSet : Type)
 @[default_instance]
@@ -301,7 +304,7 @@ instance : testrrr.rel_test_fs.vars ThoR_TupleSet := by sorry
 --startTestBlock testrrr.rel_test_fs
 #check testrrr.rel_test_fs.preds.p1
 #check (testrrr.rel_test_fs.preds.p1 : Prop)
-
+-/
 
 #alloy rel_test_fs
   sig a {}
