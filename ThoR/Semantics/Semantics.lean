@@ -73,11 +73,16 @@ mutual
     | q_one {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
     | q_some {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
     | q_all {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
-    | call {n : ℕ} {t : RelType R n} (p : Predicate t) (e : Expression t) : Formula
+    | call {n : ℕ} {t : RelType R n} (p : PredicateApplication) : Formula
     | let {n : ℕ} {t : RelType R n} (l : FormulaLet t) (e : Expression t) : Formula
 
-  inductive Predicate : {n: ℕ} → RelType R n → Type u where
-    | mk {n : ℕ} {t : RelType R n} (p : (Rel t) → Formula): Predicate t
+  inductive PredicateAbstraction : {n: ℕ} → RelType R n → Type u where
+    -- RelType.none R 0 is a dummy value
+    | formula      : Formula → PredicateAbstraction (RelType.none R 0)
+    | add_param : {arity' arity : ℕ} → {type' : RelType R arity'} → {type : RelType R arity}  → (Rel type → PredicateAbstraction type') → PredicateAbstraction type
+
+  inductive PredicateApplication : Type u where
+    | app : {arity' arity : ℕ} → {type' : RelType R arity'} → {type : RelType R arity}  → (predicate : Rel type → PredicateAbstraction type') → (param : Rel type) → PredicateApplication
 
   inductive FormulaLet : {n: ℕ} → RelType R n → Type u where
     | mk {n : ℕ} {t : RelType R n} (p : (Rel t) → Formula): FormulaLet t
