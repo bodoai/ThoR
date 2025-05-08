@@ -8,6 +8,21 @@ import ThoR.Shared.Syntax.quant
 import ThoR.Relation.Quantification
 import ThoR.Relation.Rel
 
+namespace ThoR
+-- inductive HList : List (Type u) → Type (u+1)
+--   | nil  : HList []
+--   | cons :
+--     {α : Type u} → {type_list : List (Type u)} →
+--     (h : α)  → HList type_list → HList (α::type_list)
+inductive RelList (R : Type) [TupleSet R] : List ℕ → Type
+  | nil  : RelList R []
+  | cons : {arity : ℕ} → {type : RelType R n} → (rel : Rel type) → {arities : List ℕ} → RelList R (arity :: arities)
+  -- | cons : β i → HList β is → HList β (i::is)
+infix:67 " :: " => RelList.cons
+notation "[" "]" => RelList.nil
+
+end ThoR
+
 namespace ThoR.Semantics
 
 variable {R : Type} [TupleSet R]
@@ -73,11 +88,11 @@ mutual
     | q_one {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
     | q_some {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
     | q_all {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
-    | call {n : ℕ} {t : RelType R n} (p : Predicate t) (e : Expression t) : Formula
+    | call {arities : List ℕ} (p : Predicate arities) (params : RelList R arities) : Formula
     | let {n : ℕ} {t : RelType R n} (l : FormulaLet t) (e : Expression t) : Formula
 
-  inductive Predicate : {n: ℕ} → RelType R n → Type u where
-    | mk {n : ℕ} {t : RelType R n} (p : (Rel t) → Formula): Predicate t
+  inductive Predicate : List ℕ → Type u where
+    | mk (arities : List ℕ) (predicate : (RelList R arities) → Formula): Predicate arities
 
   inductive FormulaLet : {n: ℕ} → RelType R n → Type u where
     | mk {n : ℕ} {t : RelType R n} (p : (Rel t) → Formula): FormulaLet t
@@ -149,12 +164,20 @@ mutual
     | .q_one        f         => (Quantification.Formula.var Shared.quant.one (fun r => (Quantification.Formula.prop (f r).eval))).eval
     | .q_some       f         => (Quantification.Formula.var Shared.quant.some (fun r => (Quantification.Formula.prop (f r).eval))).eval
     | .q_all        f         => (Quantification.Formula.var Shared.quant.all (fun r => (Quantification.Formula.prop (f r).eval))).eval
-    | @Formula.call _ _ _ t p e    => (p.eval : Rel t → Prop) e.eval
-    | @Formula.let  _ _ _ t l e    => (l.eval : Rel t → Prop) e.eval
+    | @Formula.call _ _ arities pred params    => (p.eval : Rel t → Prop) e.eval
+--    | @Formula.let  _ _ _ t l e    => (l.eval : Rel t → Prop) e.eval
 
-  def Predicate.eval {n : ℕ } {t : RelType R n} (p : @Predicate R _ _ t) :=
+  def Predicate.eval (p : @Predicate R _ arities) :=
     match p with
-    | .mk pred => (fun (r : Rel t) => (pred r).eval : Rel t → Prop)
+    | .mk arities predicate =>
+      (
+          (fun (params : RelList R arities) => (predicate params).eval)
+           : RelList R arities → Prop
+      )
+      -- match h : arities with
+      -- | [] => (predicate (h ▸ ThoR.RelList.nil))
+      -- | List.cons arity arity_list =>
+      --   (fun {type : RelType R arity} (r : Rel type) => (predicate r).eval : Rel t → Prop)
 
   def FormulaLet.eval {n : ℕ } {t : RelType R n} (p : @FormulaLet R _ _ t) :=
     match p with
