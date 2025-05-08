@@ -73,16 +73,15 @@ mutual
     | q_one {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
     | q_some {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
     | q_all {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
-    | call {n : ℕ} {t : RelType R n} (p : PredicateApplication) : Formula
+--    | call {n : ℕ} {t : RelType R n} (p : PredicateApplication) : Formula
     | let {n : ℕ} {t : RelType R n} (l : FormulaLet t) (e : Expression t) : Formula
 
   inductive PredicateAbstraction : {n: ℕ} → RelType R n → Type u where
-    -- RelType.none R 0 is a dummy value
-    | formula      : Formula → PredicateAbstraction (RelType.none R 0)
-    | add_param : {arity' arity : ℕ} → {type' : RelType R arity'} → {type : RelType R arity}  → (Rel type → PredicateAbstraction type') → PredicateAbstraction type
+    | last_param : {arity : ℕ} → {type : RelType R arity}  → (predicate : Rel type → Formula) → PredicateAbstraction type
+    | add_param : {arity' arity : ℕ} → {type' : RelType R arity'} → {type : RelType R arity}  → (predicate : Rel type → PredicateAbstraction type') → PredicateAbstraction type
 
   inductive PredicateApplication : Type u where
-    | app : {arity' arity : ℕ} → {type' : RelType R arity'} → {type : RelType R arity}  → (predicate : Rel type → PredicateAbstraction type') → (param : Rel type) → PredicateApplication
+    | app : {arity' arity : ℕ} → {type' : RelType R arity'} → {type : RelType R arity}  → (predicate : Rel type → PredicateAbstraction type') → PredicateApplication
 
   inductive FormulaLet : {n: ℕ} → RelType R n → Type u where
     | mk {n : ℕ} {t : RelType R n} (p : (Rel t) → Formula): FormulaLet t
@@ -154,12 +153,15 @@ mutual
     | .q_one        f         => (Quantification.Formula.var Shared.quant.one (fun r => (Quantification.Formula.prop (f r).eval))).eval
     | .q_some       f         => (Quantification.Formula.var Shared.quant.some (fun r => (Quantification.Formula.prop (f r).eval))).eval
     | .q_all        f         => (Quantification.Formula.var Shared.quant.all (fun r => (Quantification.Formula.prop (f r).eval))).eval
-    | @Formula.call _ _ _ t p e    => (p.eval : Rel t → Prop) e.eval
+--    | @Formula.call _ _ _ t p e    => (p.eval : Rel t → Prop) e.eval
     | @Formula.let  _ _ _ t l e    => (l.eval : Rel t → Prop) e.eval
 
-  def Predicate.eval {n : ℕ } {t : RelType R n} (p : @Predicate R _ _ t) :=
+  def PredicateAbstraction.eval {n : ℕ } {t : RelType R n} (p : @PredicateAbstraction R _ _ t) :=
     match p with
-    | .mk pred => (fun (r : Rel t) => (pred r).eval : Rel t → Prop)
+--    | .mk pred => (fun (r : Rel t) => (pred r).eval : Rel t → Prop)
+    | @PredicateAbstraction.last_param R _ arity type predicate => (fun (param : Rel type) => (predicate param).eval : Rel type → Prop)
+    | @PredicateAbstraction.add_param R _ arity' arity type' type predicate =>
+      (fun (param : Rel type) => (predicate param).eval : Rel type → Rel type' → Prop)
 
   def FormulaLet.eval {n : ℕ } {t : RelType R n} (p : @FormulaLet R _ _ t) :=
     match p with
