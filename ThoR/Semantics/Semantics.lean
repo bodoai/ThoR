@@ -9,17 +9,18 @@ import ThoR.Relation.Quantification
 import ThoR.Relation.Rel
 
 namespace ThoR
--- inductive HList : List (Type u) → Type (u+1)
---   | nil  : HList []
---   | cons :
---     {α : Type u} → {type_list : List (Type u)} →
---     (h : α)  → HList type_list → HList (α::type_list)
-inductive RelList (R : Type) [TupleSet R] : List ℕ → Type
-  | nil  : RelList R []
-  | cons : {arity : ℕ} → {type : RelType R n} → (rel : Rel type) → {arities : List ℕ} → RelList R (arity :: arities)
-  -- | cons : β i → HList β is → HList β (i::is)
-infix:67 " :: " => RelList.cons
-notation "[" "]" => RelList.nil
+
+-- definition from https://lean-lang.org/documentation/examples/debruijn/
+inductive HList {α : Type v} (β : α → Type u) : List α → Type (max u v)
+  | nil  : HList β []
+  | cons : β i → HList β is → HList β (i::is)
+
+infix:67 " :: " => HList.cons
+notation "[" "]" => HList.nil
+
+abbrev RelTypeWithArity (R : Type) [TupleSet R] := Sigma (RelType R)
+
+abbrev RelList (R : Type) [TupleSet R] := HList (λ (type : RelTypeWithArity R) => Rel type.2)
 
 end ThoR
 
@@ -88,11 +89,12 @@ mutual
     | q_one {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
     | q_some {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
     | q_all {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
-    | call {arities : List ℕ} (p : Predicate arities) (params : RelList R arities) : Formula
+    | call {rel_types : List (RelTypeWithArity R)} (p : Predicate rel_types) (params : ThoR.HList (λ (type : RelTypeWithArity R) => Expression type.2) rel_types) : Formula
     | let {n : ℕ} {t : RelType R n} (l : FormulaLet t) (e : Expression t) : Formula
 
-  inductive Predicate : List ℕ → Type u where
-    | mk (arities : List ℕ) (predicate : (RelList R arities) → Formula): Predicate arities
+
+  inductive Predicate : List (RelTypeWithArity R) → Type u where
+    | mk (rel_types : List (RelTypeWithArity R)) (predicate : (RelList R rel_types) → Formula): Predicate rel_types
 
   inductive FormulaLet : {n: ℕ} → RelType R n → Type u where
     | mk {n : ℕ} {t : RelType R n} (p : (Rel t) → Formula): FormulaLet t
@@ -164,20 +166,18 @@ mutual
     | .q_one        f         => (Quantification.Formula.var Shared.quant.one (fun r => (Quantification.Formula.prop (f r).eval))).eval
     | .q_some       f         => (Quantification.Formula.var Shared.quant.some (fun r => (Quantification.Formula.prop (f r).eval))).eval
     | .q_all        f         => (Quantification.Formula.var Shared.quant.all (fun r => (Quantification.Formula.prop (f r).eval))).eval
-    | @Formula.call _ _ arities pred params    => (p.eval : Rel t → Prop) e.eval
---    | @Formula.let  _ _ _ t l e    => (l.eval : Rel t → Prop) e.eval
+    | @Formula.call _ _ rel_types predicate params    => (predicate.eval : RelList R rel_types → Prop) params
+    | @Formula.let  _ _ _ t l e    => (l.eval : Rel t → Prop) e.eval
 
-  def Predicate.eval (p : @Predicate R _ arities) :=
+  namespace ExpressionList
+    def eval {rel_types : List (RelTypeWithArity R)} (params : ThoR.HList (λ (type : RelTypeWithArity R) => Expression type.2) rel_types) :=
+    // TODO map (Expression t → RelType t) params
+  end ExpressionList
+
+  def Predicate.eval {rel_types : List (RelTypeWithArity R)} (p : Predicate rel_types) :=
     match p with
-    | .mk arities predicate =>
-      (
-          (fun (params : RelList R arities) => (predicate params).eval)
-           : RelList R arities → Prop
-      )
-      -- match h : arities with
-      -- | [] => (predicate (h ▸ ThoR.RelList.nil))
-      -- | List.cons arity arity_list =>
-      --   (fun {type : RelType R arity} (r : Rel type) => (predicate r).eval : Rel t → Prop)
+    | .mk rel_types predicate =>
+      ((fun (params : RelList R rel_types) => (predicate params).eval) : RelList R rel_types → Prop)
 
   def FormulaLet.eval {n : ℕ } {t : RelType R n} (p : @FormulaLet R _ _ t) :=
     match p with
@@ -198,17 +198,17 @@ open ThoR
 -- [ ] FormulaLet
 -- [ ] TypeExpression
 
--- Coercion Formula -> Prop
-instance {R : Type} [ThoR.TupleSet R]:
-  CoeSort.{u+1} (@ThoR.Semantics.Formula.{u} R _) Prop where
-    coe f := ThoR.Semantics.Formula.eval.{u,u+1} f
+-- -- Coercion Formula -> Prop
+-- instance {R : Type} [ThoR.TupleSet R]:
+--   CoeSort.{u+1} (@ThoR.Semantics.Formula.{u} R _) Prop where
+--     coe f := ThoR.Semantics.Formula.eval.{u,u+1} f
 
--- Coercion Expression t -> Rel t
-instance {R : Type} [ThoR.TupleSet R] {n : ℕ} {t : ThoR.RelType R n}:
-  CoeSort.{u+1} (@ThoR.Semantics.Expression.{u} R _ _ t) (ThoR.Rel t) where
-    coe e := ThoR.Semantics.Expression.eval.{u,u+1} e
+-- -- Coercion Expression t -> Rel t
+-- instance {R : Type} [ThoR.TupleSet R] {n : ℕ} {t : ThoR.RelType R n}:
+--   CoeSort.{u+1} (@ThoR.Semantics.Expression.{u} R _ _ t) (ThoR.Rel t) where
+--     coe e := ThoR.Semantics.Expression.eval.{u,u+1} e
 
--- Coercion Function
-instance {R : Type} [ThoR.TupleSet R] {n1 n2 : ℕ} {t1 : RelType R n1} {t2 : RelType R n2}:
-  CoeSort.{u+1} (ThoR.Semantics.Function.{u} t1 t2) (Rel t1 → Rel t2) where
-    coe e := ThoR.Semantics.Function.eval.{u,u+1} e
+-- -- Coercion Function
+-- instance {R : Type} [ThoR.TupleSet R] {n1 n2 : ℕ} {t1 : RelType R n1} {t2 : RelType R n2}:
+--   CoeSort.{u+1} (ThoR.Semantics.Function.{u} t1 t2) (Rel t1 → Rel t2) where
+--     coe e := ThoR.Semantics.Function.eval.{u,u+1} e
