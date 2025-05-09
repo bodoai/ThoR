@@ -7,6 +7,8 @@ Authors: s. file CONTRIBUTORS
 import ThoR.Alloy.Syntax.FactDecl.factDecl
 import ThoR.Alloy.Syntax.Property.propertyService
 
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
+
 namespace Alloy.factDecl
 
   /-- Generates a type representation from the TSyntax -/
@@ -24,7 +26,7 @@ namespace Alloy.factDecl
               return ← property.toType defaultName.toName p
 
           | syntx =>
-            throw s!"No match implemented in factDeclService.toType for '{syntx}'"
+            throwNoMatchImplemented "factDeclService.toType" syntx
 
   /--
   Extracts all required definitions (i.e. references to preds)

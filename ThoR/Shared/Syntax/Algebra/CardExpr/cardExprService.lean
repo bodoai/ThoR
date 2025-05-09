@@ -6,6 +6,7 @@ Authors: s. file CONTRIBUTORS
 
 import ThoR.Shared.Syntax.Algebra.CardExpr.cardExpr
 import ThoR.Shared.Syntax.Relation.Expr.exprService
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
 
 open Lean
 
@@ -20,9 +21,8 @@ namespace Shared.cardExpr
       match ce with
         | `(cardExpr| # $e:expr) =>
           return (cardExpr.cardExpression (← expr.toType e))
-        | syntx => throw s!"No match implemented in \
-            cardExprService.toType \
-            for '{syntx}'"
+        | syntx =>
+          throwNoMatchImplemented "cardExprService.toType" syntx
 
   /--
   Gets the required variables for the cardial expression.

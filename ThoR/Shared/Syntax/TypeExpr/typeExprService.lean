@@ -5,6 +5,7 @@ Authors: s. file CONTRIBUTORS
 -/
 
 import ThoR.Shared.Syntax.ArrowOp.arrowOpService
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
 
 open Alloy ThoR
 open Lean
@@ -157,9 +158,7 @@ namespace Shared.typeExpr
           return typeExpr.arrowExpr (← arrowOp.toType arrowExpr)
 
         | syntx =>
-          throw s!"No match implemented in \
-          typeExprService.toType \
-          for '{syntx}'"
+          throwNoMatchImplemented "typeExprService.toType" syntx
 
   def isString
     | typeExpr.relExpr e => e.isString

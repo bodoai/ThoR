@@ -4,6 +4,7 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
 open Lean
 namespace Shared
 
@@ -58,9 +59,7 @@ namespace Shared
           | `(unRelBoolOp| no) =>   return unRelBoolOp.no
 
           | syntx =>
-              throw s!"No match implemented in \
-              unRelBoolOp.toType \
-              for '{syntx}'"
+            throwNoMatchImplemented "unRelBoolOp.toType" syntx
 
     /--
     Generates a Lean term corosponding with the type

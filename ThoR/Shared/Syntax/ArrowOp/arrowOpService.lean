@@ -6,6 +6,7 @@ Authors: s. file CONTRIBUTORS
 
 import ThoR.Shared.Syntax.ArrowOp.arrowOp
 import ThoR.Shared.Syntax.Relation.Expr.exprService
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
 
 open Alloy ThoR
 open Lean
@@ -280,9 +281,7 @@ namespace Shared.arrowOp
             (← toType subArrowExpr2)
 
         | syntx =>
-            throw s!"No match implemented in \
-            arrowOpService.toType \
-            for '{syntx}'"
+          throwNoMatchImplemented "arrowOpService.toType" syntx
 
   /--
   Gets the required variables for the arrowOp to work (as a term)
