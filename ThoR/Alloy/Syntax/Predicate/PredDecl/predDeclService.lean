@@ -8,6 +8,8 @@ import ThoR.Alloy.Syntax.Predicate.PredDecl.predDecl
 import ThoR.Alloy.Syntax.Predicate.PredArg.predArgService
 import ThoR.Shared.Syntax.Formula.formulaService
 
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
+
 open Lean Shared
 
 namespace Alloy.predDecl
@@ -107,9 +109,7 @@ namespace Alloy.predDecl
             return ← predDecl.createWithoutArgs (extendedIdent.toName name) forms
 
         | syntx =>
-            throw s!"No match implemented in \
-            predDeclService.toType \
-            for '{syntx}'"
+          throwNoMatchImplemented "predDeclService.toType" syntx
 
   def simplifyDomainRestrictions
     (pd : predDecl)

@@ -6,6 +6,7 @@ Authors: s. file CONTRIBUTORS
 import ThoR.Basic
 import ThoR.Relation.Set
 import ThoR.Relation.Rel
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
 
 open Lean
 open ThoR
@@ -55,9 +56,7 @@ namespace Shared
           | `(relCompareOp| !=) => return relCompareOp.neq
 
           | syntx =>
-            throw s!"No match implemented in \
-            relCompareOp.toType \
-            for '{syntx}'"
+            throwNoMatchImplemented "relCompareOp.toType" syntx
 
     /--
     Generates a Lean term corosponding with the type

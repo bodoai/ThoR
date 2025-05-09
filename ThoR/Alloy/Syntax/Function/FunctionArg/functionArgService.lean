@@ -7,6 +7,8 @@ Authors: s. file CONTRIBUTORS
 import ThoR.Alloy.Syntax.Function.FunctionArg.functionArg
 import ThoR.Shared.Syntax.TypeExpr.typeExprService
 
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
+
 open Shared
 
 namespace Alloy.functionArg
@@ -36,7 +38,7 @@ namespace Alloy.functionArg
         }
 
       | syntx =>
-        throw s!"No match implemented in functionArgService.toType for '{syntx}'"
+        throwNoMatchImplemented "functionArgService.toType" syntx
 
   def simplifyDomainRestrictions
     (fa : functionArg)

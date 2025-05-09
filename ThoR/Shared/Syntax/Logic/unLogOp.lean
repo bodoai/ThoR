@@ -5,6 +5,8 @@ Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
 
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
+
 open Lean
 
 namespace Shared
@@ -42,9 +44,7 @@ namespace Shared
           | `(unLogOp| not) => return unLogOp.not
 
           | syntx =>
-              throw s!"No match implemented in \
-              unLogOp.toType \
-              for '{syntx}'"
+            throwNoMatchImplemented "unLogOp.toType" syntx
 
     /--
     Generates a Lean term corosponding with the type

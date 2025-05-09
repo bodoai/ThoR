@@ -6,6 +6,7 @@ Authors: s. file CONTRIBUTORS
 
 import ThoR.Alloy.Syntax.Signature.SigDecl.sigDecl
 import ThoR.Alloy.Syntax.Signature.FieldDecl.fieldDeclService
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
 
 open Lean Shared
 
@@ -154,9 +155,7 @@ namespace Alloy.sigDecl
 
 
         | syntx =>
-            throw s!"No match implemented in \
-            sigDeclService.toType \
-            for '{syntx}'"
+          throwNoMatchImplemented "sigDeclService.toType" syntx
 
   def toTerm (sd : sigDecl) : Term := Unhygienic.run do
     let absTerm ← `(term | $(if sd.abs then (mkIdent `true) else (mkIdent `false)))

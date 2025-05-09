@@ -10,6 +10,8 @@ import ThoR.Alloy.Syntax.Function.FunctionIfDecl.functionIfDeclService
 import ThoR.Shared.Syntax.Relation.Expr.exprService
 import ThoR.Shared.Syntax.TypeExpr.typeExprService
 
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
+
 open Lean Shared
 
 namespace Alloy.functionDecl
@@ -50,9 +52,7 @@ namespace Alloy.functionDecl
             let fid_typed ← functionIfDecl.toType fid
             return (output.1, output.2.concat fid_typed)
           | syntx =>
-            throw s!"No match implemented in \
-            functionDeclService.splitFunExpressions \
-            for '{syntx}'"
+            throwNoMatchImplemented "functionDeclService.splitFunExpressions" syntx
       return output
 
   /--
@@ -129,7 +129,7 @@ namespace Alloy.functionDecl
             }
 
         | syntx =>
-          throw s!"No match implemented in functionDeclService.toType for '{syntx}'"
+          throwNoMatchImplemented "functionDeclService.toType" syntx
 
   def simplifyDomainRestrictions
     (fd : functionDecl)

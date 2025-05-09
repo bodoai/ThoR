@@ -10,6 +10,7 @@ import ThoR.Basic
 import ThoR.Relation.Set
 import ThoR.Relation.TupleSet
 import ThoR.Relation.Rel
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
 open Lean
 open ThoR
 namespace Shared
@@ -109,9 +110,7 @@ namespace Shared
           | `(binRelOp| :>) => return binRelOp.range_restriction
 
           | syntx =>
-            throw s!"No match implemented in \
-            binRelOp.toType \
-            for '{syntx}'"
+            throwNoMatchImplemented "binRelOp.toType" syntx
 
   end binRelOp
 

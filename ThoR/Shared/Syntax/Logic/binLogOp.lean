@@ -6,6 +6,8 @@ Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
 
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
+
 open Lean PrettyPrinter Delaborator SubExpr
 namespace Shared
 
@@ -85,9 +87,7 @@ namespace Shared
         | `(binLogOp| implies) => return binLogOp.implication
 
         | syntx =>
-          throw s!"No match implemented in \
-          binLogOp.toType \
-          for '{syntx}'"
+          throwNoMatchImplemented "binLogOp.toType" syntx
 
   end binLogOp
 

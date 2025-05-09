@@ -6,6 +6,8 @@ Authors: s. file CONTRIBUTORS
 
 import ThoR.Alloy.Syntax.SeparatedNamespace
 
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
+
 open Lean
 
 /-
@@ -102,9 +104,7 @@ namespace openModule
           }
 
         | syntx =>
-            throw s!"No match implemented in \
-            openModule.toType \
-            for '{syntx}'"
+          throwNoMatchImplemented "openModule.toType" syntx
 
 end openModule
 

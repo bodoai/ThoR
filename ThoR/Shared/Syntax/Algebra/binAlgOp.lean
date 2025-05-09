@@ -4,6 +4,7 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
 
 open Lean
 
@@ -71,9 +72,8 @@ namespace Shared
           | `(binAlgOp| div) => return binAlgOp.div
           | `(binAlgOp| rem) => return binAlgOp.rem
 
-          | syntx => throw s!"No match implemented in \
-            binAlgOp.toType \
-            for '{syntx}'"
+          | syntx =>
+            throwNoMatchImplemented "binAlgOp.toType" syntx
 
   end binAlgOp
 

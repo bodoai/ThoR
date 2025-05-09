@@ -8,6 +8,8 @@ import ThoR.Alloy.Syntax.Function.FunctionIfDecl.functionIfDecl
 import ThoR.Shared.Syntax.Formula.formulaService
 import ThoR.Alloy.UnhygienicUnfolder
 
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
+
 open Lean
 open Shared
 
@@ -58,6 +60,6 @@ namespace Alloy.functionIfDecl
             (elseBody := ← expr.toType elseBody)
 
         | syntx =>
-          throw s!"No match implemented in functionIfDeclService.toType for '{syntx}'"
+          throwNoMatchImplemented "functionIfDeclService.toType" syntx
 
 end Alloy.functionIfDecl

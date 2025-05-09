@@ -7,6 +7,8 @@ import ThoR.Basic
 import ThoR.Alloy.Config
 import ThoR.Relation.Rel
 
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
+
 open ThoR Config
 open Lean
 namespace Shared
@@ -85,9 +87,8 @@ namespace Shared
           | `(constant| iden) => return constant.iden
           | `(constant| univ) => return constant.univ
 
-          | syntx => throw s!"No match implemented in \
-            constant.toType \
-            for '{syntx}'"
+          | syntx =>
+            throwNoMatchImplemented "constant.toType" syntx
 
   end constant
 

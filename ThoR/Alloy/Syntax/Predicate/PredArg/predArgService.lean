@@ -7,6 +7,8 @@ Authors: s. file CONTRIBUTORS
 import ThoR.Alloy.Syntax.Predicate.PredArg.predArg
 import ThoR.Shared.Syntax.Relation.Expr.exprService
 
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
+
 open Lean Shared
 
 namespace Alloy.predArg
@@ -43,9 +45,7 @@ namespace Alloy.predArg
           return ← create False names expression
 
         | syntx =>
-            throw s!"No match implemented in \
-            predArgService.toType \
-            for '{syntx}'"
+          throwNoMatchImplemented "predArgService.toType" syntx
 
   def simplifyDomainRestrictions
     (pa : predArg)

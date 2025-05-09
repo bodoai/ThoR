@@ -7,6 +7,8 @@ Authors: s. file CONTRIBUTORS
 import ThoR.Alloy.Syntax.AssertDecl.assertDecl
 import ThoR.Alloy.Syntax.Property.propertyService
 
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
+
 namespace Alloy.assertDecl
 
   /-- Generates a type representation from the TSyntax -/
@@ -18,7 +20,7 @@ namespace Alloy.assertDecl
             return ← property.toType (extendedIdent.toName name) p
 
         | syntx =>
-          throw s!"No match implemented in assertDeclService.toType for '{syntx}'"
+          throwNoMatchImplemented "assertDeclService.toType" syntx
 
   /--
   Extracts all required definitions (i.e. references to preds)

@@ -5,6 +5,8 @@ Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
 import ThoR.Alloy.Syntax.SeparatedNamespace.extendedIdent
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
+
 open Lean
 
 /-
@@ -59,9 +61,7 @@ namespace Alloy
             return {representedNamespace := (mkIdent (Name.fromComponents components))}
 
           | syntx =>
-            throw s!"No match implemented in \
-            separatedNamespace.toType \
-            for '{syntx}'"
+            throwNoMatchImplemented "separatedNamespace.toType" syntx
 
     def toTerm
       (sn : separatedNamespace)

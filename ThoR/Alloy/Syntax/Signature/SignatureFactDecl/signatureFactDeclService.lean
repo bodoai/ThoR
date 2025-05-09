@@ -7,6 +7,8 @@ Authors: s. file CONTRIBUTORS
 import ThoR.Alloy.Syntax.Signature.SignatureFactDecl.signatureFactDecl
 import ThoR.Alloy.Syntax.Property.propertyService
 
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
+
 namespace Alloy.signatureFactDecl
 
   /--
@@ -28,8 +30,6 @@ namespace Alloy.signatureFactDecl
                   signatureRelationNames
 
           | syntx =>
-            throw s!"No match implemented in \
-            signatureFactDeclService.toType \
-            for '{syntx}'"
+            throwNoMatchImplemented "signatureFactDeclService.toType" syntx
 
 end Alloy.signatureFactDecl

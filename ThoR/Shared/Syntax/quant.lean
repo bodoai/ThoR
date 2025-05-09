@@ -4,6 +4,7 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
 
 open Lean
 
@@ -59,9 +60,8 @@ namespace Shared
           | `(quant| no) => return quant.no
 
           | syntx =>
-            throw s!"No match implemented in \
-            quant.toType \
-            for '{syntx}'"
+            throwNoMatchImplemented "quant.toType" syntx
+
     /--
     Generates a Lean term corosponding with the type
     -/
