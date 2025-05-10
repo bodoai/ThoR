@@ -18,6 +18,25 @@ inductive HList {α : Type v} (β : α → Type u) : List α → Type (max u v)
 infix:67 " :: " => HList.cons
 notation "[" "]" => HList.nil
 
+#print List.map
+-- def List.map.{u, v} : {α : Type u} → {β : Type v} → (α → β) → List α → List β :=
+-- fun {α} {β} f x ↦
+--   List.brecOn x fun x f_1 ↦
+--     (match (motive := (x : List α) → List.below x → List β) x with
+--       | [] => fun x ↦ []
+--       | a :: as => fun x ↦ f a :: x.1)
+--       f_1
+
+-- HList β₁ is
+-- HList (fun {i} ↦ β₁ i) is
+
+def HList.map.{u, v} : {α : Type v} → {β₁ : α → Type u} → {β₂ : α → Type u} → (f : {i: α} → (β₁ i) → (β₂ i)) → {is :List α} → HList β₁ is → HList β₂ is
+:=
+  λ {α} {β₁} {β₂} f {indices} l ↦
+    match l with
+    | [] => []
+    | h :: t => (f h) :: (HList.map f t)
+
 abbrev RelTypeWithArity (R : Type) [TupleSet R] := Sigma (RelType R)
 
 abbrev RelList (R : Type) [TupleSet R] := HList (λ (type : RelTypeWithArity R) => Rel type.2)
@@ -166,13 +185,12 @@ mutual
     | .q_one        f         => (Quantification.Formula.var Shared.quant.one (fun r => (Quantification.Formula.prop (f r).eval))).eval
     | .q_some       f         => (Quantification.Formula.var Shared.quant.some (fun r => (Quantification.Formula.prop (f r).eval))).eval
     | .q_all        f         => (Quantification.Formula.var Shared.quant.all (fun r => (Quantification.Formula.prop (f r).eval))).eval
-    | @Formula.call _ _ rel_types predicate params    => (predicate.eval : RelList R rel_types → Prop) params
+    | @Formula.call _ _ rel_types predicate params    => (predicate.eval : RelList R rel_types → Prop) (ExpressionList_eval params)
     | @Formula.let  _ _ _ t l e    => (l.eval : Rel t → Prop) e.eval
 
-  namespace ExpressionList
-    def eval {rel_types : List (RelTypeWithArity R)} (params : ThoR.HList (λ (type : RelTypeWithArity R) => Expression type.2) rel_types) :=
-    // TODO map (Expression t → RelType t) params
-  end ExpressionList
+    def ExpressionList_eval {rel_types : List (RelTypeWithArity R)} (params : ThoR.HList (λ (type : RelTypeWithArity R) => Expression type.2) rel_types)
+    :=
+    HList.map (λ {type: RelTypeWithArity R} (e : Expression type.2) => e.eval) params
 
   def Predicate.eval {rel_types : List (RelTypeWithArity R)} (p : Predicate rel_types) :=
     match p with
