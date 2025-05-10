@@ -18,26 +18,24 @@ inductive HList {α : Type v} (β : α → Type u) : List α → Type (max u v)
 infix:67 " :: " => HList.cons
 notation "[" "]" => HList.nil
 
-#print List.map
--- def List.map.{u, v} : {α : Type u} → {β : Type v} → (α → β) → List α → List β :=
--- fun {α} {β} f x ↦
---   List.brecOn x fun x f_1 ↦
---     (match (motive := (x : List α) → List.below x → List β) x with
---       | [] => fun x ↦ []
---       | a :: as => fun x ↦ f a :: x.1)
---       f_1
-
--- HList β₁ is
--- HList (fun {i} ↦ β₁ i) is
-
-def HList.map.{u, v} : {α : Type v} → {β₁ : α → Type u} → {β₂ : α → Type u} → (f : {i: α} → (β₁ i) → (β₂ i)) → {is :List α} → HList β₁ is → HList β₂ is
+def HList.map.{u, v} {α : Type v} {β₁ : α → Type u} {β₂ : α → Type u} (f : {i: α} → (β₁ i) → (β₂ i)) {indices :List α} (l : HList β₁ indices) : HList β₂ indices
 :=
-  λ {α} {β₁} {β₂} f {indices} l ↦
     match l with
     | [] => []
     | h :: t => (f h) :: (HList.map f t)
 
-abbrev RelTypeWithArity (R : Type) [TupleSet R] := Sigma (RelType R)
+#print List.foldl
+--  	(a -> b -> a) -> a -> [b] -> a
+
+def HList.foldl.{u, v} {α : Type v} {β : α → Type u} {γ : Type} {indices :List α} (l : HList β indices) (f : {i: α} → γ → (β i) → γ) (acc : γ) : γ
+:=
+    match l with
+    | [] => acc
+    | h :: t => f (HList.foldl t f acc) h
+
+
+-- abbrev RelTypeWithArity (R : Type) [TupleSet R] := Sigma (RelType R)
+abbrev RelTypeWithDepth (R : Type) [TupleSet R] := (Sigma (RelType R)) × ℕ
 
 abbrev RelList (R : Type) [TupleSet R] := HList (λ (type : RelTypeWithArity R) => Rel type.2)
 
@@ -51,28 +49,28 @@ variable {R : Type} [TupleSet R]
 -- TODO: possibly add an option to give arguments as an Array or List
 --       -> heterogeneous lists
 mutual
-  inductive Expression : {n: ℕ} → RelType R n → Type u where
-    | rel {n : ℕ} {t : RelType R n} (r : Rel t) : Expression t
-    | intersect {n : ℕ} {t1 t2 : RelType R n} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 & t2)
-    | union {n : ℕ} {t1 t2 : RelType R n} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 + t2)
-    | diff {n : ℕ} {t1 t2 : RelType R n} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 - t2)
-    | cartprod {n1 n2 : ℕ} {t1 : RelType R n1} {t2 : RelType R n2} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 ⟶ t2)
-    | dotjoin {n1 n2 : ℕ} {t1 : RelType R (n1+1)} {t2 : RelType R (n2+2)} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 ⋈ t2)
-    | transclos {t : RelType R 2} (r : Rel t) : Expression (^ t)
-    | reftransclos {t : RelType R 2} (r : Rel t) : Expression (* t)
-    | transpose {t : RelType R 2} (r : Rel t) : Expression (~ t)
-    | append {n : ℕ} {t1 t2 : RelType R n} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 ++ t2)
-    | domrestr {n : ℕ} {t1 : RelType R 1} {t2 : RelType R n} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 <: t2)
-    | rangerestr {n : ℕ} {t1 : RelType R n} {t2 : RelType R 1} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 :> t2)
-    | if_then_else {n : ℕ} {t1 t2 : RelType R n} (f : Formula) (r1 : Rel t1) (r2 : Rel t2) : Expression (RelType.ifThenElse t1 t2)
-    | call {n1 n2 : ℕ} {parameter_type : RelType R n1} {return_type : RelType R n2} (f : Function parameter_type return_type) (parameter : Expression parameter_type) : Expression return_type
-    | let {n1 n2 : ℕ} {parameter_type : RelType R n1} {return_type : RelType R n2} (l : ExpressionLet parameter_type return_type) (e : Expression parameter_type) : Expression return_type
+  inductive Expression : {arity: ℕ} → RelType R arity → (depth : ℕ) → Type u where
+    | rel {arity : ℕ} {t : RelType R arity} (r : Rel t) : Expression t 0
+    | intersect {arity : ℕ} {t1 t2 : RelType R arity} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 & t2) 0
+    | union {arity : ℕ} {t1 t2 : RelType R arity} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 + t2) 0
+    | diff {arity : ℕ} {t1 t2 : RelType R arity} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 - t2) 0
+    | cartprod {n1 n2 : ℕ} {t1 : RelType R n1} {t2 : RelType R n2} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 ⟶ t2) 0
+    | dotjoin {n1 n2 : ℕ} {t1 : RelType R (n1+1)} {t2 : RelType R (n2+2)} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 ⋈ t2) 0
+    | transclos {t : RelType R 2} (r : Rel t) : Expression (^ t) 0
+    | reftransclos {t : RelType R 2} (r : Rel t) : Expression (* t) 0
+    | transpose {t : RelType R 2} (r : Rel t) : Expression (~ t) 0
+    | append {arity : ℕ} {t1 t2 : RelType R arity} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 ++ t2) 0
+    | domrestr {arity : ℕ} {t1 : RelType R 1} {t2 : RelType R arity} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 <: t2) 0
+    | rangerestr {arity : ℕ} {t1 : RelType R arity} {t2 : RelType R 1} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 :> t2) 0
+    | if_then_else {arity : ℕ} {t1 t2 : RelType R arity} (f : Formula depth) (r1 : Rel t1) (r2 : Rel t2) : Expression (RelType.ifThenElse t1 t2) 1
+    | call {n1 n2 : ℕ} {parameter_type : RelType R n1} {return_type : RelType R n2} (f : Function parameter_type return_type parameter_type_depth) (parameter : Expression parameter_type parameter_depth) : Expression return_type ((max parameter_type_depth parameter_depth) + 1)
+    | let {n1 n2 : ℕ} {parameter_type : RelType R n1} {return_type : RelType R n2} (l : ExpressionLet parameter_type return_type parameter_type_depth) (e : Expression parameter_type expression_depth) : Expression return_type ((max parameter_type_depth expression_depth) + 1)
 
-  inductive Function : {n1 n2: ℕ} → RelType R n1 → RelType R n2 → Type u where
-    | mk {n1 n2 : ℕ} {t1 : RelType R n1} {t2 : RelType R n2} (f : (Rel t1) → Expression t2): Function t1 t2
+  inductive Function : {n1 n2: ℕ} → RelType R n1 → RelType R n2 → (depth : ℕ) → Type u where
+    | mk {n1 n2 : ℕ} {t1 : RelType R n1} {t2 : RelType R n2} (f : (Rel t1) → Expression t2 depth): Function t1 t2 (depth + 1)
 
-  inductive ExpressionLet : {n1 n2: ℕ} → RelType R n1 → RelType R n2 → Type u where
-    | mk {n1 n2 : ℕ} {t1 : RelType R n1} {t2 : RelType R n2} (f : (Rel t1) → Expression t2): ExpressionLet t1 t2
+  inductive ExpressionLet : {n1 n2: ℕ} → RelType R n1 → RelType R n2 → (depth : ℕ) → Type u where
+    | mk {n1 n2 : ℕ} {t1 : RelType R n1} {t2 : RelType R n2} (f : (Rel t1) → Expression t2 depth): ExpressionLet t1 t2 (depth + 1)
 
   inductive ArithmeticExpression : Type u where
     | number (z : ℤ) : ArithmeticExpression
@@ -82,48 +80,49 @@ mutual
     | mult (a1 a2 : ArithmeticExpression) : ArithmeticExpression
     | div (a1 a2 : ArithmeticExpression) : ArithmeticExpression
     | rem (a1 a2 : ArithmeticExpression) : ArithmeticExpression
-    | card {n : ℕ} {t : RelType R n} (r : Rel t) : ArithmeticExpression
+    | card {arity : ℕ} {t : RelType R arity} (r : Rel t) : ArithmeticExpression
 
-  inductive Formula : Type u where
-    | no {n : ℕ} {t : RelType R n} (e : Expression t) : Formula
-    | lone {n : ℕ} {t : RelType R n} (e : Expression t) : Formula
-    | one {n : ℕ} {t : RelType R n} (e : Expression t) : Formula
-    | some {n : ℕ} {t : RelType R n} (e : Expression t) : Formula
-    | not (f : Formula) : Formula
-    | or (f1 f2 : Formula) : Formula
-    | and (f1 f2 : Formula) : Formula
-    | equivalent (f1 f2 : Formula) : Formula
-    | implication (f1 f2 : Formula) : Formula
-    | if_then_else (f1 f2 f3 : Formula) : Formula
-    | a_lt (a1 a2 : ArithmeticExpression) : Formula
-    | a_gt (a1 a2 : ArithmeticExpression) : Formula
-    | a_eq (a1 a2 : ArithmeticExpression) : Formula
-    | a_leq (a1 a2 : ArithmeticExpression) : Formula
-    | a_geq (a1 a2 : ArithmeticExpression) : Formula
-    | in {n : ℕ} {t1 t2 : RelType R n} (e1 : Expression t1) (e2 : Expression t2): Formula
-    | eq {n : ℕ} {t1 t2 : RelType R n} (e1 : Expression t1) (e2 : Expression t2) : Formula
-    | neq {n : ℕ} {t1 t2 : RelType R n} (e1 : Expression t1) (e2 : Expression t2) : Formula
-    | q_no {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
-    | q_lone {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
-    | q_one {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
-    | q_some {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
-    | q_all {n : ℕ} {t : RelType R n} (f : (Rel t) → Formula): Formula
-    | call {rel_types : List (RelTypeWithArity R)} (p : Predicate rel_types) (params : ThoR.HList (λ (type : RelTypeWithArity R) => Expression type.2) rel_types) : Formula
-    | let {n : ℕ} {t : RelType R n} (l : FormulaLet t) (e : Expression t) : Formula
+  inductive Formula : (depth : ℕ) → Type u where
+    | no {arity : ℕ} {t : RelType R arity} (e : Expression t depth) : Formula (depth + 1)
+    | lone {arity : ℕ} {t : RelType R arity} (e : Expression t depth) : Formula (depth + 1)
+    | one {arity : ℕ} {t : RelType R arity} (e : Expression t depth) : Formula (depth + 1)
+    | some {arity : ℕ} {t : RelType R arity} (e : Expression t depth) : Formula (depth + 1)
+    | not (f : Formula depth) : Formula (depth + 1)
+    | or (f1 : Formula depth1) (f2 : Formula depth2) : Formula ((max depth1 depth2) + 1)
+    | and (f1 : Formula depth1) (f2 : Formula depth2) : Formula ((max depth1 depth2) + 1)
+    | equivalent (f1 : Formula depth1) (f2 : Formula depth2) : Formula ((max depth1 depth2) + 1)
+    | implication (f1 : Formula depth1) (f2 : Formula depth2) : Formula ((max depth1 depth2) + 1)
+    | if_then_else (f1 : Formula depth1) (f2 : Formula depth2) (f3 : Formula depth3): Formula ((max (max depth1 depth2) depth3) + 1)
+    | a_lt (a1 a2 : ArithmeticExpression) : Formula 0
+    | a_gt (a1 a2 : ArithmeticExpression) : Formula 0
+    | a_eq (a1 a2 : ArithmeticExpression) : Formula 0
+    | a_leq (a1 a2 : ArithmeticExpression) : Formula 0
+    | a_geq (a1 a2 : ArithmeticExpression) : Formula 0
+    | in {arity : ℕ} {t1 t2 : RelType R arity} (e1 : Expression t1 depth1) (e2 : Expression t2 depth2): Formula ((max depth1 depth2) + 1)
+    | eq {arity : ℕ} {t1 t2 : RelType R arity} (e1 : Expression t1 depth1) (e2 : Expression t2 depth2): Formula ((max depth1 depth2) + 1)
+    | neq {arity : ℕ} {t1 t2 : RelType R arity} (e1 : Expression t1 depth1) (e2 : Expression t2 depth2): Formula ((max depth1 depth2) + 1)
+    | q_no {arity : ℕ} {t : RelType R arity} (f : (Rel t) → Formula depth): Formula (depth + 1)
+    | q_lone {arity : ℕ} {t : RelType R arity} (f : (Rel t) → Formula depth): Formula (depth + 1)
+    | q_one {arity : ℕ} {t : RelType R arity} (f : (Rel t) → Formula depth): Formula (depth + 1)
+    | q_some {arity : ℕ} {t : RelType R arity} (f : (Rel t) → Formula depth): Formula (depth + 1)
+    | q_all {arity : ℕ} {t : RelType R arity} (f : (Rel t) → Formula depth): Formula (depth + 1)
+    | call {rel_types_w_depth : List ((RelTypeWithArity R) × ℕ)} (p : Predicate rel_types pred_depth) (params : ThoR.HList (λ (type_w_depth : (RelTypeWithArity R) × ℕ) => Expression type_w_depth.1.2 type_w_depth.2) rel_types_w_depth) :
+      Formula ((max (rel_types_w_depth.foldl (λ depth param => max depth param.2) 0 ) depth) + 1)
+    | let {arity : ℕ} {t : RelType R arity} (l : FormulaLet t l_depth) (e : Expression t e_depth) : Formula ((max l_depth e_depth) + 1)
 
 
-  inductive Predicate : List (RelTypeWithArity R) → Type u where
-    | mk (rel_types : List (RelTypeWithArity R)) (predicate : (RelList R rel_types) → Formula): Predicate rel_types
+  inductive Predicate : List (RelTypeWithArity R) → (depth : ℕ) → Type u where
+    | mk (rel_types : List (RelTypeWithArity R)) (predicate : (RelList R rel_types) → Formula depth): Predicate rel_types (depth + 1)
 
-  inductive FormulaLet : {n: ℕ} → RelType R n → Type u where
-    | mk {n : ℕ} {t : RelType R n} (p : (Rel t) → Formula): FormulaLet t
+  inductive FormulaLet : {arity: ℕ} → RelType R arity → (depth : ℕ) → Type u where
+    | mk {arity : ℕ} {t : RelType R arity} (p : (Rel t) → Formula depth): FormulaLet t (depth + 1)
 
   inductive TypeExpression : ℕ → Type u where
-    | type {n : ℕ} (t : RelType R n) : TypeExpression n
+    | type {arity : ℕ} (t : RelType R arity) : TypeExpression arity
 end
 
 mutual
-  def Expression.eval {n : ℕ } {t : RelType R n} (e : @Expression R _ _ t) :=
+  def Expression.eval {arity : ℕ } {t : RelType R arity} (e : @Expression R _ _ t d) : (Rel t) :=
     match e with
     | .rel              r       => r
     | .intersect        r1 r2   => r1 & r2
@@ -138,14 +137,14 @@ mutual
     | .domrestr         r1 r2   => r1 <: r2
     | .rangerestr       r1 r2   => r1 :> r2
     | .if_then_else     f r1 r2 => HIfThenElse.hIfThenElse f.eval r1 r2
-    | @Expression.call  _ _ _ _ t1 t2 f e     => (f.eval : Rel t1 → Rel t2) e.eval
-    | @Expression.let   _ _ _ _ t1 t2 l e     => (l.eval : Rel t1 → Rel t2) e.eval
+    | @Expression.call  _ _ _ _ _ _ t1 t2 f e     => (f.eval : Rel t1 → Rel t2) e.eval
+    | @Expression.let   _ _ _ _ _ _ t1 t2 l e     => (l.eval : Rel t1 → Rel t2) e.eval
 
-  def Function.eval {n1 n2 : ℕ } {t1 : RelType R n1} {t2 : RelType R n2} (f : @Function R _ _ _ t1 t2) :=
+  def Function.eval {n1 n2 : ℕ } {t1 : RelType R n1} {t2 : RelType R n2} (f : @Function R _ _ _ t1 t2 d) :=
       match f with
       | .mk f => (fun (r : Rel t1) => (f r).eval : Rel t1 → Rel t2)
 
-  def ExpressionLet.eval {n1 n2 : ℕ } {t1 : RelType R n1} {t2 : RelType R n2} (l : @ExpressionLet R _ _ _ t1 t2) :=
+  def ExpressionLet.eval {n1 n2 : ℕ } {t1 : RelType R n1} {t2 : RelType R n2} (l : @ExpressionLet R _ _ _ t1 t2 d) :=
       match l with
       | .mk f => (fun (r : Rel t1) => (f r).eval : Rel t1 → Rel t2)
 
@@ -160,7 +159,7 @@ mutual
     | .rem      a1 a2 => a1.eval % a2.eval
     | .card     r     => Card.card r
 
-  def Formula.eval (f : @Formula R _) :=
+  def Formula.eval (f : @Formula R _ d) :=
     match f with
     | .no           e         => SetMultPredicates.no e.eval
     | .lone         e         => SetMultPredicates.lone e.eval
@@ -185,23 +184,28 @@ mutual
     | .q_one        f         => (Quantification.Formula.var Shared.quant.one (fun r => (Quantification.Formula.prop (f r).eval))).eval
     | .q_some       f         => (Quantification.Formula.var Shared.quant.some (fun r => (Quantification.Formula.prop (f r).eval))).eval
     | .q_all        f         => (Quantification.Formula.var Shared.quant.all (fun r => (Quantification.Formula.prop (f r).eval))).eval
-    | @Formula.call _ _ rel_types predicate params    => (predicate.eval : RelList R rel_types → Prop) (ExpressionList_eval params)
-    | @Formula.let  _ _ _ t l e    => (l.eval : Rel t → Prop) e.eval
+    | @Formula.call _ _ _ _ _ rel_types_w_depth predicate params    =>
+      -- let rel_types := rel_types_w_depth.map Prod.fst
+      -- (predicate.eval : RelList R rel_types → Prop) (ExpressionList_eval params)
+      predicate.eval (ExpressionList_eval params)
+    | @Formula.let  _ _ _ _ _ t l e    => (l.eval : Rel t → Prop) e.eval
 
-    def ExpressionList_eval {rel_types : List (RelTypeWithArity R)} (params : ThoR.HList (λ (type : RelTypeWithArity R) => Expression type.2) rel_types)
+-- (params : ThoR.HList (λ (type_w_depth : (RelTypeWithArity R) × ℕ) => Expression type_w_depth.1.2 type_w_depth.2) rel_types_w_depth)
+
+    def ExpressionList_eval {rel_types_w_depth : List ((RelTypeWithArity R) × ℕ)} (params : ThoR.HList (λ (type_w_depth : (RelTypeWithArity R) × ℕ) => Expression type_w_depth.1.2 type_w_depth.2) rel_types_w_depth)
     :=
-    HList.map (λ {type: RelTypeWithArity R} (e : Expression type.2) => e.eval) params
+      HList.map (λ {type_w_depth: (RelTypeWithArity R) × ℕ} (e : Expression type_w_depth.1.2 type_w_depth.2) => e.eval) params
 
-  def Predicate.eval {rel_types : List (RelTypeWithArity R)} (p : Predicate rel_types) :=
+  def Predicate.eval {rel_types : List (RelTypeWithArity R)} (p : Predicate rel_types depth) : RelList R rel_types → Prop :=
     match p with
     | .mk rel_types predicate =>
       ((fun (params : RelList R rel_types) => (predicate params).eval) : RelList R rel_types → Prop)
 
-  def FormulaLet.eval {n : ℕ } {t : RelType R n} (p : @FormulaLet R _ _ t) :=
+  def FormulaLet.eval {arity : ℕ } {t : RelType R arity} (p : @FormulaLet R _ _ t d) :=
     match p with
     | .mk pred => (fun (r : Rel t) => (pred r).eval : Rel t → Prop)
 
-  def TypeExpression.eval {n : ℕ} (te : @TypeExpression R _ n) :=
+  def TypeExpression.eval {arity : ℕ} (te : @TypeExpression R _ arity) :=
     match te with
     | .type t => t
 end
