@@ -114,43 +114,14 @@ namespace Alloy
         let argNames := (cd.functionArgs.map fun fa => fa.1.names).join
 
         let fe := (expressions.get! 0)
-        bodyTerm ← fe.toTermFromBlock blockName argNames
+        bodyTerm ← fe.toTerm blockName cd.requiredVars callableVariables cd.predCalls argNames
 
         for expression in expressions.drop 1 do
-          let newTerm ← expression.toTermFromBlock blockName argNames
+          let newTerm ←
+            expression.toTerm blockName cd.requiredVars
+              callableVariables cd.predCalls argNames
+
           bodyTerm := unhygienicUnfolder `($bodyTerm ∧ ($newTerm))
-
-      -- and ifExpressions
-      if cd.isFunction && !(cd.ifExpressions.isEmpty) then
-
-        let argNames := (cd.functionArgs.map fun fa => fa.1.names).join
-
-        let ifExpressions :=
-          cd.ifExpressions.map fun ie =>
-            {ie with
-              condition := ie.condition.replaceCalls callableVariables,
-              thenBody := ie.thenBody.replaceCalls callableVariables,
-              elseBody := ie.elseBody.replaceCalls callableVariables
-            }
-
-        let first_if_expression := ifExpressions.get! 0
-
-        let mut dropCount := 0
-        -- if there are no expressions get the first ifExpr as Body
-        if (cd.expressions.isEmpty) then
-          dropCount := 1
-          bodyTerm ←
-            first_if_expression.toTerm
-              blockName
-              cd.requiredVars
-              callableVariables
-              callablePredicates
-              argNames
-
-        for ifExpression in ifExpressions.drop dropCount do
-          bodyTerm :=
-            unhygienicUnfolder
-              `($bodyTerm ∧ $(← ifExpression.toTerm blockName cd.requiredVars callableVariables callablePredicates argNames))
 
       -- define command
       let tupleSetArg
@@ -215,10 +186,13 @@ namespace Alloy
           let returnType :=
             (cd.functionReturnType.replaceCalls callableVariables).toStringRb
           let returnTypeSyntax := returnType.toSyntax blockName
+          let argNames := (cd.functionArgs.map fun fa => fa.1.names).join
+          let returnTypeTerm ← returnType.toTerm blockName cd.requiredVars callableVariables cd.predCalls argNames
           argTerms := unhygienicUnfolder
             `(Lean.Parser.Command.optDeclSig| $[$allArgs]* : ∷ $returnTypeSyntax)
 
-          bodyTerm := unhygienicUnfolder `(cast ($(bodyTerm)) ∷ $returnTypeSyntax)
+
+          bodyTerm := unhygienicUnfolder `(cast ($(bodyTerm)) ∷ $returnTypeTerm)
 
         if bodyTerm != emptyTerm then
           return unhygienicUnfolder `(

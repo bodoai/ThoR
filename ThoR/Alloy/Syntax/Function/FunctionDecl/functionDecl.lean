@@ -7,7 +7,6 @@ import ThoR.Basic
 import ThoR.Alloy.Syntax.Function.FunctionArg.functionArg
 import ThoR.Alloy.Syntax.SeparatedNamespace.extendedIdent
 import ThoR.Shared.Syntax.Formula.formula
-import ThoR.Alloy.Syntax.Function.FunctionIfDecl.functionIfDecl
 
 open Lean
 open Shared
@@ -22,7 +21,6 @@ namespace Alloy
           (arguments : List (functionArg))
           (outputType : typeExpr)
           (expressions : List (expr))
-          (ifExpressions : List (functionIfDecl))
   deriving Repr, BEq, Inhabited
 
   /--
@@ -31,20 +29,14 @@ namespace Alloy
   declare_syntax_cat functionDecl
   abbrev FunctionDecl := TSyntax `functionDecl
 
-  declare_syntax_cat exprOfFunIfDecl
-  abbrev ExprOfFunIfDecl := TSyntax `exprOfFunIfDecl
-  syntax expr : exprOfFunIfDecl
-  syntax functionIfDecl : exprOfFunIfDecl
-
-
   syntax (name := function_declaration_with_brackets)
     "fun" extendedIdent ("["functionArg,*"]")? ":" typeExpr "{"
-      exprOfFunIfDecl*
+      expr*
     "}": functionDecl
 
   syntax (name := function_declaration_with_parenthesis)
     "fun" extendedIdent ("("functionArg,*")")? ":" typeExpr "{"
-      exprOfFunIfDecl*
+      expr*
     "}": functionDecl
 
   namespace functionDecl
@@ -58,11 +50,6 @@ namespace Alloy
             {
             if !fd.expressions.isEmpty then
               s!"expressions := {fd.expressions},"
-            else ""
-            }
-            {
-            if !fd.ifExpressions.isEmpty then
-              s!"ifExpressions := {fd.ifExpressions}"
             else ""
             }
           }"

@@ -21,6 +21,9 @@ namespace Shared
     | some
     | lone
     | one
-  deriving Repr
+  deriving Repr, BEq
+
+  instance : Inhabited mult where
+    default := mult.set
 
 end Shared

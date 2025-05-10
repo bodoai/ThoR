@@ -50,6 +50,13 @@ namespace Shared
     -/
     def toString (op : binLogOp) : String := ToString.toString op
 
+    def toSyntax (op : binLogOp) : BinLogOp := Unhygienic.run do
+      match op with
+        | binLogOp.or => `(binLogOp | or)
+        | binLogOp.and => `(binLogOp | and)
+        | binLogOp.equivalent => `(binLogOp | equivalent)
+        | binLogOp.implication => `(binLogOp | implies)
+
     /--
     Used to write the implication to a term
     -/

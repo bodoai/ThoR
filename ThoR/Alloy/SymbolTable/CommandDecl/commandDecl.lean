@@ -6,7 +6,6 @@ Authors: s. file CONTRIBUTORS
 import ThoR.Shared.Syntax.Formula.formula
 import ThoR.Alloy.Syntax.Predicate.PredArg.predArg
 import ThoR.Alloy.Syntax.Function.FunctionArg.functionArg
-import ThoR.Alloy.Syntax.Function.FunctionIfDecl.functionIfDecl
 import ThoR.Alloy.SymbolTable.VarDecl.varDecl
 
 open Shared
@@ -44,7 +43,6 @@ namespace Alloy
           (functionReturnType : typeExpr := default)
           (formulas : List (formula) := []) -- formulas (used in preds, axioms, asserts)
           (expressions : List (expr) := []) -- expressiosn (used in functions)
-          (ifExpressions : List (functionIfDecl) := [])
           (requiredDefs : List (String)) -- only for Lean Infoview
           (requiredVars : List (String)) -- only for Lean Infoview
           /-
@@ -65,20 +63,19 @@ namespace Alloy
   deriving Repr
   namespace commandDecl
 
-    def name | mk n _ _ _ _ _ _ _ _ _ _ _ _ _ => n
-    def commandType | mk  _ commandType _ _ _ _ _ _ _ _ _ _ _ _ => commandType
-    def predArgs | mk _ _ predArgs _ _ _ _ _ _ _ _ _ _ _ => predArgs
-    def functionArgs | mk _ _ _ functionArgs _ _ _ _ _ _ _ _ _ _ => functionArgs
-    def functionReturnType | mk _ _ _ _ functionReturnType _ _ _ _ _ _ _ _ _ => functionReturnType
-    def formulas | mk _ _ _ _ _ formulas _ _ _ _ _ _ _ _ => formulas
-    def expressions | mk _ _ _ _ _ _ expressions _ _ _ _ _ _ _ => expressions
-    def ifExpressions | mk _ _ _ _ _ _ _ ifExpressions _ _ _ _ _ _ => ifExpressions
-    def requiredDefs | mk _ _ _ _ _ _ _ _ requiredDefs _ _ _ _ _ => requiredDefs
-    def requiredVars | mk _ _ _ _ _ _ _ _ _ requiredVars _ _ _ _ => requiredVars
-    def predCalls | mk _ _ _ _ _ _ _ _ _ _ predCalls _ _ _ => predCalls
-    def functionCalls | mk _ _ _ _ _ _ _ _ _ _ _ functionCalls _  _ => functionCalls
-    def relationCalls | mk _ _ _ _ _ _ _ _ _ _ _ _ relationCalls _ => relationCalls
-    def signatureCalls | mk _ _ _ _ _ _ _ _ _ _ _ _ _ signatureCalls => signatureCalls
+    def name | mk n _ _ _ _ _ _ _ _ _ _ _ _ => n
+    def commandType | mk  _ commandType _ _ _ _ _ _ _ _ _ _ _ => commandType
+    def predArgs | mk _ _ predArgs _ _ _ _ _ _ _ _ _ _ => predArgs
+    def functionArgs | mk _ _ _ functionArgs _ _ _ _ _ _ _ _ _ => functionArgs
+    def functionReturnType | mk _ _ _ _ functionReturnType _ _ _ _ _ _ _ _ => functionReturnType
+    def formulas | mk _ _ _ _ _ formulas _ _ _ _ _ _ _ => formulas
+    def expressions | mk _ _ _ _ _ _ expressions _ _ _ _ _ _ => expressions
+    def requiredDefs | mk _ _ _ _ _ _ _ requiredDefs _ _ _ _ _ => requiredDefs
+    def requiredVars | mk _ _ _ _ _ _ _ _ requiredVars _ _ _ _ => requiredVars
+    def predCalls | mk _ _ _ _ _ _ _ _ _ predCalls _ _ _ => predCalls
+    def functionCalls | mk _ _ _ _ _ _ _ _ _ _ functionCalls _  _ => functionCalls
+    def relationCalls | mk _ _ _ _ _ _ _ _ _ _ _ relationCalls _ => relationCalls
+    def signatureCalls | mk _ _ _ _ _ _ _ _ _ _ _ _ signatureCalls => signatureCalls
 
     instance : Inhabited commandDecl where
       default :=
@@ -103,7 +100,6 @@ namespace Alloy
             functionReturnType
             _
             expressions
-            ifExpressions
             requiredDefs
             requiredVars
             predCalls
@@ -118,7 +114,6 @@ namespace Alloy
             functionReturnType
             formulas
             expressions
-            ifExpressions
             requiredDefs
             requiredVars
             predCalls
@@ -136,7 +131,6 @@ namespace Alloy
             functionReturnType
             formulas
             _
-            ifExpressions
             requiredDefs
             requiredVars
             predCalls
@@ -151,7 +145,6 @@ namespace Alloy
             functionReturnType
             formulas
             expressions
-            ifExpressions
             requiredDefs
             requiredVars
             predCalls
@@ -169,7 +162,6 @@ namespace Alloy
             functionReturnType
             formulas
             expressions
-            ifExpressions
             requiredDefs
             requiredVars
             _
@@ -184,7 +176,6 @@ namespace Alloy
             functionReturnType
             formulas
             expressions
-            ifExpressions
             requiredDefs
             requiredVars
             predCalls
@@ -202,7 +193,6 @@ namespace Alloy
             functionReturnType
             formulas
             expressions
-            ifExpressions
             requiredDefs
             requiredVars
             predCalls
@@ -217,7 +207,6 @@ namespace Alloy
             functionReturnType
             formulas
             expressions
-            ifExpressions
             requiredDefs
             requiredVars
             predCalls
@@ -352,10 +341,6 @@ namespace Alloy
         ) ++
         ( if cd.commandType == commandType.function && !cd.expressions.isEmpty then
             inner_spaces ++ s!"expressions := {cd.expressions}" ++ "\n"
-          else ""
-        ) ++
-        ( if cd.commandType == commandType.function && !cd.ifExpressions.isEmpty then
-            inner_spaces ++ s!"ifExpressions := {cd.ifExpressions}" ++ "\n"
           else ""
         ) ++
         outer_spaces ++ "⦄"

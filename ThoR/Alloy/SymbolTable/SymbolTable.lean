@@ -10,7 +10,7 @@ to be better digestible for further computation and transformation into Lean.
 
 import ThoR.Alloy.SymbolTable.VarDecl.varDecl
 import ThoR.Alloy.SymbolTable.CommandDecl.commandDecl
-import ThoR.Shared.Syntax.Formula.formula
+import ThoR.Shared.Syntax.Mutuals.mutuals
 
 open Lean Shared
 

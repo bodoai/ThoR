@@ -657,7 +657,6 @@ to be better digestible for further computation and transformation into Lean.
             (functionArgs := newArgs)
             (functionReturnType := functionDecl.outputType)
             (expressions := functionDecl.expressions)
-            (ifExpressions := functionDecl.ifExpressions)
             (requiredVars := reqVars)
             (requiredDefs := default)
             (predCalls := default)
