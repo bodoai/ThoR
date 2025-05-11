@@ -32,9 +32,9 @@ def HList.foldl.{u, v} {α : Type v} {β : α → Type u} {γ : Type} {indices :
     | h :: t => f (HList.foldl t f acc) h
 
 
--- abbrev RelTypeWithArity (R : Type) [TupleSet R] := Sigma (RelType R)
-abbrev RelTypeWithDepth (R : Type) [TupleSet R] := (Sigma (RelType R)) × ℕ
+abbrev RelTypeWithArity (R : Type) [TupleSet R] := Sigma (RelType R)
+-- abbrev RelTypeWithDepth (R : Type) [TupleSet R] := (Sigma (RelType R)) × ℕ
 
-abbrev RelList (R : Type) [TupleSet R] := HList (λ (type_w_depth : RelTypeWithDepth R) => Rel type_w_depth.1.2)
+abbrev RelList (R : Type) [TupleSet R] := HList (λ (type_w_depth : RelTypeWithArity R) => Rel type_w_depth.2)
 
 end ThoR

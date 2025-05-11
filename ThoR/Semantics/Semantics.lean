@@ -7,10 +7,13 @@ Authors: s. file CONTRIBUTORS
 import ThoR.Shared.Syntax.quant
 import ThoR.Relation.Quantification
 import ThoR.Relation.Rel
+-- import ThoR.Relation.Elab
+
+import ThoR.Semantics.RelList
 
 namespace ThoR.Semantics
 
-variable {R : Type} [TupleSet R]
+variable (R : Type) [TupleSet R]
 
 -- TODO: self-explaining variable names
 -- TODO: possibly add an option to give arguments as an Array or List
@@ -19,6 +22,7 @@ variable {R : Type} [TupleSet R]
     | number -- ℤ
     | formula -- Prop
     | expression : {n : ℕ} → (rel_type : RelType R n) → SemType -- Rel rel_type
+    | expression_list : (indices : List (RelTypeWithArity R)) → SemType -- RelList indices
     | function : SemType → SemType → SemType -- st1.eval → st2.eval
 
   inductive Term {R : Type} [TupleSet R] : @SemType R _ → Type u where
@@ -36,8 +40,11 @@ variable {R : Type} [TupleSet R]
     -- | rangerestr {n : ℕ} {t1 : RelType R n} {t2 : RelType R 1} (r1 : Rel t1) (r2 : Rel t2) : Expression (t1 :> t2)
     | if_then_else {n : ℕ} {t1 t2 : RelType R n} (f : Formula) (r1 : Rel t1) (r2 : Rel t2) : Term (.expression (RelType.ifThenElse t1 t2))
     --  Term ctx (.fn dom ran) → Term ctx dom → Term ctx ran
-    | pred_abstraction {n : ℕ} {t : RelType R n} : Term (.expression t) → Term .formula → Term (.function (.expression t) .formula)
-    | pred_application {n : ℕ} {t : RelType R n} : Term (.function (.expression t) .formula) → Term (.expression t) → Term .formula
+    -- | pred_abstraction {n : ℕ} {t : RelType R n} : Term (.expression t) → Term .formula → Term (.function (.expression t) .formula)
+
+    | pred_abstraction {indices : List (RelTypeWithArity R)} : (RelList R indices → Term .formula) → Term (.function (.expression_list indices) .formula)
+
+    | pred_application {indices : List (RelTypeWithArity R)} : Term (.function (.expression_list indices) .formula) → RelList R indices → Term .formula
     -- | call {n1 n2 : ℕ} {parameter_type : RelType R n1} {return_type : RelType R n2} (f : Function parameter_type return_type) (parameter : Expression parameter_type) : Expression return_type
     -- | let {n1 n2 : ℕ} {parameter_type : RelType R n1} {return_type : RelType R n2} (l : ExpressionLet parameter_type return_type) (e : Expression parameter_type) : Expression return_type
 
@@ -193,3 +200,40 @@ variable {R : Type} [TupleSet R]
 -- instance {R : Type} [ThoR.TupleSet R] {n1 n2 : ℕ} {t1 : RelType R n1} {t2 : RelType R n2}:
 --   CoeSort.{u+1} (ThoR.Semantics.Function.{u} t1 t2) (Rel t1 → Rel t2) where
 --     coe e := ThoR.Semantics.Function.eval.{u,u+1} e
+
+end ThoR.Semantics
+
+open ThoR.Semantics
+open ThoR
+class vars (R : Type) [TupleSet R] where
+  UNIV : Rel (RelType.mk.sig R Shared.mult.set)
+  Time : Rel (RelType.mk.sig R Shared.mult.set)
+
+variable (ThoR_TupleSet : Type) [TupleSet ThoR_TupleSet] [vars ThoR_TupleSet]
+
+@[default_instance]
+instance : ThoR.TupleSet ThoR_TupleSet := by sorry
+
+@[default_instance]
+instance : vars ThoR_TupleSet := by sorry
+
+
+def u := Term.rel (@vars.UNIV ThoR_TupleSet _ _)
+#check u
+
+#check Term.in (@u ThoR_TupleSet _ _) (@u ThoR_TupleSet _ _)
+def pred1 :=
+  Term.pred_abstraction (
+    λ (r1 : Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) =>
+      Term.pred_abstraction'' (
+        λ (r2 : Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) =>
+          Term.pred_abstraction' (
+            λ (r3 : Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) =>
+              Term.or (Term.in (Term.rel r1) (Term.rel r2)) (Term.in (Term.rel r2) (Term.rel r3))
+          )
+      )
+  )
+
+
+#check @pred1 ThoR_TupleSet _
+#check Term.pred_application (@pred1 ThoR_TupleSet _ ) (@u ThoR_TupleSet _  _)
