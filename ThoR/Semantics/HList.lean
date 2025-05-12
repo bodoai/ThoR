@@ -4,17 +4,23 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 
-import ThoR.Relation.Rel
-
 namespace ThoR
 
--- definition from https://lean-lang.org/documentation/examples/debruijn/
+-- definitions from https://lean-lang.org/documentation/examples/debruijn/
 inductive HList {α : Type v} (β : α → Type u) : List α → Type (max u v)
   | nil  : HList β []
   | cons : β i → HList β is → HList β (i::is)
 
 infix:67 " :: " => HList.cons
 notation "[" "]" => HList.nil
+
+inductive Member : α → List α → Type u
+  | head : Member a (a::as)
+  | tail : Member a bs → Member a (b::bs)
+
+def HList.get : HList β is → Member i is → β i
+  | a::as, .head => a
+  | a::as, .tail h => as.get h
 
 def HList.map.{u, v} {α : Type v} {β₁ : α → Type u} {β₂ : α → Type u} (f : {i: α} → (β₁ i) → (β₂ i)) {indices :List α} (l : HList β₁ indices) : HList β₂ indices
 :=
@@ -30,11 +36,5 @@ def HList.foldl.{u, v} {α : Type v} {β : α → Type u} {γ : Type} {indices :
     match l with
     | [] => acc
     | h :: t => f (HList.foldl t f acc) h
-
-
-abbrev RelTypeWithArity (R : Type) [TupleSet R] := Sigma (RelType R)
--- abbrev RelTypeWithDepth (R : Type) [TupleSet R] := (Sigma (RelType R)) × ℕ
-
-abbrev RelList (R : Type) [TupleSet R] := HList (λ (type_w_depth : RelTypeWithArity R) => Rel type_w_depth.2)
 
 end ThoR
