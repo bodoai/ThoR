@@ -22,19 +22,12 @@ variable (R : Type) [TupleSet R]
     | abstraction : (β i → HFunc β is) → HFunc β (i::is)
     | application : HFunc β (i::is) → β i → HFunc β is
 
---  abbrev RelIndex (R : Type) [TupleSet R] := λ (type : RelTypeWithArity R) => Rel type.2
-
-  -- abbrev RelFunc (R : Type) [TupleSet R] {return_type : Type w}:= @HFunc _ (λ (type : RelTypeWithArity R) => Rel type.2) return_type
-
 -- construction follows https://lean-lang.org/documentation/examples/debruijn/
-
-
   inductive Ty {R : Type} [TupleSet R] : Type u where
     | number -- ℤ
     | formula -- Prop
     | expression : {n : ℕ} → (rel_type : RelType R n) → Ty -- Rel rel_type
---    | expression_list : (indices : List (RelTypeWithArity R)) → Ty -- RelList indices
-    | function : Ty → Ty → Ty -- st1.eval → st2.eval
+    | function : Ty → Ty → Ty -- type1.eval → type2.eval
 
   @[reducible]
   def Ty.eval {R : Type} [TupleSet R] (ty : @Ty R _) :=
@@ -117,29 +110,40 @@ class vars (R : Type) [TupleSet R] where
 
 variable (ThoR_TupleSet : Type) [TupleSet ThoR_TupleSet] [vars ThoR_TupleSet]
 
+@[default_instance]
+instance : ThoR.TupleSet ThoR_TupleSet := by sorry
+
+@[default_instance]
+instance : vars ThoR_TupleSet := by sorry
+
 -- pred_in1 [x : set univ] {
 --    x in x
 -- }
-#check (Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
-#check (Term.in (Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head)) (Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head)))
-
-#check Term.lam (Term.in (Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head)) (Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head)))
-
-def pred_in1 := @Term.lam ThoR_TupleSet _ _ [] (Term.in (Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head)) (Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head)))
-
-#print pred_in1
+def pred_in1 :=
+  @Term.lam ThoR_TupleSet _ _ [] _ (
+    Term.in
+      (Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
+      (Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
+  )
 
 -- pred_in2 [x : set univ] {
 --    x in univ
 -- }
-def pred_in2 := @Term.lam _ _ _ [] (Term.in (Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head)) (Term.rel (@vars.UNIV ThoR_TupleSet _ _)))
+def pred_in2 :=
+  @Term.lam _ _ _ [] _ (
+    Term.in
+      (Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
+      (Term.rel (@vars.UNIV ThoR_TupleSet _ _))
+  )
 
-example : (Term.pred_app (@pred_in1 ThoR_TupleSet _) (Term.rel (@vars.UNIV ThoR_TupleSet _ _))).eval [] := by
+-- pred_in1[univ]
+example : (Term.app (@pred_in1 ThoR_TupleSet _) (Term.rel (@vars.UNIV ThoR_TupleSet _ _))).eval [] := by
   simp [Term.eval]
   simp [HList.get]
   apply Set.subset_refl
 
-example : (Term.pred_app (@pred_in2 ThoR_TupleSet _ _) (Term.rel (@vars.UNIV ThoR_TupleSet _ _))).eval [] := by
+-- pred_in2[univ]
+example : (Term.app (@pred_in2 ThoR_TupleSet _ _) (Term.rel (@vars.UNIV ThoR_TupleSet _ _))).eval [] := by
   simp [Term.eval]
   simp [HList.get]
   apply Set.subset_refl
@@ -147,11 +151,17 @@ example : (Term.pred_app (@pred_in2 ThoR_TupleSet _ _) (Term.rel (@vars.UNIV Tho
 -- pred_in3 [x : set univ, y : set univ] {
 --    x in y
 -- }
-#check
-  Term.lam (
-    Term.lam (
+def pred_in3 :=
+  @Term.lam ThoR_TupleSet _ (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) [] _ (
+    @Term.lam ThoR_TupleSet _ (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) _ _ (
       Term.in
         (Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
         (Term.rel (@vars.UNIV ThoR_TupleSet _ _))
     )
   )
+
+-- pred_in3[univ,univ]
+example : (Term.app (Term.app (@pred_in3 ThoR_TupleSet _ _) (Term.rel (@vars.UNIV ThoR_TupleSet _ _))) (Term.rel (@vars.UNIV ThoR_TupleSet _ _))).eval [] := by
+  simp [Term.eval]
+  simp [HList.get]
+  apply Set.subset_refl
