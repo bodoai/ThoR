@@ -17,14 +17,14 @@ variable (R : Type) [TupleSet R]
 
 --   | cons : β i → HList β is → HList β (i::is)
 
-  inductive HFunc {γ : Type w} {α : Type v} (β : α → Type u): List α → Type (max u v w) where
-    | const : γ → HFunc β []
+  inductive HFunc {return_type : Type w} {α : Type v} (β : α → Type u): List α → Type (max u v w) where
+    | const : return_type → HFunc β []
     | abstraction : (β i → HFunc β is) → HFunc β (i::is)
     | application : HFunc β (i::is) → β i → HFunc β is
 
 --  abbrev RelIndex (R : Type) [TupleSet R] := λ (type : RelTypeWithArity R) => Rel type.2
 
-  -- abbrev RelFunc (R : Type) [TupleSet R] {γ : Type w}:= @HFunc _ (λ (type : RelTypeWithArity R) => Rel type.2) γ
+  -- abbrev RelFunc (R : Type) [TupleSet R] {return_type : Type w}:= @HFunc _ (λ (type : RelTypeWithArity R) => Rel type.2) return_type
 
 
   inductive SemType {R : Type} [TupleSet R] : Type u where
@@ -121,6 +121,8 @@ def u := Term.rel (@vars.UNIV ThoR_TupleSet _ _)
       )
   )
 
+
+
 def pred3 :=
   HFunc.abstraction (
     λ (r1 : Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) =>
@@ -135,10 +137,10 @@ def pred3 :=
       )
   )
 
-  -- inductive HFunc {α : Type v} (β : α → Type u) (γ : Type w): List α → Type (max u v w) where
-  --   | const : γ → HFunc β γ []
-  --   | abstraction : (β i → HFunc β γ is) → HFunc β γ (i::is)
-  --   | application : β i → HFunc β γ (i::is) → HFunc β γ is
+  -- inductive HFunc {α : Type v} (β : α → Type u) (return_type : Type w): List α → Type (max u v w) where
+  --   | const : return_type → HFunc β return_type []
+  --   | abstraction : (β i → HFunc β return_type is) → HFunc β return_type (i::is)
+  --   | application : β i → HFunc β return_type (i::is) → HFunc β return_type is
 
 #check pred3 _
 #check
