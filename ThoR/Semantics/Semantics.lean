@@ -137,6 +137,11 @@ def pred3 :=
       )
   )
 
+#check RelType'
+#print pred3
+
+
+
   -- inductive HFunc {α : Type v} (β : α → Type u) (return_type : Type w): List α → Type (max u v w) where
   --   | const : return_type → HFunc β return_type []
   --   | abstraction : (β i → HFunc β return_type is) → HFunc β return_type (i::is)
