@@ -38,13 +38,7 @@ namespace  predtest
     [  ThoR.TupleSet  ThoR_TupleSet  ]
     [  predtest.vars  ThoR_TupleSet  ]  :=
       Term.in
-        (Term.var
-          (Ty.expression
-            (RelType.mk.sig ThoR_TupleSet Shared.mult.set)
-          ) (  ∻  predtest.vars.this_φ_a  ))
-        (Term.var
-          (Ty.expression
-            (RelType.mk.sig ThoR_TupleSet Shared.mult.set)
-          ) (  ∻  predtest.vars.this_φ_b  ))
+        (Term.rel (  ∻  predtest.vars.this_φ_a  ))
+        (Term.rel (  ∻  predtest.vars.this_φ_a  ))
 
 end  predtest.preds
