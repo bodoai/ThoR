@@ -64,7 +64,7 @@ variable (R : Type) [TupleSet R]
 
     | a_lt : Term ctx .number → Term ctx .number → Term ctx .formula
 
-    | in {n : ℕ} {t1 t2 : RelType R n} : Term ctx (.expression t1) → Term ctx (.expression t2) → Term ctx .formula
+    | in {n : ℕ} {t1 t2 : RelType R n} (ctx : List (@Ty R _) := []): (expression1 : Term ctx (.expression t1)) → (expression2 : Term ctx (.expression t2)) → Term ctx .formula
 
     -- | q_all {n : ℕ} {t : RelType R n} : Term ctx (.function (.expression t) ran) → Term ctx .formula -- (f : (Rel t) → Formula): Formula
 
@@ -96,7 +96,7 @@ variable (R : Type) [TupleSet R]
 
     | .a_lt z1 z2 => (z1.eval env) < (z2.eval env)
 
-    | .in r1 r2 => (r1.eval env) ⊂ (r2.eval env)
+    | .in _ r1 r2 => (r1.eval env) ⊂ (r2.eval env)
 
     -- | q_all {n : ℕ} {t : RelType R n} : Term ctx (.function (.expression t) ran) → Term ctx .formula -- (f : (Rel t) → Formula): Formula
 
@@ -121,9 +121,9 @@ instance : vars ThoR_TupleSet := by sorry
 -- }
 def pred_in1 :=
   @Term.lam ThoR_TupleSet _ _ [] _ (
-    Term.in
-      (Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
-      (Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
+    Term.in (ctx := _)
+      (expression1 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
+      (expression2 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
   )
 
 -- pred_in2 [x : set univ] {
@@ -131,9 +131,9 @@ def pred_in1 :=
 -- }
 def pred_in2 :=
   @Term.lam _ _ _ [] _ (
-    Term.in
-      (Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
-      (Term.rel (@vars.UNIV ThoR_TupleSet _ _))
+    Term.in (ctx := _)
+      (expression1 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
+      (expression2 := Term.rel (@vars.UNIV ThoR_TupleSet _ _))
   )
 
 -- pred_in1[univ]
@@ -154,9 +154,9 @@ example : (Term.app (@pred_in2 ThoR_TupleSet _ _) (Term.rel (@vars.UNIV ThoR_Tup
 def pred_in3 :=
   @Term.lam ThoR_TupleSet _ (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) [] _ (
     @Term.lam ThoR_TupleSet _ (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) _ _ (
-      Term.in
-        (Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
-        (Term.rel (@vars.UNIV ThoR_TupleSet _ _))
+      Term.in (ctx := _)
+        (expression1 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
+        (expression2 := Term.rel (@vars.UNIV ThoR_TupleSet _ _))
     )
   )
 

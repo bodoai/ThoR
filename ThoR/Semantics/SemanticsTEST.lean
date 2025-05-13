@@ -12,8 +12,8 @@ namespace  predtest
   class  vars
     (  ThoR_TupleSet  :  Type  )
     [  ThoR.TupleSet  ThoR_TupleSet  ]  where
-      (  this_φ_a  :  Rel (RelType.mk.sig R Shared.mult.set) )
-      (  this_φ_b  :  Rel (RelType.mk.sig R Shared.mult.set) )
+      (  this_φ_a  :  Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set) )
+      (  this_φ_b  :  Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set) )
 
   end  predtest
 
@@ -28,6 +28,12 @@ namespace  predtest
     [  ThoR.TupleSet  ThoR_TupleSet  ]
     [  predtest.vars  ThoR_TupleSet  ]
 
+-- @[default_instance]
+-- instance : ThoR.TupleSet ThoR_TupleSet := by sorry
+
+-- @[default_instance]
+-- instance : vars ThoR_TupleSet := by sorry
+
   /-
   pred p1 {
     a in b
@@ -37,8 +43,8 @@ namespace  predtest
     {  ThoR_TupleSet  :  Type  }
     [  ThoR.TupleSet  ThoR_TupleSet  ]
     [  predtest.vars  ThoR_TupleSet  ]  :=
-      Term.in
-        (Term.rel (  ∻  predtest.vars.this_φ_a  ))
-        (Term.rel (  ∻  predtest.vars.this_φ_a  ))
+      Term.in (R := ThoR_TupleSet)
+        (expression1 := Term.rel (  ∻ predtest.vars.this_φ_a))
+        (expression2 := Term.rel (  ∻ predtest.vars.this_φ_a))
 
 end  predtest.preds
