@@ -50,13 +50,13 @@ variable (R : Type) [TupleSet R]
     --| iden
 
     /- binary expression operators -/
-    | union {n : ℕ} {t1 t2 : RelType R n} : Term ctx (.expression t1) → Term ctx (.expression t2)  → Term ctx (.expression (t1 & t2))
+    | union {n : ℕ} {t1 t2 : RelType R n} : Term ctx (.expression t1) → Term ctx (.expression t2)  → Term ctx (.expression (t1 + t2))
     | intersect {n : ℕ} {t1 t2 : RelType R n} : Term ctx (.expression t1) → Term ctx (.expression t2)  → Term ctx (.expression (t1 & t2))
-    | difference {n : ℕ} {t1 t2 : RelType R n} : Term ctx (.expression t1) → Term ctx (.expression t2)  → Term ctx (.expression (t1 & t2))
-    | overwrite {n : ℕ} {t1 t2 : RelType R n} : Term ctx (.expression t1) → Term ctx (.expression t2)  → Term ctx (.expression (t1 & t2))
-    | domain_restriction {n : ℕ} {t1 t2 : RelType R n} : Term ctx (.expression t1) → Term ctx (.expression t2)  → Term ctx (.expression (t1 & t2))
-    | range_restriction {n : ℕ} {t1 t2 : RelType R n} : Term ctx (.expression t1) → Term ctx (.expression t2)  → Term ctx (.expression (t1 & t2))
-    | dotjoin {n : ℕ} {t1 t2 : RelType R n} : Term ctx (.expression t1) → Term ctx (.expression t2)  → Term ctx (.expression (t1 & t2))
+    | difference {n : ℕ} {t1 t2 : RelType R n} : Term ctx (.expression t1) → Term ctx (.expression t2)  → Term ctx (.expression (t1 - t2))
+    | overwrite {n : ℕ} {t1 t2 : RelType R n} : Term ctx (.expression t1) → Term ctx (.expression t2)  → Term ctx (.expression (t1 ++ t2))
+    | domain_restriction {n : ℕ} {t1 : RelType R 1} {t2 : RelType R n}: Term ctx (.expression t1) → Term ctx (.expression t2)  → Term ctx (.expression (t1 <: t2))
+    | range_restriction {n : ℕ} {t1 : RelType R n} {t2 : RelType R 1}: Term ctx (.expression t1) → Term ctx (.expression t2)  → Term ctx (.expression (t1 :> t2))
+    | dotjoin {n m : ℕ} {t1 : RelType R (n+1)} {t2 : RelType R (m+2)}: Term ctx (.expression t1) → Term ctx (.expression t2)  → Term ctx (.expression (t1 ⋈ t2))
 
     /- unary expression operators -/
     | transclos {t : RelType R 2} : Term ctx (.expression t) → Term ctx (.expression (^ t))
@@ -69,10 +69,10 @@ variable (R : Type) [TupleSet R]
     /- function call from expression ? -/
     --| call -- skip ?
 
-    /- application of argument to call ? -/
+    /- function application / application of argument to call ? -/
     | app   : Term ctx (.function dom ran) → Term ctx dom → Term ctx ran
 
-    /- ?? -/
+    /- function abstraction -/
     | lam   : Term (dom :: ctx) ran → Term ctx (.function dom ran)
 
     /- algebra expression number -/
@@ -137,7 +137,7 @@ variable (R : Type) [TupleSet R]
     | .var t h => env.get h
 
     | .intersect r1 r2 => (r1.eval env) & (r2.eval env)
-    | .union r1 r2 => (r1.eval env) + (r2.eval env)
+    | .union r1 r2 => HAdd.hAdd (r1.eval env) (r2.eval env)
     | .difference r1 r2 => (r1.eval env) - (r2.eval env)
     | .overwrite r1 r2 => (r1.eval env) ++ (r2.eval env)
     | .domain_restriction r1 r2 => (r1.eval env) <: (r2.eval env)
