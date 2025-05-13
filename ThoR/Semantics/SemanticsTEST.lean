@@ -35,6 +35,7 @@ namespace  predtest
 -- instance : vars ThoR_TupleSet := by sorry
 
   /-
+  create a predicate
   pred p1 {
     a in b
   }
@@ -46,5 +47,18 @@ namespace  predtest
       Term.in (R := ThoR_TupleSet)
         (expression1 := Term.rel (  ∻ predtest.vars.this_φ_a))
         (expression2 := Term.rel (  ∻ predtest.vars.this_φ_a))
+
+
+  /-
+  call another predicate
+  pred p2 {
+    p1
+  }
+  -/
+  def  p2
+    {  ThoR_TupleSet  :  Type  }
+    [  ThoR.TupleSet  ThoR_TupleSet  ]
+    [  predtest.vars  ThoR_TupleSet  ]  :=
+      ∻ p1
 
 end  predtest.preds
