@@ -46,7 +46,7 @@ namespace  predtest
     [  predtest.vars  ThoR_TupleSet  ]  :=
       Term.in (R := ThoR_TupleSet)
         (expression1 := Term.rel (  ∻ predtest.vars.this_φ_a))
-        (expression2 := Term.rel (  ∻ predtest.vars.this_φ_a))
+        (expression2 := Term.rel (  ∻ predtest.vars.this_φ_b))
 
 
   /-
@@ -62,3 +62,25 @@ namespace  predtest
       ∻ p1
 
 end  predtest.preds
+
+namespace  predtest.functions
+
+  variable
+  {  ThoR_TupleSet  :  Type  }
+  [  ThoR.TupleSet  ThoR_TupleSet  ]
+  [  predtest.vars  ThoR_TupleSet  ]
+
+  def  f1
+    {  ThoR_TupleSet  :  Type  }
+    [  ThoR.TupleSet  ThoR_TupleSet  ]
+    [  predtest.vars  ThoR_TupleSet  ]
+    :  Rel (∻ predtest.vars.this_φ_b).getType  :=
+    cast  ( ∻ predtest.vars.this_φ_b  ) predtest.vars.this_φ_b
+
+  end  predtest.functions
+
+  def  predtest.preds.p3
+    {  ThoR_TupleSet  :  Type  }
+    [  ThoR.TupleSet  ThoR_TupleSet  ]
+    [  predtest.vars  ThoR_TupleSet  ]
+    :=  (  ∻  predtest.functions.f1  )
