@@ -165,3 +165,15 @@ example : (Term.app (Term.app (@pred_in3 ThoR_TupleSet _ _) (Term.rel (@vars.UNI
   simp [Term.eval]
   simp [HList.get]
   apply Set.subset_refl
+
+-- fun1 [x : set univ, y : set univ] : univ {
+--    x & y
+-- }
+def fun1 :=
+  @Term.lam ThoR_TupleSet _ (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) [] _ (
+    @Term.lam ThoR_TupleSet _ (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) _ _ (
+      Term.intersect
+        (Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
+        (Term.rel (@vars.UNIV ThoR_TupleSet _ _))
+    )
+  )
