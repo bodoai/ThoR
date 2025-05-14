@@ -141,7 +141,7 @@ variable (R : Type) [TupleSet R]
     /- function application / application of argument to call ? -/
     | app
       : Term (.function t ran) →
-        (Rel t) →
+        Term (.expression t) →
         Term ran
 
     /- algebra expression number -/
@@ -328,7 +328,7 @@ variable (R : Type) [TupleSet R]
       -- | .name _ t => t.eval
 
       | @Term.lam R _ _ _ t f => λ (x : Rel t) => (f x).eval
-      | .app f r => f.eval r
+      | .app f r => f.eval r.eval
 
       | .number z => z
 
@@ -436,9 +436,9 @@ def pred_in1 :=
     --     Term ran
 
 #check (pred_in1 ThoR_TupleSet)
-#check (Term.app (pred_in1 ThoR_TupleSet) (@vars.UNIV ThoR_TupleSet _ _)).eval
+#check (Term.app (pred_in1 ThoR_TupleSet) (Term.global_rel_var (@vars.UNIV ThoR_TupleSet _ _) "UNIV")).eval
 -- pred_in1[univ]
-example : (Term.app (pred_in1 ThoR_TupleSet) (@vars.UNIV ThoR_TupleSet _ _)).eval := by
+example : (Term.app (pred_in1 ThoR_TupleSet) (Term.global_rel_var (@vars.UNIV ThoR_TupleSet _ _) "UNIV")).eval := by
   dsimp [Term.eval]
   apply Set.subset_refl
 
@@ -479,3 +479,29 @@ example : (Term.app (pred_in1 ThoR_TupleSet) (@vars.UNIV ThoR_TupleSet _ _)).eva
 --         (Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")
 --     )
 --   )
+
+
+def fun_union1 :=
+    Term.lam (
+      λ (r : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
+        Term.union
+          (Term.local_rel_var r)
+          (Term.local_rel_var r)
+    )
+
+#check (Term.app (fun_union1 ThoR_TupleSet) (Term.global_rel_var (@vars.UNIV ThoR_TupleSet _ _) "UNIV")).eval
+-- pred_in1[univ]
+example : (Term.app (fun_union1 ThoR_TupleSet) (Term.global_rel_var (@vars.UNIV ThoR_TupleSet _ _) "UNIV")).eval =  (@vars.UNIV ThoR_TupleSet _ _) + (@vars.UNIV ThoR_TupleSet _ _) := by
+  dsimp [Term.eval]
+
+def fun_union_union :=
+    Term.lam (
+      λ (r : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
+        Term.union
+          (Term.app (fun_union1 ThoR_TupleSet) (Term.local_rel_var r))
+          (Term.app (fun_union1 ThoR_TupleSet) (Term.local_rel_var r))
+    )
+#check (Term.app (fun_union_union ThoR_TupleSet) (Term.global_rel_var (@vars.UNIV ThoR_TupleSet _ _) "UNIV")).eval
+
+example : (Term.app (fun_union_union ThoR_TupleSet) (Term.global_rel_var (@vars.UNIV ThoR_TupleSet _ _) "UNIV")).eval = ((@vars.UNIV ThoR_TupleSet _ _) + (@vars.UNIV ThoR_TupleSet _ _)) + ((@vars.UNIV ThoR_TupleSet _ _) + (@vars.UNIV ThoR_TupleSet _ _)) := by
+  dsimp [Term.eval]
