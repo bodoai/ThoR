@@ -9,25 +9,16 @@ import ThoR.Relation.Quantification
 import ThoR.Relation.Rel
 -- import ThoR.Relation.Elab
 
-import ThoR.Semantics.HList
-
 namespace ThoR.Semantics
 
 variable (R : Type) [TupleSet R]
-
---   | cons : β i → HList β is → HList β (i::is)
-
-  inductive HFunc {return_type : Type w} {α : Type v} (β : α → Type u): List α → Type (max u v w) where
-    | const : return_type → HFunc β []
-    | abstraction : (β i → HFunc β is) → HFunc β (i::is)
-    | application : HFunc β (i::is) → β i → HFunc β is
 
 -- construction follows https://lean-lang.org/documentation/examples/debruijn/
   inductive Ty {R : Type} [TupleSet R] : Type u where
     | number -- ℤ
     | formula -- Prop
     | expression : {n : ℕ} → (rel_type : RelType R n) → Ty -- Rel rel_type
-    | function : Ty → Ty → Ty -- type1.eval → type2.eval
+    | function : {n : ℕ} → (t : RelType R n) → Ty → Ty -- type1.eval → type2.eval
 
   inductive Marker : Type u where
     | alloy_predicate
@@ -39,21 +30,17 @@ variable (R : Type) [TupleSet R]
     | number => ℤ
     | formula => Prop
     | expression rel_type => Rel rel_type
-    | function dom ran => dom.eval → ran.eval
+    | Ty.function dom_rel_type ran => Rel dom_rel_type → ran.eval
 
   inductive Term
     {R : Type}
     [TupleSet R]
-    : List (@Ty R _) →
-      (@Ty R _) →
+    : (@Ty R _) →
       Type u
       where
 
     /- ?? expr string ?? fromula string ?? -/
-    | rel {n : ℕ} {t : RelType R n} (r : Rel t) (name : String): Term ctx (.expression t)
-
-    /- ?? -/
-    | var : (ty : @Ty R _) → Member ty ctx → Term ctx ty
+    | rel {n : ℕ} {t : RelType R n} (r : Rel t) (name : String): Term (.expression t)
 
     /- expression constants -/
     --| univ
@@ -64,246 +51,243 @@ variable (R : Type) [TupleSet R]
     | union
       {n : ℕ}
       {t1 t2 : RelType R n}
-      : Term ctx (.expression t1) →
-        Term ctx (.expression t2) →
-        Term ctx (.expression (t1 + t2))
+      : Term (.expression t1) →
+        Term (.expression t2) →
+        Term (.expression (t1 + t2))
 
     | intersect
       {n : ℕ}
       {t1 t2 : RelType R n}
-      : Term ctx (.expression t1) →
-        Term ctx (.expression t2) →
-        Term ctx (.expression (t1 & t2))
+      : Term (.expression t1) →
+        Term (.expression t2) →
+        Term (.expression (t1 & t2))
 
     | difference
       {n : ℕ}
       {t1 t2 : RelType R n}
-      : Term ctx (.expression t1) →
-        Term ctx (.expression t2) →
-        Term ctx (.expression (t1 - t2))
+      : Term (.expression t1) →
+        Term (.expression t2) →
+        Term (.expression (t1 - t2))
 
     | overwrite
       {n : ℕ}
       {t1 t2 : RelType R n}
-      : Term ctx (.expression t1) →
-        Term ctx (.expression t2) →
-        Term ctx (.expression (t1 ++ t2))
+      : Term (.expression t1) →
+        Term (.expression t2) →
+        Term (.expression (t1 ++ t2))
 
     | domain_restriction
       {n : ℕ}
       {t1 : RelType R 1}
       {t2 : RelType R n}
-      : Term ctx (.expression t1) →
-        Term ctx (.expression t2) →
-        Term ctx (.expression (t1 <: t2))
+      : Term (.expression t1) →
+        Term (.expression t2) →
+        Term (.expression (t1 <: t2))
 
     | range_restriction
       {n : ℕ}
       {t1 : RelType R n}
       {t2 : RelType R 1}
-      : Term ctx (.expression t1) →
-        Term ctx (.expression t2) →
-        Term ctx (.expression (t1 :> t2))
+      : Term (.expression t1) →
+        Term (.expression t2) →
+        Term (.expression (t1 :> t2))
 
     | dotjoin
       {n m : ℕ}
       {t1 : RelType R (n+1)}
       {t2 : RelType R (m+2)}
-      : Term ctx (.expression t1) →
-        Term ctx (.expression t2) →
-        Term ctx (.expression (t1 ⋈ t2))
+      : Term (.expression t1) →
+        Term (.expression t2) →
+        Term (.expression (t1 ⋈ t2))
 
     /- unary expression operators -/
     | transclos
       {t : RelType R 2}
-      : Term ctx (.expression t) →
-        Term ctx (.expression (^ t))
+      : Term (.expression t) →
+        Term (.expression (^ t))
 
     | reflexive_closure
       {t : RelType R 2}
-      : Term ctx (.expression t) →
-        Term ctx (.expression (* t))
+      : Term (.expression t) →
+        Term (.expression (* t))
 
     | transposition
       {t : RelType R 2}
-      : Term ctx (.expression t) →
-        Term ctx (.expression (~ t))
+      : Term (.expression t) →
+        Term (.expression (~ t))
 
     /- expression if else -/
     | if_then_else
       {n : ℕ}
       {t1 t2 : RelType R n}
-      : Term ctx .formula →
-        Term ctx (.expression t1) →
-        Term ctx (.expression t2) →
-        Term ctx (.expression (RelType.ifThenElse t1 t2))
+      : Term .formula →
+        Term (.expression t1) →
+        Term (.expression t2) →
+        Term (.expression (RelType.ifThenElse t1 t2))
 
     /- function call from expression ? -/
     --| call -- skip ?
 
-    /- function application / application of argument to call ? -/
-    | app
-      : Term ctx (.function dom ran) →
-        Term ctx dom →
-        Term ctx ran
-
-    | pred_def : Term ctx ty → Term ctx ty
-    -- | marker : Marker → Term ctx ty → Term ctx ty
-    -- | name : String → Term ctx ty → Term ctx ty
+    | pred_def : Term ty → Term ty
+    -- | marker : Marker → Term ty → Term ty
+    -- | name : String → Term ty → Term ty
 
     /- function abstraction -/
-    | lam
-      : Term (dom :: ctx) ran →
-        Term ctx (.function dom ran)
+    | lam {t : RelType R n}
+      : (Rel t → Term ran) →
+        Term (.function t ran)
+
+    /- function application / application of argument to call ? -/
+    | app
+      : Term (.function t ran) →
+        (Rel t) →
+        Term ran
 
     /- algebra expression number -/
-    | number (z : ℤ) : Term ctx .number -- may have to be from N
+    | number (z : ℤ) : Term .number -- may have to be from N
 
     /- algebra expression unary operation -/
-    | negation : Term ctx .number → Term ctx .number
+    | negation : Term .number → Term .number
 
     /- algebra expression binary operation -/
     | add
-      : Term ctx .number →
-      Term ctx .number →
-      Term ctx .number
+      : Term .number →
+      Term .number →
+      Term .number
 
     | sub
-      : Term ctx .number →
-      Term ctx .number →
-      Term ctx .number
+      : Term .number →
+      Term .number →
+      Term .number
 
     | mul
-      : Term ctx .number →
-        Term ctx .number →
-        Term ctx .number
+      : Term .number →
+        Term .number →
+        Term .number
 
     | div
-      : Term ctx .number →
-        Term ctx .number →
-        Term ctx .number
+      : Term .number →
+        Term .number →
+        Term .number
 
     | rem
-      : Term ctx .number →
-        Term ctx .number →
-        Term ctx .number
+      : Term .number →
+        Term .number →
+        Term .number
 
     /- algebra expression card operation (rel operation)-/
     | card
       {n : ℕ}
       {t : RelType R n}
-      : Term ctx (.expression t) →
-        Term ctx .number
+      : Term (.expression t) →
+        Term .number
 
     /- formula unary rel bool operator-/
     | no
       {n : ℕ}
       {t : RelType R n}
-      : Term ctx (.expression t) →
-        Term ctx .formula
+      : Term (.expression t) →
+        Term .formula
 
     | one
       {n : ℕ}
       {t : RelType R n}
-      : Term ctx (.expression t) →
-        Term ctx .formula
+      : Term (.expression t) →
+        Term .formula
 
     | lone
       {n : ℕ}
       {t : RelType R n}
-      : Term ctx (.expression t) →
-        Term ctx .formula
+      : Term (.expression t) →
+        Term .formula
 
     | some
       {n : ℕ}
       {t : RelType R n}
-      : Term ctx (.expression t) →
-        Term ctx .formula
+      : Term (.expression t) →
+        Term .formula
 
     /- formula unary logic operator -/
-    | not : Term ctx .formula → Term ctx .formula
+    | not : Term .formula → Term .formula
 
     /- formula binary logic operator -/
     | or
-      : Term ctx .formula →
-        Term ctx .formula →
-        Term ctx .formula
+      : Term .formula →
+        Term .formula →
+        Term .formula
 
     | and
-      : Term ctx .formula →
-        Term ctx .formula →
-        Term ctx .formula
+      : Term .formula →
+        Term .formula →
+        Term .formula
 
     | implication
-      : Term ctx .formula →
-        Term ctx .formula →
-        Term ctx .formula
+      : Term .formula →
+        Term .formula →
+        Term .formula
 
     | equivalent
-      : Term ctx .formula →
-        Term ctx .formula →
-        Term ctx .formula
+      : Term .formula →
+        Term .formula →
+        Term .formula
 
     /- formula if else-/
     | f_if_then_else
-      : Term ctx .formula →
-        Term ctx .formula →
-        Term ctx .formula →
-        Term ctx .formula
+      : Term .formula →
+        Term .formula →
+        Term .formula →
+        Term .formula
 
     /- formula algebraic comparison operator -/
     | algebraic_leq
-      : Term ctx .number →
-        Term ctx .number →
-        Term ctx .formula
+      : Term .number →
+        Term .number →
+        Term .formula
 
     | algebraic_geq
-      : Term ctx .number →
-        Term ctx .number →
-        Term ctx .formula
+      : Term .number →
+        Term .number →
+        Term .formula
 
     | algebraic_eq
-      : Term ctx .number →
-        Term ctx .number →
-        Term ctx .formula
+      : Term .number →
+        Term .number →
+        Term .formula
 
     | algebraic_lt
-      : Term ctx .number →
-        Term ctx .number →
-        Term ctx .formula
+      : Term .number →
+        Term .number →
+        Term .formula
 
     | algebraic_gt
-      : Term ctx .number →
-        Term ctx .number →
-        Term ctx .formula
+      : Term .number →
+        Term .number →
+        Term .formula
 
     /- formula relation comparison operation -/
     | in
       {n : ℕ}
       {t1 t2 : RelType R n}
-      (ctx : List (@Ty R _) := [])
-      : (expression1 : Term ctx (.expression t1)) →
-        (expression2 : Term ctx (.expression t2)) →
-        Term ctx .formula
+      : (expression1 : Term (.expression t1)) →
+        (expression2 : Term (.expression t2)) →
+        Term .formula
 
     | eq
       {n : ℕ}
       {t1 t2 : RelType R n}
-      (ctx : List (@Ty R _) := [])
-      : (expression1 : Term ctx (.expression t1)) →
-        (expression2 : Term ctx (.expression t2)) →
-        Term ctx .formula
+      : (expression1 : Term (.expression t1)) →
+        (expression2 : Term (.expression t2)) →
+        Term .formula
 
     | neq
       {n : ℕ}
       {t1 t2 : RelType R n}
-      (ctx : List (@Ty R _) := [])
-      : (expression1 : Term ctx (.expression t1)) →
-        (expression2 : Term ctx (.expression t2)) →
-        Term ctx .formula
+      : (expression1 : Term (.expression t1)) →
+        (expression2 : Term (.expression t2)) →
+        Term .formula
 
     /- formula quantification -/
-    -- | q_all {n : ℕ} {t : RelType R n} : Term ctx (.function (.expression t) ran) → Term ctx .formula -- (f : (Rel t) → Formula): Formula
+    -- | q_all {n : ℕ} {t : RelType R n} : Term (.function (.expression t) ran) → Term .formula -- (f : (Rel t) → Formula): Formula
 
     /- formula let declaration ? -/
     -- | let
@@ -314,87 +298,83 @@ variable (R : Type) [TupleSet R]
   def Term.eval
     {R : Type}
     [TupleSet R]
-    {ctx: List (@Ty R _)}
     {ty : @Ty R _}
-    (t : @Term R _ ctx ty)
-    (env : HList Ty.eval ctx)
+    (t : @Term R _ ty)
     : ty.eval :=
       match t with
       | .rel r _ => r
 
-      | .var t h => env.get h
-
       /- binary expression operators -/
-      | .intersect r1 r2 => (r1.eval env) & (r2.eval env)
-      | .union r1 r2 => HAdd.hAdd (r1.eval env) (r2.eval env)
-      | .difference r1 r2 => (r1.eval env) - (r2.eval env)
-      | .overwrite r1 r2 => (r1.eval env) ++ (r2.eval env)
-      | .domain_restriction r1 r2 => (r1.eval env) <: (r2.eval env)
-      | .range_restriction r1 r2 => (r1.eval env) :> (r2.eval env)
-      | .dotjoin r1 r2 => (r1.eval env) ⋈ (r2.eval env)
+      | .intersect r1 r2 => (r1.eval) & (r2.eval)
+      | .union r1 r2 => HAdd.hAdd (r1.eval) (r2.eval)
+      | .difference r1 r2 => (r1.eval) - (r2.eval)
+      | .overwrite r1 r2 => (r1.eval) ++ (r2.eval)
+      | .domain_restriction r1 r2 => (r1.eval) <: (r2.eval)
+      | .range_restriction r1 r2 => (r1.eval) :> (r2.eval)
+      | .dotjoin r1 r2 => (r1.eval) ⋈ (r2.eval)
 
       /- unary expression operators -/
-      | .transclos r => ^ (r.eval env)
-      | .reflexive_closure  r => * (r.eval env)
-      | .transposition r => ~ (r.eval env)
+      | .transclos r => ^ (r.eval)
+      | .reflexive_closure  r => * (r.eval)
+      | .transposition r => ~ (r.eval)
 
       /- expression if else -/
-      | .if_then_else f r1 r2 => HIfThenElse.hIfThenElse (f.eval env) (r1.eval env) (r2.eval env)
+      | .if_then_else f r1 r2 => HIfThenElse.hIfThenElse (f.eval) (r1.eval) (r2.eval)
 
-      | .pred_def t => t.eval env
-      -- | .marker _ t => t.eval env
-      -- | .name _ t => t.eval env
+      | .pred_def t => t.eval
+      -- | .marker _ t => t.eval
+      -- | .name _ t => t.eval
 
-      | .lam b => λ x => b.eval (x :: env)
-      | .app f a => f.eval env (a.eval env)
+      | @Term.lam R _ _ _ t f => λ (x : Rel t) => (f x).eval
+      | .app f r => f.eval r
 
       | .number z => z
 
       /- algebra expression unary operation -/
-      | .negation z => - (z.eval env)
+      | .negation z => - (z.eval)
 
       /- algebra expression binary operation -/
-      | .add z1 z2 => (z1.eval env) + (z2.eval env)
-      | .sub z1 z2 => (z1.eval env) - (z2.eval env)
-      | .div z1 z2 => (z1.eval env) / (z2.eval env)
-      | .mul z1 z2 => (z1.eval env) * (z2.eval env)
-      | .rem z1 z2 => (z1.eval env) % (z2.eval env)
+      | .add z1 z2 => (z1.eval) + (z2.eval)
+      | .sub z1 z2 => (z1.eval) - (z2.eval)
+      | .div z1 z2 => (z1.eval) / (z2.eval)
+      | .mul z1 z2 => (z1.eval) * (z2.eval)
+      | .rem z1 z2 => (z1.eval) % (z2.eval)
 
       /- algebra expression card operation (rel operation)-/
-      | .card r => Card.card (r.eval env)
+      | .card r => Card.card (r.eval)
 
       /- formula unary rel bool operator-/
-      | .no r => SetMultPredicates.no (r.eval env)
-      | .one r => SetMultPredicates.one (r.eval env)
-      | .lone r => SetMultPredicates.lone (r.eval env)
-      | .some r => SetMultPredicates.some (r.eval env)
+      | .no r => SetMultPredicates.no (r.eval)
+      | .one r => SetMultPredicates.one (r.eval)
+      | .lone r => SetMultPredicates.lone (r.eval)
+      | .some r => SetMultPredicates.some (r.eval)
 
       /- formula unary logic operator -/
-      | .not f => ¬ (f.eval env)
+      | .not f => ¬ (f.eval)
 
       /- formula binary logic operator -/
-      | .or f1 f2 => (f1.eval env) ∨ (f2.eval env)
-      | .and f1 f2 => (f1.eval env) ∧ (f2.eval env)
-      | .implication f1 f2 => (f1.eval env) → (f2.eval env)
-      | .equivalent f1 f2 => (f1.eval env) = (f2.eval env)
+      | .or f1 f2 => (f1.eval) ∨ (f2.eval)
+      | .and f1 f2 => (f1.eval) ∧ (f2.eval)
+      | .implication f1 f2 => (f1.eval) → (f2.eval)
+      | .equivalent f1 f2 => (f1.eval) = (f2.eval)
 
       /- formula if else -/
       | .f_if_then_else f1 f2 f3 =>
-        ((f1.eval env) -> (f2.eval env)) ∧ (¬ (f1.eval env) → (f2.eval env))
+        ((f1.eval) -> (f2.eval)) ∧ (¬ (f1.eval) → (f2.eval))
 
       /- formula algebraic comparison operator -/
-      | .algebraic_leq z1 z2 => (z1.eval env) <= (z2.eval env)
-      | .algebraic_geq z1 z2 => (z1.eval env) >= (z2.eval env)
-      | .algebraic_lt z1 z2 => (z1.eval env) < (z2.eval env)
-      | .algebraic_gt z1 z2 => (z1.eval env) > (z2.eval env)
-      | .algebraic_eq z1 z2 => (z1.eval env) = (z2.eval env)
+      | .algebraic_leq z1 z2 => (z1.eval) <= (z2.eval)
+      | .algebraic_geq z1 z2 => (z1.eval) >= (z2.eval)
+      | .algebraic_lt z1 z2 => (z1.eval) < (z2.eval)
+      | .algebraic_gt z1 z2 => (z1.eval) > (z2.eval)
+      | .algebraic_eq z1 z2 => (z1.eval) = (z2.eval)
 
       /- formula relation comparison operation -/
-      | .in _ r1 r2 => (r1.eval env) ⊂ (r2.eval env)
-      | .eq _ r1 r2 => (r1.eval env) ≡ (r2.eval env)
-      | .neq _ r1 r2 => (r1.eval env) ≢  (r2.eval env)
+      | .in r1 r2 => (r1.eval) ⊂ (r2.eval)
+      | .eq r1 r2 => (r1.eval) ≡ (r2.eval)
+      | .neq r1 r2 => (r1.eval) ≢  (r2.eval)
 
-      -- | q_all {n : ℕ} {t : RelType R n} : Term ctx (.function (.expression t) ran) → Term ctx .formula -- (f : (Rel t) → Formula): Formula
+      -- | q_all {n : ℕ} {t : RelType R n} : Term (.function (.expression t) ran) → Term .formula -- (f : (Rel t) → Formula): Formula
 
 end ThoR.Semantics
 
@@ -423,71 +403,77 @@ instance : ThoR.TupleSet ThoR_TupleSet := by sorry
 @[default_instance]
 instance : vars ThoR_TupleSet := by sorry
 
+
 -- pred_in1 [x : set univ] {
 --    x in x
 -- }
 def pred_in1 :=
-  @Term.pred_def ThoR_TupleSet _ [] _ (
+  Term.pred_def (
   -- @Term.marker ThoR_TupleSet _ [] _ Marker.alloy_predicate (
   --   @Term.name ThoR_TupleSet _ _ _ "pred_in1" (
-      @Term.lam ThoR_TupleSet _ _ _ _ (
-        Term.in (ctx := _)
-          (expression1 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
-          (expression2 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
+      Term.lam (
+        λ (r : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
+          Term.in
+            (expression1 := Term.rel r "r")
+            (expression2 := Term.rel r "r")
       )
-    -- )
-  )
+      )
 
--- pred_in2 [x : set univ] {
---    x in m/UNIV
--- }
-def pred_in2 :=
-  @Term.lam _ _ _ [] _ (
-    Term.in (ctx := _)
-      (expression1 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
-      (expression2 := Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")
-  )
+-- -- pred_in2 [x : set univ] {
+-- --    x in m/UNIV
+-- -- }
+-- def pred_in2 :=
+--   @Term.lam _ _ _ [] _ (
+--     Term.in (:= _)
+--       (expression1 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
+--       (expression2 := Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")
+--   )
+    -- | app
+    --   : Term (.function t ran) →
+    --     (Rel t) →
+    --     Term ran
 
+#check (pred_in1 ThoR_TupleSet)
+#check (Term.app (pred_in1 ThoR_TupleSet) (@vars.UNIV ThoR_TupleSet _ _)).eval
 -- pred_in1[univ]
-example : (Term.app (@pred_in1 ThoR_TupleSet _) (Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")).eval [] := by
+example : (Term.app (pred_in1 ThoR_TupleSet) (@vars.UNIV ThoR_TupleSet _ _)).eval := by
   dsimp [Term.eval]
-  simp [HList.get]
   apply Set.subset_refl
 
--- pred_in2[univ]
-example : (Term.app (@pred_in2 ThoR_TupleSet _ _) (Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")).eval [] := by
-  dsimp [Term.eval]
-  dsimp [HList.get]
-  apply Set.subset_refl
+-- -- pred_in2[univ]
+-- example : (Term.app (@pred_in2 ThoR_TupleSet _ _) (Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")).eval [] := by
+--   dsimp [Term.eval]
+--   dsimp [HList.get]
+--   apply Set.subset_refl
 
--- pred_in3 [x : set univ, y : set univ] {
---    x in y
--- }
---
--- ctx = [head, tail.head] entspricht [y, x]
-def pred_in3 :=
-  @Term.lam ThoR_TupleSet _ (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) [] _ (
-    @Term.lam ThoR_TupleSet _ (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) _ _ (
-      Term.in (ctx := _)
-        (expression1 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.tail Member.head))  -- deBruijn-Index 1 -> x
-        (expression2 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head)) -- deBruijn-Index 0 -> y
-    )
-  )
+-- -- pred_in3 [x : set univ, y : set univ] {
+-- --    x in y
+-- -- }
+-- --
+-- -- = [head, tail.head] entspricht [y, x]
+-- def pred_in3 :=
+--   @Term.lam ThoR_TupleSet _ (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) [] _ (
+--     @Term.lam ThoR_TupleSet _ (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) _ _ (
+--       Term.in (:= _)
+--         (expression1 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.tail Member.head))  -- deBruijn-Index 1 -> x
+--         (expression2 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head)) -- deBruijn-Index 0 -> y
+--     )
+--   )
 
--- pred_in3[univ,univ]
-example : (Term.app (Term.app (@pred_in3 ThoR_TupleSet _) (Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")) (Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")).eval [] := by
-  dsimp [Term.eval]
-  dsimp [HList.get]
-  apply Set.subset_refl
+-- -- pred_in3[univ,univ]
+-- example : (Term.app (Term.app (@pred_in3 ThoR_TupleSet _) (Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")) (Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")).eval [] := by
+--   dsimp [Term.eval]
+--   dsimp [HList.get]
+--   apply Set.subset_refl
 
--- fun1 [x : set univ, y : set univ] : univ {
---    x & y
--- }
-def fun1 :=
-  @Term.lam ThoR_TupleSet _ (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) [] _ (
-    @Term.lam ThoR_TupleSet _ (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) _ _ (
-      Term.intersect
-        (Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
-        (Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")
-    )
-  )
+-- -- fun1 [x : set univ, y : set univ] : univ {
+-- --    x & y
+-- -- }
+-- def fun1 :=
+--   @Term.lam ThoR_TupleSet _ (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) [] _ (
+--     @Term.lam ThoR_TupleSet _ (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) _ _ (
+--       Term.intersect
+--         (Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
+--         (Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")
+--     )
+--   )
