@@ -29,6 +29,10 @@ variable (R : Type) [TupleSet R]
     | expression : {n : ℕ} → (rel_type : RelType R n) → Ty -- Rel rel_type
     | function : Ty → Ty → Ty -- type1.eval → type2.eval
 
+  inductive Marker : Type u where
+    | alloy_predicate
+    | alloy_function
+
   @[reducible]
   def Ty.eval {R : Type} [TupleSet R] (ty : @Ty R _) :=
     match ty with
@@ -46,7 +50,7 @@ variable (R : Type) [TupleSet R]
       where
 
     /- ?? expr string ?? fromula string ?? -/
-    | rel {n : ℕ} {t : RelType R n} (r : Rel t) : Term ctx (.expression t)
+    | rel {n : ℕ} {t : RelType R n} (r : Rel t) (name : String): Term ctx (.expression t)
 
     /- ?? -/
     | var : (ty : @Ty R _) → Member ty ctx → Term ctx ty
@@ -142,6 +146,10 @@ variable (R : Type) [TupleSet R]
       : Term ctx (.function dom ran) →
         Term ctx dom →
         Term ctx ran
+
+    | pred_def : Term ctx ty → Term ctx ty
+    -- | marker : Marker → Term ctx ty → Term ctx ty
+    -- | name : String → Term ctx ty → Term ctx ty
 
     /- function abstraction -/
     | lam
@@ -312,7 +320,7 @@ variable (R : Type) [TupleSet R]
     (env : HList Ty.eval ctx)
     : ty.eval :=
       match t with
-      | .rel r => r
+      | .rel r _ => r
 
       | .var t h => env.get h
 
@@ -332,6 +340,10 @@ variable (R : Type) [TupleSet R]
 
       /- expression if else -/
       | .if_then_else f r1 r2 => HIfThenElse.hIfThenElse (f.eval env) (r1.eval env) (r2.eval env)
+
+      | .pred_def t => t.eval env
+      -- | .marker _ t => t.eval env
+      -- | .name _ t => t.eval env
 
       | .lam b => λ x => b.eval (x :: env)
       | .app f a => f.eval env (a.eval env)
@@ -386,6 +398,17 @@ variable (R : Type) [TupleSet R]
 
 end ThoR.Semantics
 
+
+/-
+all disj x, y, z : r | ...
+
+->
+all disj x : r | all y : r | all z : r | ...
+
+
+-/
+
+
 open ThoR.Semantics
 open ThoR
 class vars (R : Type) [TupleSet R] where
@@ -404,50 +427,57 @@ instance : vars ThoR_TupleSet := by sorry
 --    x in x
 -- }
 def pred_in1 :=
-  @Term.lam ThoR_TupleSet _ _ [] _ (
-    Term.in (ctx := _)
-      (expression1 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
-      (expression2 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
+  @Term.pred_def ThoR_TupleSet _ [] _ (
+  -- @Term.marker ThoR_TupleSet _ [] _ Marker.alloy_predicate (
+  --   @Term.name ThoR_TupleSet _ _ _ "pred_in1" (
+      @Term.lam ThoR_TupleSet _ _ _ _ (
+        Term.in (ctx := _)
+          (expression1 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
+          (expression2 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
+      )
+    -- )
   )
 
 -- pred_in2 [x : set univ] {
---    x in univ
+--    x in m/UNIV
 -- }
 def pred_in2 :=
   @Term.lam _ _ _ [] _ (
     Term.in (ctx := _)
       (expression1 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
-      (expression2 := Term.rel (@vars.UNIV ThoR_TupleSet _ _))
+      (expression2 := Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")
   )
 
 -- pred_in1[univ]
-example : (Term.app (@pred_in1 ThoR_TupleSet _) (Term.rel (@vars.UNIV ThoR_TupleSet _ _))).eval [] := by
-  simp [Term.eval]
+example : (Term.app (@pred_in1 ThoR_TupleSet _) (Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")).eval [] := by
+  dsimp [Term.eval]
   simp [HList.get]
   apply Set.subset_refl
 
 -- pred_in2[univ]
-example : (Term.app (@pred_in2 ThoR_TupleSet _ _) (Term.rel (@vars.UNIV ThoR_TupleSet _ _))).eval [] := by
-  simp [Term.eval]
-  simp [HList.get]
+example : (Term.app (@pred_in2 ThoR_TupleSet _ _) (Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")).eval [] := by
+  dsimp [Term.eval]
+  dsimp [HList.get]
   apply Set.subset_refl
 
 -- pred_in3 [x : set univ, y : set univ] {
 --    x in y
 -- }
+--
+-- ctx = [head, tail.head] entspricht [y, x]
 def pred_in3 :=
   @Term.lam ThoR_TupleSet _ (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) [] _ (
     @Term.lam ThoR_TupleSet _ (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) _ _ (
       Term.in (ctx := _)
-        (expression1 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
-        (expression2 := Term.rel (@vars.UNIV ThoR_TupleSet _ _))
+        (expression1 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.tail Member.head))  -- deBruijn-Index 1 -> x
+        (expression2 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head)) -- deBruijn-Index 0 -> y
     )
   )
 
 -- pred_in3[univ,univ]
-example : (Term.app (Term.app (@pred_in3 ThoR_TupleSet _ _) (Term.rel (@vars.UNIV ThoR_TupleSet _ _))) (Term.rel (@vars.UNIV ThoR_TupleSet _ _))).eval [] := by
-  simp [Term.eval]
-  simp [HList.get]
+example : (Term.app (Term.app (@pred_in3 ThoR_TupleSet _) (Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")) (Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")).eval [] := by
+  dsimp [Term.eval]
+  dsimp [HList.get]
   apply Set.subset_refl
 
 -- fun1 [x : set univ, y : set univ] : univ {
@@ -458,6 +488,6 @@ def fun1 :=
     @Term.lam ThoR_TupleSet _ (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) _ _ (
       Term.intersect
         (Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
-        (Term.rel (@vars.UNIV ThoR_TupleSet _ _))
+        (Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")
     )
   )
