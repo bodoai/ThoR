@@ -40,7 +40,8 @@ variable (R : Type) [TupleSet R]
       where
 
     /- ?? expr string ?? fromula string ?? -/
-    | rel {n : ℕ} {t : RelType R n} (r : Rel t) (name : String): Term (.expression t)
+    | global_rel_var {n : ℕ} {t : RelType R n} (r : Rel t) (name : String): Term (.expression t)
+    | local_rel_var {n : ℕ} {t : RelType R n} (r : Rel t): Term (.expression t)
 
     /- expression constants -/
     --| univ
@@ -302,7 +303,8 @@ variable (R : Type) [TupleSet R]
     (t : @Term R _ ty)
     : ty.eval :=
       match t with
-      | .rel r _ => r
+      | .global_rel_var r _ => r
+      | .local_rel_var r => r
 
       /- binary expression operators -/
       | .intersect r1 r2 => (r1.eval) & (r2.eval)
@@ -414,8 +416,8 @@ def pred_in1 :=
       Term.lam (
         λ (r : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
           Term.in
-            (expression1 := Term.rel r "r")
-            (expression2 := Term.rel r "r")
+            (expression1 := Term.local_rel_var r)
+            (expression2 := Term.local_rel_var r)
       )
       )
 
