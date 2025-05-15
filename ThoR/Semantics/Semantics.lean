@@ -405,10 +405,11 @@ instance : ThoR.TupleSet ThoR_TupleSet := by sorry
 @[default_instance]
 instance : vars ThoR_TupleSet := by sorry
 
-
--- pred_in1 [x : set univ] {
---    x in x
--- }
+/-
+pred_in1 [x : set univ] {
+ x in x
+}
+-/
 def pred_in1 :=
   Term.pred_def (
   -- @Term.marker ThoR_TupleSet _ [] _ Marker.alloy_predicate (
@@ -421,36 +422,47 @@ def pred_in1 :=
       )
       )
 
--- -- pred_in2 [x : set univ] {
--- --    x in m/UNIV
--- -- }
--- def pred_in2 :=
---   @Term.lam _ _ _ [] _ (
---     Term.in (:= _)
---       (expression1 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
---       (expression2 := Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")
---   )
-    -- | app
-    --   : Term (.function t ran) →
-    --     (Rel t) →
-    --     Term ran
+/-
+pred_in2 [x : set univ] {
+  x in m/UNIV
+}
+-/
+def pred_in2 :=
+  Term.pred_def (
+    Term.lam (
+      λ (x : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
+        Term.in
+          (expression1 := Term.local_rel_var x)
+          (expression2 := Term.global_rel_var (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")
+    )
+  )
 
 #check (pred_in1 ThoR_TupleSet)
-#check (Term.app (pred_in1 ThoR_TupleSet) (Term.global_rel_var (@vars.UNIV ThoR_TupleSet _ _) "UNIV")).eval
+#check (
+  Term.app
+    (pred_in1 ThoR_TupleSet)
+    (Term.global_rel_var (@vars.UNIV ThoR_TupleSet _ _) "UNIV")
+  ).eval
+
 -- pred_in1[univ]
 example : (Term.app (pred_in1 ThoR_TupleSet) (Term.global_rel_var (@vars.UNIV ThoR_TupleSet _ _) "UNIV")).eval := by
   dsimp [Term.eval]
   apply Set.subset_refl
 
--- -- pred_in2[univ]
--- example : (Term.app (@pred_in2 ThoR_TupleSet _ _) (Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")).eval [] := by
---   dsimp [Term.eval]
---   dsimp [HList.get]
---   apply Set.subset_refl
+-- pred_in2[univ]
+example : (
+  Term.app
+    (pred_in2 ThoR_TupleSet)
+    (Term.global_rel_var (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")
+  ).eval := by
+  dsimp [Term.eval]
+  apply Set.subset_refl
 
--- -- pred_in3 [x : set univ, y : set univ] {
--- --    x in y
--- -- }
+/-
+pred_in3 [x : set univ, y : set univ] {
+  x in y
+}
+-/
 -- --
 -- -- = [head, tail.head] entspricht [y, x]
 -- def pred_in3 :=
