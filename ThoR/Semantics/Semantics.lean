@@ -8,7 +8,7 @@ import ThoR.Shared.Syntax.quant
 import ThoR.Relation.Quantification
 import ThoR.Relation.Rel
 -- import ThoR.Relation.Elab
-
+import ThoR.Relation.ElabCallMacro
 namespace ThoR.Semantics
 
 variable (R : Type) [TupleSet R]
@@ -130,6 +130,7 @@ variable (R : Type) [TupleSet R]
     --| call -- skip ?
 
     | pred_def : Term ty → Term ty
+    | fun_def : Term ty → Term ty
     -- | marker : Marker → Term ty → Term ty
     -- | name : String → Term ty → Term ty
 
@@ -324,6 +325,7 @@ variable (R : Type) [TupleSet R]
       | .if_then_else f r1 r2 => HIfThenElse.hIfThenElse (f.eval) (r1.eval) (r2.eval)
 
       | .pred_def t => t.eval
+      | .fun_def t => t.eval
       -- | .marker _ t => t.eval
       -- | .name _ t => t.eval
 
@@ -463,36 +465,71 @@ pred_in3 [x : set univ, y : set univ] {
   x in y
 }
 -/
--- --
--- -- = [head, tail.head] entspricht [y, x]
--- def pred_in3 :=
---   @Term.lam ThoR_TupleSet _ (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) [] _ (
---     @Term.lam ThoR_TupleSet _ (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) _ _ (
---       Term.in (:= _)
---         (expression1 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.tail Member.head))  -- deBruijn-Index 1 -> x
---         (expression2 := Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head)) -- deBruijn-Index 0 -> y
---     )
---   )
+def pred_in3 :=
+  Term.pred_def (
+    Term.lam (
+      λ (x : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
+        Term.lam (
+          λ (y : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
+            Term.in
+              (expression1 := Term.local_rel_var x)
+              (expression2 := Term.local_rel_var y)
+        )
+    )
+  )
 
--- -- pred_in3[univ,univ]
--- example : (Term.app (Term.app (@pred_in3 ThoR_TupleSet _) (Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")) (Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")).eval [] := by
---   dsimp [Term.eval]
---   dsimp [HList.get]
---   apply Set.subset_refl
+-- pred_in3[univ,univ]
+example : (
+  Term.app
+    (Term.app
+      (@pred_in3 ThoR_TupleSet _)
+      (Term.global_rel_var (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")
+    )
+    (Term.global_rel_var (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")
+  ).eval := by
+    dsimp [Term.eval]
+    apply Set.subset_refl
 
--- -- fun1 [x : set univ, y : set univ] : univ {
--- --    x & y
--- -- }
--- def fun1 :=
---   @Term.lam ThoR_TupleSet _ (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) [] _ (
---     @Term.lam ThoR_TupleSet _ (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) _ _ (
---       Term.intersect
---         (Term.var (Ty.expression (RelType.mk.sig ThoR_TupleSet Shared.mult.set)) (Member.head))
---         (Term.rel (@vars.UNIV ThoR_TupleSet _ _) "m/UNIV")
---     )
---   )
+/-
+fun1 [x : set univ, y : set univ] : univ {
+  x & y
+}
+-/
+def fun1 :=
+  Term.fun_def (
+    Term.lam (
+      λ (x : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
+        Term.lam (
+          λ (y : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
+            Term.intersect
+              (Term.local_rel_var x)
+              (Term.local_rel_var y)
+        )
+    )
+  )
 
+/-
+fun2 [r : set univ] : univ {
+  fun1 r
+}
+-/
+def fun2 :=
+  Term.fun_def (
+    Term.lam (
+      λ (r : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
+        ( Term.app
+          (Term.app
+            (fun1 ThoR_TupleSet) (Term.local_rel_var r)
+          )
+          (Term.local_rel_var r))
+    )
+  )
 
+/-
+fun1 [r : set univ] : univ {
+  r + r
+}
+-/
 def fun_union1 :=
     Term.lam (
       λ (r : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
@@ -506,6 +543,11 @@ def fun_union1 :=
 example : (Term.app (fun_union1 ThoR_TupleSet) (Term.global_rel_var (@vars.UNIV ThoR_TupleSet _ _) "UNIV")).eval =  (@vars.UNIV ThoR_TupleSet _ _) + (@vars.UNIV ThoR_TupleSet _ _) := by
   dsimp [Term.eval]
 
+/-
+fun1 [r : set univ] : univ {
+  fun_union1 r + fun_union1 r
+}
+-/
 def fun_union_union :=
     Term.lam (
       λ (r : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
