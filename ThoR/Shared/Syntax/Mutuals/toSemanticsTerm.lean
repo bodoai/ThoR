@@ -75,7 +75,6 @@ namespace Shared
             )
 
           | expr.function_call_with_args called_function arguments =>
-            -- TODO : How to implement with semantics
             let mut argumentsTerm
               ← (arguments.get! 0).toSemanticsTerm blockName
                 variableNames callableVariables callablePredicates pureNames
@@ -99,7 +98,8 @@ namespace Shared
             return unhygienicUnfolder
               `(
                 (
-                  ∻ $(mkIdent function_name)
+                  $(mkIdent ``ThoR.Semantics.Term.app)
+                  $(mkIdent function_name)
                 ) $argumentsTerm
               )
 
@@ -238,7 +238,8 @@ namespace Shared
           else
             -- check if the ident is a variable or def
             if variableNames.contains s then
-              -- TODO: Can this happen? What to do here?
+
+              -- TODO: Can this happen? What to do here? Unclear
               return unhygienicUnfolder
                 `(
                   (
@@ -247,31 +248,17 @@ namespace Shared
                 )
 
             else
-            -- TODO: How to apply correctly
+              -- Call to pred (with no args) => no Term.app
               return unhygienicUnfolder
                 `(
                   (
-                    $(mkIdent ``ThoR.Semantics.Formula.call)
                     (
-                      $(mkIdent ``ThoR.Semantics.Predicate)
                       (∻ $(mkIdent s!"{blockName}.preds.{s}".toName))
                     )
                   )
                 )
 
         | formula.pred_with_args p pa => do
-          let mut term := unhygienicUnfolder
-            -- TODO: How to apply args and pred
-             `(
-                (
-                  $(mkIdent ``ThoR.Semantics.Formula.call)
-                  (
-                    $(mkIdent ``ThoR.Semantics.Predicate)
-                    (∻ $(mkIdent s!"{blockName}.preds.{p}".toName))
-                  )
-                )
-              )
-
           let possibleCalledPredicates :=
             (callablePredicates.filter fun cp => cp.1.name == p)
 
@@ -286,6 +273,20 @@ namespace Shared
             (calledPredicate.1.predArgs.map fun cp =>
               cp.1.names.map fun _ =>
                 cp.2).join
+
+          if pa.isEmpty then
+            return unhygienicUnfolder
+             `(
+                (
+                  (
+                    (∻ $(mkIdent s!"{blockName}.preds.{p}".toName))
+                  )
+                )
+              )
+
+          -- this term is replaced asap
+          let mut argTerm := unhygienicUnfolder
+             `(term | $(mkIdent `Default_Term))
 
           for index in [0:pa.length] do
 
@@ -340,9 +341,12 @@ namespace Shared
               cast_type_equals_called_var_type
             then
 
-
-              term :=
-                unhygienicUnfolder `(term | $(term):term $(calledArgTerm):term)
+              if index == 0 then
+                argTerm :=
+                unhygienicUnfolder `(term | $(calledArgTerm):term)
+              else
+                argTerm :=
+                unhygienicUnfolder `(term | $(argTerm):term $(calledArgTerm):term)
 
             else
 
@@ -357,12 +361,23 @@ namespace Shared
                     ($calledArgTerm:term)
                     $(cast_type_term):term)
 
-              term :=
-                unhygienicUnfolder
-                  `(term |
-                    $(term)
-                    $(castCommand)
+              if index == 0 then
+                argTerm :=
+                unhygienicUnfolder `(term | $(castCommand):term)
+              else
+                argTerm :=
+                unhygienicUnfolder `(term | $(argTerm):term $(castCommand):term)
+
+          let mut term := unhygienicUnfolder
+             `(
+                (
+                  $(mkIdent ``ThoR.Semantics.Term.app)
+                  (
+                    ($(mkIdent s!"{blockName}.preds.{p}".toName))
                   )
+                  $(argTerm)
+                )
+              )
 
           return term
 
