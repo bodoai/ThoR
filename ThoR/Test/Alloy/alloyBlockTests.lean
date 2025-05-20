@@ -42,7 +42,7 @@ end
 
   namespace  x2
 
-  class  vars  (  ThoR_TupleSet  :  Type  )  [  ThoR.TupleSet  ThoR_TupleSet  ]  where  (  this_φ_A  :  ∷  set  univ  )  (  this_φ_A_ξ_r  :  ∷  this_φ_A  set  →  one  this_φ_A  )  (  this_φ_B  :  ∷  set  univ  )  (  this_φ_B_ξ_r  :  ∷  this_φ_B  set  →  one  this_φ_B  )
+  class  vars  (  ThoR_TupleSet  :  Type  )  [  ThoR.TupleSet  ThoR_TupleSet  ]  where  (  this_φ_A  :  ((ThoR.Semantics.Term.type (ThoR.RelType.mk.rel (ThoR.Rel.constant.univ ThoR_TupleSet))) : Type)  )  (  this_φ_A_ξ_r  :  ∷  this_φ_A  set  →  one  this_φ_A  )  (  this_φ_B  :  ∷  set  univ  )  (  this_φ_B_ξ_r  :  ∷  this_φ_B  set  →  one  this_φ_B  )
 
   end  x2
 

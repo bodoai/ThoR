@@ -387,6 +387,15 @@ variable (R : Type) [TupleSet R]
 
       | type t => t
 
+
+  instance {R : Type} [TupleSet R] {ty : @Ty R _} (t : @Term R _ ty):
+    CoeDep (@Term R _ ty) t ty.eval where
+      coe := t.eval
+
+  instance {R : Type} [TupleSet R] {n : ℕ} (t : @Term R _ (Ty.type n)):
+    CoeDep _ t Type where
+      coe := Rel t.eval
+
 end ThoR.Semantics
 
 /-
