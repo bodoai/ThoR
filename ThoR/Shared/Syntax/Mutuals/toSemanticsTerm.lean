@@ -691,9 +691,8 @@ namespace Shared
             return unhygienicUnfolder
               `(
                 (
-                  $(mkIdent ``ThoR.Semantics.TypeExpression.type)
+                  $(mkIdent ``ThoR.Semantics.Term.type)
                   (
-                    $(mkIdent ``ThoR.Rel)
                     $(aeTerm)
                   )
                 )
@@ -706,9 +705,8 @@ namespace Shared
             return unhygienicUnfolder
               `(
                 (
-                  $(mkIdent ``ThoR.Semantics.TypeExpression.type)
+                  $(mkIdent ``ThoR.Semantics.Term.type)
                   (
-                    $(mkIdent ``ThoR.Rel)
                     (
                       $(mkIdent ``RelType.mk.unary_rel)
                       $(m.toTerm) $(eTerm)
@@ -724,9 +722,8 @@ namespace Shared
             return unhygienicUnfolder
               `(
                 (
-                  $(mkIdent ``ThoR.Semantics.TypeExpression.type)
+                  $(mkIdent ``ThoR.Semantics.Term.type)
                   (
-                    $(mkIdent ``ThoR.Rel)
                     ($(mkIdent ``RelType.mk.rel) $(eTerm))
                   )
                 )
