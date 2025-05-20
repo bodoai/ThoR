@@ -96,6 +96,7 @@ def RelType'.arity {R : Type} [TupleSet R] (t : RelType' R) :=
                         return n1
   | if_then_else t1 t2   => checkArityEq (arity, t1, t2)
 
+@[reducible]
 def RelType (R : Type) [TupleSet R] (n : ℕ):= { r : RelType' R // r.arity = some n }
 
 -- lemma RelType'.sig.cons {R : Type} [TupleSet R] {m : Shared.mult} :

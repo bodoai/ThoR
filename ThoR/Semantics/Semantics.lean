@@ -19,6 +19,7 @@ variable (R : Type) [TupleSet R]
     | formula -- Prop
     | expression : {n : ℕ} → (rel_type : RelType R n) → Ty -- Rel rel_type
     | function : {n : ℕ} → (t : RelType R n) → Ty → Ty -- type1.eval → type2.eval
+    | type : (n : ℕ) → Ty
 
   inductive Marker : Type u where
     | alloy_predicate
@@ -31,6 +32,7 @@ variable (R : Type) [TupleSet R]
     | formula => Prop
     | expression rel_type => Rel rel_type
     | Ty.function dom_rel_type ran => Rel dom_rel_type → ran.eval
+    | Ty.type n => ThoR.RelType R n
 
   inductive Term
     {R : Type}
@@ -295,7 +297,10 @@ variable (R : Type) [TupleSet R]
     -- | let
 
     /- type expression ??-/
-
+    | type
+      {n : ℕ}
+      (t : RelType R n)
+      : Term (.type n)
 
   def Term.eval
     {R : Type}
@@ -380,8 +385,9 @@ variable (R : Type) [TupleSet R]
 
       -- | q_all {n : ℕ} {t : RelType R n} : Term (.function (.expression t) ran) → Term .formula -- (f : (Rel t) → Formula): Formula
 
-end ThoR.Semantics
+      | type t => t
 
+end ThoR.Semantics
 
 /-
 all disj x, y, z : r | ...
@@ -391,12 +397,19 @@ all disj x : r | all y : r | all z : r | ...
 
 
 -/
-
-
 open ThoR.Semantics
 open ThoR
+
+-- automatic coercion from t : RelType to Rel t : Type
+instance {R : Type} [ThoR.TupleSet R] {n : ℕ} (t : RelType R n):
+  CoeDep (RelType R n ) t Type where
+    coe := ThoR.Rel t
+
+variable (R : Type) [TupleSet R]
+#check ThoR.Rel (RelType.mk.sig R Shared.mult.set)
+
 class vars (R : Type) [TupleSet R] where
-  UNIV : Rel (RelType.mk.sig R Shared.mult.set)
+  UNIV : ((RelType.mk.sig R Shared.mult.set) : Type)
   Time : Rel (RelType.mk.sig R Shared.mult.set)
 
 variable (ThoR_TupleSet : Type) [TupleSet ThoR_TupleSet] [vars ThoR_TupleSet]
