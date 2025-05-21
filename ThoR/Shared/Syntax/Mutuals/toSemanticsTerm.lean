@@ -99,6 +99,7 @@ namespace Shared
               `(
                 (
                   $(mkIdent ``ThoR.Semantics.Term.app)
+                  ($(mkIdent `R) := $(baseType.ident))
                   $(mkIdent function_name)
                 ) $argumentsTerm
               )
@@ -127,6 +128,7 @@ namespace Shared
             return unhygienicUnfolder `(
                 (
                   $(unRelOpTerm)
+                  ($(mkIdent `R) := $(baseType.ident))
                   $(eTerm)
                 )
               )
@@ -170,6 +172,7 @@ namespace Shared
             return unhygienicUnfolder `(
                 (
                   $(binRelOpTerm)
+                  ($(mkIdent `R) := $(baseType.ident))
                   $(e1Term)
                   $(e2Term)
                 )
@@ -185,6 +188,7 @@ namespace Shared
             return unhygienicUnfolder `(
                 (
                   $(mkIdent ``ThoR.Semantics.Term.dotjoin)
+                  ($(mkIdent `R) := $(baseType.ident))
                   $(e1Term)
                   $(e2Term)
                 )
@@ -204,6 +208,7 @@ namespace Shared
               `(
                 (
                   $(mkIdent ``ThoR.Semantics.Term.if_then_else)
+                  ($(mkIdent `R) := $(baseType.ident))
                   $(conditionTerm)
                   $(thenBodyTerm)
                   $(elseBodyTerm)
@@ -372,6 +377,7 @@ namespace Shared
              `(
                 (
                   $(mkIdent ``ThoR.Semantics.Term.app)
+                  ($(mkIdent `R) := $(baseType.ident))
                   (
                     ($(mkIdent s!"{blockName}.preds.{p}".toName))
                   )
@@ -408,6 +414,7 @@ namespace Shared
             `(
               (
                 $(unRelBoolOpTerm)
+                ($(mkIdent `R) := $(baseType.ident))
                 $(← e.toSemanticsTerm
                   blockName variableNames callableVariables
                   callablePredicates pureNames)
@@ -426,7 +433,11 @@ namespace Shared
                 )
 
           return unhygienicUnfolder `(term |
-            ( $(unLogOpTerm) $(fTerm))
+            (
+              $(unLogOpTerm)
+              ($(mkIdent `R) := $(baseType.ident))
+              $(fTerm)
+            )
           )
 
         | formula.binaryLogicOperation op f1 f2 =>
@@ -464,6 +475,7 @@ namespace Shared
             `(
               (
                 $(binLogOpTerm)
+                ($(mkIdent `R) := $(baseType.ident))
                 $(f1Term)
                 $(f2Term)
               )
@@ -488,6 +500,7 @@ namespace Shared
             `(
               (
                 $(mkIdent ``ThoR.Semantics.Term.f_if_then_else)
+                ($(mkIdent `R) := $(baseType.ident))
                 $(f1Term)
                 $(f2Term)
                 $(f3Term)
@@ -526,6 +539,7 @@ namespace Shared
             `(
               (
                 $(algCompOpTerm)
+                ($(mkIdent `R) := $(baseType.ident))
                 $(← ae1.toSemanticsTerm blockName variableNames callableVariables
                   callablePredicates pureNames)
                 $(← ae2.toSemanticsTerm blockName variableNames callableVariables
@@ -562,6 +576,7 @@ namespace Shared
             `(
               (
                 $(relCompareOpTerm)
+                ($(mkIdent `R) := $(baseType.ident))
                 $(e1Term)
                 $(e2Term)
               )
@@ -759,6 +774,7 @@ namespace Shared
             `(
               (
                 $(mkIdent ``ThoR.Semantics.Term.card)
+                ($(mkIdent `R) := $(baseType.ident))
                 $(eTerm)
               )
             )
@@ -779,6 +795,7 @@ namespace Shared
             `(
               (
                 $(unAlgOpTerm)
+                ($(mkIdent `R) := $(baseType.ident))
                 $(aeTerm)
               )
             )
@@ -818,6 +835,7 @@ namespace Shared
             `(
               (
                 $(binAlgOpTerm)
+                ($(mkIdent `R) := $(baseType.ident))
                 $(ae1Term)
                 $(ae2Term)
               )

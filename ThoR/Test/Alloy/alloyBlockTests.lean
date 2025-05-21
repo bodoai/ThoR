@@ -40,21 +40,21 @@ end
 
 end
 
-  namespace  x2
+  namespace  x2_t
 
   class  vars  (  ThoR_TupleSet  :  Type  )  [  ThoR.TupleSet  ThoR_TupleSet  ]  where  (  this_φ_A  :  ((ThoR.Semantics.Term.type (ThoR.RelType.mk.rel (ThoR.Rel.constant.univ ThoR_TupleSet))) : Type)  )  (  this_φ_A_ξ_r  :  ∷  this_φ_A  set  →  one  this_φ_A  )  (  this_φ_B  :  ∷  set  univ  )  (  this_φ_B_ξ_r  :  ∷  this_φ_B  set  →  one  this_φ_B  )
 
-  end  x2
+  end  x2_t
 
-  alias  x2.vars.A  :=  x2.vars.this_φ_A
+  alias  x2_t.vars.A  :=  x2_t.vars.this_φ_A
 
-  alias  x2.vars.A.r  :=  x2.vars.this_φ_A_ξ_r
+  alias  x2_t.vars.A.r  :=  x2_t.vars.this_φ_A_ξ_r
 
-  alias  x2.vars.B  :=  x2.vars.this_φ_B
+  alias  x2_t.vars.B  :=  x2_t.vars.this_φ_B
 
-  alias  x2.vars.B.r  :=  x2.vars.this_φ_B_ξ_r
+  alias  x2_t.vars.B.r  :=  x2_t.vars.this_φ_B_ξ_r
 
-  namespace  x2.preds
+  namespace  x2_t.preds
 
 
 def xyz {  ThoR_TupleSet  :  Type  } [  ThoR.TupleSet  ThoR_TupleSet  ] (y : ThoR.Rel (ThoR.RelType.mk.rel (ThoR.Rel.constant.univ ThoR_TupleSet))) : (ThoR.Semantics.Term ThoR.Semantics.Ty.formula (R := ThoR_TupleSet)) := ThoR.Semantics.Term.eq (ThoR.Semantics.Term.local_rel_var  y) (ThoR.Semantics.Term.local_rel_var y)
@@ -62,7 +62,7 @@ def xyz {  ThoR_TupleSet  :  Type  } [  ThoR.TupleSet  ThoR_TupleSet  ] (y : Tho
 #print xyz
 
 
-def p2' {  ThoR_TupleSet  :  Type  }  [  ThoR.TupleSet  ThoR_TupleSet  ]  [  x2.vars  ThoR_TupleSet  ] :=
+def p2' {  ThoR_TupleSet  :  Type  }  [  ThoR.TupleSet  ThoR_TupleSet  ]  [  x2_t.vars  ThoR_TupleSet  ] :=
 ThoR.Semantics.Term.pred_def (R := ThoR_TupleSet) (
     ThoR.Semantics.Term.lam (R := ThoR_TupleSet) (
       λ (x : (ThoR.Rel (ThoR.RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
@@ -71,12 +71,13 @@ ThoR.Semantics.Term.pred_def (R := ThoR_TupleSet) (
               (expression2 := ThoR.Semantics.Term.local_rel_var x)
     )
 )
+  /-
+  def  p2  {  ThoR_TupleSet  :  Type  }  [  ThoR.TupleSet  ThoR_TupleSet  ]  [  x2_t.vars  ThoR_TupleSet  ]  (  x  :  ∷  univ  )  :=  (  ThoR.Semantics.Term.eq  (  ThoR.Semantics.Term.local_rel_var  x  )  (  ThoR.Semantics.Term.local_rel_var x  )  )
+  -/
 
-  def  p2  {  ThoR_TupleSet  :  Type  }  [  ThoR.TupleSet  ThoR_TupleSet  ]  [  x2.vars  ThoR_TupleSet  ]  (  x  :  ∷  univ  )  :=  (  ThoR.Semantics.Term.eq  (  ThoR.Semantics.Term.local_rel_var  x  )  (  ThoR.Semantics.Term.local_rel_var  x  )  )
+  end  x2_t.preds
 
-  end  x2.preds
-
-  open  x2.vars  x2.preds
+  open  x2_t.vars  x2_t.preds
 
 
 #create x2
