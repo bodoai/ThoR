@@ -44,7 +44,7 @@ namespace Shared
         match e with
           | expr.const c =>
             return (c.toTerm)
-            -- missing in semantics
+            -- TODO: Add to semantics or change value ?
 
           | expr.string s => do
 
