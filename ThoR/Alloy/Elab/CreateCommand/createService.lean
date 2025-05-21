@@ -162,24 +162,36 @@ namespace Alloy
           for arg in cd.predArgs do
             let argExpr := arg.1.expression.replaceCalls callableVariables
             let type := typeExpr.relExpr argExpr.toStringRb
-            let typeSyntax := type.toSyntax blockName
+            let typeTerm ← type.toSemanticsTerm blockName
+              cd.requiredVars callableVariables cd.predCalls
             let names := (arg.1.names.map fun name => (mkIdent name.toName)).toArray
-            let unhygienicTerm :=
-              `(Lean.Parser.Term.bracketedBinderF | ($[$names]* : ∷ $typeSyntax))
-            let term := unhygienicUnfolder unhygienicTerm
-            allArgs := allArgs.push term
-          argTerms := unhygienicUnfolder `(Lean.Parser.Command.optDeclSig| $[$allArgs]*)
+
+            for name in names do
+              bodyTerm := unhygienicUnfolder `( term |
+                (
+                  $(mkIdent ``ThoR.Semantics.Term.lam)
+                  ($(mkIdent `R) := $(baseType.ident))
+                  ( λ ( $(name) : ($(typeTerm) : Type)) => $bodyTerm )
+                )
+              )
 
         -- function arguments
         if cd.isFunction && !(cd.functionArgs.isEmpty) then
           for arg in cd.functionArgs do
-            let type := (arg.1.type.replaceCalls callableVariables).toStringRb
-            let typeSyntax := type.toSyntax blockName
+            let type := (arg.1.type.replaceCalls callableVariables)
+            let typeTerm ← type.toSemanticsTerm blockName
+              cd.requiredVars callableVariables cd.predCalls
+
             let names := (arg.1.names.map fun name => (mkIdent name.toName)).toArray
-            let unhygienicTerm :=
-              `(Lean.Parser.Term.bracketedBinderF | ($[$names]* : ∷ $typeSyntax))
-            let term := unhygienicUnfolder unhygienicTerm
-            allArgs := allArgs.push term
+
+            for name in names do
+              bodyTerm := unhygienicUnfolder `( term |
+                (
+                  $(mkIdent ``ThoR.Semantics.Term.lam)
+                  ($(mkIdent `R) := $(baseType.ident))
+                  ( λ ( $(name) : ($(typeTerm) : Type)) => $bodyTerm )
+                )
+              )
 
         -- add function arguments and function return type
         if cd.isFunction then
@@ -198,7 +210,15 @@ namespace Alloy
           return unhygienicUnfolder `(
             def $(mkIdent cd.name.toName)
             $argTerms
-            := $bodyTerm)
+            :=
+            $(
+              if cd.isFunction then
+                (mkIdent ``ThoR.Semantics.Term.fun_def)
+              else
+                (mkIdent ``ThoR.Semantics.Term.pred_def)
+            )
+            $bodyTerm
+          )
         else
           return unhygienicUnfolder `(
             def $(mkIdent cd.name.toName)

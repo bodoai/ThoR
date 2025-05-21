@@ -71,6 +71,7 @@ ThoR.Semantics.Term.pred_def (R := ThoR_TupleSet) (
               (expression2 := ThoR.Semantics.Term.local_rel_var x)
     )
 )
+
   /-
   def  p2  {  ThoR_TupleSet  :  Type  }  [  ThoR.TupleSet  ThoR_TupleSet  ]  [  x2_t.vars  ThoR_TupleSet  ]  (  x  :  ∷  univ  )  :=  (  ThoR.Semantics.Term.eq  (  ThoR.Semantics.Term.local_rel_var  x  )  (  ThoR.Semantics.Term.local_rel_var x  )  )
   -/
