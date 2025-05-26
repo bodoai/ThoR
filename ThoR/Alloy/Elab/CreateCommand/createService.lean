@@ -162,7 +162,7 @@ namespace Alloy
           for arg in cd.predArgs do
             let argExpr := arg.1.expression.replaceCalls callableVariables
             let type := typeExpr.relExpr argExpr.toStringRb
-            let typeTerm ← type.toSemanticsTerm blockName
+            let typeTerm ← type.toTerm blockName
               cd.requiredVars callableVariables cd.predCalls
             let names := (arg.1.names.map fun name => (mkIdent name.toName)).toArray
 
@@ -179,7 +179,7 @@ namespace Alloy
         if cd.isFunction && !(cd.functionArgs.isEmpty) then
           for arg in cd.functionArgs do
             let type := (arg.1.type.replaceCalls callableVariables)
-            let typeTerm ← type.toSemanticsTerm blockName
+            let typeTerm ← type.toTerm blockName
               cd.requiredVars callableVariables cd.predCalls
 
             let names := (arg.1.names.map fun name => (mkIdent name.toName)).toArray
@@ -211,13 +211,16 @@ namespace Alloy
             def $(mkIdent cd.name.toName)
             $argTerms
             :=
-            $(
+            (
+              $(
               if cd.isFunction then
                 (mkIdent ``ThoR.Semantics.Term.fun_def)
               else
                 (mkIdent ``ThoR.Semantics.Term.pred_def)
+              )
+              ($(mkIdent `R) := $(baseType.ident))
+              $bodyTerm
             )
-            $bodyTerm
           )
         else
           return unhygienicUnfolder `(

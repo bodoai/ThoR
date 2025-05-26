@@ -18,6 +18,8 @@ import ThoR.Alloy.Config
 import ThoR.Relation.ElabCallMacro
 import ThoR.Relation.Quantification
 
+import ThoR.Shared.Syntax.Relation.Expr.exprHelper
+
 open Lean
 open ThoR Quantification Alloy Config
 
@@ -488,6 +490,52 @@ namespace Shared
           | Shared.typeExpr.relExpr e =>
             let eTerm ← e.toTerm blockName
               variableNames callableVariables callablePredicates pureNames
+
+            if e.isConstant then
+              let c := e.getConstant
+              match c with
+                | constant.univ =>
+                  return unhygienicUnfolder
+                    `(
+                      $(mkIdent ``ThoR.Rel)
+                      (
+                        $(mkIdent ``RelType.mk.unary_rel)
+                        $(mult.set.toTerm)
+                        (
+                          $(c.toTerm)
+                          ($(mkIdent `R) := $(baseType.ident))
+                        )
+                      )
+                    )
+
+                | constant.iden =>
+                  return unhygienicUnfolder
+                    `(
+                      $(mkIdent ``ThoR.Rel)
+                      (
+                        $(mkIdent ``RelType.mk.rel)
+                        ($(mkIdent `n) := $(Syntax.mkNumLit "2"))
+                        (
+                          $(c.toTerm)
+                          ($(mkIdent `R) := $(baseType.ident))
+                        )
+                      )
+                    )
+
+                | constant.none =>
+                  return unhygienicUnfolder
+                    `(
+                      $(mkIdent ``ThoR.Rel)
+                      (
+                        $(mkIdent ``RelType.mk.rel)
+                        ($(mkIdent `n) := $(Syntax.mkNumLit "1"))
+                        (
+                          $(c.toTerm)
+                          ($(mkIdent `R) := $(baseType.ident))
+                        )
+                      )
+                    )
+
 
             return unhygienicUnfolder
               `($(mkIdent ``ThoR.Rel)

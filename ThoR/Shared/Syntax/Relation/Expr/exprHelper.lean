@@ -17,6 +17,11 @@ namespace Shared.expr
       | expr.string _ => true
       | _ => false
 
+  def isConstant (e : expr) : Bool :=
+    match e with
+      | expr.const _ => true
+      | _ => false
+
   def isCallFromOpen (e : expr) : Bool :=
     match e with
       | expr.callFromOpen _ => true
@@ -26,6 +31,11 @@ namespace Shared.expr
     match e with
       | expr.callFromOpen data => data
       | _ => panic! s!"Tried to get callFromOpenData from expr {e}"
+
+  def getConstant (e : expr) : constant :=
+    match e with
+      | expr.const c => c
+      | _ => panic! s!"Tried to get constant from expr {e}"
 
   def getStringData (e : expr) : String :=
     match e with
