@@ -7,6 +7,7 @@ Authors: s. file CONTRIBUTORS
 -- import ThoR
 import ThoR.Relation
 import ThoR.Relation.Elab
+import ThoR.Relation.SetRules
 
 namespace ThoR
   namespace Subtype
@@ -153,25 +154,61 @@ namespace ThoR
     variable (m : ∷ lone PERSON)
 
 -- FIXME
-    -- example : ◃∷ set PERSON ≺ ◃∷ set univ := by aesop
-    -- example : ◃∷ set MANN ≺ ◃∷ set univ  := by aesop
+    example : ◃∷ set PERSON ≺ ◃∷ set univ := by aesop
+    example : ◃∷ set MANN ≺ ◃∷ set univ  := by aesop
 
-    lemma ex1 : (PERSON - MANN).getType ≺ PERSON.getType
+
+    lemma ex1 (p : ∷ PERSON - MANN) : p ⊂ PERSON
       := by
-        apply Subtype.subtypeP.subset
-        intro r1
-        cases r1 with
-        | mk r p =>
-          dsimp[HSubset.hSubset,Rel.subset]
-          sorry
+        cases p with
+        | mk p p_proof =>
+            dsimp[HSubset.hSubset,Rel.subset]
+            dsimp[RelType.mk.rel] at p_proof
+            dsimp[HasRelType.hasType] at p_proof
+            match p_proof with
+            | ⟨ ht, w ⟩ =>
+              cases ht with
+              | rel superrel n h subrel h1 =>
+                cases PERSON with
+                | mk PERSON p_PERSON =>
+                  cases MANN with
+                  | mk MANN p_MANN =>
+                    dsimp
+                    dsimp[HSub.hSub] at h1
+                    apply Set.subset_trans
+                    apply h1
+                    apply diff_subset
 
-    /- FIXME : aesop -/
+#check ∷ PERSON
+#check (RelType.mk.rel PERSON)
+#check (RelType.mk.unary_rel Shared.mult.set (Rel.constant.univ ThoR_TupleSet))
+
+    lemma ex2 (p : ∷ PERSON - MANN) : HasRelType.hasType p.relation (RelType.mk.rel PERSON)
+      := by
+        cases PERSON with
+        | mk PERSON p_PERSON =>
+          cases p with
+          | mk p p_proof =>
+            dsimp[HSubset.hSubset,Rel.subset]
+            dsimp[RelType.mk.rel] at p_proof
+            dsimp[RelType.mk.rel]
+            dsimp[HasRelType.hasType] at p_proof
+            dsimp[HasRelType.hasType]
+            match p_proof with
+            | ⟨ ht, w ⟩ =>
+              cases ht with
+              | rel superrel n h subrel h1 =>
+                cases MANN with
+                | mk MANN p_MANN =>
+                  dsimp[HSub.hSub] at h1
+                  have h2 : p ⊂ PERSON := by
+                    apply Set.subset_trans
+                    apply h1
+                    apply diff_subset
+                  exists HasRelType.hasType'.rel PERSON 1 (Rel.arity (Rel.mk PERSON p_PERSON)) p h2
+
     example : (PERSON - MANN).getType ≺ ◃∷ set univ
-      := by
-        apply Subtype.subtypeP.trans
-          _ PERSON.getType
-        apply ex1
-        aesop
+      := by aesop
 
     axiom a1 : PERSON ⊂ (MANN + FRAU)
     /- TODO : apply knowledge from inheritance tree, i.e. add inheritance tree axiom with PERSON = MANN + FRAU -/
@@ -199,10 +236,10 @@ namespace ThoR
 --           | dotjoin => sorry
 
     example : (MANN).getType ≺ (FRAU + MANN).getType
-      := by sorry
+      := by aesop
     example (r1 : ∷ some MANN) :
       r1.getType ≺ (MANN + (FRAU - (MANN' & PERSON))).getType
-      := by sorry
+      := by aesop
 
     -- unary_rel set r ≺ rel r
     example : MANN.getType ≺ MANN''.getType
@@ -249,24 +286,24 @@ namespace ThoR
     (castable r t2 subtype_pf)
 
   macro "cast" varName:ident : term
-    => do `((Subtype.cast $(varName) _ (by sorry)))
+    => do `((Subtype.cast $(varName) _ (by aesop)))
 
   macro "cast" varName:ident "∷" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) _ (by sorry) : ∷ $(typeName)))
+    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(typeName)))
 
   macro "cast" "(" varName:term ")" : term
-    => do `((Subtype.cast $(varName) _ (by sorry)))
+    => do `((Subtype.cast $(varName) _ (by aesop)))
 
   macro "cast" "(" varName:term ")" ":" type:typeExpr : term
-    => do `((Subtype.cast $(varName) _ (by sorry) : ∷ $(type)))
+    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(type)))
 
   macro "cast" "(" varName:term ")" "∷" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) _ (by sorry) : ∷ $(typeName)))
+    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(typeName)))
 
   macro varName:ident "▹" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) _ (by sorry) : ∷ $(typeName)))
+    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(typeName)))
   macro "(" varName:ident ")" "▹" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) _ (by sorry) : ∷ $(typeName)))
+    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(typeName)))
 
 
 end Subtype
