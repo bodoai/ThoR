@@ -82,6 +82,7 @@ namespace ThoR
       | sub (t1 t2 : RelType R arity) : subtypeP (t1 - t2) t1
       | add_r (t1 t2 : RelType R arity) : subtypeP t1 (t1 + t2)
       | add_l (t1 t2 : RelType R arity) : subtypeP t1 (t2 + t1)
+      | add_idem_l (t : RelType R arity) : subtypeP (t + t) t
   end Subtype
 
   namespace Subtype
@@ -164,6 +165,11 @@ namespace ThoR
         | mk r p =>
           dsimp[HSubset.hSubset,Rel.subset]
           sorry
+
+    lemma ex2 : (PERSON + PERSON).getType ≺ PERSON.getType
+      := by
+        aesop
+
 
     /- FIXME : aesop -/
     example : (PERSON - MANN).getType ≺ ◃∷ set univ
@@ -249,24 +255,24 @@ namespace ThoR
     (castable r t2 subtype_pf)
 
   macro "cast" varName:ident : term
-    => do `((Subtype.cast $(varName) _ (by sorry)))
+    => do `((Subtype.cast $(varName) _ (by aesop)))
 
   macro "cast" varName:ident "∷" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) _ (by sorry) : ∷ $(typeName)))
+    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(typeName)))
 
   macro "cast" "(" varName:term ")" : term
-    => do `((Subtype.cast $(varName) _ (by sorry)))
+    => do `((Subtype.cast $(varName) _ (by aesop)))
 
   macro "cast" "(" varName:term ")" ":" type:typeExpr : term
-    => do `((Subtype.cast $(varName) _ (by sorry) : ∷ $(type)))
+    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(type)))
 
   macro "cast" "(" varName:term ")" "∷" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) _ (by sorry) : ∷ $(typeName)))
+    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(typeName)))
 
   macro varName:ident "▹" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) _ (by sorry) : ∷ $(typeName)))
+    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(typeName)))
   macro "(" varName:ident ")" "▹" typeName:typeExpr: term
-    => do `((Subtype.cast $(varName) _ (by sorry) : ∷ $(typeName)))
+    => do `((Subtype.cast $(varName) _ (by aesop) : ∷ $(typeName)))
 
 
 end Subtype
@@ -314,6 +320,12 @@ end Subtype
     #check (∻ preds.p2)
       (cast (cast vars.MANN' ∷ set @ vars.MANN) ∷ set @ vars.PERSON)
     #check (∻ preds.p3) vars.MANN'
+
+
+    -- found cause for cast problems: ThoR_TupleSet in type declaration not defined
+    #check (Subtype.cast (vars.PERSON + vars.PERSON) _ (by aesop) : (@Rel ThoR_TupleSet _ _ vars.PERSON.getType))
+    def pp_c_p :=  (Subtype.cast (∻ vars.PERSON + ∻ vars.PERSON) _ (by aesop) : (@Rel ThoR_TupleSet _ _ vars.PERSON.getType))
+
 
   /- FIXME : cast macro syntax problem when chaining casts in the following syntaxes:
 
