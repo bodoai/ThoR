@@ -131,8 +131,8 @@ variable (R : Type) [TupleSet R]
     /- function call from expression ? -/
     --| call -- skip ?
 
-    | pred_def : Term ty → Term ty
-    | fun_def : Term ty → Term ty
+    | pred_def (name : String) : Term ty → Term ty
+    | fun_def (name : String) : Term ty → Term ty
     -- | marker : Marker → Term ty → Term ty
     -- | name : String → Term ty → Term ty
 
@@ -329,8 +329,8 @@ variable (R : Type) [TupleSet R]
       /- expression if else -/
       | .if_then_else f r1 r2 => HIfThenElse.hIfThenElse (f.eval) (r1.eval) (r2.eval)
 
-      | .pred_def t => t.eval
-      | .fun_def t => t.eval
+      | .pred_def _ t => t.eval
+      | .fun_def _ t => t.eval
       -- | .marker _ t => t.eval
       -- | .name _ t => t.eval
 
@@ -435,7 +435,7 @@ pred_in1 [x : set univ] {
 }
 -/
 def pred_in1 :=
-  Term.pred_def (
+  Term.pred_def "p1" (
   -- @Term.marker ThoR_TupleSet _ [] _ Marker.alloy_predicate (
   --   @Term.name ThoR_TupleSet _ _ _ "pred_in1" (
       Term.lam (
@@ -452,7 +452,7 @@ pred_in2 [x : set univ] {
 }
 -/
 def pred_in2 :=
-  Term.pred_def (
+  Term.pred_def "p2" (
     Term.lam (
       λ (x : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
         Term.in
@@ -488,7 +488,7 @@ pred_in3 [x : set univ, y : set univ] {
 }
 -/
 def pred_in3 :=
-  Term.pred_def (
+  Term.pred_def "p3" (
     Term.lam (
       λ (x : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
         Term.lam (
@@ -518,7 +518,7 @@ fun1 [x : set univ, y : set univ] : univ {
 }
 -/
 def fun1 :=
-  Term.fun_def (
+  Term.fun_def "f1" (
     Term.lam (
       λ (x : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
         Term.lam (
@@ -536,7 +536,7 @@ fun2 [r : set univ] : univ {
 }
 -/
 def fun2 :=
-  Term.fun_def (
+  Term.fun_def "f2" (
     Term.lam (
       λ (r : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
         ( Term.app

@@ -12,6 +12,8 @@ import ThoR.Test.Alloy.test_macro
 
 import ThoR.Macros
 
+import ThoR.Alloy.Delab
+
 alloy empty
 end
 
@@ -43,7 +45,7 @@ end
 #create x2
 #check x2.vars.A
 #check x2.vars.B
-#check x2.preds.p2
+#print x2.preds.p2
 
 
 ~alloy x3

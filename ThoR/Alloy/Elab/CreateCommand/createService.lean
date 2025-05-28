@@ -218,6 +218,7 @@ namespace Alloy
               else
                 (mkIdent ``ThoR.Semantics.Term.pred_def)
               )
+              $(Syntax.mkStrLit cd.name)
               ($(mkIdent `R) := $(baseType.ident))
               $bodyTerm
             )
