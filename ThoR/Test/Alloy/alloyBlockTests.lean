@@ -72,7 +72,7 @@ ThoR.Semantics.Term.pred_def (R := ThoR_TupleSet) (
     )
 )
 
-def  p2
+def  p2_univ
   {  ThoR_TupleSet  :  Type  }
   [  ThoR.TupleSet  ThoR_TupleSet  ]
   [ x2_t.vars  ThoR_TupleSet  ]  :=
@@ -146,17 +146,15 @@ def  p2_none
           )
         )
 
-  /-
-  def  p2  {  ThoR_TupleSet  :  Type  }  [  ThoR.TupleSet  ThoR_TupleSet  ]  [  x2_t.vars  ThoR_TupleSet  ]  (  x  :  ∷  univ  )  :=  (  ThoR.Semantics.Term.eq  (  ThoR.Semantics.Term.local_rel_var  x  )  (  ThoR.Semantics.Term.local_rel_var x  )  )
-  -/
-
   end  x2_t.preds
 
   open  x2_t.vars  x2_t.preds
 
 
 #create x2
-#check x2.preds.p1
+#check x2.vars.A
+#check x2.vars.B
+#check x2.preds.p2
 
 
 ~alloy x3

@@ -503,7 +503,6 @@ namespace Shared
                         $(mult.set.toTerm)
                         (
                           $(c.toTerm)
-                          ($(mkIdent `R) := $(baseType.ident))
                         )
                       )
                     )
@@ -517,7 +516,6 @@ namespace Shared
                         ($(mkIdent `n) := $(Syntax.mkNumLit "2"))
                         (
                           $(c.toTerm)
-                          ($(mkIdent `R) := $(baseType.ident))
                         )
                       )
                     )
@@ -531,7 +529,6 @@ namespace Shared
                         ($(mkIdent `n) := $(Syntax.mkNumLit "1"))
                         (
                           $(c.toTerm)
-                          ($(mkIdent `R) := $(baseType.ident))
                         )
                       )
                     )
