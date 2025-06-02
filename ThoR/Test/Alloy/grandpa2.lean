@@ -52,6 +52,23 @@ open language.grandpa1
 
 open Rules
 
+
+lemma l0 :
+  [alloy| all p : Person |
+    p in p.(mother + father).father =>
+    p in p.((mother + father).(mother + father))
+  ] := by
+    apply all.intro
+    intro p
+  -- TODO have h1 : [alloy| p in p.(mother + ...)... ] := by
+    -- apply subset.trans
+    -- apply contra
+    -- apply dotjoin.subset.r
+    -- apply dotjoin.subset.r
+    -- apply add.subset.l
+    sorry
+
+
 lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   unfold NoSelfGrandpa
   apply no.intro
