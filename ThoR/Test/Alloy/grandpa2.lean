@@ -49,18 +49,17 @@ end
 startTestBlock language.grandpa1
 
 open language.grandpa1
-#check vars.Person.father
-#print this_φ_Person_ξ_mother
-#check [#alloy | all p : Person | mother in mother]
+
+open Rules
 
 lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   unfold NoSelfGrandpa
-  apply Rules.no.intro
+  apply no.intro
 
 --  intro contra
-  apply Rules.some.neg -- TODO get rid of insertion of redundant Formula.prop in Rules.some.neg
+  apply some.neg -- TODO get rid of insertion of redundant Formula.prop in Rules.some.neg
   -- TODO apply Rules.all.intro; intro p; unfold ThoR.Quantification.Formula.eval -> in one macro
-  apply Rules.all.intro
+  apply all.intro
   intro p
   unfold ThoR.Quantification.Formula.eval
   intro contra -- TODO proper intro macro that unfolds eval
@@ -76,22 +75,20 @@ lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   --      apply Rules.and.elim at f0 with f1 and f2?
   clear f0
   clear f2
-  apply Rules.no.elim at f1
+  apply no.elim at f1
   apply f1
   clear f1
-  apply Rules.some.intro p -- TODO include eval as step in intro
+  apply some.intro p -- TODO include eval as step in intro
   unfold ThoR.Quantification.Formula.eval
-  have h1 : p ⊂ p ⋈ ((∻ this_φ_Person_ξ_mother + ∻ this_φ_Person_ξ_father) ⋈ (∻ this_φ_Person_ξ_mother + ∻ this_φ_Person_ξ_father)) := by
+  have h1 : [alloy| p in p.((mother + father).(mother + father))] := by
   -- TODO have h1 : [alloy| p in p.(mother + ...)... ] := by
-    apply Rules.subset.trans
-    apply contra
-    apply Rules.dotjoin.subset.r
-    apply Rules.dotjoin.subset.r
-    apply Rules.add.subset.l
-  apply Rules.subset.trans
-  apply h1
-  apply Rules.dotjoin.subset.r
-  apply Rules.dotjoin.transclos_2
+    apply subset.trans contra
+    apply dotjoin.subset.r
+    apply dotjoin.subset.r
+    apply add.subset.l
+  apply subset.trans h1
+  apply dotjoin.subset.r
+  apply dotjoin.transclos_2
 
 -- TODO get rid of:
 -- - (long) case names after introduction of new goal
