@@ -245,7 +245,7 @@ namespace Shared.expr
               let possibleMatches := alloyData.st.variableDecls.filter fun vd => vd.name == s
               if !possibleMatches.isEmpty then
                 possibleVarDecls := possibleVarDecls.concat
-                  (alloyData.st.name, possibleMatches)
+                  (alloyData.ast.name, possibleMatches)
 
             if !possibleVarDecls.isEmpty then
               if
@@ -257,10 +257,24 @@ namespace Shared.expr
                 throw s!"The call to {s} is ambiguous. \
                 There are multiple declared variables which it could refer to ({possibleVarDecls})"
 
-              let calledVarDecl := possibleVarDecls.get! 0
-              let calledBlockName := calledVarDecl.1
-              let callNameComponents := [calledBlockName, `vars, s.toName]
+              let varDeclsPerBlock := possibleVarDecls.get! 0
+              let calledBlockName := varDeclsPerBlock.1
+              let calledVarDecl := (varDeclsPerBlock.2.get! 0)
+
+              let variableName :=
+                if calledVarDecl.isRelation then
+                  [calledVarDecl.relationOf.toName, s.toName]
+                else
+                  [s.toName]
+
+
+              let callNameComponents :=
+                calledBlockName.components ++
+                [`vars] ++
+                variableName
+
               let callName := Name.fromComponents callNameComponents
+
               return unhygienicUnfolder `((@$(mkIdent callName) $(baseType.ident) _ _))
 
           if inBlock && !(quantorNames.contains s) then
