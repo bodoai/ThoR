@@ -52,8 +52,9 @@ open language.grandpa1
 #check vars.Person.father
 #print this_φ_Person_ξ_mother
 #check [#alloy | all p : Person | mother in mother]
+#check [#alloy | NoSelfGrandpa]
 
-lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
+lemma l1 : [alloy | NoSelfGrandpa] := by
   unfold NoSelfGrandpa
   apply Rules.no.intro
 
