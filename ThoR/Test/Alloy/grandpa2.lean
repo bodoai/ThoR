@@ -71,7 +71,7 @@ lemma l1 : [alloy | NoSelfGrandpa] := by
 
 --  thor_rw [Rules.dotjoin.add.dist.r] at contra
 
-  fact f0 : language.grandpa1.facts.f0
+  fact f0 : f0
   have ⟨f1, f2⟩ := f0
   -- TODO and elimination
   --      apply Rules.and.elim at f0 with f1 and f2?
