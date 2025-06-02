@@ -4,7 +4,7 @@ import ThoR.Rules
 
 import ThoR.Alloy.Delab
 
-alloy
+#alloy
 module language/grandpa1 ---- Page 84, 85
 
 abstract sig Person {
@@ -44,13 +44,14 @@ assert NoSelfGrandpa {
 check NoSelfGrandpa for 4 Person
 end
 
-create language/grandpa1
+#create language/grandpa1
 
 startTestBlock language.grandpa1
 
 open language.grandpa1
 #check vars.Person.father
 #print this_φ_Person_ξ_mother
+#check [#alloy | all p : Person | mother in mother]
 
 lemma l1 : ∻ language.grandpa1.asserts.NoSelfGrandpa := by
   unfold NoSelfGrandpa
