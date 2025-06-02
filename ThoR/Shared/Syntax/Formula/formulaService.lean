@@ -102,6 +102,43 @@ namespace Shared.formula
     : Except String ((Term)) := do
     match f with
       | formula.string s => do
+        let mut possibleDecls := []
+        for alloyData in availableAlloyData do
+          let possibleMatches :=
+            (alloyData.st.assertDecls ++
+            alloyData.st.axiomDecls ++
+            alloyData.st.defDecls).filter
+              fun cd => cd.name == s
+
+          if !possibleMatches.isEmpty then
+            possibleDecls := possibleDecls.concat
+              (alloyData.st.name, possibleMatches)
+
+        if !possibleDecls.isEmpty then
+          if
+            -- if there are matches in more than one module
+            possibleDecls.length > 1 ||
+            -- or more than one match in a module (this should be impossible)
+            possibleDecls.any fun pv => pv.2.length > 1
+          then
+            throw s!"The call to {s} is ambiguous. \
+            There are multiple declared definitions which it could refer to ({possibleDecls})"
+
+          let declsOfBlock := possibleDecls.get! 0
+          let calledBlockName := declsOfBlock.1
+          let calledCommandDecl := (declsOfBlock.2.get! 0)
+
+          let calledNameComponents :=
+            calledBlockName.components ++
+            match calledCommandDecl.commandType with
+              | commandType.assert => [`asserts, s.toName]
+              | commandType.fact => [`facts, s.toName]
+              | commandType.pred => [`preds, s.toName]
+              | commandType.function => [`functions, s.toName]
+
+          let calledName := Name.fromComponents calledNameComponents
+          return unhygienicUnfolder `((@$(mkIdent calledName) $(baseType.ident) _ _))
+
         return unhygienicUnfolder `($(mkIdent s.toName))
 
       | formula.pred_with_args p pa => do
