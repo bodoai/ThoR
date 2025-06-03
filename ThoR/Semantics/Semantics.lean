@@ -14,25 +14,41 @@ namespace ThoR.Semantics
 variable (R : Type) [TupleSet R]
 
 -- construction follows https://lean-lang.org/documentation/examples/debruijn/
-  inductive Ty {R : Type} [TupleSet R] : Type u where
-    | number -- ℤ
-    | formula -- Prop
-    | expression : {n : ℕ} → (rel_type : RelType R n) → Ty -- Rel rel_type
-    | function : {n : ℕ} → (t : RelType R n) → Ty → Ty -- type1.eval → type2.eval
-    | type : (n : ℕ) → Ty
+  mutual
+    inductive Ty {R : Type} [TupleSet R] : Type u where
+      | number -- ℤ
+      | formula -- Prop
+      | expression : {n : ℕ} → (rel_type : RelType R n) → Ty -- Rel rel_type
+      | function : {n : ℕ} → (t : RelType R n) → Ty → Ty -- type1.eval → type2.eval
+      | pred : {n : ℕ} → {t : RelType R n} → Pred t → Ty
+      | type : (n : ℕ) → Ty
+
+    inductive Pred {R : Type} [TupleSet R] : {n : ℕ} → (RelType R n)→ Type u where
+      | pred_1 : {n : ℕ} → (t : RelType R n) → Pred t
+      | pred_n : {n' n : ℕ} → {t' : RelType R n'} → (t : RelType R n) → (p : Pred t') → Pred t
+  end
 
   inductive Marker : Type u where
     | alloy_predicate
     | alloy_function
 
-  @[reducible]
-  def Ty.eval {R : Type} [TupleSet R] (ty : @Ty R _) :=
-    match ty with
-    | number => ℤ
-    | formula => Prop
-    | expression rel_type => Rel rel_type
-    | Ty.function dom_rel_type ran => Rel dom_rel_type → ran.eval
-    | Ty.type n => ThoR.RelType R n
+  mutual
+    @[reducible]
+    def Ty.eval {R : Type} [TupleSet R] (ty : @Ty R _) :=
+      match ty with
+      | .number => ℤ
+      | .formula => Prop
+      | .expression rel_type => Rel rel_type
+      | Ty.function dom_rel_type ran => Rel dom_rel_type → ran.eval
+      | .pred p => p.eval
+      | Ty.type n => ThoR.RelType R n
+
+    @[reducible]
+    def Pred.eval {R : Type} [TupleSet R] {n : ℕ} (t : RelType R n) (p : @Pred R _ _ t) :=
+      match p with
+      | .pred_1 t => Prop
+      | .pred_n t p => Prop
+  end
 
   inductive Term
     {R : Type}
@@ -290,6 +306,27 @@ variable (R : Type) [TupleSet R]
         (expression2 : Term (.expression t2)) →
         Term .formula
 
+  -- inductive Formula: Type u → Type (u+1) where
+  --   | prop      : Prop → Formula PUnit
+  --   | var       : {T' T : Type u} → Shared.quant → (T → Formula T') → Formula T
+  --   | group     : Shared.quant → (Group T) → Formula T
+  --   | disj      : Shared.quant → (Group T) → Formula T
+
+  -- inductive Group: Type u → Type (u+1)  where
+  --   | formula : {T' T : Type u} → Formula T' → Group T
+  --   | var     : (T → Group T) → Group T
+
+    /- function abstraction -/
+    | quant_1 {t : RelType R n}
+      : Shared.quant → (Rel t → (Term .formula)) →
+        Term (.pred (Pred.pred_1 t))
+    | quant_n {t : RelType R n}
+      : Shared.quant → (Rel t → Term (.pred (Pred.pred_n t p))) →
+        Term (.pred (Pred.pred_n t p))
+    /- function abstraction -/
+    -- | quant {t : RelType R n}
+    --   : Shared.quant → (Rel t → ran) →
+    --     Term (.function t ran)
     /- formula quantification -/
     -- | q_all {n : ℕ} {t : RelType R n} : Term (.function (.expression t) ran) → Term .formula -- (f : (Rel t) → Formula): Formula
 
@@ -301,6 +338,8 @@ variable (R : Type) [TupleSet R]
       {n : ℕ}
       (t : RelType R n)
       : Term (.type n)
+
+  open ThoR.Quantification
 
   def Term.eval
     {R : Type}
@@ -387,6 +426,8 @@ variable (R : Type) [TupleSet R]
 
       | type t => t
 
+      | quant_1 m p => (Formula.var m (λ x => (Formula.prop (p x).eval))).eval
+      | quant_n m p => (Formula.var m (λ x => (Formula.prop (p x).eval))).eval
 
   instance {R : Type} [TupleSet R] {ty : @Ty R _} (t : @Term R _ ty):
     CoeDep (@Term R _ ty) t ty.eval where
