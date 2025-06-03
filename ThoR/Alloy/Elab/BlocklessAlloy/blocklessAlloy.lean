@@ -15,10 +15,17 @@ open Shared
 
 namespace Alloy
 
+  declare_syntax_cat blockless_body
+  syntax formula* : blockless_body
+  syntax expr* : blockless_body
+
+  instance : Coe Formula (TSyntax `blockless_body) where
+  coe s := ⟨s.raw⟩
+
   syntax
     (name := blockless_alloy)
     "[" ("#")? "alloy" "|"
-      formula*
+      blockless_body
     "]"
     : term
 
@@ -43,6 +50,19 @@ namespace Alloy
 
         return result_term
 
+  private def evalBlocklessAlloy
+    (bb : TSyntax `blockless_body)
+    (alloyDataList : List alloyData)
+    (localContextUserNames : List Name)
+    : Except String Term := do
+      match bb with
+      | `(blockless_body | $formulas:formula* ) =>
+        let term_of_formulas ←
+          evalAlloyFormulaBlock formulas.toList alloyDataList localContextUserNames
+        return term_of_formulas
+
+      | _ => throw s!"No Match implemented for the body {bb}"
+
   @[term_elab blockless_alloy]
   private def alloyFormulaBlockImpl : TermElab := fun stx expectedType? => do
     let environment ← getEnv
@@ -62,30 +82,31 @@ namespace Alloy
       []
 
     match stx with
-      | `([ alloy | $formulas:formula* ]) =>
-        let except_term_of_formulas :=
-          evalAlloyFormulaBlock formulas.toList alloyDataList lctxUserNames
+      | `([ alloy | $body:blockless_body ]) =>
 
-        match except_term_of_formulas with
+        let except_body_term :=
+          evalBlocklessAlloy body alloyDataList lctxUserNames
+
+        match except_body_term with
           | Except.error msg =>
             logError msg
             elabTerm (← `(term | True)) expectedType?
 
-          | Except.ok term_of_formulas =>
-            elabTerm term_of_formulas expectedType?
+          | Except.ok body_term =>
+            elabTerm body_term expectedType?
 
-      | `([ #alloy | $formulas:formula* ]) =>
-        let except_term_of_formulas :=
-          evalAlloyFormulaBlock formulas.toList alloyDataList lctxUserNames
+      | `([ #alloy | $body:blockless_body ]) =>
+        let except_body_term :=
+          evalBlocklessAlloy body alloyDataList lctxUserNames
 
-        match except_term_of_formulas with
+        match except_body_term with
           | Except.error msg =>
             logError msg
             elabTerm (← `(term | True)) expectedType?
 
-          | Except.ok term_of_formulas =>
-            logInfo term_of_formulas.raw.prettyPrint
-            elabTerm term_of_formulas expectedType?
+          | Except.ok body_term =>
+            logInfo body_term.raw.prettyPrint
+            elabTerm body_term expectedType?
 
       | _ => throwUnsupportedSyntax
 
