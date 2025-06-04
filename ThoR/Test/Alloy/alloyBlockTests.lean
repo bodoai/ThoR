@@ -37,7 +37,7 @@ end
   -- }
 
   pred p2 [x : iden] {
-    x = x
+    x = (x + x)
   }
 
 end

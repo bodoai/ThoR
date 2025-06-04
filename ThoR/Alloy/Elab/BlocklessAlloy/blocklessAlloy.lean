@@ -17,10 +17,6 @@ namespace Alloy
 
   declare_syntax_cat blockless_body
   syntax formula* : blockless_body
-  syntax expr* : blockless_body
-
-  instance : Coe Formula (TSyntax `blockless_body) where
-  coe s := ⟨s.raw⟩
 
   syntax
     (name := blockless_alloy)

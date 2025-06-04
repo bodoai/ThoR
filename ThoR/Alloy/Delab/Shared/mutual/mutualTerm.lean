@@ -6,20 +6,7 @@ Authors: s. file CONTRIBUTORS
 
 import Lean
 import ThoR.Semantics.Semantics
-import ThoR.Relation.Set
-import ThoR.Alloy.Elab.BlocklessAlloy.blocklessAlloy
-
-/- import of the syntax for expr -/
-import ThoR.Shared.Syntax.Relation.Expr.expr
-
-/- import of the syntax for algExpr -/
-import ThoR.Shared.Syntax.Algebra.AlgExpr.algExpr
-
-/- import of the syntax for typeExpr -/
-import ThoR.Shared.Syntax.TypeExpr.typeExpr
-
-/- import of the syntax for formula -/
-import ThoR.Shared.Syntax.Formula.formula
+import ThoR.Alloy.Delab.DelaborationAlloySyntax
 
 import ThoR.Alloy.UnhygienicUnfolder
 
@@ -30,72 +17,87 @@ open Shared
 
 @[app_unexpander ThoR.Semantics.Term.local_rel_var]
 def unexpTerm_local_rel_var : Unexpander
-  | `($_ $value:ident) => do
-    let e := unhygienicUnfolder
-      `(expr_without_if | $value:ident)
+  | `($_ $value) => do
     let bb := unhygienicUnfolder
-      `(blockless_body | $e:expr_without_if)
+      `(delaborator_body | $value:term )
 
-    `([alloy | $bb:blockless_body ])
+    `([alloy' | $bb:delaborator_body ])
 
   | _ => throw Unit.unit
 
 @[app_unexpander ThoR.Semantics.Term.global_rel_var]
 def unexpTerm_global_rel_var : Unexpander
   | `($_ $_:ident $name:str) => do
-    let e := unhygienicUnfolder
-      `(expr_without_if| $(mkIdent name.getString.toName):ident)
+    let nameTerm := unhygienicUnfolder
+      `(term| $(mkIdent name.getString.toName):ident)
 
     let bb := unhygienicUnfolder
-      `(blockless_body | $e:expr_without_if)
+      `(delaborator_body | $nameTerm:term )
 
-    `([alloy | $bb:blockless_body ])
+    `([alloy' | $bb:delaborator_body ])
 
   | _ => throw Unit.unit
 
 @[app_unexpander ThoR.Semantics.Term.eq]
 def unexpTerm_eq : Unexpander
-  | `($_ $param1 $param2) => do
-    `($param1 = $param2)
-    /-
-    let leftSide := unexpExpressionWithoutIfTerm param1
-    let rightSide := unexpExpressionWithoutIfTerm param2
-    let formula_body := unhygienicUnfolder
-      `(formula | $leftSide:expr_without_if = $rightSide:expr_without_if)
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | ($param1:term = $param2:term) )
 
-    `([ alloy | $formula_body:formula ])
-    -/
+    `([alloy' | $bb:delaborator_body ])
 
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.union]
+def unexpTerm_union : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | ( $param1:term + $param2:term ) )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.lam]
+def unexp_lam : Unexpander
+  | `($_ $lambda_function) =>
+    match lambda_function with
+      | `(fun $lambda_variable ↦ [alloy' | $body ]) =>
+        match lambda_variable with
+          | `(Lean.Parser.Term.funBinder | $(variable_nameTerm):term) =>
+            match variable_nameTerm with
+              | `(term| $variable_name:ident) =>
+                let bb := unhygienicUnfolder
+                  `(delaborator_body |
+                    $(variable_name):ident
+                    { $body:term }
+                  )
+
+                `(
+                    [ alloy' | $bb:delaborator_body ]
+                  )
+
+              | _ => throw Unit.unit
+      | _ => throw Unit.unit
   | _ => throw Unit.unit
 
 -- TODO: Add pred declaration to blockless and add it here?
 -- Blockless Preddeclaration? Usage of variables like in blockless formula?
 @[app_unexpander ThoR.Semantics.Term.pred_def]
 def unexpTerm_predDef : Unexpander
-  | `($_ $name $param) => do
+  | `($_ $name [alloy' | $body] ) => do
 
     let nn := match name with
       | `(term | $n:str) => n.getString
       | _ => unreachable!
 
-    match param with
-      -- TODO: This has to be executed as many times as there is a match to lam ...
-      | `(ThoR.Semantics.Term.lam $lambda_function) =>
-        match lambda_function with
-          | `(fun $lambda_variable ↦ $body) =>
-            match lambda_variable with
-              | `(Lean.Parser.Term.funBinder | $(variable_nameTerm):term) =>
-                match variable_nameTerm with
-                  -- TODO: Blockless pred decl is needed to correctly display this, currently := pred p1 x (x = x)
-                  | `(term| $variable_name:ident) =>
-                    `( $(mkIdent `pred)
-                        $(mkIdent nn.toName)
-                        $(variable_name)
-                        ($(body))
-                      )
-                  | _ =>`($(mkIdent `pred) $(mkIdent nn.toName))
-          | _ => `($(mkIdent `pred) $(mkIdent nn.toName) $lambda_function)
+    let bb := unhygienicUnfolder
+      `( delaborator_body |
+        $(mkIdent `pred):ident
+        $(mkIdent nn.toName)
+        $body
+      )
 
-      | _ =>  `($(mkIdent `pred) $(mkIdent nn.toName) $param)
+    `([alloy' | $bb:delaborator_body])
 
   | _ => throw Unit.unit
