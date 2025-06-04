@@ -12,11 +12,15 @@ namespace Alloy
 
   declare_syntax_cat delaborator_body
   syntax term : delaborator_body
-  syntax term "+" term : delaborator_body
-  syntax term "=" term : delaborator_body
-  syntax "{" term "}" : delaborator_body
+  syntax delaborator_body "+" delaborator_body : delaborator_body
+  syntax delaborator_body "=" delaborator_body : delaborator_body
+  syntax "[" delaborator_body,+ "]" : delaborator_body
+  syntax "{" delaborator_body "}" : delaborator_body
 
-  instance : Coe (TSyntax `delaborator_body) Term  where
+  instance : Coe (TSyntax `delaborator_body) Term where
+  coe s := ⟨s.raw⟩
+
+  instance : Coe Term (TSyntax `delaborator_body) where
   coe s := ⟨s.raw⟩
 
   syntax

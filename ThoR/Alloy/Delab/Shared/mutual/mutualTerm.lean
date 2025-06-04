@@ -42,7 +42,7 @@ def unexpTerm_global_rel_var : Unexpander
 def unexpTerm_eq : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
-      `(delaborator_body | ($param1:term = $param2:term) )
+      `(delaborator_body | $param1:term = $param2:term )
 
     `([alloy' | $bb:delaborator_body ])
 
@@ -52,7 +52,7 @@ def unexpTerm_eq : Unexpander
 def unexpTerm_union : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
-      `(delaborator_body | ( $param1:term + $param2:term ) )
+      `(delaborator_body | $param1:term + $param2:term )
 
     `([alloy' | $bb:delaborator_body ])
 
@@ -67,11 +67,24 @@ def unexp_lam : Unexpander
           | `(Lean.Parser.Term.funBinder | $(variable_nameTerm):term) =>
             match variable_nameTerm with
               | `(term| $variable_name:ident) =>
-                let bb := unhygienicUnfolder
-                  `(delaborator_body |
-                    $(variable_name):ident
-                    { $body:term }
-                  )
+
+                let isLastArg := match body with
+                  | `(ThoR.Semantics.Term.lam $_) => false
+                  | _ => true
+
+                let bb :=
+                  if isLastArg then
+                    unhygienicUnfolder
+                    `(delaborator_body |
+                      $variable_name:ident
+                      { $body:term }
+                    )
+                  else
+                    unhygienicUnfolder
+                    `(delaborator_body |
+                      $variable_name:ident
+                      $body:term
+                    )
 
                 `(
                     [ alloy' | $bb:delaborator_body ]
@@ -81,8 +94,6 @@ def unexp_lam : Unexpander
       | _ => throw Unit.unit
   | _ => throw Unit.unit
 
--- TODO: Add pred declaration to blockless and add it here?
--- Blockless Preddeclaration? Usage of variables like in blockless formula?
 @[app_unexpander ThoR.Semantics.Term.pred_def]
 def unexpTerm_predDef : Unexpander
   | `($_ $name [alloy' | $body] ) => do
