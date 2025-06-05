@@ -18,8 +18,14 @@ open Shared
 @[app_unexpander ThoR.Semantics.Term.local_rel_var]
 def unexpTerm_local_rel_var : Unexpander
   | `($_ $value) => do
+
+    let value_ident :=
+      match value with
+        |`(ident | $value_ident:ident) => value_ident
+        | _ => unreachable!
+
     let bb := unhygienicUnfolder
-      `(delaborator_body | $value:term )
+      `(delaborator_body | $value_ident:ident )
 
     `([alloy' | $bb:delaborator_body ])
 
@@ -28,11 +34,10 @@ def unexpTerm_local_rel_var : Unexpander
 @[app_unexpander ThoR.Semantics.Term.global_rel_var]
 def unexpTerm_global_rel_var : Unexpander
   | `($_ $_:ident $name:str) => do
-    let nameTerm := unhygienicUnfolder
-      `(term| $(mkIdent name.getString.toName):ident)
+    let name_ident := mkIdent name.getString.toName
 
     let bb := unhygienicUnfolder
-      `(delaborator_body | $nameTerm:term )
+      `(delaborator_body | $name_ident:ident )
 
     `([alloy' | $bb:delaborator_body ])
 
@@ -42,7 +47,7 @@ def unexpTerm_global_rel_var : Unexpander
 def unexpTerm_eq : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
-      `(delaborator_body | $param1:term = $param2:term )
+      `(delaborator_body | $param1:delaborator_body = $param2:delaborator_body )
 
     `([alloy' | $bb:delaborator_body ])
 
@@ -52,7 +57,7 @@ def unexpTerm_eq : Unexpander
 def unexpTerm_union : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
-      `(delaborator_body | $param1:term + $param2:term )
+      `(delaborator_body | $param1:delaborator_body + $param2:delaborator_body )
 
     `([alloy' | $bb:delaborator_body ])
 
@@ -67,24 +72,12 @@ def unexp_lam : Unexpander
           | `(Lean.Parser.Term.funBinder | $(variable_nameTerm):term) =>
             match variable_nameTerm with
               | `(term| $variable_name:ident) =>
-
-                let isLastArg := match body with
-                  | `(ThoR.Semantics.Term.lam $_) => false
-                  | _ => true
-
                 let bb :=
-                  if isLastArg then
-                    unhygienicUnfolder
-                    `(delaborator_body |
-                      $variable_name:ident
-                      { $body:term }
-                    )
-                  else
-                    unhygienicUnfolder
-                    `(delaborator_body |
-                      $variable_name:ident
-                      $body:term
-                    )
+                  unhygienicUnfolder
+                  `(delaborator_body |
+                    $variable_name:ident
+                    { $body:delaborator_body }
+                  )
 
                 `(
                     [ alloy' | $bb:delaborator_body ]
@@ -104,7 +97,7 @@ def unexpTerm_predDef : Unexpander
 
     let bb := unhygienicUnfolder
       `( delaborator_body |
-        $(mkIdent `pred):ident
+        pred
         $(mkIdent nn.toName)
         $body
       )

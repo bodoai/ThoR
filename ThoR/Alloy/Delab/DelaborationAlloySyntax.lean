@@ -11,16 +11,61 @@ open Lean Lean.Elab Term
 namespace Alloy
 
   declare_syntax_cat delaborator_body
-  syntax term : delaborator_body
-  syntax delaborator_body "+" delaborator_body : delaborator_body
-  syntax delaborator_body "=" delaborator_body : delaborator_body
-  syntax "[" delaborator_body,+ "]" : delaborator_body
-  syntax "{" delaborator_body "}" : delaborator_body
+  syntax ident : delaborator_body
 
-  instance : Coe (TSyntax `delaborator_body) Term where
+  /-unaryRelOperation-/
+  /--transposition-/
+  syntax "~" delaborator_body : delaborator_body
+  /--transitive_closure-/
+  syntax "^" delaborator_body : delaborator_body
+  /--reflexive_closure-/
+  syntax "*" delaborator_body : delaborator_body
+
+  /-binaryRelOperation-/
+  /--intersection-/
+  syntax delaborator_body "&" delaborator_body : delaborator_body
+  /--union-/
+  syntax delaborator_body "+" delaborator_body : delaborator_body
+  /--difference-/
+  syntax delaborator_body "-" delaborator_body : delaborator_body
+  /--overwrite-/
+  syntax delaborator_body "++" delaborator_body : delaborator_body
+  /--domain_restriction-/
+  syntax delaborator_body "<:" delaborator_body : delaborator_body
+  /--range_restriction-/
+  syntax delaborator_body ":>" delaborator_body : delaborator_body
+
+  /-dotjoin-/
+  syntax delaborator_body "." delaborator_body : delaborator_body
+
+  /-rel_if_else-/
+  syntax delaborator_body "=>" delaborator_body "else" delaborator_body : delaborator_body
+
+  /-unRelBoolOp-/
+  /--no-/
+  syntax "no" delaborator_body : delaborator_body
+  /--one-/
+  syntax "one" delaborator_body : delaborator_body
+  /--lone-/
+  syntax "lone" delaborator_body : delaborator_body
+  /--none-/
+  syntax "none" delaborator_body : delaborator_body
+
+  /--not-/
+  syntax "none" delaborator_body : delaborator_body
+
+  /--relCompareOperation-/
+  syntax delaborator_body "=" delaborator_body : delaborator_body
+
+
+  syntax "pred" ident delaborator_body+ : delaborator_body
+  syntax "[" delaborator_body,+ "]" : delaborator_body
+  syntax delaborator_body "{" delaborator_body+ "}" : delaborator_body
+
+  instance : Coe (TSyntax `delaborator_body) Ident where
   coe s := ⟨s.raw⟩
 
-  instance : Coe Term (TSyntax `delaborator_body) where
+  instance : Coe Ident (TSyntax `delaborator_body) where
   coe s := ⟨s.raw⟩
 
   syntax
