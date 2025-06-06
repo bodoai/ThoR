@@ -43,21 +43,115 @@ def unexpTerm_global_rel_var : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.eq]
-def unexpTerm_eq : Unexpander
-  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
-    let bb := unhygienicUnfolder
-      `(delaborator_body | $param1:delaborator_body = $param2:delaborator_body )
-
-    `([alloy' | $bb:delaborator_body ])
-
-  | _ => throw Unit.unit
-
 @[app_unexpander ThoR.Semantics.Term.union]
 def unexpTerm_union : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
       `(delaborator_body | $param1:delaborator_body + $param2:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.intersect]
+def unexpTerm_intersection : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | $param1:delaborator_body & $param2:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.difference]
+def unexpTerm_difference : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | $param1:delaborator_body - $param2:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.overwrite]
+def unexpTerm_overwrite : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | $param1:delaborator_body ++ $param2:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.domain_restriction]
+def unexpTerm_domain_restriction : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | $param1:delaborator_body <: $param2:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.range_restriction]
+def unexpTerm_range_restriction : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | $param1:delaborator_body :> $param2:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.dotjoin]
+def unexpTerm_dotjoin : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | $param1:delaborator_body . $param2:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.transclos]
+def unexpTerm_transclos : Unexpander
+  | `($_ [alloy'|$body] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | ^ $body:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.reflexive_closure]
+def unexpTerm_reflexive_closure : Unexpander
+  | `($_ [alloy'|$body] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | * $body:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.transposition]
+def unexpTerm_transposition : Unexpander
+  | `($_ [alloy'|$body] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | ~ $body:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+/- expr if else-/
+@[app_unexpander ThoR.Semantics.Term.if_then_else]
+def unexpTerm_if_then_else : Unexpander
+  | `($_ [alloy'|$condition] [alloy'|$thenBody] [alloy'|$elseBody] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body |
+        $condition:delaborator_body =>
+        $thenBody:delaborator_body else
+        $elseBody:delaborator_body )
 
     `([alloy' | $bb:delaborator_body ])
 
@@ -139,8 +233,6 @@ def unexpTerm_predDef : Unexpander
       | `(term | $n:str) => n.getString
       | _ => unreachable!
 
-    --panic! s!"{body}"
-
     /-get args here to group them-/
     let argsAndBody := getArgs body
     let args := argsAndBody.1
@@ -165,5 +257,310 @@ def unexpTerm_predDef : Unexpander
           )
 
     `([alloy' | $bb:delaborator_body])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.fun_def]
+def unexpTerm_fun_def : Unexpander
+  | `($_ $name $body ) => do
+
+    let nn := match name with
+      | `(term | $n:str) => n.getString
+      | _ => unreachable!
+
+    /-get args here to group them-/
+    let argsAndBody := getArgs body
+    let args := argsAndBody.1
+    let argsBody := unhygienicUnfolder `(delaborator_body | [$[$(args)],*])
+    let body := unhygienicUnfolder `(delaborator_body | { $(argsAndBody.2) } )
+
+    let bb :=
+      if args.isEmpty then
+        unhygienicUnfolder
+        `( delaborator_body |
+          fun
+          $(mkIdent nn.toName)
+          $body
+        )
+      else
+        unhygienicUnfolder
+          `( delaborator_body |
+            fun
+            $(mkIdent nn.toName)
+            $argsBody
+            $body
+          )
+
+    `([alloy' | $bb:delaborator_body])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.number]
+def unexpTerm_number : Unexpander
+  | `($_ $value ) => do
+
+    let value_NumLit :=
+      match value with
+        |`(num | $value_NumLit:num) => value_NumLit
+        | _ => unreachable!
+
+    let bb := unhygienicUnfolder
+      `(delaborator_body | $value_NumLit:num )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.negation]
+def unexpTerm_negation : Unexpander
+  | `($_ [alloy'|$body] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | - $body:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.add]
+def unexpTerm_add : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | plus[$param1:delaborator_body, $param2:delaborator_body] )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.sub]
+def unexpTerm_sub : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | minus[$param1:delaborator_body, $param2:delaborator_body] )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.mul]
+def unexpTerm_mul : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | mul[$param1:delaborator_body, $param2:delaborator_body] )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.div]
+def unexpTerm_div : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | div[$param1:delaborator_body, $param2:delaborator_body] )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.rem]
+def unexpTerm_rem : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | rem[$param1:delaborator_body, $param2:delaborator_body] )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.card]
+def unexpTerm_card : Unexpander
+  | `($_ [alloy'|$body] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | #$body:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.no]
+def unexpTerm_no : Unexpander
+  | `($_ [alloy'|$body] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | no $body:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.one]
+def unexpTerm_one : Unexpander
+  | `($_ [alloy'|$body] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | one $body:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.lone]
+def unexpTerm_lone : Unexpander
+  | `($_ [alloy'|$body] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | lone $body:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.some]
+def unexpTerm_some : Unexpander
+  | `($_ [alloy'|$body] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | some $body:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.not]
+def unexpTerm_not : Unexpander
+  | `($_ [alloy'|$body] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | not $body:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.or]
+def unexpTerm_or : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | $param1:delaborator_body or $param2:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.and]
+def unexpTerm_and : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | $param1:delaborator_body and $param2:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.implication]
+def unexpTerm_implication : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | $param1:delaborator_body => $param2:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.equivalent]
+def unexpTerm_equivalent : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | $param1:delaborator_body <=> $param2:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+/- expr if else-/
+@[app_unexpander ThoR.Semantics.Term.f_if_then_else]
+def unexpTerm_f_if_then_else : Unexpander
+  | `($_ [alloy'|$condition] [alloy'|$thenBody] [alloy'|$elseBody] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body |
+        $condition:delaborator_body =>
+        $thenBody:delaborator_body else
+        $elseBody:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.algebraic_leq]
+def unexpTerm_algebraic_leq : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | $param1:delaborator_body <= $param2:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.algebraic_geq]
+def unexpTerm_algebraic_geq : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | $param1:delaborator_body >= $param2:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.algebraic_eq]
+def unexpTerm_algebraic_eq : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | $param1:delaborator_body = $param2:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.algebraic_lt]
+def unexpTerm_algebraic_lt : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | $param1:delaborator_body < $param2:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.algebraic_gt]
+def unexpTerm_algebraic_gt : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | $param1:delaborator_body > $param2:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.in]
+def unexpTerm_in : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | $param1:delaborator_body in $param2:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.eq]
+def unexpTerm_eq : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | $param1:delaborator_body = $param2:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.neq]
+def unexpTerm_neq : Unexpander
+  | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body | $param1:delaborator_body != $param2:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
 
   | _ => throw Unit.unit

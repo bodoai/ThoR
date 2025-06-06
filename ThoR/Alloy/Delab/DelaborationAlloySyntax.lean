@@ -12,6 +12,7 @@ namespace Alloy
 
   declare_syntax_cat delaborator_body
   syntax ident : delaborator_body
+  syntax num : delaborator_body
 
   /-unaryRelOperation-/
   /--transposition-/
@@ -41,6 +42,35 @@ namespace Alloy
   /-rel_if_else-/
   syntax delaborator_body "=>" delaborator_body "else" delaborator_body : delaborator_body
 
+  /-algOperations-/
+  /--negation-/
+  syntax "-" delaborator_body : delaborator_body
+  /--add-/
+  syntax "plus[" delaborator_body "," delaborator_body "]" : delaborator_body
+  /--sub-/
+  syntax "minus[" delaborator_body "," delaborator_body "]" : delaborator_body
+  /--mul-/
+  syntax "mul[" delaborator_body "," delaborator_body "]" : delaborator_body
+  /--div-/
+  syntax "div[" delaborator_body "," delaborator_body "]" : delaborator_body
+  /--rem-/
+  syntax "rem[" delaborator_body "," delaborator_body "]" : delaborator_body
+
+  /-algCompareOp-/
+  /--leq-/
+  syntax delaborator_body "<=" delaborator_body  : delaborator_body
+  /--geq-/
+  syntax delaborator_body ">=" delaborator_body  : delaborator_body
+  /--eq-/
+  syntax delaborator_body "=" delaborator_body  : delaborator_body
+  /--lt-/
+  syntax delaborator_body "<" delaborator_body  : delaborator_body
+  /--gt-/
+  syntax delaborator_body ">" delaborator_body  : delaborator_body
+
+  /--card-/
+  syntax "#" delaborator_body : delaborator_body
+
   /-unRelBoolOp-/
   /--no-/
   syntax "no" delaborator_body : delaborator_body
@@ -48,17 +78,32 @@ namespace Alloy
   syntax "one" delaborator_body : delaborator_body
   /--lone-/
   syntax "lone" delaborator_body : delaborator_body
-  /--none-/
-  syntax "none" delaborator_body : delaborator_body
+  /--some-/
+  syntax "some" delaborator_body : delaborator_body
 
+  /- unRelLogOp-/
   /--not-/
-  syntax "none" delaborator_body : delaborator_body
+  syntax "not" delaborator_body : delaborator_body
 
   /--relCompareOperation-/
+  syntax delaborator_body "in" delaborator_body : delaborator_body
   syntax delaborator_body "=" delaborator_body : delaborator_body
+  syntax delaborator_body "!=" delaborator_body : delaborator_body
+
+  /-binaryLogOperation-/
+  /--or-/
+  syntax delaborator_body "or" delaborator_body : delaborator_body
+  /--and-/
+  syntax delaborator_body "and" delaborator_body : delaborator_body
+  /--implication-/
+  syntax delaborator_body "=>" delaborator_body : delaborator_body
+  /--equivalent-/
+  syntax delaborator_body "<=>" delaborator_body : delaborator_body
 
 
   syntax "pred" ident delaborator_body+ : delaborator_body
+  syntax "fun" ident delaborator_body+ : delaborator_body
+
   syntax "[" delaborator_body,+ "]" : delaborator_body
   syntax "{" delaborator_body "}" : delaborator_body
   syntax "(" delaborator_body ")" : delaborator_body
@@ -67,6 +112,12 @@ namespace Alloy
   coe s := ⟨s.raw⟩
 
   instance : Coe Ident (TSyntax `delaborator_body) where
+  coe s := ⟨s.raw⟩
+
+  instance : Coe NumLit (TSyntax `delaborator_body) where
+  coe s := ⟨s.raw⟩
+
+  instance : Coe (TSyntax `delaborator_body) NumLit where
   coe s := ⟨s.raw⟩
 
   syntax
