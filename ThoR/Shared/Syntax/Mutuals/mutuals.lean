@@ -32,6 +32,7 @@ namespace Shared
     This inductive type represents an alloy formula
     -/
     inductive formula
+      | bracket : formula → formula
       | string : (string : String) → formula
       | pred_with_args :
         (ident : String) →
@@ -84,6 +85,7 @@ namespace Shared
     This inductive type represents a relation
     -/
     inductive expr where
+      | bracket : expr → expr
       | const : (const: constant) → expr
       | string : (string : String) → expr
       | function_call_with_args :
@@ -215,6 +217,7 @@ namespace Shared
     -/
     partial def formula.toString (f : formula) : String :=
       match f with
+        | formula.bracket f => s!"( {f.toString } )"
         | formula.string s => s
         | formula.pred_with_args p pa => Id.run do
           let mut pas := ""
@@ -242,6 +245,7 @@ namespace Shared
     -/
     partial def expr.toString (e : expr) : String :=
       match e with
+        | expr.bracket e => s!"( {e.toString} )"
         | expr.const c => c.toString
         | expr.string s => s
         | expr.function_call_with_args function_name args =>

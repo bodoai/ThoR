@@ -27,6 +27,7 @@ namespace Shared
       (callableVariables : List (varDecl))
       : Except String (List (String × List (varDecl))) := do
         match f with
+          | formula.bracket f => f.getCalledVariables callableVariables
           | formula.pred_with_args _ predicate_arguments =>
             let mut result : List (String × List varDecl) := []
             for pa in predicate_arguments do
@@ -116,6 +117,7 @@ namespace Shared
         let callableVariableNames := (callableVariables.map fun cv => cv.name)
 
         match e with
+        | expr.bracket e => e.getCalledVariables callableVariables
         | expr.string s =>
 
           -- the name does not corrospond to ANY callable variable

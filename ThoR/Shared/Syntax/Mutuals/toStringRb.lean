@@ -16,6 +16,7 @@ namespace Shared
     -/
     partial def expr.toStringRb (e : expr) : expr :=
       match e with
+        | expr.bracket e => expr.bracket (e.toStringRb)
         | expr.string s => expr.string_rb s
         | expr.binaryRelOperation op e1 e2 =>
           expr.binaryRelOperation op (e1.toStringRb) (e2.toStringRb)
@@ -39,6 +40,9 @@ namespace Shared
       (f: formula)
       : formula :=
         match f with
+          | formula.bracket f =>
+            formula.bracket (f.toStringRb)
+
           | formula.string _ => f
 
           | formula.pred_with_args n pas =>

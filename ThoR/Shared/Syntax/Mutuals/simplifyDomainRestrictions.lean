@@ -31,6 +31,8 @@ namespace Shared
       (st : SymbolTable)
       : formula :=
       match f with
+        | formula.bracket f => formula.bracket (f.simplifyDomainRestrictions st)
+
         | formula.pred_with_args p args =>
           formula.pred_with_args p (args.map fun arg => arg.simplifyDomainRestrictions st)
         | formula.unaryRelBoolOperation op e =>
@@ -90,6 +92,8 @@ namespace Shared
       (st : SymbolTable)
       : expr := Id.run do
       match e with
+        | expr.bracket e => expr.bracket (e.simplifyDomainRestrictions st)
+
         | expr.binaryRelOperation operator leftSide rightSide =>
           -- needs to be domain restriction
           if !operator.isDomainRestriction then return e

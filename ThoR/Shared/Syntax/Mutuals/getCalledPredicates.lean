@@ -30,6 +30,9 @@ namespace Shared
         let callablePredicateNames := callablePredicates.map fun cp => cp.name
 
         match f with
+          | formula.bracket f =>
+            f.getCalledPredicates callablePredicates callableVariables
+
           | formula.string s =>
             if callablePredicateNames.contains s then
               let index := callablePredicateNames.indexOf s
@@ -119,6 +122,9 @@ namespace Shared
         (List (commandDecl × List (expr × List (String × List (varDecl)))))
       := do
       match e with
+        | expr.bracket e =>
+          e.getCalledPredicates callablePredicates callableVariables
+
         | expr.ifElse condition thenBody elseBody =>
           let condition_cp ←
             condition.getCalledPredicates callablePredicates callableVariables

@@ -41,10 +41,10 @@ namespace Shared
     : Except String expr := do
       match e with
         | `(expr_without_if | ( $e:expr_without_if )) =>
-          return ← expr.toType_without_if e signatureRelationNames
+          return expr.bracket (← expr.toType_without_if e signatureRelationNames)
 
         | `(expr_without_if | ( $e:expr )) =>
-          return ← expr.toType e signatureRelationNames
+          return expr.bracket (← expr.toType e signatureRelationNames)
 
         | `(expr_without_if | $const:constant) =>
             return expr.const (← constant.toType const)
@@ -168,10 +168,10 @@ namespace Shared
     : Except String expr := do
       match e with
         | `(expr | ( $e:expr )) =>
-          return ← expr.toType e signatureRelationNames
+          return expr.bracket (← expr.toType e signatureRelationNames)
 
         | `(expr | ( $e:expr_without_if )) =>
-          return ← expr.toType_without_if e signatureRelationNames
+          return expr.bracket (← expr.toType_without_if e signatureRelationNames)
 
         | `(expr | $e:expr_without_if) =>
           return ← expr.toType_without_if e signatureRelationNames
@@ -202,7 +202,7 @@ namespace Shared
     : Except String formula := do
       match f with
         | `(formula | ( $f:formula )) =>
-          return ← formula.toType f
+          return formula.bracket (← formula.toType f)
 
         | `(formula | $name:ident) =>
           return formula.string name.getId.toString

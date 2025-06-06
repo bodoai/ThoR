@@ -18,6 +18,9 @@ namespace Shared
     (moduleVariables openVariables : List (String))
     : formula :=
     match f with
+      | formula.bracket f =>
+        formula.bracket (f.insertModuleVariables moduleVariables openVariables)
+
       | formula.pred_with_args p args =>
         formula.pred_with_args
           p
@@ -79,6 +82,9 @@ namespace Shared
     (moduleVariables openVariables : List (String))
     : expr := Id.run do
       match e with
+        | expr.bracket e =>
+          expr.bracket (e.insertModuleVariables moduleVariables openVariables)
+
         | expr.string s =>
           if !moduleVariables.contains s then return e
 

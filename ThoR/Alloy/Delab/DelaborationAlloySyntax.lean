@@ -61,6 +61,7 @@ namespace Alloy
   syntax "pred" ident delaborator_body+ : delaborator_body
   syntax "[" delaborator_body,+ "]" : delaborator_body
   syntax "{" delaborator_body "}" : delaborator_body
+  syntax "(" delaborator_body ")" : delaborator_body
 
   instance : Coe (TSyntax `delaborator_body) Ident where
   coe s := ⟨s.raw⟩

@@ -16,6 +16,8 @@ namespace Shared
       (e : expr)
       : List (String) :=
         match e with
+          | expr.bracket e => e.getReqVariables
+
           | expr.string s => [s]
 
           | expr.callFromOpen sn => Id.run do
@@ -53,6 +55,8 @@ namespace Shared
       (f : formula)
       : List (String) :=
         match f with
+          | formula.bracket f => f.getReqVariables
+
           | formula.pred_with_args _ pa =>
             (pa.map fun (e) => e.getReqVariables).join
 

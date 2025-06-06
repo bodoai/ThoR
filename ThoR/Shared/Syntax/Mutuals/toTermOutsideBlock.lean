@@ -32,6 +32,9 @@ namespace Shared
       (localContextUserNames : List Name := [])
       : Except String Term := do
         match e with
+          | expr.bracket e =>
+            e.toTermOutsideBlock availableAlloyData localContextUserNames
+
           | expr.const c =>
             return (c.toTerm)
 
@@ -160,6 +163,9 @@ namespace Shared
       (localContextUserNames : List Name := [])
       : Except String ((Term)) := do
       match f with
+        | formula.bracket f =>
+          f.toTermOutsideBlock availableAlloyData localContextUserNames
+
         | formula.string s => do
           return unhygienicUnfolder `($(mkIdent s.toName))
 

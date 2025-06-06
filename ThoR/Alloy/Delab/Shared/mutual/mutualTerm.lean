@@ -63,6 +63,16 @@ def unexpTerm_union : Unexpander
 
   | _ => throw Unit.unit
 
+@[app_unexpander ThoR.Semantics.Term.bracket]
+def unexpTerm_bracket : Unexpander
+  | `($_ [alloy'| $body] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body |  ($body:delaborator_body ))
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
 /-
 @[app_unexpander ThoR.Semantics.Term.lam]
 def unexp_lam : Unexpander

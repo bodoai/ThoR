@@ -23,8 +23,6 @@ end
   }
 end
 
-#create x
-
 #alloy x2
   sig A {
     r: A

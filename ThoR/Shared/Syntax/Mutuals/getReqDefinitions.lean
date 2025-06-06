@@ -16,6 +16,7 @@ namespace Shared
       (f : formula)
       : List (String) := Id.run do
         match f with
+          | formula.bracket f => f.getReqDefinitions
           | formula.string s => [s]
           | formula.pred_with_args p _ => [p]
           | formula.unaryRelBoolOperation _ expression =>
@@ -54,6 +55,7 @@ namespace Shared
       (e : expr)
       : List (String) :=
         match e with
+          | expr.bracket e => e.getReqDefinitions
           | expr.ifElse condition thenBody elseBody =>
             let condition_rd := condition.getReqDefinitions
             let thenBody_rd := thenBody.getReqDefinitions

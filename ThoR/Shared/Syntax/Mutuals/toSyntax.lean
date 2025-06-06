@@ -35,8 +35,12 @@ namespace Shared
       (blockName : Name)
       : Expression := Unhygienic.run do
         match e with
+          | expr.bracket e => `(expr | ( $(e.toSyntax blockName):expr ) )
+
           | expr.const c => `(expr | $(c.toSyntax):constant)
+
           | expr.string s => `(expr | $(mkIdent s.toName):ident)
+
           | expr.callFromOpen sn => `(expr | $(sn.toSyntax):separatedNamespace)
 
           | expr.function_call_with_args function_name arguments =>
@@ -103,6 +107,9 @@ namespace Shared
       (blockName : Name)
       : Formula := Unhygienic.run do
         match f with
+          | formula.bracket f =>
+            `(formula | ( $(f.toSyntax blockName):formula ))
+
           | formula.string s =>
             `(formula | $(mkIdent s.toName):ident)
 

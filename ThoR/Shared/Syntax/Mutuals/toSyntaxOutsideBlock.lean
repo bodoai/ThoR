@@ -34,6 +34,8 @@ namespace Shared
       (e : expr)
       : Expression := Unhygienic.run do
         match e with
+          | expr.bracket e => `(expr | ( $(e.toSyntaxOutsideBlock):expr ))
+
           | expr.const c => `(expr | $(c.toSyntax):constant)
 
           | expr.string s => `(expr | $(mkIdent s.toName):ident)
@@ -95,6 +97,9 @@ namespace Shared
       (f : formula)
       : Formula := Unhygienic.run do
         match f with
+          | formula.bracket f =>
+            `(formula | ( $(f.toSyntaxOutsideBlock):formula ))
+
           | formula.string s =>
             `(formula | $(mkIdent s.toName):ident)
 

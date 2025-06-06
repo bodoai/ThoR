@@ -40,6 +40,9 @@ namespace Shared
       (pureNames : List (String) := [])
       : Except String Term := do
         match e with
+          | expr.bracket e =>
+            e.toTerm blockName variableNames callableVariables callablePredicates
+
           | expr.const c =>
             return (c.toTerm)
 
@@ -153,6 +156,9 @@ namespace Shared
       : Except String Term := do
 
         match f with
+        | formula.bracket f =>
+          f.toTerm blockName variableNames callableVariables callablePredicates
+
         | formula.string s => do
           -- Quantors and args dont use namespaces
           if pureNames.contains s then

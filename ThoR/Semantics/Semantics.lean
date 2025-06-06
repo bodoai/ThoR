@@ -131,7 +131,13 @@ variable (R : Type) [TupleSet R]
     /- function call from expression ? -/
     --| call -- skip ?
 
+    /--breacket definition-/
+    | bracket : Term ty → Term ty
+
+    /--predicate definition-/
     | pred_def (name : String) : Term ty → Term ty
+
+    /--function definition-/
     | fun_def (name : String) : Term ty → Term ty
     -- | marker : Marker → Term ty → Term ty
     -- | name : String → Term ty → Term ty
@@ -329,6 +335,7 @@ variable (R : Type) [TupleSet R]
       /- expression if else -/
       | .if_then_else f r1 r2 => HIfThenElse.hIfThenElse (f.eval) (r1.eval) (r2.eval)
 
+      | .bracket t => t.eval
       | .pred_def _ t => t.eval
       | .fun_def _ t => t.eval
       -- | .marker _ t => t.eval

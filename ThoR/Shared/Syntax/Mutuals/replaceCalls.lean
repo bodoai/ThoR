@@ -30,6 +30,9 @@ namespace Shared
       (callables : List (varDecl))
       : formula := Id.run do
         match f with
+          | formula.bracket f =>
+            formula.bracket (f.replaceCalls callables)
+
           | formula.string _ =>
 
             /-
@@ -127,6 +130,9 @@ namespace Shared
       (callables : List (varDecl))
       : expr := Id.run do
         match e with
+          | expr.bracket e =>
+            expr.bracket (e.replaceCalls callables)
+
           | expr.string s =>
 
             -- Get the names of the callable elements

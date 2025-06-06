@@ -23,6 +23,9 @@ namespace Shared
       (moduleName : String)
       : expr := Id.run do
         match e with
+          | expr.bracket e =>
+            expr.bracket (e.replaceThisCalls moduleName)
+
           | expr.callFromOpen sn =>
             let components := sn.representedNamespace.getId.components
             if !components.get! 0 == `this then return e
@@ -74,6 +77,9 @@ namespace Shared
       (moduleName : String)
       : formula :=
       match f with
+        | formula.bracket f =>
+          formula.bracket (f.replaceThisCalls moduleName)
+
         | formula.pred_with_args p args =>
           formula.pred_with_args
             p

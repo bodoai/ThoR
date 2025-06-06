@@ -28,6 +28,9 @@ namespace Shared
         (List (commandDecl × List (expr × List (String × List (varDecl)))))
       := do
         match f with
+          | formula.bracket f =>
+            f.getFunctionCalls callableFunctions callableVariables
+
           | formula.pred_with_args _ arguments =>
             let mut functionCalls := []
             for argument in arguments do
@@ -99,6 +102,9 @@ namespace Shared
         (List (commandDecl × List (expr × List (String × List (varDecl)))))
       := do
         match e with
+          | expr.bracket e =>
+            e.getFunctionCalls callableFunctions callableVariables
+
           | expr.string s =>
             let possibleFunctions :=
               callableFunctions.filter fun cf => cf.name == s

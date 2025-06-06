@@ -42,6 +42,14 @@ namespace Shared
       (pureNames : List (String) := [])
       : Except String Term := do
         match e with
+          | expr.bracket e =>
+            return unhygienicUnfolder `(
+                (
+                  $(mkIdent ``ThoR.Semantics.Term.bracket)
+                  $(← e.toSemanticsTerm blockName variableNames callableVariables callablePredicates pureNames)
+                )
+              )
+
           | expr.const c =>
             return (c.toTerm)
             -- TODO: Add to semantics or change value ?
@@ -234,6 +242,14 @@ namespace Shared
       : Except String Term := do
 
         match f with
+        | formula.bracket f =>
+          return unhygienicUnfolder `(
+                (
+                  $(mkIdent ``ThoR.Semantics.Term.bracket)
+                  $(← f.toSemanticsTerm blockName variableNames callableVariables callablePredicates pureNames)
+                )
+              )
+
         | formula.string s => do
           -- Quantors and args dont use namespaces
           if pureNames.contains s then
