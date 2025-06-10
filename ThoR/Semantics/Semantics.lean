@@ -143,7 +143,7 @@ variable (R : Type) [TupleSet R]
     -- | name : String → Term ty → Term ty
 
     /- function abstraction -/
-    | lam {t : RelType R n}
+    | lam (t : RelType R n)
       : (Rel t → Term ran) →
         Term (.function t ran)
 
@@ -445,7 +445,7 @@ def pred_in1 :=
   Term.pred_def "p1" (
   -- @Term.marker ThoR_TupleSet _ [] _ Marker.alloy_predicate (
   --   @Term.name ThoR_TupleSet _ _ _ "pred_in1" (
-      Term.lam (
+      Term.lam _ (
         λ (r : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
           Term.in
             (expression1 := Term.local_rel_var r)
@@ -460,7 +460,7 @@ pred_in2 [x : set univ] {
 -/
 def pred_in2 :=
   Term.pred_def "p2" (
-    Term.lam (
+    Term.lam _ (
       λ (x : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
         Term.in
           (expression1 := Term.local_rel_var x)
@@ -496,9 +496,9 @@ pred_in3 [x : set univ, y : set univ] {
 -/
 def pred_in3 :=
   Term.pred_def "p3" (
-    Term.lam (
+    Term.lam _ (
       λ (x : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
-        Term.lam (
+        Term.lam _ (
           λ (y : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
             Term.in
               (expression1 := Term.local_rel_var x)
@@ -526,9 +526,9 @@ fun1 [x : set univ, y : set univ] : univ {
 -/
 def fun1 :=
   Term.fun_def "f1" (
-    Term.lam (
+    Term.lam _ (
       λ (x : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
-        Term.lam (
+        Term.lam _ (
           λ (y : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
             Term.intersect
               (Term.local_rel_var x)
@@ -544,7 +544,7 @@ fun2 [r : set univ] : univ {
 -/
 def fun2 :=
   Term.fun_def "f2" (
-    Term.lam (
+    Term.lam _ (
       λ (r : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
         ( Term.app
           (Term.app
@@ -560,7 +560,7 @@ fun1 [r : set univ] : univ {
 }
 -/
 def fun_union1 :=
-    Term.lam (
+    Term.lam _ (
       λ (r : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
         Term.union
           (Term.local_rel_var r)
@@ -578,7 +578,7 @@ fun1 [r : set univ] : univ {
 }
 -/
 def fun_union_union :=
-    Term.lam (
+    Term.lam _ (
       λ (r : (Rel (RelType.mk.sig ThoR_TupleSet Shared.mult.set))) =>
         Term.union
           (Term.app (fun_union1 ThoR_TupleSet) (Term.local_rel_var r))

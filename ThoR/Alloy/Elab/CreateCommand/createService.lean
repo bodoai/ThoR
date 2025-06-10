@@ -169,7 +169,7 @@ namespace Alloy
             for name in names do
               bodyTerm := unhygienicUnfolder `( term |
                 (
-                  $(mkIdent ``ThoR.Semantics.Term.lam)
+                  $(mkIdent ``ThoR.Semantics.Term.lam) _
                   ($(mkIdent `R) := $(baseType.ident))
                   ( λ ( $(name) : ($(typeTerm) : Type)) => $bodyTerm )
                 )
@@ -187,7 +187,7 @@ namespace Alloy
             for name in names do
               bodyTerm := unhygienicUnfolder `( term |
                 (
-                  $(mkIdent ``ThoR.Semantics.Term.lam)
+                  $(mkIdent ``ThoR.Semantics.Term.lam) _
                   ($(mkIdent `R) := $(baseType.ident))
                   ( λ ( $(name) : ($(typeTerm) : Type)) => $bodyTerm )
                 )
