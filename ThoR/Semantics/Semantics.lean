@@ -13,65 +13,41 @@ namespace ThoR.Semantics
 
 variable (R : Type) [TupleSet R]
 
+inductive TyTy : Type 1 where
+  | isTy
+  | isPred {R : Type} [TupleSet R] (t : RelType R n): TyTy
+
 -- construction follows https://lean-lang.org/documentation/examples/debruijn/
-mutual
-  inductive Ty {R : Type} [TupleSet R] : Type u where
-    | number -- ℤ
-    | formula -- Prop
-    | expression : {n : ℕ} → (rel_type : RelType R n) → Ty -- Rel rel_type
-    | function : {n : ℕ} → (t : RelType R n) → Ty → Ty -- type1.eval → type2.eval
-    | pred : {n : ℕ} → (t : RelType R n) → PredTy t → Ty
-    -- | type : (n : ℕ) → Ty
-
-  inductive PredTy {R : Type} [TupleSet R] : {n : ℕ} → (t : RelType R n) → Type u where
-    | pred_1 : {n : ℕ} → (t : RelType R n) → PredTy t
-    | pred_n : {n : ℕ} → (t : RelType R n) → PredTy t → PredTy t
-end
-
-instance {R : Type} [TupleSet R] : Inhabited (@Ty R _) := by sorry
-instance {R : Type} [TupleSet R] {n : ℕ} (t : RelType R n) : Inhabited (PredTy t) := by sorry
+  inductive Ty {R : Type} [TupleSet R] : (tt : TyTy) → Type u where
+    | number : Ty .isTy-- ℤ
+    | formula : Ty .isTy -- Prop
+    | expression : {n : ℕ} → (rel_type : RelType R n) → Ty .isTy-- Rel rel_type
+    | function : {n : ℕ} → (t : RelType R n) → Ty .isTy → Ty .isTy -- type1.eval → type2.eval
+    | pred : {n : ℕ} → {t : RelType R n} → Ty (.isPred t) → Ty .isTy
+    | pred_1 : {n : ℕ} → (t : RelType R n) → Ty (.isPred t)
+    | pred_n : {n : ℕ} → (t : RelType R n) → Ty (.isPred t) → Ty (.isPred t)
 
   inductive Marker : Type u where
     | alloy_predicate
     | alloy_function
 
-mutual
   @[reducible]
-  def Ty.eval {R : Type} [TupleSet R] (ty : @Ty R _) : Type :=
+  def Ty.eval {R : Type} [TupleSet R] {tt : TyTy} (ty : @Ty R _ tt) : Type :=
     match ty with
     | .number => ℤ
     | .formula => Prop
     | .expression rel_type => Rel rel_type
     | .function dom_rel_type ran => Rel dom_rel_type → ran.eval
-    | .pred dom_rel_type p => Rel dom_rel_type → p.eval
-    -- | .type n => ThoR.RelType R n
-
-  @[reducible]
-  def PredTy.eval {R : Type} [TupleSet R] {n : ℕ} (t : RelType R n) (p : PredTy t) : Type :=
-    match p with
+    | .pred p => p.eval
     | .pred_1 dom_rel_type => Rel dom_rel_type → Prop
     | .pred_n dom_rel_type p' => Rel dom_rel_type → (p'.eval)
-end
 
-mutual
   inductive Term
     {R : Type}
     [TupleSet R]
-    : (@Ty R _) →
-      Type u
+    : {tt : TyTy} → (ty : @Ty.{u} R _ tt) →
+      Type (u+1)
       where
-
-    | default_number : Term .number
-    | default_formula : Term .formula
-    | default_expression : {n : ℕ} → (rel_type : RelType R n) → Term (.expression rel_type)
-    | default_function : (Rel t → Term ran) → Term (.function t ran)
-    | default_pred : {n : ℕ} → (t : RelType R n) → (ran : PredTy t) → Term (.pred t ran)
-    -- | type : (n : ℕ) → Ty
-    -- | q_group {t : RelType R n} {ran : PredTy t}
-    --   : Shared.quant →
-    --     Pred ran →
-    --     Term .formula
-
 
     /- ?? expr string ?? fromula string ?? -/
     | global_rel_var {n : ℕ} {t : RelType R n} (r : Rel t) (name : String): Term (.expression t)
@@ -163,7 +139,7 @@ mutual
     /- function call from expression ? -/
     --| call -- skip ?
 
-    /--breacket definition-/
+    /--bracket definition-/
     | bracket : Term ty → Term ty
 
     /--predicate definition-/
@@ -184,11 +160,6 @@ mutual
       : Term (.function t ran) →
         Term (.expression t) →
         Term ran
-
-    | q_group {t : RelType R n} {ran : PredTy t}
-      : Shared.quant →
-        Pred ran →
-        Term .formula
 
     /- algebra expression number -/
     | number (z : ℤ) : Term .number -- may have to be from N
@@ -333,78 +304,29 @@ mutual
         (expression2 : Term (.expression t2)) →
         Term .formula
 
-    /- formula quantification -/
-    -- | q_all {n : ℕ} {t : RelType R n} : Term (.function (.expression t) ran) → Term .formula -- (f : (Rel t) → Formula): Formula
-
-    /- formula let declaration ? -/
-    -- | let
-
-    /- type expression ??-/
-    -- | type
-    --   {n : ℕ}
-    --   (t : RelType R n)
-    --   : Term (.type n)
-
-  inductive Pred
-    {R : Type}
-    [TupleSet R]
-    : {n : ℕ} →
-      {t : RelType R n} →
-      (PredTy t) →
-      Type u
-      where
+    | q_group {t : RelType R n} {ran : Ty (.isPred t)}
+      : Shared.quant →
+        Term ran →
+        Term .formula
     | pred_1 {n : ℕ} {t : RelType R n}
       : (Rel t → Term .formula) →
-        Pred (.pred_1 t)
-    | pred_n {n : ℕ} {t : RelType R n} {ran : PredTy t}
-      : (Rel t → Pred ran) →
-        Pred (.pred_n t ran)
+        Term (Ty.pred_1 t)
+    | pred_n {n : ℕ} {t : RelType R n} {ran : Ty (.isPred t)}
+      : (Rel t → Term ran) →
+        Term (Ty.pred_n t ran)
 
-end
+    -- | lam (t : RelType R n)
+    --   : (Rel t → Term ran) →
+    --     Term (.function t ran)
 
-instance {R : Type} [TupleSet R] : Inhabited (@Term R _ .number) where
-  default := .default_number
-
-instance {R : Type} [TupleSet R] : Inhabited (@Term R _ .formula) where
-  default := .default_formula
-
-instance {R : Type} [TupleSet R] {n : ℕ} (rel_type : RelType R n) : Inhabited (@Term R _ (.expression rel_type)) where
-  default := .default_expression rel_type
-
-instance {R : Type} [TupleSet R] {n : ℕ} (rel_type : RelType R n) (ran : @Ty R _) (f : Rel rel_type → @Term R _ ran) : Inhabited (@Term R _ (.function rel_type ran)) where
-  default := .default_function f
-
-instance {R : Type} [TupleSet R] {n : ℕ} (t : RelType R n) (ran : PredTy t) : Inhabited (@Term R _ (.pred t ran)) where
-  default := .default_pred t ran
-
-    -- | number -- ℤ
-    -- | formula -- Prop
-    -- | expression : {n : ℕ} → (rel_type : RelType R n) → Ty -- Rel rel_type
-    -- | function : {n : ℕ} → (t : RelType R n) → Ty → Ty -- type1.eval → type2.eval
-    -- | pred : {n : ℕ} → (t : RelType R n) → PredTy t → Ty
-    -- | type : (n : ℕ) → Ty
-
-instance {R : Type} [TupleSet R] {n : ℕ} (t : RelType R n) : Inhabited (Rel t) := by sorry
-
-instance {R : Type} [TupleSet R] {n : ℕ} (t : RelType R n) (ran : PredTy t): Inhabited (PredTy.eval t ran) := by sorry
-
-
-instance {R : Type} [TupleSet R] (ty : @Ty R _) : Inhabited (Term ty) := by sorry
-instance {R : Type} [TupleSet R] {n : ℕ} {t : RelType R n} : Inhabited (PredTy t) := by sorry
-
-mutual
-  partial def Term.eval
+  def Term.eval
     {R : Type}
     [TupleSet R]
-    {ty : @Ty R _}
-    (t : @Term R _ ty)
+    {tt : TyTy}
+    {ty : @Ty R _ tt}
+    (t : @Term R _ _ ty)
     : ty.eval :=
       match t with
-      | .default_number => 0
-      | .default_formula => False
-      | .default_expression rel_type => default
-      | .default_function f =>  λ x => (f x).eval
-      | .default_pred t ran => λ x => default
 
       | .global_rel_var r _ => r
       | .local_rel_var r => r
@@ -439,7 +361,12 @@ mutual
 
       -- | @Term.q_bind R _ _ t m f => ∀ (x : Rel t), f.eval x
 
-      | @Term.q_group R _ _ _ _ m p => p.eval
+    -- | q_group {t : RelType R n} {ran : Ty (.isPred t)}
+    --   : Shared.quant →
+    --     Term ran →
+    --     Term .formula
+
+      | @Term.q_group R _ _ t ran m p => p.eval
 
       | .number z => z
 
@@ -487,23 +414,8 @@ mutual
       | .eq r1 r2 => (r1.eval) ≡ (r2.eval)
       | .neq r1 r2 => (r1.eval) ≢  (r2.eval)
 
-      -- | q_all {n : ℕ} {t : RelType R n} : Term (.function (.expression t) ran) → Term .formula -- (f : (Rel t) → Formula): Formula
-
---      | type t => t
-
-
-  partial def Pred.eval
-    {R : Type}
-    [TupleSet R]
-    {n : ℕ}
-    {t : RelType R n}
-    {ty : PredTy t}
-    (p : Pred ty)
-    : Prop := match p with
-    | .pred_1 f => ∀ (x : Rel t), (f x).eval
-    | .pred_n f => ∀ (x : Rel t), (f x).eval
-
-end
+      | .pred_1 f => ∀ x, (f x).eval
+      | .pred_n f => ∀ x, (f x).eval
 
   instance {R : Type} [TupleSet R] {ty : @Ty R _} (t : @Term R _ ty):
     CoeDep (@Term R _ ty) t ty.eval where
