@@ -85,6 +85,24 @@ namespace Shared
             )
 
           | expr.function_call_with_args called_function arguments =>
+            let function_name_components := [blockName, `funs]
+
+            let basic_function_name := called_function.toName
+
+            let function_name :=
+              Name.fromComponents
+                (function_name_components.concat basic_function_name)
+
+            if arguments.isEmpty then
+              return unhygienicUnfolder
+                `(
+                  (
+                    $(mkIdent ``ThoR.Semantics.Term.app)
+                    ($(mkIdent `R) := $(baseType.ident))
+                    $(mkIdent function_name)
+                  )
+                )
+
             let mut argumentsTerm
               ← (arguments.get! 0).toSemanticsTerm blockName
                 variableNames callableVariables callablePredicates pureNames
@@ -96,14 +114,6 @@ namespace Shared
               argumentsTerm :=
                 unhygienicUnfolder
                   `(argumentsTerm $argTerm)
-
-            let function_name_components := [blockName, `funs]
-
-            let basic_function_name := called_function.toName
-
-            let function_name :=
-              Name.fromComponents
-                (function_name_components.concat basic_function_name)
 
             return unhygienicUnfolder
               `(

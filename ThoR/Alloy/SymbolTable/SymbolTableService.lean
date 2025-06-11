@@ -220,6 +220,11 @@ to be better digestible for further computation and transformation into Lean.
           let calledSigDecls := signatureCall.2
 
           if calledSigDecls.isEmpty then
+            if location.relationCalls.isEmpty then
+              throw s!"The name {call} cannot be found. \
+              (In {location.commandType}}
+              {location.name})"
+
             let index := location.signatureCalls.indexOf signatureCall
             let relCall := location.relationCalls.get! index
             let calledRelDecls := relCall.2
@@ -494,10 +499,14 @@ to be better digestible for further computation and transformation into Lean.
           if !a.expression.isString then
             (a, default)
           else
-            let fv := (st.variableDecls.filter
+            let fvds := (st.variableDecls.filter
               fun cv =>
-                cv.name == a.expression.getStringData).get! 0
-            (a, fv)
+                cv.name == a.expression.getStringData)
+            if fvds.isEmpty then
+              (a, default)
+            else
+              let fv := fvds.get! 0
+              (a, fv)
 
         let functionCalls ←
           predDecl.getFunctionCalls st.getFunctionDeclarations st.variableDecls

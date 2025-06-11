@@ -88,7 +88,7 @@ def switch_thoR_representation_to_alloy_string_representation
 
     let componentResultString : String := (newComponents.drop 1).foldl
       (fun res c => s!"{res}/{c}")
-      (newComponents.get! 0)
+      (newComponents.getD 0 "")
 
     return Syntax.mkStrLit componentResultString
 
