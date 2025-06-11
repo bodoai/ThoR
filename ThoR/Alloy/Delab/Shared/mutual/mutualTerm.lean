@@ -43,6 +43,21 @@ def unexpTerm_global_rel_var : Unexpander
 
   | _ => throw Unit.unit
 
+@[app_unexpander ThoR.Semantics.Term.type]
+def unexpTerm_type : Unexpander
+  | `($_ $value) => do
+
+    let value_ident :=
+      match value with
+        |`(separatedNamespace | $value_ident:separatedNamespace) => value_ident
+
+    let bb := unhygienicUnfolder
+      `(delaborator_body | $value_ident:separatedNamespace )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
 @[app_unexpander ThoR.Semantics.Term.union]
 def unexpTerm_union : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
@@ -199,7 +214,17 @@ private partial def getArgs
   let mut result := #[]
   let mut trueBody := unhygienicUnfolder `(delaborator_body|$(mkIdent `default):ident)
   match body with
-    | `(ThoR.Semantics.Term.lam $lambda_function) =>
+    | `(ThoR.Semantics.Term.lam $type $lambda_function) =>
+
+      let mut showType := true
+
+      let mut final_type := unhygienicUnfolder `(delaborator_body| $(mkIdent `t):ident)
+
+      match type with
+        | `([alloy'| $body].eval) => final_type := body
+        | `([alloy'| $body]) => final_type := body
+        | _ => showType := false
+
       match lambda_function with
         | `(fun $lambda_variable ↦ $body) =>
           match lambda_variable with
@@ -207,7 +232,17 @@ private partial def getArgs
                 $(variable_nameTerm):term ) =>
                   match variable_nameTerm with
                     | `($variable_name:ident) =>
-                      let arg := unhygienicUnfolder `(delaborator_body|$variable_name:ident)
+
+                      let arg :=
+                        if showType then
+                          unhygienicUnfolder
+                            `(delaborator_body |
+                              $variable_name:ident : $final_type)
+                        else
+                          unhygienicUnfolder
+                            `(delaborator_body |
+                              $variable_name:ident)
+
                       result := result.push arg
                     | _ => result := result
 
@@ -231,7 +266,7 @@ def unexpTerm_predDef : Unexpander
 
     let nn := match name with
       | `(term | $n:str) => n.getString
-      | _ => unreachable!
+      | _ => "Error matching Name"
 
     /-get args here to group them-/
     let argsAndBody := getArgs body
@@ -266,7 +301,7 @@ def unexpTerm_fun_def : Unexpander
 
     let nn := match name with
       | `(term | $n:str) => n.getString
-      | _ => unreachable!
+      | _ => "Error matching Name"
 
     /-get args here to group them-/
     let argsAndBody := getArgs body
