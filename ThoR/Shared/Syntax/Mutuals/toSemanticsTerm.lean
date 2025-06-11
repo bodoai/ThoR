@@ -52,15 +52,17 @@ namespace Shared
 
           | expr.const c =>
             return (c.toTerm)
-            -- TODO: Add to semantics or change value ?
 
           | expr.string s => do
 
             if !(pureNames.contains s) then
+              let name :=
+                Name.fromComponents [blockName, "vars".toName, s.toName]
+
               return unhygienicUnfolder `(
                 (
                   $(mkIdent ``ThoR.Semantics.Term.global_rel_var)
-                  (∻ $(mkIdent s!"{blockName}.vars.{s}".toName))
+                  (∻ $(mkIdent name))
                   $(Syntax.mkStrLit s)
                 )
               )
@@ -224,7 +226,13 @@ namespace Shared
               )
 
           | expr.string_rb s => do
-            -- TODO: What to do here
+            if !(pureNames.contains s) then
+              let name :=
+                Name.fromComponents [blockName, "vars".toName, s.toName]
+
+              return unhygienicUnfolder
+                `((@$(mkIdent name) $(baseType.ident) _ _))
+
             return unhygienicUnfolder
               `((@$(mkIdent s.toName) $(baseType.ident) _ _))
 
@@ -713,7 +721,6 @@ namespace Shared
       -- names that have to be pure with no namespace (quantors and args)
       (pureNames : List (String) := [])
       : Except String Term := do
-        /- TODO: Needed in Semantics ?? -/
         match te with
           | Shared.typeExpr.arrowExpr ae =>
             let aeTerm ← ae.toTerm blockName

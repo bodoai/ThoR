@@ -162,7 +162,7 @@ namespace Alloy
           for arg in cd.predArgs do
             let argExpr := arg.1.expression.replaceCalls callableVariables
             let type := typeExpr.relExpr argExpr.toStringRb
-            let typeTerm ← type.toTerm blockName
+            let typeTerm ← type.toSemanticsTerm blockName
               cd.requiredVars callableVariables cd.predCalls
             let names := (arg.1.names.map fun name => (mkIdent name.toName)).toArray
 

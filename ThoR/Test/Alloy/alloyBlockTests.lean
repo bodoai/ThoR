@@ -34,7 +34,7 @@ end
   --   all t: B | some t + B.r
   -- }
 
-  pred p2 [x,y: iden] {
+  pred p2 [x,y: A] {
     x = (x + y)
   }
 
