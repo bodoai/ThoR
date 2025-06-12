@@ -222,20 +222,26 @@ private partial def getType
 
     return (final_type, showType)
 
+private structure delabArg where
+  (name : (TSyntax `delaborator_body))
+  (type : (TSyntax `delaborator_body))
+  (showType : Bool)
+
+instance : Inhabited delabArg where
+  default := {name := default, type := default, showType := false}
 
 private partial def getArgs
   (body : TSyntax `term)
-  : (Array (TSyntax `delaborator_body)) × (TSyntax `delaborator_body) := Id.run do
+  : (Array delabArg) × (TSyntax `delaborator_body)
+  := Id.run do
   let mut result := #[]
   let mut trueBody := unhygienicUnfolder `(delaborator_body|$(mkIdent `default):ident)
   match body with
     | `(ThoR.Semantics.Term.lam $type $lambda_function) =>
 
-
       let type_and_showType := getType type
       let type := type_and_showType.1
       let showType := type_and_showType.2
-
 
       match lambda_function with
         | `(fun $lambda_variable ↦ $body) =>
@@ -244,18 +250,17 @@ private partial def getArgs
                 $(variable_nameTerm):term ) =>
                   match variable_nameTerm with
                     | `($variable_name:ident) =>
-
                       let arg :=
-                        if showType then
-                          unhygienicUnfolder
-                            `(delaborator_body |
-                              $variable_name:ident : $type)
-                        else
-                          unhygienicUnfolder
-                            `(delaborator_body |
-                              $variable_name:ident)
+                        unhygienicUnfolder
+                          `(delaborator_body |
+                            $variable_name:ident)
 
-                      result := result.push arg
+                      result :=
+                        result.push
+                          { name := arg,
+                            type :=type,
+                            showType := showType }
+
                     | _ => result := result
 
           /- if the body is not a lam then its the final body -/
@@ -272,6 +277,44 @@ private partial def getArgs
 
   (result.reverse, trueBody)
 
+private def groupArgs
+  (args : Array delabArg)
+  : Array (TSyntax `delabArg)
+  := Id.run do
+  let mut args_per_type
+    : (HashMap String (List delabArg))
+    := HashMap.empty
+
+  for arg in args do
+    let type_as_string := s!"{arg.type.raw}"
+    args_per_type :=
+      args_per_type.insert type_as_string
+        ((args_per_type.findD type_as_string []).concat arg)
+
+  let mut groupedArgs := #[]
+  for type_with_args in args_per_type.toList do
+    let args := type_with_args.2
+    if !args.isEmpty then
+      let argNames := (type_with_args.2.map fun a => a.name).toArray
+
+      let firstArg := (type_with_args.2.get! 0)
+      let type := firstArg.type
+      let showType := firstArg.showType
+
+      if showType then
+        groupedArgs :=
+          groupedArgs.push
+            (unhygienicUnfolder
+              `(delabArg | $[$(argNames)],* : $type ))
+      else
+        for name in argNames do
+          groupedArgs :=
+            groupedArgs.push
+              (unhygienicUnfolder
+                `(delabArg | $name:delaborator_body ))
+
+  return groupedArgs
+
 @[app_unexpander ThoR.Semantics.Term.pred_def]
 def unexpTerm_predDef : Unexpander
   | `($_ $name $body ) => do
@@ -283,7 +326,9 @@ def unexpTerm_predDef : Unexpander
     /-get args here to group them-/
     let argsAndBody := getArgs body
     let args := argsAndBody.1
-    let argsBody := unhygienicUnfolder `(delaborator_body | [$[$(args)],*])
+    let groupedArgs := groupArgs args
+
+    let argsBody := unhygienicUnfolder `(delaborator_body | [$[$(groupedArgs)],*])
     let body := unhygienicUnfolder `(delaborator_body | { $(argsAndBody.2) } )
 
     let bb :=
@@ -318,7 +363,9 @@ def unexpTerm_fun_def : Unexpander
     /-get args here to group them-/
     let argsAndBody := getArgs body
     let args := argsAndBody.1
-    let argsBody := unhygienicUnfolder `(delaborator_body | [$[$(args)],*])
+    let groupedArgs := groupArgs args
+
+    let argsBody := unhygienicUnfolder `(delaborator_body | [$[$(groupedArgs)],*])
     let body := unhygienicUnfolder `(delaborator_body | { $(argsAndBody.2) } )
 
     let bb :=

@@ -107,10 +107,12 @@ namespace Alloy
   syntax "pred" ident delaborator_body+ : delaborator_body
   syntax "fun" ident delaborator_body+ : delaborator_body
 
-  /--type -/
-  syntax delaborator_body ":" delaborator_body : delaborator_body
+  declare_syntax_cat delabArg
+  syntax (delaborator_body,+ ":" delaborator_body) : delabArg
+  syntax (delaborator_body) : delabArg
 
-  syntax "[" delaborator_body,+ "]" : delaborator_body
+  syntax "[" (delabArg),+ "]" : delaborator_body
+
   syntax "{" delaborator_body "}" : delaborator_body
   syntax "(" delaborator_body ")" : delaborator_body
 
