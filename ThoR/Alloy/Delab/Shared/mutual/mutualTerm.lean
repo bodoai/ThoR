@@ -264,13 +264,13 @@ private partial def getArgs
               trueBody := body
             | _ =>
               let subResult := (getArgs body)
-              result := result.append subResult.1
+              result := result.append subResult.1.reverse
               trueBody := subResult.2
 
         | _ => result := result
     | _ => result := result
 
-  (result, trueBody)
+  (result.reverse, trueBody)
 
 @[app_unexpander ThoR.Semantics.Term.pred_def]
 def unexpTerm_predDef : Unexpander
