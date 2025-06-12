@@ -208,6 +208,21 @@ def unexp_lam : Unexpander
   | _ => throw Unit.unit
 -/
 
+private partial def getType
+  (type : TSyntax `term)
+  : TSyntax `delaborator_body × Bool := Id.run do
+    let mut showType := true
+
+    let mut final_type := unhygienicUnfolder `(delaborator_body| $(mkIdent `t):ident)
+
+    match type with
+      | `([alloy'| $body].eval) => final_type := body
+      | `([alloy'| $body]) => final_type := body
+      | _ => showType := false
+
+    return (final_type, showType)
+
+
 private partial def getArgs
   (body : TSyntax `term)
   : (Array (TSyntax `delaborator_body)) × (TSyntax `delaborator_body) := Id.run do
@@ -216,14 +231,11 @@ private partial def getArgs
   match body with
     | `(ThoR.Semantics.Term.lam $type $lambda_function) =>
 
-      let mut showType := true
 
-      let mut final_type := unhygienicUnfolder `(delaborator_body| $(mkIdent `t):ident)
+      let type_and_showType := getType type
+      let type := type_and_showType.1
+      let showType := type_and_showType.2
 
-      match type with
-        | `([alloy'| $body].eval) => final_type := body
-        | `([alloy'| $body]) => final_type := body
-        | _ => showType := false
 
       match lambda_function with
         | `(fun $lambda_variable ↦ $body) =>
@@ -237,7 +249,7 @@ private partial def getArgs
                         if showType then
                           unhygienicUnfolder
                             `(delaborator_body |
-                              $variable_name:ident : $final_type)
+                              $variable_name:ident : $type)
                         else
                           unhygienicUnfolder
                             `(delaborator_body |
