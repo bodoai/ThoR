@@ -108,13 +108,13 @@ namespace Alloy
   syntax "fun" ident delaborator_body+ : delaborator_body
 
   declare_syntax_cat delabArg
-  syntax (delaborator_body,+ ":" delaborator_body) : delabArg
+  syntax (delaborator_body,+ " :" delaborator_body) : delabArg
   syntax (delaborator_body) : delabArg
 
-  syntax "[" (delabArg),+ "]" : delaborator_body
+  syntax " [ " (delabArg),+ " ] " : delaborator_body
 
-  syntax "{" delaborator_body "}" : delaborator_body
-  syntax "(" delaborator_body ")" : delaborator_body
+  syntax " { " delaborator_body " } " : delaborator_body
+  syntax " ( " delaborator_body " ) " : delaborator_body
 
   instance : Coe (TSyntax `delaborator_body) Ident where
   coe s := ⟨s.raw⟩
@@ -136,7 +136,7 @@ namespace Alloy
 
   syntax
     (name := delaboration_alloy_syntax)
-    "[" "alloy'" "|"
+    "[" "alloy'" "| "
       delaborator_body
     "]"
     : term
