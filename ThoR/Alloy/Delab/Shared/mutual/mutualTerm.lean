@@ -226,9 +226,7 @@ private structure delabArg where
   (name : (TSyntax `delaborator_body))
   (type : (TSyntax `delaborator_body))
   (showType : Bool)
-
-instance : Inhabited delabArg where
-  default := {name := default, type := default, showType := false}
+deriving BEq, Inhabited
 
 private partial def getArgs
   (body : TSyntax `term)
@@ -281,25 +279,29 @@ private def groupArgs
   (args : Array delabArg)
   : Array (TSyntax `delabArg)
   := Id.run do
-  let mut args_per_type
-    : (HashMap String (List delabArg))
-    := HashMap.empty
+
+  let mut groupedDelabArgs : (List (List delabArg)) := []
 
   for arg in args do
-    let type_as_string := s!"{arg.type.raw}"
-    args_per_type :=
-      args_per_type.insert type_as_string
-        ((args_per_type.findD type_as_string []).concat arg)
+    if groupedDelabArgs.isEmpty then
+      groupedDelabArgs := [[arg]]
+    else
+      let lastGroup := groupedDelabArgs.getLast!
+      let lastGroupType := lastGroup.getLast!.type
+
+      if arg.type == lastGroupType then
+        groupedDelabArgs := (groupedDelabArgs.dropLast).concat (lastGroup.concat arg)
+      else
+        groupedDelabArgs := (groupedDelabArgs).concat ([arg])
 
   let mut groupedArgs := #[]
-  for type_with_args in args_per_type.toList do
-    let args := type_with_args.2
-    if !args.isEmpty then
-      let argNames := (type_with_args.2.map fun a => a.name).toArray
+  for delabArgsGroup in groupedDelabArgs do
+    if !delabArgsGroup.isEmpty then
+      let lastArg := delabArgsGroup.getLast!
+      let type := lastArg.type
+      let showType := lastArg.showType
 
-      let firstArg := (type_with_args.2.get! 0)
-      let type := firstArg.type
-      let showType := firstArg.showType
+      let argNames := (delabArgsGroup.map fun a => a.name).toArray
 
       if showType then
         groupedArgs :=
