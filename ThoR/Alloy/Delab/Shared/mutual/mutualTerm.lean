@@ -49,12 +49,10 @@ def unexpTerm_type : Unexpander
 
     let value_ident :=
       match value with
-        |`(separatedNamespace | $value_ident:separatedNamespace) => value_ident
+        | `([alloy'| $db:delaborator_body].eval ) => db
+        | `(separatedNamespace | $value_ident:separatedNamespace) => value_ident
 
-    let bb := unhygienicUnfolder
-      `(delaborator_body | $value_ident:separatedNamespace )
-
-    `([alloy' | $bb:delaborator_body ])
+    `([alloy' | $value_ident:delaborator_body ])
 
   | _ => throw Unit.unit
 

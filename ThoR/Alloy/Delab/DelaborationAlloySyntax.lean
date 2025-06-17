@@ -40,7 +40,7 @@ namespace Alloy
   syntax delaborator_body ":>" delaborator_body : delaborator_body
 
   /-dotjoin-/
-  syntax delaborator_body "." delaborator_body : delaborator_body
+  syntax delaborator_body " . " delaborator_body : delaborator_body
 
   /-rel_if_else-/
   syntax delaborator_body "=>" delaborator_body "else" delaborator_body : delaborator_body
@@ -108,7 +108,7 @@ namespace Alloy
   syntax "fun" ident delaborator_body+ : delaborator_body
 
   declare_syntax_cat delabArg
-  syntax (delaborator_body,+ " :" delaborator_body) : delabArg
+  syntax (delaborator_body,+ " : " delaborator_body) : delabArg
   syntax (delaborator_body) : delabArg
 
   syntax " [ " (delabArg),+ " ] " : delaborator_body
