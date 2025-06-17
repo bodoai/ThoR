@@ -42,6 +42,10 @@ inductive TyTy : Type 1 where
     | .pred_1 dom_rel_type => Rel dom_rel_type → Prop
     | .pred_n dom_rel_type p' => Rel dom_rel_type → (p'.eval)
 
+
+-- variable {R : Type} [TupleSet R] (t : RelType R n)
+-- #check Ty.pred_1 t
+
   inductive Term
     {R : Type}
     [TupleSet R]
@@ -149,17 +153,6 @@ inductive TyTy : Type 1 where
     | fun_def (name : String) : Term ty → Term ty
     -- | marker : Marker → Term ty → Term ty
     -- | name : String → Term ty → Term ty
-
-    /- function abstraction -/
-    | lam (t : RelType R n)
-      : (Rel t → Term ran) →
-        Term (.function t ran)
-
-    /- function application / application of argument to call ? -/
-    | app
-      : Term (.function t ran) →
-        Term (.expression t) →
-        Term ran
 
     /- algebra expression number -/
     | number (z : ℤ) : Term .number -- may have to be from N
@@ -304,10 +297,22 @@ inductive TyTy : Type 1 where
         (expression2 : Term (.expression t2)) →
         Term .formula
 
-    | q_group {t : RelType R n} {ran : Ty (.isPred t)}
+    /- function abstraction -/
+    | lam (t : RelType R n)
+      : (Rel t → Term ran) →
+        Term (.function t ran)
+
+    /- function application / application of argument to call ? -/
+    | app
+      : Term (.function t ran) →
+        Term (.expression t) →
+        Term ran
+
+    | q_group
       : Shared.quant →
-        Term ran →
+        Term .formula →
         Term .formula
+
     | pred_1 {n : ℕ} {t : RelType R n}
       : (Rel t → Term .formula) →
         Term (Ty.pred_1 t)
@@ -315,9 +320,16 @@ inductive TyTy : Type 1 where
       : (Rel t → Term ran) →
         Term (Ty.pred_n t ran)
 
-    -- | lam (t : RelType R n)
-    --   : (Rel t → Term ran) →
-    --     Term (.function t ran)
+    | bind_1 {t : RelType R n}
+      : (m : Shared.quant) →
+        (unary_pred : Term (Ty.pred_1 t)) →
+        (parameter : Term (.expression t)) →
+        Term .formula
+    | bind_n {t : RelType R n} {ran : Ty (.isPred t)}
+      : (m : Shared.quant) →
+        (nary_pred : Term (Ty.pred_n t ran)) →
+        (parameter : Term (.expression t)) →
+        Term ran
 
   def Term.eval
     {R : Type}
@@ -357,16 +369,13 @@ inductive TyTy : Type 1 where
       | @Term.lam R _ _ _ t f => λ (x : Rel t) => (f x).eval
       | .app f r => f.eval r.eval
 
-      -- | @Term.q_lam R _ _ t  f => λ (x : Rel t) => (f x).eval
+      | .q_group m p => p.eval
 
-      -- | @Term.q_bind R _ _ t m f => ∀ (x : Rel t), f.eval x
+      | .pred_1 f => λ x => (f x).eval
+      | .pred_n f => λ x => (f x).eval
 
-    -- | q_group {t : RelType R n} {ran : Ty (.isPred t)}
-    --   : Shared.quant →
-    --     Term ran →
-    --     Term .formula
-
-      | @Term.q_group R _ _ t ran m p => p.eval
+      | .bind_1 m f x => ∀ x, f.eval x
+      | @Term.bind_n R _ _ t ran m f x => ( ∀ x, (Term.eval f) x : (Ty.eval ty) )
 
       | .number z => z
 
@@ -414,8 +423,10 @@ inductive TyTy : Type 1 where
       | .eq r1 r2 => (r1.eval) ≡ (r2.eval)
       | .neq r1 r2 => (r1.eval) ≢  (r2.eval)
 
-      | .pred_1 f => ∀ x, (f x).eval
-      | .pred_n f => ∀ x, (f x).eval
+      -- | q_group {t : RelType R n} {ran : Ty (.isPred t)}
+      --     : Shared.quant →
+      --       Term ran →
+      --       Term .formula
 
   instance {R : Type} [TupleSet R] {ty : @Ty R _} (t : @Term R _ ty):
     CoeDep (@Term R _ ty) t ty.eval where
