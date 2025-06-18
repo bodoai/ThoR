@@ -308,10 +308,10 @@ inductive TyTy : Type 1 where
     --     Term (.expression t) →
     --     Term ran
 
-    -- | q_group
-    --   : Shared.quant →
-    --     Term .formula →
-    --     Term .formula
+    | q_group
+      : Shared.quant →
+        Term .formula →
+        Term .formula
 
     | pred_1 {n : ℕ} {t : RelType R n}
       : (Rel t → Term .formula) →
@@ -368,106 +368,125 @@ example : p1 t = Term.pred_n (
           (expression2 := Term.local_rel_var r)
       )
 ) := by
-  cases
+  sorry
 
 
 
---   def Term.eval
---     {R : Type}
---     [TupleSet R]
---     {tt : TyTy}
---     {ty : @Ty R _ tt}
---     (t : @Term R _ _ ty)
---     : ty.eval :=
---       match t with
+  def Term.eval
+    {R : Type}
+    [TupleSet R]
+    {tt : TyTy}
+    {ty : @Ty R _ tt}
+    (t : @Term R _ _ ty)
+    : ty.eval :=
+      match t with
 
---       | .global_rel_var r _ => r
---       | .local_rel_var r => r
+      | .global_rel_var r _ => r
+      | .local_rel_var r => r
 
---       /- binary expression operators -/
---       | .intersect r1 r2 => (r1.eval) & (r2.eval)
---       | .union r1 r2 => HAdd.hAdd (r1.eval) (r2.eval)
---       | .difference r1 r2 => (r1.eval) - (r2.eval)
---       | .overwrite r1 r2 => (r1.eval) ++ (r2.eval)
---       | .domain_restriction r1 r2 => (r1.eval) <: (r2.eval)
---       | .range_restriction r1 r2 => (r1.eval) :> (r2.eval)
---       | .dotjoin r1 r2 => (r1.eval) ⋈ (r2.eval)
+      /- binary expression operators -/
+      --| .intersect r1 r2 => (r1.eval) & (r2.eval)
+      --| .union r1 r2 => HAdd.hAdd (r1.eval) (r2.eval)
+      --| .difference r1 r2 => (r1.eval) - (r2.eval)
+      --| .overwrite r1 r2 => (r1.eval) ++ (r2.eval)
+      --| .domain_restriction r1 r2 => (r1.eval) <: (r2.eval)
+      --| .range_restriction r1 r2 => (r1.eval) :> (r2.eval)
+      --| .dotjoin r1 r2 => (r1.eval) ⋈ (r2.eval)
 
---       /- unary expression operators -/
---       | .transclos r => ^ (r.eval)
---       | .reflexive_closure  r => * (r.eval)
---       | .transposition r => ~ (r.eval)
+      /- unary expression operators -/
+      --| .transclos r => ^ (r.eval)
+      --| .reflexive_closure  r => * (r.eval)
+      --| .transposition r => ~ (r.eval)
 
---       /- expression if else -/
---       | .if_then_else f r1 r2 => HIfThenElse.hIfThenElse (f.eval) (r1.eval) (r2.eval)
+      /- expression if else -/
+      --| .if_then_else f r1 r2 => HIfThenElse.hIfThenElse (f.eval) (r1.eval) (r2.eval)
 
---       | .bracket t => t.eval
---       | .pred_def _ t => t.eval
---       | .fun_def _ t => t.eval
---       -- | .marker _ t => t.eval
---       -- | .name _ t => t.eval
+      --| .bracket t => t.eval
+      --| .pred_def _ t => t.eval
+      --| .fun_def _ t => t.eval
+      -- | .marker _ t => t.eval
+      -- | .name _ t => t.eval
 
---       | @Term.lam R _ _ _ t f => λ (x : Rel t) => (f x).eval
---       | .app f r => f.eval r.eval
+      --| @Term.lam R _ _ _ t f => λ (x : Rel t) => (f x).eval
+      --| .app f r => f.eval r.eval
 
---       | .q_group m p => p.eval
+      | .q_group m p => p.eval
 
---       | .pred_1 f => λ x => (f x).eval
---       | @Term.pred_n R _ n t ran f => ( λ x => (f x).eval : Rel t → ran.eval )
+      | .pred_1 f =>
+        let result := λ x => (f x).eval
+        result
 
---       | .bind_1 m f x => ∀ x, f.eval x
---       | @Term.bind_n R _ _ t ran m f x => ( ∀ x, ((Term.eval f) x ) : ty.eval )
+      | @Term.pred_n R _ n t ran f =>
+        let result := ( λ x => (f x).eval : Rel t → ran.eval )
+        result
 
---       | .number z => z
+      | @Term.bind_1 R _ _ t m f parameter =>
+        let function := f.eval
+        let result := ∀ x, function x
+        result
 
---       /- algebra expression unary operation -/
---       | .negation z => - (z.eval)
+      | @Term.bind_n R _ arity relType range quantifier term parameter =>
+        let test1 := @Term.eval R _ tt ty t
+        let test2 := parameter.eval
 
---       /- algebra expression binary operation -/
---       | .add z1 z2 => (z1.eval) + (z2.eval)
---       | .sub z1 z2 => (z1.eval) - (z2.eval)
---       | .div z1 z2 => (z1.eval) / (z2.eval)
---       | .mul z1 z2 => (z1.eval) * (z2.eval)
---       | .rem z1 z2 => (z1.eval) % (z2.eval)
+        let function := term.eval
+        let param := parameter.eval
 
---       /- algebra expression card operation (rel operation)-/
---       | .card r => Card.card (r.eval)
+        /-possible problem? : cant use ∀ outside of prop ?-/
+        let result := function param
+        result
 
---       /- formula unary rel bool operator-/
---       | .no r => SetMultPredicates.no (r.eval)
---       | .one r => SetMultPredicates.one (r.eval)
---       | .lone r => SetMultPredicates.lone (r.eval)
---       | .some r => SetMultPredicates.some (r.eval)
 
---       /- formula unary logic operator -/
---       | .not f => ¬ (f.eval)
+      --| .number z => z
 
---       /- formula binary logic operator -/
---       | .or f1 f2 => (f1.eval) ∨ (f2.eval)
---       | .and f1 f2 => (f1.eval) ∧ (f2.eval)
---       | .implication f1 f2 => (f1.eval) → (f2.eval)
---       | .equivalent f1 f2 => (f1.eval) = (f2.eval)
+      /- algebra expression unary operation -/
+      --| .negation z => - (z.eval)
 
---       /- formula if else -/
---       | .f_if_then_else f1 f2 f3 =>
---         ((f1.eval) -> (f2.eval)) ∧ (¬ (f1.eval) → (f2.eval))
+      /- algebra expression binary operation -/
+      --| .add z1 z2 => (z1.eval) + (z2.eval)
+      --| .sub z1 z2 => (z1.eval) - (z2.eval)
+      --| .div z1 z2 => (z1.eval) / (z2.eval)
+      --| .mul z1 z2 => (z1.eval) * (z2.eval)
+      --| .rem z1 z2 => (z1.eval) % (z2.eval)
 
---       /- formula algebraic comparison operator -/
---       | .algebraic_leq z1 z2 => (z1.eval) <= (z2.eval)
---       | .algebraic_geq z1 z2 => (z1.eval) >= (z2.eval)
---       | .algebraic_lt z1 z2 => (z1.eval) < (z2.eval)
---       | .algebraic_gt z1 z2 => (z1.eval) > (z2.eval)
---       | .algebraic_eq z1 z2 => (z1.eval) = (z2.eval)
+      /- algebra expression card operation (rel operation)-/
+      --| .card r => Card.card (r.eval)
 
---       /- formula relation comparison operation -/
---       | .in r1 r2 => (r1.eval) ⊂ (r2.eval)
---       | .eq r1 r2 => (r1.eval) ≡ (r2.eval)
---       | .neq r1 r2 => (r1.eval) ≢  (r2.eval)
+      /- formula unary rel bool operator-/
+      -- | .no r => SetMultPredicates.no (r.eval)
+      -- | .one r => SetMultPredicates.one (r.eval)
+      -- | .lone r => SetMultPredicates.lone (r.eval)
+      -- | .some r => SetMultPredicates.some (r.eval)
 
---       -- | q_group {t : RelType R n} {ran : Ty (.isPred t)}
---       --     : Shared.quant →
---       --       Term ran →
---       --       Term .formula
+      /- formula unary logic operator -/
+      -- | .not f => ¬ (f.eval)
+
+      /- formula binary logic operator -/
+      -- | .or f1 f2 => (f1.eval) ∨ (f2.eval)
+      -- | .and f1 f2 => (f1.eval) ∧ (f2.eval)
+      -- | .implication f1 f2 => (f1.eval) → (f2.eval)
+      -- | .equivalent f1 f2 => (f1.eval) = (f2.eval)
+
+      /- formula if else -/
+      -- | .f_if_then_else f1 f2 f3 =>
+      --   ((f1.eval) -> (f2.eval)) ∧ (¬ (f1.eval) → (f2.eval))
+
+      /- formula algebraic comparison operator -/
+      -- | .algebraic_leq z1 z2 => (z1.eval) <= (z2.eval)
+      -- | .algebraic_geq z1 z2 => (z1.eval) >= (z2.eval)
+      -- | .algebraic_lt z1 z2 => (z1.eval) < (z2.eval)
+      -- | .algebraic_gt z1 z2 => (z1.eval) > (z2.eval)
+      -- | .algebraic_eq z1 z2 => (z1.eval) = (z2.eval)
+
+      /- formula relation comparison operation -/
+      | .in r1 r2 => (r1.eval) ⊂ (r2.eval)
+      -- | .eq r1 r2 => (r1.eval) ≡ (r2.eval)
+      -- | .neq r1 r2 => (r1.eval) ≢  (r2.eval)
+
+      -- | q_group {t : RelType R n} {ran : Ty (.isPred t)}
+      --     : Shared.quant →
+      --       Term ran →
+      --       Term .formula
 
 --   instance {R : Type} [TupleSet R] {ty : @Ty R _} (t : @Term R _ ty):
 --     CoeDep (@Term R _ ty) t ty.eval where
