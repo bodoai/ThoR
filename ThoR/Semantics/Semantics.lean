@@ -422,6 +422,7 @@ example : p1 t = Term.pred_n (
 
       | @Term.bind_1 R _ _ t m f parameter =>
         let function := f.eval
+        let param := parameter.eval -- unused currently ?
         let result := ∀ x, function x
         result
 
@@ -433,7 +434,7 @@ example : p1 t = Term.pred_n (
         let param := parameter.eval
 
         /-possible problem? : cant use ∀ outside of prop ?-/
-        let result := function param
+        let result := (function param : range.eval)
         result
 
 
