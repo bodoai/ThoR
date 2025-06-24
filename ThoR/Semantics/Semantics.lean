@@ -391,125 +391,128 @@ example : p1 t = Term.pred (
 ) := by
   sorry
 
-  noncomputable def Term.eval
-    {R : Type}
-    [TupleSet R]
-    {tt : TyTy}
-    {ty : @Ty R _ tt}
-    (t : @Term R _ _ ty)
-    : ty.eval :=
-      match t with
+--set_option diagnostics true
+set_option maxHeartbeats 300000
 
-      | .global_rel_var r _ => r
-      | .local_rel_var r => r
+def Term.eval
+  {R : Type}
+  [TupleSet R]
+  {tt : TyTy}
+  {ty : @Ty R _ tt}
+  (t : @Term R _ _ ty)
+  : ty.eval :=
+    match t with
 
-      /- binary expression operators -/
-      | .intersect r1 r2 => (r1.eval) & (r2.eval)
-      | .union r1 r2 => HAdd.hAdd (r1.eval) (r2.eval)
-      | .difference r1 r2 => (r1.eval) - (r2.eval)
-      | .overwrite r1 r2 => (r1.eval) ++ (r2.eval)
-      | .domain_restriction r1 r2 => (r1.eval) <: (r2.eval)
-      | .range_restriction r1 r2 => (r1.eval) :> (r2.eval)
-      | .dotjoin r1 r2 => (r1.eval) ⋈ (r2.eval)
+    | .global_rel_var r _ => r
+    | .local_rel_var r => r
 
-      /- unary expression operators -/
-      | .transclos r => ^ (r.eval)
-      | .reflexive_closure  r => * (r.eval)
-      | .transposition r => ~ (r.eval)
+    /- binary expression operators -/
+    | .intersect r1 r2 => (r1.eval) & (r2.eval)
+    | .union r1 r2 => HAdd.hAdd (r1.eval) (r2.eval)
+    | .difference r1 r2 => (r1.eval) - (r2.eval)
+    | .overwrite r1 r2 => (r1.eval) ++ (r2.eval)
+    | .domain_restriction r1 r2 => (r1.eval) <: (r2.eval)
+    | .range_restriction r1 r2 => (r1.eval) :> (r2.eval)
+    | .dotjoin r1 r2 => (r1.eval) ⋈ (r2.eval)
 
-      /- expression if else -/
-      | .if_then_else f r1 r2 => HIfThenElse.hIfThenElse (f.eval) (r1.eval) (r2.eval)
+    /- unary expression operators -/
+    | .transclos r => ^ (r.eval)
+    | .reflexive_closure  r => * (r.eval)
+    | .transposition r => ~ (r.eval)
 
-      | .bracket t => t.eval
-      | .pred_def _ t => t.eval
-      | .fun_def _ t => t.eval
-      -- | .marker _ t => t.eval
-      -- | .name _ t => t.eval
+    /- expression if else -/
+    | .if_then_else f r1 r2 => HIfThenElse.hIfThenElse (f.eval) (r1.eval) (r2.eval)
 
-      | @Term.lam R _ _ _ t f => λ (x : Rel t) => (f x).eval
-      | .app f r => f.eval r.eval
+    | .bracket t => t.eval
+    | .pred_def _ t => t.eval
+    | .fun_def _ t => t.eval
+    -- | .marker _ t => t.eval
+    -- | .name _ t => t.eval
 
-      | .q_group m p => p.eval
+    | @Term.lam R _ _ _ t f => λ (x : Rel t) => (f x).eval
+    | .app f r => f.eval r.eval
 
-      -- | .pred_1 f =>
-      --   let result := λ x => (f x).eval
-      --   result
+    | .q_group m p => True -- p.eval makes it noncomputable
 
-      -- | @Term.pred_n R _ n t ran f =>
-      --   let result := ( λ x => (f x).eval : Rel t → ran.eval )
-      --   result
+    -- | .pred_1 f =>
+    --   let result := λ x => (f x).eval
+    --   result
 
-      | .pred f => fun x => (f x).eval
+    -- | @Term.pred_n R _ n t ran f =>
+    --   let result := ( λ x => (f x).eval : Rel t → ran.eval )
+    --   result
 
-      -- | @Term.bind_1 R _ _ t m f parameter =>
-      --   let function := f.eval
-      --   let param := parameter.eval -- unused currently ?
-      --   let result := ∀ x, function x
-      --   result
+    | .pred f => fun x => (f x).eval
 
-      -- | @Term.bind_n R _ arity relType range quantifier term parameter =>
-      --   let test1 := @Term.eval R _ tt ty t
-      --   let test2 := parameter.eval
+    -- | @Term.bind_1 R _ _ t m f parameter =>
+    --   let function := f.eval
+    --   let param := parameter.eval -- unused currently ?
+    --   let result := ∀ x, function x
+    --   result
 
-      --   let function := term.eval
-      --   let param := parameter.eval
+    -- | @Term.bind_n R _ arity relType range quantifier term parameter =>
+    --   let test1 := @Term.eval R _ tt ty t
+    --   let test2 := parameter.eval
 
-      --   /-possible problem? : cant use ∀ outside of prop ?-/
-      --   let result := (function param : range.eval)
-      --   result
+    --   let function := term.eval
+    --   let param := parameter.eval
 
-      | .bind m f => ∀ x, f.eval x
+    --   /-possible problem? : cant use ∀ outside of prop ?-/
+    --   let result := (function param : range.eval)
+    --   result
 
-      | .number z => z
+    | .bind m f => ∀ x, f.eval x
 
-      /- algebra expression unary operation -/
-      | .negation z => - (z.eval)
+    | .number z => z
 
-      /- algebra expression binary operation -/
-      | .add z1 z2 => (z1.eval) + (z2.eval)
-      | .sub z1 z2 => (z1.eval) - (z2.eval)
-      | .div z1 z2 => (z1.eval) / (z2.eval)
-      | .mul z1 z2 => (z1.eval) * (z2.eval)
-      | .rem z1 z2 => (z1.eval) % (z2.eval)
+    /- algebra expression unary operation -/
+    | .negation z => - (z.eval)
 
-      /- algebra expression card operation (rel operation)-/
-      | .card r => Card.card (r.eval)
+    /- algebra expression binary operation -/
+    | .add z1 z2 => (z1.eval) + (z2.eval)
+    | .sub z1 z2 => (z1.eval) - (z2.eval)
+    | .div z1 z2 => (z1.eval) / (z2.eval)
+    | .mul z1 z2 => (z1.eval) * (z2.eval)
+    | .rem z1 z2 => (z1.eval) % (z2.eval)
 
-      /- formula unary rel bool operator-/
-      | .no r => SetMultPredicates.no (r.eval)
-      | .one r => SetMultPredicates.one (r.eval)
-      | .lone r => SetMultPredicates.lone (r.eval)
-      | .some r => SetMultPredicates.some (r.eval)
+    /- algebra expression card operation (rel operation)-/
+    | .card r => Card.card (r.eval)
 
-      /- formula unary logic operator -/
-      | .not f => ¬ (f.eval)
+    /- formula unary rel bool operator-/
+    | .no r => SetMultPredicates.no (r.eval)
+    | .one r => SetMultPredicates.one (r.eval)
+    | .lone r => SetMultPredicates.lone (r.eval)
+    | .some r => SetMultPredicates.some (r.eval)
 
-      /- formula binary logic operator -/
-      | .or f1 f2 => (f1.eval) ∨ (f2.eval)
-      | .and f1 f2 => (f1.eval) ∧ (f2.eval)
-      | .implication f1 f2 => (f1.eval) → (f2.eval)
-      | .equivalent f1 f2 => (f1.eval) = (f2.eval)
+    /- formula unary logic operator -/
+    | .not f => ¬ (f.eval)
 
-      /- formula if else -/
-      | .f_if_then_else f1 f2 f3 =>
-        ((f1.eval) -> (f2.eval)) ∧ (¬ (f1.eval) → (f2.eval))
+    /- formula binary logic operator -/
+    | .or f1 f2 => (f1.eval) ∨ (f2.eval)
+    | .and f1 f2 => (f1.eval) ∧ (f2.eval)
+    | .implication f1 f2 => (f1.eval) → (f2.eval)
+    | .equivalent f1 f2 => (f1.eval) = (f2.eval)
 
-      /- formula algebraic comparison operator -/
-      | .algebraic_leq z1 z2 => (z1.eval) <= (z2.eval)
-      | .algebraic_geq z1 z2 => (z1.eval) >= (z2.eval)
-      | .algebraic_lt z1 z2 => (z1.eval) < (z2.eval)
-      | .algebraic_gt z1 z2 => (z1.eval) > (z2.eval)
-      | .algebraic_eq z1 z2 => (z1.eval) = (z2.eval)
+    /- formula if else -/
+    | .f_if_then_else f1 f2 f3 =>
+      ((f1.eval) -> (f2.eval)) ∧ (¬ (f1.eval) → (f2.eval))
 
-      /- formula relation comparison operation -/
-      | .in r1 r2 => (r1.eval) ⊂ (r2.eval)
-      | .eq r1 r2 => (r1.eval) ≡ (r2.eval)
-      | .neq r1 r2 => (r1.eval) ≢  (r2.eval)
+    /- formula algebraic comparison operator -/
+    | .algebraic_leq z1 z2 => (z1.eval) <= (z2.eval)
+    | .algebraic_geq z1 z2 => (z1.eval) >= (z2.eval)
+    | .algebraic_lt z1 z2 => (z1.eval) < (z2.eval)
+    | .algebraic_gt z1 z2 => (z1.eval) > (z2.eval)
+    | .algebraic_eq z1 z2 => (z1.eval) = (z2.eval)
 
-      -- | q_group {t : RelType R n} {ran : Ty (.isPred t)}
-      --     : Shared.quant →
-      --       Term ran →
-      --       Term .formula
+    /- formula relation comparison operation -/
+    | .in r1 r2 => (r1.eval) ⊂ (r2.eval)
+    | .eq r1 r2 => (r1.eval) ≡ (r2.eval)
+    | .neq r1 r2 => (r1.eval) ≢  (r2.eval)
+
+    -- | q_group {t : RelType R n} {ran : Ty (.isPred t)}
+    --     : Shared.quant →
+    --       Term ran →
+    --       Term .formula
 
   -- instance {R : Type} [TupleSet R] {ty : @Ty R _} (t : @Term R _ ty):
   --   CoeDep (@Term R _ ty) t ty.eval where
