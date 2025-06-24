@@ -391,9 +391,7 @@ example : p1 t = Term.pred (
 ) := by
   sorry
 
-
-
-  def Term.eval
+  noncomputable def Term.eval
     {R : Type}
     [TupleSet R]
     {tt : TyTy}
