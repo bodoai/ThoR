@@ -310,8 +310,14 @@ inductive TyTy : Type 1 where
 
     | q_group
       : Shared.quant →
-        Term .formula →
-        Term .formula
+        Term ty →
+        Term ty
+
+    -- alternate q_group => this causes the function to become noncomutable. Problem calculating type?
+    -- | q_group
+    --   : Shared.quant →
+    --     Term .formula →
+    --     Term .formula
 
     -- | pred_1 {n : ℕ} {t : RelType R n}
     --   : (Rel t → Term .formula) →
@@ -432,7 +438,7 @@ def Term.eval
     | @Term.lam R _ _ _ t f => λ (x : Rel t) => (f x).eval
     | .app f r => f.eval r.eval
 
-    | .q_group m p => True -- p.eval makes it noncomputable
+    | .q_group m p => p.eval
 
     -- | .pred_1 f =>
     --   let result := λ x => (f x).eval
