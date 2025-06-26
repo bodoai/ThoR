@@ -12,6 +12,9 @@
     | form : Prop → Term .formula
     | pred {T : Type} : (T → Term .formula) → Term (@Ty.pred T)
     | bind {T : Type} : Term (@Ty.pred T) → Term .formula
+    | q_group :
+        Term .formula →
+        Term .formula
 
 @[reducible]
 def Term.eval {T : Type} {ty : Ty T} (t : Term ty) : ty.eval :=
@@ -22,6 +25,8 @@ def Term.eval {T : Type} {ty : Ty T} (t : Term ty) : ty.eval :=
     | .pred f => λ x => (f x).eval
 
     | .bind t => ∀ x, t.eval x
+
+    | .q_group f => f.eval
 
 #check (@Term.bind Nat _ (@Term.pred Nat _ ( λ y => (@Term.bind Nat _ (@Term.pred Nat _ (λ (x : Nat) => @Term.form Nat (x = y))))))).eval
 
