@@ -15,7 +15,7 @@ variable (R : Type) [TupleSet R]
 
 inductive TyTy : Type 1 where
   | isTy
-  | isPred {R : Type} [TupleSet R] (t : RelType R n): TyTy
+  | isPred {R : Type} [TupleSet R] (t : RelType R n) (quantor_type : Shared.quant ): TyTy
 
 -- construction follows https://lean-lang.org/documentation/examples/debruijn/
   inductive Ty {R : Type} [TupleSet R] : (tt : TyTy) → Type u where
@@ -23,7 +23,7 @@ inductive TyTy : Type 1 where
     | formula : Ty .isTy -- Prop
     | expression : {n : ℕ} → (rel_type : RelType R n) → Ty .isTy-- Rel rel_type
     | function : {n : ℕ} → (t : RelType R n) → Ty .isTy → Ty .isTy -- type1.eval → type2.eval
-    | pred : {n : ℕ} → (t : RelType R n) → Ty (.isPred t)
+    | pred : {n : ℕ} → (t : RelType R n) → (quantor_type : Shared.quant) → Ty (.isPred t quantor_type)
     --| pred_1 : {n : ℕ} → (t : RelType R n) → Ty (.isPred t)
     --| pred_n : {n : ℕ} → (t : RelType R n) → Ty (.isPred t) → Ty (.isPred t)
 
@@ -38,7 +38,7 @@ inductive TyTy : Type 1 where
     | .formula => Prop
     | .expression rel_type => Rel rel_type
     | .function dom_rel_type ran => Rel dom_rel_type → ran.eval
-    | .pred t => Rel t →  Prop
+    | .pred t _ => Rel t → Prop
     --| .pred_1 dom_rel_type => Rel dom_rel_type → Prop
     --| .pred_n dom_rel_type p' => Rel dom_rel_type → (p'.eval)
 
@@ -308,9 +308,8 @@ inductive TyTy : Type 1 where
         Term (.expression t) →
         Term ran
 
-    | q_group
-      : Shared.quant →
-        Term ty →
+    | q_group (quantor_type : Shared.quant)
+      : Term ty →
         Term ty
 
     -- alternate q_group => this causes the function to become noncomutable. Problem calculating type?
@@ -326,9 +325,9 @@ inductive TyTy : Type 1 where
     --   : (Rel t → Term ran) →
     --     Term (Ty.pred_n t ran)
 
-    | pred {n : ℕ} {t : RelType R n}
+    | pred {n : ℕ} {t : RelType R n} (quantor_type : Shared.quant)
       : (Rel t → Term .formula) →
-        Term (.pred t)
+        Term (.pred t quantor_type)
 
     -- | bind_1 {t : RelType R n}
     --   : (m : Shared.quant) →
@@ -341,41 +340,47 @@ inductive TyTy : Type 1 where
     --     (parameter : Term (.expression t)) →
     --     Term ran
 
-    | bind {t : RelType R n}
-      : (m : Shared.quant) →
-        (pred : Term (.pred t)) →
+    | bind {t : RelType R n} (quantor_type : Shared.quant)
+      : (pred : Term (.pred t quantor_type)) →
         Term .formula
 
 
 variable {R : Type} [TupleSet R] (t : RelType R n)
-#check Term.pred (λ (r : Rel t) => Term.in
+#check Term.pred (Shared.quant.all) (λ (r : Rel t) => Term.in
               (expression1 := Term.local_rel_var r)
               (expression2 := Term.local_rel_var r) )
-#check Term.pred (
+
+#check Term.pred
+  (Shared.quant.all)
+  (
     λ (q : Rel t) =>
     Term.bind
       (Shared.quant.all)
-      (Term.pred (
-        λ (r : Rel t) =>
+      (Term.pred
+        (Shared.quant.all)
+        (λ (r : Rel t) =>
           Term.in
             (expression1 := Term.local_rel_var q)
             (expression2 := Term.local_rel_var r)
         )
       )
-)
+  )
 
-def p1 := Term.pred (
+def p1 := Term.pred
+  (Shared.quant.all)
+  (
     λ (q : Rel t) =>
     Term.bind
       (Shared.quant.all)
-      (Term.pred (
-      λ (r : Rel t) =>
-        Term.in
-          (expression1 := Term.local_rel_var q)
-          (expression2 := Term.local_rel_var r)
+      (Term.pred
+        (Shared.quant.all)
+        (λ (r : Rel t) =>
+          Term.in
+            (expression1 := Term.local_rel_var q)
+            (expression2 := Term.local_rel_var r)
         )
       )
-)
+  )
 
 
 #check (p1 t)
@@ -383,11 +388,14 @@ def p1 := Term.pred (
 -- set_option diagnostics true
 -- set_option diagnostics.threshold 0
 
-example : p1 t = Term.pred (
+example : p1 t = Term.pred
+  (Shared.quant.all)
+  (
     λ (q : Rel t) =>
       Term.bind
         (Shared.quant.all)
         (Term.pred
+          (Shared.quant.all)
           (λ (r : Rel t) =>
               Term.in
                 (expression1 := Term.local_rel_var q)
@@ -448,7 +456,7 @@ def Term.eval
     --   let result := ( λ x => (f x).eval : Rel t → ran.eval )
     --   result
 
-    | .pred f => fun x => (f x).eval
+    | .pred _ f => fun x => (f x).eval
 
     -- | @Term.bind_1 R _ _ t m f parameter =>
     --   let function := f.eval
@@ -467,7 +475,13 @@ def Term.eval
     --   let result := (function param : range.eval)
     --   result
 
-    | .bind m f => ∀ x, f.eval x
+    | .bind quantor_type f =>
+      match quantor_type with
+        | .all => ∀ x, f.eval x
+        | .some => ∃ x, f.eval x
+
+        /- TODO: Add semantic to missing quantors-/
+        | _ => ∃ x, f.eval x
 
     | .number z => z
 
