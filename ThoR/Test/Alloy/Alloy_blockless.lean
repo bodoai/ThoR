@@ -10,17 +10,21 @@ import ThoR.Alloy.Delab
 end
 #create model1
 
-startTestBlock model1
+#check model1.vars.a
 
-lemma l1 : 1=1 := by
+startTestBlock model1
+#check ThoR_TupleSet
+#check [alloy| univ = univ]
+
+lemma l1 : ThoR_TupleSet = ThoR_TupleSet := by
   have h1 : [alloy| univ = univ] := by sorry
   have h2 : [alloy| @ model1.vars.a = univ] := by sorry
   have h3 : [alloy| a = univ] := by sorry
-
   sorry
 
 
 variable (y : ∷ set univ)
+#check [#alloy| univ = univ]
 #check [#alloy| all x : univ | x + y + univ = univ].eval
 
 -- a -> expr.string "a"

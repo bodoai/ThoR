@@ -72,7 +72,7 @@ namespace Alloy
       (sn : separatedNamespace)
       : SeparatedNamespace := Unhygienic.run do
         let comps := sn.representedNamespace.getId.components
-        let fc := comps.get! 0
+        let fc := comps[0]!
 
         let mut extensions : TSyntaxArray `separatedNamespaceExtension := #[]
 

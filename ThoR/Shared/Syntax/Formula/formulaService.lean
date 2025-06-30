@@ -124,9 +124,9 @@ namespace Shared.formula
             throw s!"The call to {s} is ambiguous. \
             There are multiple declared definitions which it could refer to ({possibleDecls})"
 
-          let declsOfBlock := possibleDecls.get! 0
+          let declsOfBlock := possibleDecls[0]!
           let calledBlockName := declsOfBlock.1
-          let calledCommandDecl := (declsOfBlock.2.get! 0)
+          let calledCommandDecl := (declsOfBlock.2[0]!)
 
           let calledNameComponents :=
             calledBlockName.components ++
@@ -222,7 +222,7 @@ namespace Shared.formula
         let names := (n.map fun (name) => mkIdent name.toName).reverse
 
         -- one form ist present -> see syntax (+)
-        let firstForm := f.get! 0
+        let firstForm := f[0]!
         let firstFTerm ← firstForm.toTermOutsideBlock availableAlloyData localContextUserNames
 
         let mut completefTerm : Unhygienic (Term) :=
@@ -246,14 +246,14 @@ namespace Shared.formula
         -- singular parameter is var constructor
         if names.length == 1 then
             return unhygienicUnfolder `(($(mkIdent ``Formula.var) $(q.toTerm)) (
-              fun ( $(names.get! 0) : ∷ $((te.toStringRb).toSyntaxOutsideBlock))
+              fun ( $(names[0]!) : ∷ $((te.toStringRb).toSyntaxOutsideBlock))
                 => $(unhygienicUnfolder completefTerm)))
 
         -- multiple parameter is Group constructor
         else
           let mut formulaGroup :=
             `(($(mkIdent ``Group.var) (
-              fun ( $(names.get! 0) : ∷ $((te.toStringRb).toSyntaxOutsideBlock))
+              fun ( $(names[0]!) : ∷ $((te.toStringRb).toSyntaxOutsideBlock))
                 => $(mkIdent ``Group.formula) $(unhygienicUnfolder completefTerm))))
           for n in (names.drop 1) do
             formulaGroup :=
@@ -291,7 +291,7 @@ namespace Shared.formula
 
         if bodyTermList.isEmpty then throw s!"let {name}={value} has empty body"
 
-        let mut bodyTerm := unhygienicUnfolder `(term | ($(bodyTermList.get! 0)))
+        let mut bodyTerm := unhygienicUnfolder `(term | ($(bodyTermList[0]!)))
         for elem in bodyTermList do
           bodyTerm := unhygienicUnfolder `(bodyTerm ∧ ($(elem)))
 
@@ -344,18 +344,18 @@ namespace Shared.formula
             s!"Called Preds is Empty or more than one \
             in formulaService {possibleCalledPredicates}"
 
-        let calledPredicate := possibleCalledPredicates.get! 0
+        let calledPredicate := possibleCalledPredicates[0]!
 
         let calledArgsVarDecls :=
           (calledPredicate.1.predArgs.map fun cp =>
             cp.1.names.map fun _ =>
-              cp.2).join
+              cp.2).flatten
 
         for index in [0:pa.length] do
 
-          --let definedArg := calledPredArgs.get! index
+          --let definedArg := calledPredArgs[index]!
 
-          let vd := calledArgsVarDecls.get! index
+          let vd := calledArgsVarDecls[index]!
 
           let typeName :=
             (if vd.isRelation then
@@ -369,11 +369,11 @@ namespace Shared.formula
             else
               vd.getSignatureReplacementName)
 
-          let calledArg := pa.get! index
+          let calledArg := pa[index]!
           let calledVarDecls_of_arg_to_cast ←
             calledArg.getCalledVariables callableVariables
           let calledVarDecls_of_arg_to_cast_joined :=
-            (calledVarDecls_of_arg_to_cast.map fun a => a.2).join
+            (calledVarDecls_of_arg_to_cast.map fun a => a.2).flatten
 
           let cast_type_as_expr_string := expr.string typeName.toString
           let cast_type_as_expr_string_rb := cast_type_as_expr_string.toStringRb
@@ -390,7 +390,7 @@ namespace Shared.formula
             the replacer on both sides (its the actual name))
             -/
             (
-              let cv := (calledVarDecls_of_arg_to_cast_joined.get! 0)
+              let cv := (calledVarDecls_of_arg_to_cast_joined[0]!)
               cv.type.toString == typeReplacementName
             )
 
@@ -483,7 +483,7 @@ namespace Shared.formula
               (requiredDecls := [])
 
         -- one form ist present -> see syntax (+)
-        let firstForm := f.get! 0
+        let firstForm := f[0]!
         let firstFTerm ←
           firstForm.toTerm'
             blockName variableNames (callableVariables ++ quantVarDecls) callablePredicates
@@ -512,14 +512,14 @@ namespace Shared.formula
         -- singular parameter is var constructor
         if names.length == 1 then
             return `(($(mkIdent ``Formula.var) $(q.toTerm)) (
-              fun ( $(names.get! 0) : ∷ $((te.toStringRb).toSyntax blockName))
+              fun ( $(names[0]!) : ∷ $((te.toStringRb).toSyntax blockName))
                 => $(unhygienicUnfolder completefTerm)))
 
         -- multiple parameter is Group constructor
         else
           let mut formulaGroup :=
             `(($(mkIdent ``Group.var) (
-              fun ( $(names.get! 0) : ∷ $((te.toStringRb).toSyntax blockName))
+              fun ( $(names[0]!) : ∷ $((te.toStringRb).toSyntax blockName))
                 => $(mkIdent ``Group.formula) $(unhygienicUnfolder completefTerm))))
           for n in (names.drop 1) do
             formulaGroup :=
@@ -559,7 +559,7 @@ namespace Shared.formula
 
         if bodyTermList.isEmpty then throw s!"let {name}={value} has empty body"
 
-        let mut bodyTerm := `(term | ($(bodyTermList.get! 0)))
+        let mut bodyTerm := `(term | ($(bodyTermList[0]!)))
         for elem in bodyTermList do
           bodyTerm := `(bodyTerm ∧ ($(elem)))
 
@@ -760,11 +760,11 @@ namespace Shared.formula
         | formula.relationComarisonOperation _ _ _ => []
         | formula.quantification _ _ n _ f =>
           ((f.map fun form =>
-            form.getReqDefinitions).join
+            form.getReqDefinitions).flatten
               ).filter fun (elem) => !(n.contains elem)
         | formula.letDeclaration _ value body =>
           let value_rd := value.getReqDefinitions
-          let body_rds := (body.map fun e => e.getReqDefinitions).join
+          let body_rds := (body.map fun e => e.getReqDefinitions).flatten
           body_rds ++ value_rd
 
   /--
@@ -776,7 +776,7 @@ namespace Shared.formula
       match f with
         | formula.string _ => []
         | formula.pred_with_args _ pa =>
-          (pa.map fun (e) => e.getReqVariables).join
+          (pa.map fun (e) => e.getReqVariables).flatten
         | formula.unaryRelBoolOperation _ e => e.getReqVariables
         | formula.unaryLogicOperation _ f => f.getReqVariables
         | formula.binaryLogicOperation _ f1 f2 =>
@@ -789,13 +789,13 @@ namespace Shared.formula
           e1.getReqVariables ++ e2.getReqVariables
         | formula.quantification _ _ n e f =>
           (((f.map fun form =>
-            form.getReqVariables).join)
+            form.getReqVariables).flatten)
             ++ e.getReqVariables).filter
             fun (elem) => !(n.contains elem) -- quantor vars are not required
         | formula.letDeclaration name value body =>
           let value_rv := value.getReqVariables
           let body_rvs :=
-            (body.map fun e => e.getReqVariables).join.filter
+            (body.map fun e => e.getReqVariables).flatten.filter
               -- the name is not required in the body
               fun elem => !(name.toString == elem)
           body_rvs ++ value_rv
@@ -816,16 +816,16 @@ namespace Shared.formula
       match f with
         | formula.string s =>
           if callablePredicateNames.contains s then
-            let index := callablePredicateNames.indexOf s
-            let calledPredicate := callablePredicates.get! index
+            let index := callablePredicateNames.idxOf s
+            let calledPredicate := callablePredicates[index]!
             return [(calledPredicate, [])]
           else
             return []
 
         | formula.pred_with_args predicate_name predicate_arguments =>
           if callablePredicateNames.contains predicate_name then
-            let index := callablePredicateNames.indexOf predicate_name
-            let calledPredicate := callablePredicates.get! index
+            let index := callablePredicateNames.idxOf predicate_name
+            let calledPredicate := callablePredicates[index]!
 
             let mut calledArgumentVariables := []
             for arg in predicate_arguments do

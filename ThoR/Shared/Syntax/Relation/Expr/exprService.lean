@@ -40,10 +40,10 @@ namespace Shared.expr
           if callableNames.contains s then
 
             -- Get the index of the callable (the lists are same since since it was mapped)
-            let callableIndex := callableNames.indexOf s
+            let callableIndex := callableNames.idxOf s
 
             -- Get the callable element
-            let calledElement := callables.get! callableIndex
+            let calledElement := callables[callableIndex]!
 
             -- Return the expression with the fitting replacement name
             return expr.string
@@ -80,13 +80,13 @@ namespace Shared.expr
           let sigNamespace :=
             ((nsSplit.take (nsSplit.length - 1)).drop 1).foldl
               (fun result current => s!"{result}_{current}")
-              (nsSplit.get! 0)
+              (nsSplit[0]!)
 
           -- the namespace with the last element removed (assumend to be a sig name)
           let relNamespace :=
             ((nsSplit.take (nsSplit.length - 2)).drop 1).foldl
               (fun result current => s!"{result}_{current}")
-              (nsSplit.get! 0)
+              (nsSplit[0]!)
 
           let possibleCalls := callables.filter
             fun c =>
@@ -97,7 +97,7 @@ namespace Shared.expr
               -- if its a relation
               ( c.isRelation &&
               -- the signature name hast to be correct
-              ( c.relationOf == nsSplit.get! (nsSplit.length - 2) &&
+              ( c.relationOf == nsSplit[(nsSplit.length - 2)]! &&
               -- and the namespace hast to be correct
                 (c.openedFrom == relNamespace) ||
               -- or not given for this
@@ -117,7 +117,7 @@ namespace Shared.expr
           -- Only one call should be possible (since the symbold table already checked)
           if !possibleCalls.length == 1 then return e
 
-          let calledElement := possibleCalls.get! 0
+          let calledElement := possibleCalls[0]!
 
           let identifer := mkIdent
             (if calledElement.isRelation then
@@ -257,9 +257,9 @@ namespace Shared.expr
                 throw s!"The call to {s} is ambiguous. \
                 There are multiple declared variables which it could refer to ({possibleVarDecls})"
 
-              let varDeclsPerBlock := possibleVarDecls.get! 0
+              let varDeclsPerBlock := possibleVarDecls[0]!
               let calledBlockName := varDeclsPerBlock.1
-              let calledVarDecl := (varDeclsPerBlock.2.get! 0)
+              let calledVarDecl := (varDeclsPerBlock.2[0]!)
 
               let variableName :=
                 if calledVarDecl.isRelation then
@@ -296,7 +296,7 @@ namespace Shared.expr
         | expr.function_call_with_args called_function arguments =>
           let mut argumentsTerm :=
            unhygienicUnfolder
-            `(($(← (arguments.get! 0).toTerm inBlock blockName quantorNames)))
+            `(($(← (arguments[0]!).toTerm inBlock blockName quantorNames)))
 
           for arg in arguments.drop 1 do
             argumentsTerm :=
@@ -447,7 +447,7 @@ namespace Shared.expr
         let moduleName :=
           (moduleNameComponents.drop 1).foldl
           (fun result component => s!"{result}_{component.toString}")
-          (moduleNameComponents.get! 0).toString
+          (moduleNameComponents[0]!).toString
 
         let signatureName := leftSideComponents.getLast!
 
@@ -653,12 +653,12 @@ namespace Shared.expr
 
         -- there is only one variable with the give name
         if indices.length == 1 then
-          let calledVariable := callableVariables.get! (indices.get! 0)
+          let calledVariable := callableVariables[(indices[0]!)]!
           return [(s,[calledVariable])]
 
         -- get possible variables
         let possibleCalledVariables := indices.foldl
-          (fun result index => result.concat (callableVariables.get! index))
+          (fun result index => result.concat (callableVariables[index]!))
           []
 
         /-
@@ -700,7 +700,7 @@ namespace Shared.expr
           then
             return [(s, possibleCalledVariables)]
 
-          let signature := (possibleSignatures.get! 0)
+          let signature := (possibleSignatures[0]!)
 
           let calledVariable :=
             callableVariables.filter fun cv =>
@@ -749,7 +749,7 @@ namespace Shared.expr
         let sigNamespace :=
           ((components.take (components.length - 1)).drop 1).foldl
             (fun result current => s!"{result}_{current}")
-            (components.get! 0).toString
+            (components[0]!).toString
 
         -- alternate namespace if you use alloy style access
         let alternateSigNamespace :=
@@ -757,13 +757,13 @@ namespace Shared.expr
 
         -- the signature name if it is a relation
         let possibleSignatureName :=
-          (components.get! (components.length - 2)).toString
+          (components[(components.length - 2)]!).toString
 
         -- the namespace with the last element removed (assumend to be a sig name)
         let relNamespace :=
           ((components.take (components.length - 2)).drop 1).foldl
             (fun result current => s!"{result}_{current}")
-            (components.get! 0).toString
+            (components[0]!).toString
 
         -- alternate namespace if you use alloy style access
         let alternateRelNamespace :=
@@ -850,8 +850,8 @@ namespace Shared.expr
         | expr.string s =>
           if !moduleVariables.contains s then return e
 
-          let index := moduleVariables.indexOf s
-          let replacer := openVariables.get! index
+          let index := moduleVariables.idxOf s
+          let replacer := openVariables[index]!
           return expr.string replacer
 
         | expr.unaryRelOperation op e =>
@@ -883,7 +883,7 @@ namespace Shared.expr
 
         | expr.callFromOpen sn =>
           let components := sn.representedNamespace.getId.components
-          if !components.get! 0 == `this then return e
+          if !components[0]! == `this then return e
           let moduleName := (moduleName.splitOn "_").getLast!
           let new_components := [moduleName.toName] ++ (components.drop 1)
           let new_ident := mkIdent (Name.fromComponents new_components)
@@ -921,7 +921,7 @@ namespace Shared.expr
           throw s!"Call to function {s} is ambigious. Could be \
           any of {possibleFunctions}"
         if possibleFunctions.isEmpty then return []
-        let calledFunction := possibleFunctions.get! 0
+        let calledFunction := possibleFunctions[0]!
         if !calledFunction.isFunction then
           throw s!"Tried to call the {calledFunction.commandType} \
           {calledFunction.name} as a function"
@@ -934,7 +934,7 @@ namespace Shared.expr
           throw s!"Call to function {function_name} is ambigious. Could be \
           any of {possibleFunctions}"
         if possibleFunctions.isEmpty then return []
-        let calledFunction := possibleFunctions.get! 0
+        let calledFunction := possibleFunctions[0]!
         if !calledFunction.isFunction then
           throw s!"Tried to call the {calledFunction.commandType} \
           {calledFunction.name} as a function"

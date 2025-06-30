@@ -112,7 +112,7 @@ namespace InheritanceTree
           for name in sd.names do
             let parentName := (e.type.getReqVariables)[0]!
             let parentDecl :=
-              (ast.sigDecls.filter fun (sd) => sd.names.contains parentName).get! 0
+              (ast.sigDecls.filter fun (sd) => sd.names.contains parentName)[0]!
             it := it.updateNodeExChild
               parentName parentDecl.abs name
 
@@ -121,7 +121,7 @@ namespace InheritanceTree
           for parentName in parentNames do
             for name in sd.names do
               let parentDecl :=
-                (ast.sigDecls.filter fun (sd) => sd.names.contains parentName).get! 0
+                (ast.sigDecls.filter fun (sd) => sd.names.contains parentName)[0]!
               it := it.updateNodeInChild parentName parentDecl.abs name
         | sigExt.none => continue
 
@@ -165,7 +165,7 @@ namespace InheritanceTree
         return (result)
 
       else
-        let firstInput := input.get! 0
+        let firstInput := input[0]!
 
         let mut result : Term
             ← `($(firstInput.1))
@@ -226,7 +226,7 @@ namespace InheritanceTree
         -- replace node name if needed
         let nodeName :=
           if signatureNames.contains node.name then
-            rSignatureNames.get! (signatureNames.indexOf node.name)
+            rSignatureNames[(signatureNames.idxOf node.name)]!
           else
             node.name
 
@@ -238,7 +238,7 @@ namespace InheritanceTree
           fun (exChild) => Id.run do
             let exChild :=
               if signatureNames.contains exChild then
-                rSignatureNames.get! (signatureNames.indexOf exChild)
+                rSignatureNames[(signatureNames.idxOf exChild)]!
 
               else
                 exChild
@@ -249,7 +249,7 @@ namespace InheritanceTree
           fun (inChild) => Id.run do
             let inChild :=
               if signatureNames.contains inChild then
-                rSignatureNames.get! (signatureNames.indexOf inChild)
+                rSignatureNames[(signatureNames.idxOf inChild)]!
 
               else
                 inChild
@@ -263,7 +263,7 @@ namespace InheritanceTree
           -- Axioms for abstract
           if node.abs then
 
-            let firstChild := allChildren.get! 0
+            let firstChild := allChildren[0]!
 
             --Initialise HoldingLists
             let mut terms : Term
@@ -333,7 +333,7 @@ namespace InheritanceTree
 
           commands := commands.concat command
 
-          let openedFrom := (memberName.splitOn signatureSeparator).get! 0
+          let openedFrom := (memberName.splitOn signatureSeparator)[0]!
           let aliasname :=
             s!"{if !memberName.containsSubstr "this" then s!"{openedFrom}." else ""}\
             {(axiomName.toString.splitOn signatureSeparator).getLast!}".toName

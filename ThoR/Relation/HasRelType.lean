@@ -19,7 +19,7 @@ def mult_to_pred {R : Type u} [ThoR.TupleSet R] (m : Shared.mult) : R → Prop :
 
 namespace HasRelType
 
-inductive hasType' {R: Type} [TupleSet R]: R → (RelType' R) → Type :=
+inductive hasType' {R: Type} [TupleSet R]: R → (RelType' R) → Type where
   -- subset : m univ
   | sig (m : Shared.mult):
     ∀ (subset : R), subset ⊂ RelConstants.univ → mult_to_pred m subset

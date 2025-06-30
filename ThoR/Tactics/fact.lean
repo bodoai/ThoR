@@ -48,7 +48,7 @@ private def factDeclaraionImpl : Tactic := fun stx => do
           logError s!"The call to {refered_name} is ambiguous. \
           There are multiple declared definitions which it could refer to ({possibleFacts})"
 
-        let declsOfBlock := possibleFacts.get! 0
+        let declsOfBlock := possibleFacts[0]!
         let calledBlockName := declsOfBlock.1
 
         let refName := refered_name.getId

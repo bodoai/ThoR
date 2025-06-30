@@ -93,9 +93,9 @@ namespace Alloy
             fun f =>
               f.replaceCalls callableVariables)
 
-        let argnames := (cd.predArgs.map fun (arg) => arg.1.names).join
+        let argnames := (cd.predArgs.map fun (arg) => arg.1.names).flatten
 
-        let ff := (forms.get! 0)
+        let ff := (forms[0]!)
         bodyTerm ←
           ff.toTerm
             blockName cd.requiredVars callableVariables cd.predCalls argnames
@@ -111,9 +111,9 @@ namespace Alloy
         let expressions :=
           cd.expressions.map fun e => e.replaceCalls callableVariables
 
-        let argNames := (cd.functionArgs.map fun fa => fa.1.names).join
+        let argNames := (cd.functionArgs.map fun fa => fa.1.names).flatten
 
-        let fe := (expressions.get! 0)
+        let fe := (expressions[0]!)
         bodyTerm ← fe.toTermFromBlock blockName argNames
 
         for expression in expressions.drop 1 do
@@ -123,7 +123,7 @@ namespace Alloy
       -- and ifExpressions
       if cd.isFunction && !(cd.ifExpressions.isEmpty) then
 
-        let argNames := (cd.functionArgs.map fun fa => fa.1.names).join
+        let argNames := (cd.functionArgs.map fun fa => fa.1.names).flatten
 
         let ifExpressions :=
           cd.ifExpressions.map fun ie =>
@@ -133,7 +133,7 @@ namespace Alloy
               elseBody := ie.elseBody.replaceCalls callableVariables
             }
 
-        let first_if_expression := ifExpressions.get! 0
+        let first_if_expression := ifExpressions[0]!
 
         let mut dropCount := 0
         -- if there are no expressions get the first ifExpr as Body
@@ -473,7 +473,7 @@ namespace Alloy
       let aliasCommands := createVariableAliasCommands blockName st.variableDecls
       commandList := commandList.append aliasCommands
 
-      let callablePredicates := (st.getPredicateDeclarations.map fun pd => pd.predCalls).join
+      let callablePredicates := (st.getPredicateDeclarations.map fun pd => pd.predCalls).flatten
 
       -- predicates
       let predCommands ← createPredDefsCommands blockName (st.defDecls.filter fun dd => dd.isPredicate) st.variableDecls callablePredicates

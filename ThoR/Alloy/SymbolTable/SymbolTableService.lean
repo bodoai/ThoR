@@ -51,7 +51,7 @@ to be better digestible for further computation and transformation into Lean.
 
       let mut i := 0
       while !(unorderd.isEmpty) && (i < unorderd.length) do
-        let vd? := unorderd.get? i
+        let vd? := unorderd[i]?
         if vd?.isSome then
           let vd := vd?.get!
           let mut allReqsAvariable := true
@@ -91,9 +91,9 @@ to be better digestible for further computation and transformation into Lean.
           (st.axiomDecls.map  fun (ad) => ad.name) ++
           (st.defDecls.map  fun (dd) => dd.name) ++
           (st.defDecls.map  fun (dd) =>
-            (dd.predArgs.map fun (arg) => arg.1.names).join).join ++
+            (dd.predArgs.map fun (arg) => arg.1.names).flatten).flatten ++
           (st.defDecls.map  fun (dd) =>
-            (dd.functionArgs.map fun (arg) => arg.1.names).join).join
+            (dd.functionArgs.map fun (arg) => arg.1.names).flatten).flatten
 
         for requiredSymbol in st.requiredDecls do
           if !(availableSymbols.contains requiredSymbol) then
@@ -120,11 +120,11 @@ to be better digestible for further computation and transformation into Lean.
 
       let mut lookedAtNames := []
       for index in [:(alloyLikeModuleNames.length)] do
-        let alloyName := alloyLikeModuleNames.get! index
-        let realName := importedModuleNames.get! index
+        let alloyName := alloyLikeModuleNames[index]!
+        let realName := importedModuleNames[index]!
         if lookedAtNames.contains alloyName then
           let indeces := alloyLikeModuleNames.indexesOf alloyName
-          let doubleNamedModules := indeces.map fun i => importedModuleNames.get! i
+          let doubleNamedModules := indeces.map fun i => importedModuleNames[i]!
           throw s!"Cannot import module '{realName}' \
           without alias (keyword 'as'), as the name '{alloyName}' \
           is ambiguous. Multiple modules end with {alloyName}: \
@@ -220,8 +220,8 @@ to be better digestible for further computation and transformation into Lean.
           let calledSigDecls := signatureCall.2
 
           if calledSigDecls.isEmpty then
-            let index := location.signatureCalls.indexOf signatureCall
-            let relCall := location.relationCalls.get! index
+            let index := location.signatureCalls.idxOf signatureCall
+            let relCall := location.relationCalls[index]!
             let calledRelDecls := relCall.2
 
             if calledRelDecls.isEmpty then
@@ -235,7 +235,7 @@ to be better digestible for further computation and transformation into Lean.
             {call} are ambiguous. \
             Could be any of {signatureCall.2}"
 
-          let calledSignature := signatureCall.2.get! 0
+          let calledSignature := signatureCall.2[0]!
 
           -- temp quantors are not to be checked here
           if calledSignature.isQuantor then
@@ -266,7 +266,7 @@ to be better digestible for further computation and transformation into Lean.
       (calledArguments : List (expr × List (String × List varDecl)))
       : Except String Unit := do
         let requiredArgNumber :=
-          (calledPredDecl.args.map fun a => a.names).join.length
+          (calledPredDecl.args.map fun a => a.names).flatten.length
 
         let calledArgNumber := calledArguments.length
 
@@ -292,9 +292,9 @@ to be better digestible for further computation and transformation into Lean.
         let availablePredNames := availablePredDecls.map fun apd => apd.name
 
         let mut calledPreds :=
-          ((st.axiomDecls.map fun (ad) => ad.predCalls).join ++
-            ((st.defDecls.map fun (ad) => ad.predCalls).join) ++
-              ((st.assertDecls.map fun (ad) => ad.predCalls).join))
+          ((st.axiomDecls.map fun (ad) => ad.predCalls).flatten ++
+            ((st.defDecls.map fun (ad) => ad.predCalls).flatten) ++
+              ((st.assertDecls.map fun (ad) => ad.predCalls).flatten))
 
         for calledPred in calledPreds do
           let calledPredCommandDecl := calledPred.1
@@ -304,9 +304,9 @@ to be better digestible for further computation and transformation into Lean.
           if !isDefined then
             throw s!"Predicate {calledPredName} does not exist"
 
-          let index := availablePredNames.indexOf calledPredName
+          let index := availablePredNames.idxOf calledPredName
 
-          let calledPredDecl := availablePredDecls.get! index
+          let calledPredDecl := availablePredDecls[index]!
           let calledArguments := calledPred.2
 
           checkPredCallArgNumber calledPredDecl calledArguments
@@ -496,7 +496,7 @@ to be better digestible for further computation and transformation into Lean.
           else
             let fv := (st.variableDecls.filter
               fun cv =>
-                cv.name == a.expression.getStringData).get! 0
+                cv.name == a.expression.getStringData)[0]!
             (a, fv)
 
         let functionCalls ←
@@ -646,7 +646,7 @@ to be better digestible for further computation and transformation into Lean.
           else
             let fv := (st.variableDecls.filter
               fun cv =>
-                cv.name == a.type.getStringData).get! 0
+                cv.name == a.type.getStringData)[0]!
             (a, fv)
 
         st := st.addDefDecl
