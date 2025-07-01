@@ -16,6 +16,23 @@ startTestBlock model1
 #check ThoR_TupleSet
 #check [alloy| univ = univ]
 
+variable (ttt : Nat)
+lemma test : 1 = 1 := by
+  have h1 : ttt = 1 := by sorry
+  sorry
+
+theorem test1_2 : 1 = 1 := by
+  have h1 : ttt = 1 := by sorry
+  sorry
+
+example : 1 = 1 := by
+  have h1 : ttt = 1 := by sorry
+  sorry
+
+lemma test2 : ttt = 1 := by
+  have h1 : ttt = ttt := by trivial
+  sorry
+
 lemma l1 : ThoR_TupleSet = ThoR_TupleSet := by
   have h1 : [alloy| univ = univ] := by sorry
   have h2 : [alloy| @ model1.vars.a = univ] := by sorry
