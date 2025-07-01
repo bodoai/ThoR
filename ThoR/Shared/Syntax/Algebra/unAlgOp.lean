@@ -4,6 +4,7 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
 
 open Lean
 
@@ -52,9 +53,8 @@ namespace Shared
       match op with
         | `(unAlgOp| -) => return unAlgOp.negation
 
-        | syntx => throw s!"No match implemented in \
-            unAlgOp.toType \
-            for '{syntx}'"
+        | syntx =>
+          throwNoMatchImplemented "unAlgOp.toType" syntx
 
   end unAlgOp
 

@@ -6,6 +6,9 @@ Authors: s. file CONTRIBUTORS
 
 import ThoR.Basic
 import ThoR.Shared.Syntax.multType
+
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
+
 open Lean
 namespace Shared
 
@@ -71,9 +74,8 @@ namespace Shared
           | `(mult| lone) => return mult.lone
           | `(mult| one) => return mult.one
 
-          | syntx => throw s!"No match implemented in \
-            mult.toType \
-            for '{syntx}'"
+          | syntx =>
+            throwNoMatchImplemented "mult.toType" syntx
 
     /--
     Tries to parse an mult from an option syntax and

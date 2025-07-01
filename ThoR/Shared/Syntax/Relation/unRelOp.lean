@@ -6,6 +6,7 @@ Authors: s. file CONTRIBUTORS
 import ThoR.Basic
 import ThoR.Relation.TupleSet
 import ThoR.Relation.Rel
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
 
 open Lean
 open ThoR
@@ -86,9 +87,7 @@ namespace Shared
           | `(unRelOp| ~) => return unRelOp.transposition
 
           | syntx =>
-            throw s!"No match implemented in \
-            unRelOp.toType \
-            for '{syntx}'"
+            throwNoMatchImplemented "unRelOp.toType" syntx
 
   end unRelOp
 

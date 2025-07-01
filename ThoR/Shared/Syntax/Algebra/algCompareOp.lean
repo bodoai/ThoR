@@ -4,6 +4,7 @@ Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
 import ThoR.Basic
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
 
 open Lean
 
@@ -69,9 +70,8 @@ namespace Shared
           | `(algCompareOp| =<) => return algCompareOp.leq
           | `(algCompareOp| >=) => return algCompareOp.geq
 
-          | syntx => throw s!"No match implemented in \
-              algComapreOp.toType \
-              for '{syntx}'"
+          | syntx =>
+            throwNoMatchImplemented "algComapreOp.toType" syntx
 
   end algCompareOp
 

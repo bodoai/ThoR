@@ -9,6 +9,7 @@ import ThoR.Alloy.SymbolTable.SymbolTable
 import ThoR.Alloy.Config
 import ThoR.Alloy.Syntax.AlloyData.alloyData
 import ThoR.Alloy.UnhygienicUnfolder
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
 
 open Alloy Config
 open Lean
@@ -588,9 +589,7 @@ namespace Shared.expr
               (← expr.toType subExpr3))
 
         | syntx =>
-            throw s!"No match implemented in \
-            exprService.toType \
-            for '{syntx}'"
+          throwNoMatchImplemented "exprService.toType" syntx
 
   /--
   Gets the required variables for the type

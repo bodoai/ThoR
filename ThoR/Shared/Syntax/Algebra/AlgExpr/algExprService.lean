@@ -6,6 +6,7 @@ Authors: s. file CONTRIBUTORS
 
 import ThoR.Shared.Syntax.Algebra
 import ThoR.Shared.Syntax.Algebra.CardExpr.cardExprService
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
 
 open Lean
 
@@ -98,9 +99,8 @@ namespace Shared.algExpr
           return algExpr.binaryAlgebraOperation
             (← binAlgOp.toType op) (← toType algExpr1) (← toType algExpr2)
 
-        | syntx => throw s!"No match implemented in \
-            algExprService.toType \
-            for '{syntx}'"
+        | syntx =>
+          throwNoMatchImplemented "algExprService.toType" syntx
 
   /--
   Gets the required variables for the algebra expression.

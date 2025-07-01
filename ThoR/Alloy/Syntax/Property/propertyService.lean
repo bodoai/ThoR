@@ -7,6 +7,8 @@ Authors: s. file CONTRIBUTORS
 import ThoR.Alloy.Syntax.Property.property
 import ThoR.Shared.Syntax.Formula.formulaService
 
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
+
 open Shared
 open Lean
 
@@ -58,8 +60,6 @@ namespace Alloy.property
       | `(property | { $formulas:formula*}) =>
         return ← create name formulas signatureName signatureRelationNames
       | syntx =>
-          throw s!"No match implemented in \
-          propertyService.toType \
-          for '{syntx}'"
+        throwNoMatchImplemented "propertyService.toType" syntx
 
 end Alloy.property

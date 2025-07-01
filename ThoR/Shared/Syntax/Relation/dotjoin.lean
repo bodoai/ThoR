@@ -7,6 +7,7 @@ import ThoR.Basic
 import ThoR.Relation.Set
 import ThoR.Relation.TupleSet
 import ThoR.Relation.Rel
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
 open Lean
 open ThoR
 
@@ -68,9 +69,7 @@ namespace Shared
           | `(dotjoin| .)  => return dotjoin.dot_join
           | `(dotjoin| ⋈)  => return dotjoin.dot_join
           | syntx =>
-            throw s!"No match implemented in \
-            dotjoin.toType \
-            for '{syntx}'"
+            throwNoMatchImplemented "dotjoin.toType" syntx
 
   end dotjoin
 

@@ -20,6 +20,8 @@ import ThoR.Alloy.Config
 import ThoR.Alloy.Syntax.AlloyData.alloyData
 import ThoR.Alloy.UnhygienicUnfolder
 
+import ThoR.Alloy.Exceptions.NoMatchImplementedException
+
 open Alloy ThoR ThoR.Quantification
 open Lean ThoR Config
 
@@ -715,13 +717,11 @@ namespace Shared.formula
                 (name := name.getId)
                 (value := ←formula.toType_withoutIf value)
                 (body := body_typed)
-            | syntx => throw s!"No match implemented in \
-              formulaSerivce.toType (let match) \
-              for '{syntx}'"
+            | syntx =>
+              throwNoMatchImplemented "formulaSerivce.toType (let match)" syntx
 
-        | syntx => throw s!"No match implemented in \
-              formulaSerivce.toType \
-              for '{syntx}'"
+        | syntx =>
+          throwNoMatchImplemented "formulaSerivce.toType" syntx
 
   /--
   Parses the given syntax to the type
@@ -737,9 +737,8 @@ namespace Shared.formula
           return formula.tertiaryLogicOperation terLogOp.ifelse
               (← toType form1) (← toType form2) (← toType form3)
 
-        | syntx => throw s!"No match implemented in \
-            formulaService.toType \
-            for '{syntx}'"
+        | syntx =>
+           throwNoMatchImplemented "formulaService.toType" syntx
 
   /--
   Returns the required definitions for the formula to work in Lean
