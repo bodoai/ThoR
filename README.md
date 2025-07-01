@@ -18,9 +18,9 @@ Alloy5 as embedded DSL in Lean4
     rev = "main"
     ```
 
-    Note, that you can either set rev to main for the latest version or refer to a release (e.g. 0.0.1)
-- set your mathlib version to the currently used version of ThoR (see lean-toolchain) and also make sure you use the same lean version in your project to prevent errors
-- execute lake update
-- clean and build the project
+    Note, that you can either set rev to main for the latest version or refer to a release (e.g. 0.0.1).
+- set your mathlib version to the currently used version of ThoR (see the lean-toolchain file) and also make sure you use the same lean version in your project to prevent errors. (The mathlib version in ThoR should always be the right one if it is taken from the manifest. If you notice an error please report it to a maintainer).
+- execute lake update.
+- clean and build the project.
 
-Note that new releases and be created by maintainers (refer to <https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository>)
+Note that new releases can be created by maintainers (refer to <https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository>)
