@@ -309,14 +309,8 @@ inductive TyTy : Type 1 where
         Term ran
 
     | q_group (quantor_type : Shared.quant)
-      : Term ty →
-        Term ty
-
-    -- alternate q_group => this causes the function to become noncomutable. Problem calculating type?
-    -- | q_group
-    --   : Shared.quant →
-    --     Term .formula →
-    --     Term .formula
+      : Term .formula →
+        Term .formula
 
     -- | pred_1 {n : ℕ} {t : RelType R n}
     --   : (Rel t → Term .formula) →
