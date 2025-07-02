@@ -147,7 +147,7 @@ namespace Shared
             if callableNames.contains s then
 
               -- Get the index of the callable (the lists are same since since it was mapped)
-              let callableIndex := callableNames.indexOf s
+              let callableIndex := callableNames.idxOf s
 
               -- Get the callable element
               let calledElement := callables[callableIndex]!

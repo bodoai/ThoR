@@ -226,7 +226,7 @@ namespace InheritanceTree
         -- replace node name if needed
         let nodeName :=
           if signatureNames.contains node.name then
-            rSignatureNames[signatureNames.indexOf node.name]!
+            rSignatureNames[signatureNames.idxOf node.name]!
           else
             node.name
 
@@ -238,7 +238,7 @@ namespace InheritanceTree
           fun (exChild) => Id.run do
             let exChild :=
               if signatureNames.contains exChild then
-                rSignatureNames[signatureNames.indexOf exChild]!
+                rSignatureNames[signatureNames.idxOf exChild]!
 
               else
                 exChild
@@ -249,7 +249,7 @@ namespace InheritanceTree
           fun (inChild) => Id.run do
             let inChild :=
               if signatureNames.contains inChild then
-                rSignatureNames[signatureNames.indexOf inChild]!
+                rSignatureNames[signatureNames.idxOf inChild]!
 
               else
                 inChild

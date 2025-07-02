@@ -220,7 +220,7 @@ to be better digestible for further computation and transformation into Lean.
           let calledSigDecls := signatureCall.2
 
           if calledSigDecls.isEmpty then
-            let index := location.signatureCalls.indexOf signatureCall
+            let index := location.signatureCalls.idxOf signatureCall
             let relCall := location.relationCalls[index]!
             let calledRelDecls := relCall.2
 
@@ -304,7 +304,7 @@ to be better digestible for further computation and transformation into Lean.
           if !isDefined then
             throw s!"Predicate {calledPredName} does not exist"
 
-          let index := availablePredNames.indexOf calledPredName
+          let index := availablePredNames.idxOf calledPredName
 
           let calledPredDecl := availablePredDecls[index]!
           let calledArguments := calledPred.2

@@ -88,7 +88,7 @@ namespace Shared
         | expr.string s =>
           if !moduleVariables.contains s then return e
 
-          let index := moduleVariables.indexOf s
+          let index := moduleVariables.idxOf s
           let replacer := openVariables[index]!
           return expr.string replacer
 
