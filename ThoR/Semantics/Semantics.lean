@@ -26,6 +26,7 @@ inductive TyTy : Type 1 where
     | pred : {n : ℕ} → (t : RelType R n) → (quantor_type : Shared.quant) → Ty (.isPred t quantor_type)
     --| pred_1 : {n : ℕ} → (t : RelType R n) → Ty (.isPred t)
     --| pred_n : {n : ℕ} → (t : RelType R n) → Ty (.isPred t) → Ty (.isPred t)
+    | type : (n : ℕ) → Ty .isTy
 
   inductive Marker : Type u where
     | alloy_predicate
@@ -41,6 +42,7 @@ inductive TyTy : Type 1 where
     | .pred t _ => Rel t → Prop
     --| .pred_1 dom_rel_type => Rel dom_rel_type → Prop
     --| .pred_n dom_rel_type p' => Rel dom_rel_type → (p'.eval)
+     | Ty.type n => ThoR.RelType R n
 
 
 -- variable {R : Type} [TupleSet R] (t : RelType R n)
@@ -338,6 +340,8 @@ inductive TyTy : Type 1 where
       : (pred : Term (.pred t quantor_type)) →
         Term .formula
 
+    | type {n : ℕ} (t : RelType R n) : Term (.type n)
+
 
 variable {R : Type} [TupleSet R] (t : RelType R n)
 #check Term.pred (Shared.quant.all) (λ (r : Rel t) => Term.in
@@ -522,6 +526,8 @@ def Term.eval
     | .in r1 r2 => (r1.eval) ⊂ (r2.eval)
     | .eq r1 r2 => (r1.eval) ≡ (r2.eval)
     | .neq r1 r2 => (r1.eval) ≢  (r2.eval)
+
+    | type t => t
 
     -- | q_group {t : RelType R n} {ran : Ty (.isPred t)}
     --     : Shared.quant →
