@@ -95,9 +95,9 @@ namespace Alloy
 
         let argnames := (cd.predArgs.map fun (arg) => arg.1.names).flatten
 
-        let ff := (forms.get! 0)
+        let first_formula := (forms[0]!)
         bodyTerm ←
-          ff.toSemanticsTerm
+          first_formula.toSemanticsTerm
             blockName cd.requiredVars callableVariables cd.predCalls argnames
 
         for formula in forms.drop 1 do
@@ -113,8 +113,8 @@ namespace Alloy
 
         let argNames := (cd.functionArgs.map fun fa => fa.1.names).flatten
 
-        let fe := (expressions.get! 0)
-        bodyTerm ← fe.toTerm blockName cd.requiredVars callableVariables cd.predCalls argNames
+        let first_expression := (expressions[0]!)
+        bodyTerm ← first_expression.toTerm blockName cd.requiredVars callableVariables cd.predCalls argNames
 
         for expression in expressions.drop 1 do
           let newTerm ←

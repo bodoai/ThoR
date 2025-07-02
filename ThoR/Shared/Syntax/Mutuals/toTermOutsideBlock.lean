@@ -68,7 +68,7 @@ namespace Shared
                   There are multiple declared variables \
                   which it could refer to ({possibleVarDecls})"
 
-                let calledVarDecl := possibleVarDecls.get! 0
+                let calledVarDecl := possibleVarDecls[0]!
                 let calledBlockName := calledVarDecl.1
                 let callNameComponents := [calledBlockName, `vars, s.toName]
                 let callName := Name.fromComponents callNameComponents
@@ -82,7 +82,7 @@ namespace Shared
 
           | expr.function_call_with_args called_function arguments =>
             let mut argumentsTerm
-              ← (arguments.get! 0).toTermOutsideBlock
+              ← (arguments[0]!).toTermOutsideBlock
 
             for arg in arguments.drop 1 do
               let argTerm ← arg.toTermOutsideBlock
@@ -256,7 +256,7 @@ namespace Shared
           let names := (n.map fun (name) => mkIdent name.toName).reverse
 
           -- one form ist present -> see syntax (+)
-          let firstForm := f.get! 0
+          let firstForm := f[0]!
           let firstFTerm ← firstForm.toTermOutsideBlock availableAlloyData localContextUserNames
 
           let mut completefTerm : Unhygienic (Term) :=
@@ -280,14 +280,14 @@ namespace Shared
           -- singular parameter is var constructor
           if names.length == 1 then
               return unhygienicUnfolder `(($(mkIdent ``Formula.var) $(q.toTerm)) (
-                fun ( $(names.get! 0) : $(← te.toTermOutsideBlock))
+                fun ( $(names[0]!) : $(← te.toTermOutsideBlock))
                   => $(unhygienicUnfolder completefTerm)))
 
           -- multiple parameter is Group constructor
           else
             let mut formulaGroup :=
               `(($(mkIdent ``Group.var) (
-                fun ( $(names.get! 0) : $(← te.toTermOutsideBlock))
+                fun ( $(names[0]!) : $(← te.toTermOutsideBlock))
                   => $(mkIdent ``Group.formula) $(unhygienicUnfolder completefTerm))))
             for n in (names.drop 1) do
               formulaGroup :=
@@ -325,7 +325,7 @@ namespace Shared
 
           if bodyTermList.isEmpty then throw s!"let {name}={value} has empty body"
 
-          let mut bodyTerm := unhygienicUnfolder `(term | ($(bodyTermList.get! 0)))
+          let mut bodyTerm := unhygienicUnfolder `(term | ($(bodyTermList[0]!)))
           for elem in bodyTermList do
             bodyTerm := unhygienicUnfolder `(bodyTerm ∧ ($(elem)))
 

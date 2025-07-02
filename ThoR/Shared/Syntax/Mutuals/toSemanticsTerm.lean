@@ -84,7 +84,7 @@ namespace Shared
 
           | expr.function_call_with_args called_function arguments =>
             let mut argumentsTerm
-              ← (arguments.get! 0).toSemanticsTerm blockName
+              ← (arguments[0]!).toSemanticsTerm blockName
                 variableNames callableVariables callablePredicates pureNames
 
             for arg in arguments.drop 1 do
@@ -288,7 +288,7 @@ namespace Shared
               s!"Called Preds is Empty or more than one \
               in formulaService {possibleCalledPredicates}"
 
-          let calledPredicate := possibleCalledPredicates.get! 0
+          let calledPredicate := possibleCalledPredicates[0]!
 
           let calledArgsVarDecls :=
             (calledPredicate.1.predArgs.map fun cp =>
@@ -311,9 +311,9 @@ namespace Shared
 
           for index in [0:pa.length] do
 
-            --let definedArg := calledPredArgs.get! index
+            --let definedArg := calledPredArgs[index]!
 
-            let vd := calledArgsVarDecls.get! index
+            let vd := calledArgsVarDecls[index]!
 
             let typeName :=
               (if vd.isRelation then
@@ -327,7 +327,7 @@ namespace Shared
               else
                 vd.getSignatureReplacementName)
 
-            let calledArg := pa.get! index
+            let calledArg := pa[index]!
             let calledVarDecls_of_arg_to_cast ←
               calledArg.getCalledVariables callableVariables
 
@@ -349,7 +349,7 @@ namespace Shared
               the replacer on both sides (its the actual name))
               -/
               (
-                let cv := (calledVarDecls_of_arg_to_cast_flat.get! 0)
+                let cv := (calledVarDecls_of_arg_to_cast_flat[0]!)
                 cv.type.toString == typeReplacementName
               )
 
@@ -617,7 +617,7 @@ namespace Shared
                 (requiredDecls := [])
 
           -- one form ist present -> see syntax (+)
-          let firstForm := f.get! 0
+          let firstForm := f[0]!
           let firstFTerm ←
             firstForm.toSemanticsTerm
               blockName variableNames (callableVariables ++ quantVarDecls) callablePredicates
@@ -646,14 +646,14 @@ namespace Shared
           -- singular parameter is var constructor
           if names.length == 1 then
               return unhygienicUnfolder `(($(mkIdent ``Formula.var) $(q.toTerm)) (
-                fun ( $(names.get! 0) : $(← te.toSemanticsTerm blockName variableNames callableVariables callablePredicates pureNames))
+                fun ( $(names[0]!) : $(← te.toSemanticsTerm blockName variableNames callableVariables callablePredicates pureNames))
                   => $(completefTerm)))
 
           -- multiple parameter is Group constructor
           else
             let mut formulaGroup : Term := unhygienicUnfolder
               `(($(mkIdent ``Group.var) (
-                fun ( $(names.get! 0) : $(← te.toSemanticsTerm blockName variableNames callableVariables callablePredicates pureNames))
+                fun ( $(names[0]!) : $(← te.toSemanticsTerm blockName variableNames callableVariables callablePredicates pureNames))
                   => $(mkIdent ``Group.formula) $(completefTerm))))
             for n in (names.drop 1) do
               formulaGroup := unhygienicUnfolder
@@ -692,7 +692,7 @@ namespace Shared
 
           if bodyTermList.isEmpty then throw s!"let {name}={value} has empty body"
 
-          let mut bodyTerm := `(term | ($(bodyTermList.get! 0)))
+          let mut bodyTerm := `(term | ($(bodyTermList[0]!)))
           for elem in bodyTermList do
             bodyTerm := `(bodyTerm ∧ ($(elem)))
 

@@ -145,7 +145,7 @@ namespace Shared
           let moduleName :=
             (moduleNameComponents.drop 1).foldl
             (fun result component => s!"{result}_{component.toString}")
-            (moduleNameComponents.get! 0).toString
+            (moduleNameComponents[0]!).toString
 
           let signatureName := leftSideComponents.getLast!
 

@@ -36,7 +36,7 @@ namespace Shared
           | formula.string s =>
             if callablePredicateNames.contains s then
               let index := callablePredicateNames.indexOf s
-              let calledPredicate := callablePredicates.get! index
+              let calledPredicate := callablePredicates[index]!
               return [(calledPredicate, [])]
             else
               return []
@@ -44,7 +44,7 @@ namespace Shared
           | formula.pred_with_args predicate_name predicate_arguments =>
             if callablePredicateNames.contains predicate_name then
               let index := callablePredicateNames.indexOf predicate_name
-              let calledPredicate := callablePredicates.get! index
+              let calledPredicate := callablePredicates[index]!
 
               let mut calledArgumentVariables := []
               let mut args_cp := []

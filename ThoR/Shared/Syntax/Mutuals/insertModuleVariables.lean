@@ -89,7 +89,7 @@ namespace Shared
           if !moduleVariables.contains s then return e
 
           let index := moduleVariables.indexOf s
-          let replacer := openVariables.get! index
+          let replacer := openVariables[index]!
           return expr.string replacer
 
         | expr.unaryRelOperation op e =>

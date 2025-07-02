@@ -150,7 +150,7 @@ namespace Shared
               let callableIndex := callableNames.indexOf s
 
               -- Get the callable element
-              let calledElement := callables.get! callableIndex
+              let calledElement := callables[callableIndex]!
 
               -- Return the expression with the fitting replacement name
               return expr.string
@@ -187,13 +187,13 @@ namespace Shared
             let sigNamespace :=
               ((nsSplit.take (nsSplit.length - 1)).drop 1).foldl
                 (fun result current => s!"{result}_{current}")
-                (nsSplit.get! 0)
+                (nsSplit[0]!)
 
             -- the namespace with the last element removed (assumend to be a sig name)
             let relNamespace :=
               ((nsSplit.take (nsSplit.length - 2)).drop 1).foldl
                 (fun result current => s!"{result}_{current}")
-                (nsSplit.get! 0)
+                (nsSplit[0]!)
 
             let possibleCalls := callables.filter
               fun c =>
@@ -204,7 +204,7 @@ namespace Shared
                 -- if its a relation
                 ( c.isRelation &&
                 -- the signature name hast to be correct
-                ( c.relationOf == nsSplit.get! (nsSplit.length - 2) &&
+                ( c.relationOf == nsSplit[nsSplit.length - 2]! &&
                 -- and the namespace hast to be correct
                   (c.openedFrom == relNamespace) ||
                 -- or not given for this
@@ -224,7 +224,7 @@ namespace Shared
             -- Only one call should be possible (since the symbold table already checked)
             if !possibleCalls.length == 1 then return e
 
-            let calledElement := possibleCalls.get! 0
+            let calledElement := possibleCalls[0]!
 
             let identifer := mkIdent
               (if calledElement.isRelation then

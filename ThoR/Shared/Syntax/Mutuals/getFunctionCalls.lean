@@ -115,7 +115,7 @@ namespace Shared
 
             if possibleFunctions.isEmpty then return []
 
-            let calledFunction := possibleFunctions.get! 0
+            let calledFunction := possibleFunctions[0]!
             if !calledFunction.isFunction then
               throw s!"Tried to call the {calledFunction.commandType} \
               {calledFunction.name} as a function"
@@ -131,7 +131,7 @@ namespace Shared
               any of {possibleFunctions}"
 
             if possibleFunctions.isEmpty then return []
-            let calledFunction := possibleFunctions.get! 0
+            let calledFunction := possibleFunctions[0]!
 
             if !calledFunction.isFunction then
               throw s!"Tried to call the {calledFunction.commandType} \

@@ -63,7 +63,7 @@ def extractBVarNames (e:Expr) : List (Name) :=
 
 def substituteBVarsWithConst (e:Expr) (bnl : List (Name)) : Expr := Id.run do
   match e with
-    | Expr.bvar n => Expr.const (bnl.reverse.get! n) []
+    | Expr.bvar n => Expr.const (bnl.reverse[n]!) []
     | Expr.app fn arg => Expr.app (substituteBVarsWithConst fn bnl) (substituteBVarsWithConst arg bnl)
     | Expr.lam bn bt body bi => Expr.lam bn bt (substituteBVarsWithConst body (bnl)) bi
     | _ => e
@@ -88,7 +88,7 @@ def delab3 : Delab := do
 
   let ea_body := (substituteBVarsWithConst pure_body (extractBVarNames e))
   let body ← (delab ea_body)
-  let q : Shared.quant := (termToQuant (← delab (args.get! 2))) -- quant steht an Pos. 2
+  let q : Shared.quant := (termToQuant (← delab (args[2]!))) -- quant steht an Pos. 2
 
   -- if the type is an ident, then generate the alloy representation, else continue
   match type with
@@ -112,13 +112,13 @@ partial def extractGroupBVarNames (e:Expr) : List (Name) :=
   let fName := e.getAppFn.constName.toString
   match fName with
   | "ThoR.Quantification.Formula.disj" =>
-    let groupVarExpr := e.getAppArgs.get! 2
+    let groupVarExpr := e.getAppArgs[2]!
     extractGroupBVarNames groupVarExpr
   | "ThoR.Quantification.Formula.group" =>
-    let groupVarExpr := e.getAppArgs.get! 2
+    let groupVarExpr := e.getAppArgs[2]!
     extractGroupBVarNames groupVarExpr
   | "ThoR.Quantification.Group.var" =>
-    let lambdaExpr := (e.getAppArgs.get! 1)
+    let lambdaExpr := (e.getAppArgs[1]!)
     match lambdaExpr with
     | Expr.lam bn bt body bi => [bn].append (extractGroupBVarNames body)
     | _ => []
@@ -129,18 +129,18 @@ partial def extractGroupBody (e:Expr) : Expr :=
   let fName := e.getAppFn.constName.toString
   match fName with
   | "ThoR.Quantification.Formula.disj" =>
-    let groupVarExpr := e.getAppArgs.get! 2
+    let groupVarExpr := e.getAppArgs[2]!
     extractGroupBody groupVarExpr
   | "ThoR.Quantification.Formula.group" =>
-    let groupVarExpr := e.getAppArgs.get! 2
+    let groupVarExpr := e.getAppArgs[2]!
     extractGroupBody groupVarExpr
   | "ThoR.Quantification.Group.var" =>
-    let lambdaExpr := (e.getAppArgs.get! 1)
+    let lambdaExpr := (e.getAppArgs[1]!)
     match lambdaExpr with
     | Expr.lam bn bt body bi => extractGroupBody body
     | _ => default
   | "ThoR.Quantification.Group.formula" =>
-    let formulaExpr := (e.getAppArgs.get! 2)
+    let formulaExpr := (e.getAppArgs[2]!)
     formulaExpr
   | _ => default
 
@@ -154,7 +154,7 @@ def delab4 : Delab := do
   let type ← (delab (extractType e))
 
   let args := e.getAppArgs
-  let q : Shared.quant := (termToQuant (← delab (args.get! 1))) -- quant steht an Pos. 2
+  let q : Shared.quant := (termToQuant (← delab (args[1]!))) -- quant steht an Pos. 2
 
   let bVarNames := extractGroupBVarNames e
   let namesArray : Array (Ident) :=
@@ -177,7 +177,7 @@ def delab5 : Delab := do
   let type ← (delab (extractType e))
 
   let args := e.getAppArgs
-  let q : Shared.quant := (termToQuant (← delab (args.get! 1))) -- quant steht an Pos. 2
+  let q : Shared.quant := (termToQuant (← delab (args[1]!))) -- quant steht an Pos. 2
 
   let bVarNames := extractGroupBVarNames e
   let namesArray : Array (Ident) :=

@@ -128,12 +128,12 @@ namespace Shared
 
           -- there is only one variable with the give name
           if indices.length == 1 then
-            let calledVariable := callableVariables.get! (indices.get! 0)
+            let calledVariable := callableVariables[(indices[0]!)]!
             return [(s,[calledVariable])]
 
           -- get possible variables
           let possibleCalledVariables := indices.foldl
-            (fun result index => result.concat (callableVariables.get! index))
+            (fun result index => result.concat (callableVariables[index]!))
             []
 
           /-
@@ -175,7 +175,7 @@ namespace Shared
             then
               return [(s, possibleCalledVariables)]
 
-            let signature := (possibleSignatures.get! 0)
+            let signature := (possibleSignatures[0]!)
 
             let calledVariable :=
               callableVariables.filter fun cv =>
@@ -224,7 +224,7 @@ namespace Shared
           let sigNamespace :=
             ((components.take (components.length - 1)).drop 1).foldl
               (fun result current => s!"{result}_{current}")
-              (components.get! 0).toString
+              (components[0]!).toString
 
           -- alternate namespace if you use alloy style access
           let alternateSigNamespace :=
@@ -232,13 +232,13 @@ namespace Shared
 
           -- the signature name if it is a relation
           let possibleSignatureName :=
-            (components.get! (components.length - 2)).toString
+            (components[components.length - 2]!).toString
 
           -- the namespace with the last element removed (assumend to be a sig name)
           let relNamespace :=
             ((components.take (components.length - 2)).drop 1).foldl
               (fun result current => s!"{result}_{current}")
-              (components.get! 0).toString
+              (components[0]!).toString
 
           -- alternate namespace if you use alloy style access
           let alternateRelNamespace :=

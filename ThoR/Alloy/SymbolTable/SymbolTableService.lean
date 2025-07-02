@@ -51,7 +51,7 @@ to be better digestible for further computation and transformation into Lean.
 
       let mut i := 0
       while !(unorderd.isEmpty) && (i < unorderd.length) do
-        let vd? := unorderd.get? i
+        let vd? := unorderd[i]?
         if vd?.isSome then
           let vd := vd?.get!
           let mut allReqsAvariable := true
@@ -120,11 +120,11 @@ to be better digestible for further computation and transformation into Lean.
 
       let mut lookedAtNames := []
       for index in [:(alloyLikeModuleNames.length)] do
-        let alloyName := alloyLikeModuleNames.get! index
-        let realName := importedModuleNames.get! index
+        let alloyName := alloyLikeModuleNames[index]!
+        let realName := importedModuleNames[index]!
         if lookedAtNames.contains alloyName then
           let indeces := alloyLikeModuleNames.indexesOf alloyName
-          let doubleNamedModules := indeces.map fun i => importedModuleNames.get! i
+          let doubleNamedModules := indeces.map fun i => importedModuleNames[i]!
           throw s!"Cannot import module '{realName}' \
           without alias (keyword 'as'), as the name '{alloyName}' \
           is ambiguous. Multiple modules end with {alloyName}: \
@@ -221,7 +221,7 @@ to be better digestible for further computation and transformation into Lean.
 
           if calledSigDecls.isEmpty then
             let index := location.signatureCalls.indexOf signatureCall
-            let relCall := location.relationCalls.get! index
+            let relCall := location.relationCalls[index]!
             let calledRelDecls := relCall.2
 
             if calledRelDecls.isEmpty then
@@ -235,7 +235,7 @@ to be better digestible for further computation and transformation into Lean.
             {call} are ambiguous. \
             Could be any of {signatureCall.2}"
 
-          let calledSignature := signatureCall.2.get! 0
+          let calledSignature := signatureCall.2[0]!
 
           -- temp quantors are not to be checked here
           if calledSignature.isQuantor then
@@ -306,7 +306,7 @@ to be better digestible for further computation and transformation into Lean.
 
           let index := availablePredNames.indexOf calledPredName
 
-          let calledPredDecl := availablePredDecls.get! index
+          let calledPredDecl := availablePredDecls[index]!
           let calledArguments := calledPred.2
 
           checkPredCallArgNumber calledPredDecl calledArguments
@@ -496,7 +496,7 @@ to be better digestible for further computation and transformation into Lean.
           else
             let fv := (st.variableDecls.filter
               fun cv =>
-                cv.name == a.expression.getStringData).get! 0
+                cv.name == a.expression.getStringData)[0]!
             (a, fv)
 
         let functionCalls ←
@@ -646,7 +646,7 @@ to be better digestible for further computation and transformation into Lean.
           else
             let fv := (st.variableDecls.filter
               fun cv =>
-                cv.name == a.type.getStringData).get! 0
+                cv.name == a.type.getStringData)[0]!
             (a, fv)
 
         st := st.addDefDecl

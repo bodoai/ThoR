@@ -37,7 +37,7 @@ namespace Alloy
         for f in formulas do
           formulas_typed := formulas_typed.concat (← formula.toType f)
 
-        let first_formula := formulas_typed.get! 0
+        let first_formula := formulas_typed[0]!
 
         let mut result_term ← first_formula.toTermOutsideBlock alloyDataList localContextUserNames
         for formula in (formulas_typed.drop 1) do

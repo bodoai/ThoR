@@ -28,7 +28,7 @@ namespace Shared
 
           | expr.callFromOpen sn =>
             let components := sn.representedNamespace.getId.components
-            if !components.get! 0 == `this then return e
+            if !components[0]! == `this then return e
             let moduleName := (moduleName.splitOn "_").getLast!
             let new_components := [moduleName.toName] ++ (components.drop 1)
             let new_ident := mkIdent (Name.fromComponents new_components)
