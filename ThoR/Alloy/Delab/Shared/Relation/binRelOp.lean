@@ -18,7 +18,6 @@ import ThoR.Alloy.Delab.DelaborationService
 
 open Lean PrettyPrinter Delaborator SubExpr
 
-set_option linter.cdot false in -- supress warning for use of .
 @[app_unexpander ThoR.Dotjoin.dotjoin]
 def unexpDotjoin : Unexpander
   | `($_ $a:ident $b:ident) =>
@@ -43,7 +42,6 @@ def unexpDotjoin : Unexpander
 
   | _ => throw Unit.unit
 
-set_option linter.cdot false in -- supress warning for use of .
 @[app_unexpander ThoR.HDotjoin.hDotjoin]
 def unexpHDotjoin : Unexpander
   | `($_ $a:ident $b:ident) =>
