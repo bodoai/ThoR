@@ -61,7 +61,7 @@ namespace Rel
       hSubset := subset
 
   local macro "binop_inst"
-    typeClass:ident op:ident relTypeOp:ident consistencyProof:ident : command
+    typeClass:ident op:Lean.Parser.Term.structInstLVal relTypeOp:ident consistencyProof:ident : command
     => do
       `(
         instance (R : Type) [TupleSet R] (arity : ℕ) (t1 t2 : RelType R arity):
@@ -93,7 +93,7 @@ namespace Rel
       (Dotjoin.dotjoin r1.1 r2.1) (HasRelType.dotjoin_consistent r1.2 r2.2)
 
   local macro "unop_inst"
-    typeClass:ident op:ident relTypeOp:ident consistencyProof:ident : command
+    typeClass:ident op:Lean.Parser.Term.structInstLVal relTypeOp:ident consistencyProof:ident : command
     => do
       `(
         instance (R : Type) [TupleSet R] (t : RelType R 2):
