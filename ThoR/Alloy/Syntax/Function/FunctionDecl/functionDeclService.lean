@@ -20,8 +20,8 @@ namespace Alloy.functionDecl
     (fd : functionDecl)
     : List (String) :=
       fd.outputType.getReqVariables ++
-      (fd.arguments.map fun argument => argument.getReqVariables).join ++
-      (fd.expressions.map fun expression => expression.getReqVariables).join
+      (fd.arguments.map fun argument => argument.getReqVariables).flatten ++
+      (fd.expressions.map fun expression => expression.getReqVariables).flatten
 
   def getFunctionCalls
     (fd : functionDecl)

@@ -43,7 +43,7 @@ namespace Alloy.AST
 
           let signatureNames : List String := sigDeclTyped.names
           let signatureRelationNames : List String :=
-            (sigDeclTyped.fieldDecls.map fun fd => fd.names).join
+            (sigDeclTyped.fieldDecls.map fun fd => fd.names).flatten
 
           -- create a fact per created signature
           for signatureName in signatureNames do

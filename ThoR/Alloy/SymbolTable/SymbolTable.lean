@@ -200,7 +200,7 @@ namespace Alloy
         (st.axiomDecls.map fun ad => ad.formulas) ++
         (st.defDecls.map fun dd => dd.formulas) ++
         (st.assertDecls.map fun ad => ad.formulas)
-        ).join)
+        ).flatten)
 
     /--
     Get all defined relations (signature fields) from the symbol table

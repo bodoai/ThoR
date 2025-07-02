@@ -43,7 +43,7 @@ namespace Shared
             (elseBody.getReqVariables)
 
           | expr.function_call_with_args _ arguments =>
-            (arguments.map fun a => a.getReqVariables).join
+            (arguments.map fun a => a.getReqVariables).flatten
 
           | expr.string_rb _ => []
           | expr.const _ => []
@@ -58,7 +58,7 @@ namespace Shared
           | formula.bracket f => f.getReqVariables
 
           | formula.pred_with_args _ pa =>
-            (pa.map fun (e) => e.getReqVariables).join
+            (pa.map fun (e) => e.getReqVariables).flatten
 
           | formula.unaryRelBoolOperation _ e => e.getReqVariables
 
@@ -78,14 +78,14 @@ namespace Shared
 
           | formula.quantification _ _ n e f =>
             (((f.map fun form =>
-              form.getReqVariables).join)
+              form.getReqVariables).flatten)
               ++ e.getReqVariables).filter
               fun (elem) => !(n.contains elem) -- quantor vars are not required
 
           | formula.letDeclaration name value body =>
             let value_rv := value.getReqVariables
             let body_rvs :=
-              (body.map fun e => e.getReqVariables).join.filter
+              (body.map fun e => e.getReqVariables).flatten.filter
                 -- the name is not required in the body
                 fun elem => !(name.toString == elem)
             body_rvs ++ value_rv

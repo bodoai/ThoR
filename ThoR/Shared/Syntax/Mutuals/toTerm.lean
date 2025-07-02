@@ -197,7 +197,7 @@ namespace Shared
           let calledArgsVarDecls :=
             (calledPredicate.1.predArgs.map fun cp =>
               cp.1.names.map fun _ =>
-                cp.2).join
+                cp.2).flatten
 
           for index in [0:pa.length] do
 
@@ -222,7 +222,7 @@ namespace Shared
               calledArg.getCalledVariables callableVariables
 
             let calledVarDecls_of_arg_to_cast_joined :=
-              (calledVarDecls_of_arg_to_cast.map fun a => a.2).join
+              (calledVarDecls_of_arg_to_cast.map fun a => a.2).flatten
 
             let cast_type_as_expr_string := expr.string typeName.toString
             let cast_type_as_expr_string_rb := cast_type_as_expr_string.toStringRb

@@ -48,7 +48,7 @@ def switch_thoR_representation_to_alloy_representation
 
     let split1 := lastComponentString.splitOn relationSeparator
     let split2 := split1.map fun r => r.splitOn signatureSeparator
-    let filteredSplit := (split2.join).filter
+    let filteredSplit := (split2.flatten).filter
       fun oc => oc != "this" && oc != "_root_"
     let splitNames := filteredSplit.map fun s => s.toName
 
@@ -82,13 +82,13 @@ def switch_thoR_representation_to_alloy_string_representation
 
     let split1 := lastComponentString.splitOn relationSeparator
     let split2 := split1.map fun r => r.splitOn signatureSeparator
-    let filteredSplit := (split2.join).filter fun oc => oc != "this"
+    let filteredSplit := (split2.flatten).filter fun oc => oc != "this"
 
     let newComponents := componentsWithoutLast ++ filteredSplit
 
     let componentResultString : String := (newComponents.drop 1).foldl
       (fun res c => s!"{res}/{c}")
-      (newComponents.get! 0)
+      (newComponents[0]!)
 
     return Syntax.mkStrLit componentResultString
 
@@ -109,7 +109,7 @@ def switch_thoR_representation_to_alloy_string_representation
 
       let split1 := lastComponentString.splitOn relationSeparator
       let split2 := (split1.map fun r => r.splitOn signatureSeparator)
-      let filteredSplit := (split2.join).filter fun elem => elem != "this"
+      let filteredSplit := (split2.flatten).filter fun elem => elem != "this"
 
       let newComponents : List (Name) := filteredSplit.map fun s => s.toName
 

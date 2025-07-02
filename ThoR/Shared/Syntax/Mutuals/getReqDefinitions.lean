@@ -39,13 +39,13 @@ namespace Shared
             expr1_rd ++ expr2_rd
           | formula.quantification _ _ n te f =>
             let f_rd := ((f.map fun form =>
-              form.getReqDefinitions).join
+              form.getReqDefinitions).flatten
                 ).filter fun (elem) => !(n.contains elem)
             let te_rd := te.getReqDefinitions
             f_rd ++ te_rd
           | formula.letDeclaration _ value body =>
             let value_rd := value.getReqDefinitions
-            let body_rds := (body.map fun e => e.getReqDefinitions).join
+            let body_rds := (body.map fun e => e.getReqDefinitions).flatten
             body_rds ++ value_rd
 
     /--
@@ -72,7 +72,7 @@ namespace Shared
           | expr.unaryRelOperation _ expression =>
             expression.getReqDefinitions
           | expr.function_call_with_args _ arguments =>
-            (arguments.map fun a => a.getReqDefinitions).join
+            (arguments.map fun a => a.getReqDefinitions).flatten
           | expr.string _ => []
           | expr.string_rb _ => []
           | expr.const _ => []

@@ -91,9 +91,9 @@ to be better digestible for further computation and transformation into Lean.
           (st.axiomDecls.map  fun (ad) => ad.name) ++
           (st.defDecls.map  fun (dd) => dd.name) ++
           (st.defDecls.map  fun (dd) =>
-            (dd.predArgs.map fun (arg) => arg.1.names).join).join ++
+            (dd.predArgs.map fun (arg) => arg.1.names).flatten).flatten ++
           (st.defDecls.map  fun (dd) =>
-            (dd.functionArgs.map fun (arg) => arg.1.names).join).join
+            (dd.functionArgs.map fun (arg) => arg.1.names).flatten).flatten
 
         for requiredSymbol in st.requiredDecls do
           if !(availableSymbols.contains requiredSymbol) then
@@ -266,7 +266,7 @@ to be better digestible for further computation and transformation into Lean.
       (calledArguments : List (expr × List (String × List varDecl)))
       : Except String Unit := do
         let requiredArgNumber :=
-          (calledPredDecl.args.map fun a => a.names).join.length
+          (calledPredDecl.args.map fun a => a.names).flatten.length
 
         let calledArgNumber := calledArguments.length
 
@@ -292,9 +292,9 @@ to be better digestible for further computation and transformation into Lean.
         let availablePredNames := availablePredDecls.map fun apd => apd.name
 
         let mut calledPreds :=
-          ((st.axiomDecls.map fun (ad) => ad.predCalls).join ++
-            ((st.defDecls.map fun (ad) => ad.predCalls).join) ++
-              ((st.assertDecls.map fun (ad) => ad.predCalls).join))
+          ((st.axiomDecls.map fun (ad) => ad.predCalls).flatten ++
+            ((st.defDecls.map fun (ad) => ad.predCalls).flatten) ++
+              ((st.assertDecls.map fun (ad) => ad.predCalls).flatten))
 
         for calledPred in calledPreds do
           let calledPredCommandDecl := calledPred.1

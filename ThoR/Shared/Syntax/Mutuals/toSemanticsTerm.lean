@@ -293,7 +293,7 @@ namespace Shared
           let calledArgsVarDecls :=
             (calledPredicate.1.predArgs.map fun cp =>
               cp.1.names.map fun _ =>
-                cp.2).join
+                cp.2).flatten
 
           if pa.isEmpty then
             return unhygienicUnfolder
@@ -331,8 +331,8 @@ namespace Shared
             let calledVarDecls_of_arg_to_cast ←
               calledArg.getCalledVariables callableVariables
 
-            let calledVarDecls_of_arg_to_cast_joined :=
-              (calledVarDecls_of_arg_to_cast.map fun a => a.2).join
+            let calledVarDecls_of_arg_to_cast_flat :=
+              (calledVarDecls_of_arg_to_cast.map fun a => a.2).flatten
 
             let cast_type_as_expr_string := expr.string typeName.toString
             let cast_type_as_expr_string_rb := cast_type_as_expr_string.toStringRb
@@ -340,7 +340,7 @@ namespace Shared
 
             let cast_type_equals_called_var_type :=
               -- the type must be clear (only one called var)
-              (calledVarDecls_of_arg_to_cast_joined.length == 1) &&
+              (calledVarDecls_of_arg_to_cast_flat.length == 1) &&
               /-
               get the type, stringify it and compare it to the
               replacerName of the type we try to cast to
@@ -349,7 +349,7 @@ namespace Shared
               the replacer on both sides (its the actual name))
               -/
               (
-                let cv := (calledVarDecls_of_arg_to_cast_joined.get! 0)
+                let cv := (calledVarDecls_of_arg_to_cast_flat.get! 0)
                 cv.type.toString == typeReplacementName
               )
 

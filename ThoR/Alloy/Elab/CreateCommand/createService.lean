@@ -93,7 +93,7 @@ namespace Alloy
             fun f =>
               f.replaceCalls callableVariables)
 
-        let argnames := (cd.predArgs.map fun (arg) => arg.1.names).join
+        let argnames := (cd.predArgs.map fun (arg) => arg.1.names).flatten
 
         let ff := (forms.get! 0)
         bodyTerm ←
@@ -111,7 +111,7 @@ namespace Alloy
         let expressions :=
           cd.expressions.map fun e => e.replaceCalls callableVariables
 
-        let argNames := (cd.functionArgs.map fun fa => fa.1.names).join
+        let argNames := (cd.functionArgs.map fun fa => fa.1.names).flatten
 
         let fe := (expressions.get! 0)
         bodyTerm ← fe.toTerm blockName cd.requiredVars callableVariables cd.predCalls argNames
@@ -198,7 +198,7 @@ namespace Alloy
           let returnType :=
             (cd.functionReturnType.replaceCalls callableVariables).toStringRb
           let returnTypeSyntax := returnType.toSyntax blockName
-          let argNames := (cd.functionArgs.map fun fa => fa.1.names).join
+          let argNames := (cd.functionArgs.map fun fa => fa.1.names).flatten
           let returnTypeTerm ← returnType.toTerm blockName cd.requiredVars callableVariables cd.predCalls argNames
           argTerms := unhygienicUnfolder
             `(Lean.Parser.Command.optDeclSig| $[$allArgs]* : ∷ $returnTypeSyntax)
@@ -471,7 +471,7 @@ namespace Alloy
       let aliasCommands := createVariableAliasCommands blockName st.variableDecls
       commandList := commandList.append aliasCommands
 
-      let callablePredicates := (st.getPredicateDeclarations.map fun pd => pd.predCalls).join
+      let callablePredicates := (st.getPredicateDeclarations.map fun pd => pd.predCalls).flatten
 
       -- predicates
       let predCommands ← createPredDefsCommands blockName (st.defDecls.filter fun dd => dd.isPredicate) st.variableDecls callablePredicates
