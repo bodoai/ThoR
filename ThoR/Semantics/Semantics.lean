@@ -474,12 +474,15 @@ def Term.eval
     --   result
 
     | .bind quantor_type f =>
+      let function := f.eval
       match quantor_type with
-        | .all => ∀ x, f.eval x
-        | .some => ∃ x, f.eval x
-
-        /- TODO: Add semantic to missing quantors-/
-        | _ => ∃ x, f.eval x
+        | .all => ∀ x, function x
+        | .some => ∃ x, function x
+        | .no => ¬ (∃ x, function x)
+        | .lone =>
+          ∀ x y, (function x) → (function y) → (x = y)
+        | .one =>
+          (∃ x, function x) ∧ (∀ x y, (function x) → (function y) → (x = y))
 
     | .number z => z
 
