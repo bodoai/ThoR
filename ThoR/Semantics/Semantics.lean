@@ -310,7 +310,7 @@ inductive TyTy : Type 1 where
         Term (.expression t) →
         Term ran
 
-    | q_group (quantor_type : Shared.quant)
+    | q_group (quantor_type : Shared.quant) (disj:Bool)
       : Term .formula →
         Term .formula
 
@@ -444,7 +444,12 @@ def Term.eval
     | @Term.lam R _ _ _ t f => λ (x : Rel t) => (f x).eval
     | .app f r => f.eval r.eval
 
-    | .q_group m p => p.eval
+    | .q_group m disj p =>
+      let predBody := p.eval -- give eval that it is disj (if it is quanto) ? then give the names ?
+      if !disj then
+        predBody
+      else
+        predBody
 
     -- | .pred_1 f =>
     --   let result := λ x => (f x).eval
