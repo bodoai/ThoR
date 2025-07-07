@@ -22,7 +22,9 @@ inductive TyTy : Type 1 where
     (rel_type : RelType R arity)
     (quantor_type : Shared.quant)
     (disj : Bool)
+    (parameter_count : Nat)
     : TyTy
+
   | isPred_o
     {arity : Nat}
     {R : Type}
@@ -42,7 +44,8 @@ inductive TyTy : Type 1 where
       (rel_type : RelType R arity) →
       (quantor_type : Shared.quant) →
       (disj : Bool) →
-      Ty (.isPred rel_type quantor_type disj)
+      (parameter_count : Nat) →
+      Ty (.isPred rel_type quantor_type disj parameter_count)
 
     | pred_o : (t : RelType R n) → (quantor_type : Shared.quant) → Ty (.isPred_o t quantor_type)
     --| pred_1 : {n : ℕ} → (t : RelType R n) → Ty (.isPred t)
@@ -60,7 +63,7 @@ inductive TyTy : Type 1 where
     | .formula => Prop
     | .expression rel_type => Rel rel_type
     | .function dom_rel_type ran => Rel dom_rel_type → ran.eval
-    | .pred rel_type _ _ => Rel rel_type → Prop
+    | .pred rel_type _ _ parameter_count => (Vector (Rel rel_type) parameter_count) → Prop
     | .pred_o t _ => Rel t → Prop
     --| .pred_1 dom_rel_type => Rel dom_rel_type → Prop
     --| .pred_n dom_rel_type p' => Rel dom_rel_type → (p'.eval)
@@ -344,7 +347,7 @@ inductive TyTy : Type 1 where
       (disj : Bool)
       :
       (function : (Vector (Rel rel_type) parameter_count) → Term .formula) →
-      Term (.pred rel_type quantor_type disj)
+      Term (.pred rel_type quantor_type disj parameter_count)
 
     /-Test to use PROP instead of Term .formula-/
     | pred_proped
@@ -355,7 +358,7 @@ inductive TyTy : Type 1 where
       (disj : Bool)
       :
       (function : (Vector (Rel rel_type) parameter_count) → Prop) →
-      Term (.pred rel_type quantor_type disj)
+      Term (.pred rel_type quantor_type disj parameter_count)
 
     /-old pred for comparison-/
     | pred_o {n : ℕ} {t : RelType R n} (quantor_type : Shared.quant)
@@ -365,9 +368,10 @@ inductive TyTy : Type 1 where
     | bind
       {arity : Nat}
       {rel_type : RelType R arity}
+      {parameter_count : Nat}
       (quantor_type : Shared.quant)
       (disj : Bool)
-      : (pred : Term (.pred rel_type quantor_type disj) ) →
+      : (pred : Term (.pred rel_type quantor_type disj parameter_count) ) →
         Term .formula
 
     | bind_o {t : RelType R n} (quantor_type : Shared.quant)
@@ -385,13 +389,17 @@ variable {R : Type} [TupleSet R] (t : RelType R n)
               (expression1 := Term.local_rel_var (parameter_vector.get (Fin.mk 0 (by aesop))))
               (expression2 := Term.local_rel_var (parameter_vector.get 100)) )
 
+#check Fin.ofNat 2 10 -- Fin.ofNat 2 10 : Fin 2
+#eval Fin.ofNat 10 2 -- 2
+#eval Fin.ofNat 10 10 -- 0
+
 -- try with prop -> what to do to use Term in Prop ?
 #check Term.pred_proped (Shared.quant.all) (disj := false)
           (λ (parameter_vector : (Vector (Rel t) 2)) =>
             (Term.in
               (expression1 := Term.local_rel_var (parameter_vector.get (Fin.mk 0 (by aesop))))
               (expression2 := Term.local_rel_var (parameter_vector.get 100))
-            ).eval
+            )
           )
 
 -- old way, examples
