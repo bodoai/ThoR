@@ -23,7 +23,6 @@ inductive TyTy : Type 1 where
     (quantor_type : Shared.quant)
     (disj : Bool)
     (parameter_count : Nat)
-    (parameter_count : Nat)
     : TyTy
 
   | isPred_o
@@ -45,8 +44,6 @@ inductive TyTy : Type 1 where
       (rel_type : RelType R arity) →
       (quantor_type : Shared.quant) →
       (disj : Bool) →
-      (parameter_count : Nat) →
-      Ty (.isPred rel_type quantor_type disj parameter_count)
       (parameter_count : Nat) →
       Ty (.isPred rel_type quantor_type disj parameter_count)
 
@@ -351,7 +348,6 @@ inductive TyTy : Type 1 where
       :
       (function : (Vector (Rel rel_type) parameter_count) → Term .formula) →
       Term (.pred rel_type quantor_type disj parameter_count)
-      Term (.pred rel_type quantor_type disj parameter_count)
 
     /-Test to use PROP instead of Term .formula-/
     | pred_proped
@@ -362,7 +358,6 @@ inductive TyTy : Type 1 where
       (disj : Bool)
       :
       (function : (Vector (Rel rel_type) parameter_count) → Prop) →
-      Term (.pred rel_type quantor_type disj parameter_count)
       Term (.pred rel_type quantor_type disj parameter_count)
 
     /-old pred for comparison-/
