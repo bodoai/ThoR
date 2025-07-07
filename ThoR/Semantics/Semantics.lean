@@ -22,6 +22,7 @@ inductive TyTy : Type 1 where
     (rel_type : RelType R arity)
     (quantor_type : Shared.quant)
     (disj : Bool)
+    (parameter_count : Nat)
     : TyTy
   | isPred_o
     {arity : Nat}
@@ -42,7 +43,8 @@ inductive TyTy : Type 1 where
       (rel_type : RelType R arity) →
       (quantor_type : Shared.quant) →
       (disj : Bool) →
-      Ty (.isPred rel_type quantor_type disj)
+      (parameter_count : Nat) →
+      Ty (.isPred rel_type quantor_type disj parameter_count)
 
     | pred_o : (t : RelType R n) → (quantor_type : Shared.quant) → Ty (.isPred_o t quantor_type)
     --| pred_1 : {n : ℕ} → (t : RelType R n) → Ty (.isPred t)
@@ -60,7 +62,7 @@ inductive TyTy : Type 1 where
     | .formula => Prop
     | .expression rel_type => Rel rel_type
     | .function dom_rel_type ran => Rel dom_rel_type → ran.eval
-    | .pred rel_type _ _ => Rel rel_type → Prop
+    | .pred rel_type _ _ n => Vector (Rel rel_type) n → Prop
     | .pred_o t _ => Rel t → Prop
     --| .pred_1 dom_rel_type => Rel dom_rel_type → Prop
     --| .pred_n dom_rel_type p' => Rel dom_rel_type → (p'.eval)
@@ -344,7 +346,7 @@ inductive TyTy : Type 1 where
       (disj : Bool)
       :
       (function : (Vector (Rel rel_type) parameter_count) → Term .formula) →
-      Term (.pred rel_type quantor_type disj)
+      Term (.pred rel_type quantor_type disj parameter_count)
 
     /-Test to use PROP instead of Term .formula-/
     | pred_proped
@@ -355,7 +357,7 @@ inductive TyTy : Type 1 where
       (disj : Bool)
       :
       (function : (Vector (Rel rel_type) parameter_count) → Prop) →
-      Term (.pred rel_type quantor_type disj)
+      Term (.pred rel_type quantor_type disj parameter_count)
 
     /-old pred for comparison-/
     | pred_o {n : ℕ} {t : RelType R n} (quantor_type : Shared.quant)
@@ -367,7 +369,8 @@ inductive TyTy : Type 1 where
       {rel_type : RelType R arity}
       (quantor_type : Shared.quant)
       (disj : Bool)
-      : (pred : Term (.pred rel_type quantor_type disj) ) →
+      (parameter_count : Nat)
+      : (pred : Term (.pred rel_type quantor_type disj parameter_count) ) →
         Term .formula
 
     | bind_o {t : RelType R n} (quantor_type : Shared.quant)
@@ -453,6 +456,14 @@ example : p1 t = Term.pred_o
 --set_option diagnostics true
 set_option maxHeartbeats 300000
 
+def Vector0 {T : Type} : Vector T 0:= #[].toVector
+
+def curry_pred {T : Type} {parameter_count : Nat} (pred : Vector T parameter_count → Prop) :=
+  match parameter_count with
+  | 0 => pred
+  | .succ n' => λ (param_list : Vector T n') => ∀ (x : T), pred (x :: param_list.toList).toVector
+
+
 def Term.eval
   {R : Type}
   [TupleSet R]
@@ -505,8 +516,7 @@ def Term.eval
     | .pred_o _ f => fun x => (f x).eval
 
     | @Term.bind R _ arity rel_type quantor disj function =>
-      match function with
-        | x => x
+      curry_pred (function.eval)
 
     | .bind_o quantor_type f =>
       let function := f.eval
