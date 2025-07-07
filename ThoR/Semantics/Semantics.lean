@@ -15,7 +15,21 @@ variable (R : Type) [TupleSet R]
 
 inductive TyTy : Type 1 where
   | isTy
-  | isPred {R : Type} [TupleSet R] (t : RelType R n) (quantor_type : Shared.quant ): TyTy
+  | isPred
+    {arity : Nat}
+    {R : Type}
+    [TupleSet R]
+    (rel_type : RelType R arity)
+    (quantor_type : Shared.quant)
+    (disj : Bool)
+    : TyTy
+  | isPred_o
+    {arity : Nat}
+    {R : Type}
+    [TupleSet R]
+    (rel_type : RelType R arity)
+    (quantor_type : Shared.quant)
+    : TyTy
 
 -- construction follows https://lean-lang.org/documentation/examples/debruijn/
   inductive Ty {R : Type} [TupleSet R] : (tt : TyTy) → Type u where
@@ -23,7 +37,14 @@ inductive TyTy : Type 1 where
     | formula : Ty .isTy -- Prop
     | expression : {n : ℕ} → (rel_type : RelType R n) → Ty .isTy-- Rel rel_type
     | function : {n : ℕ} → (t : RelType R n) → Ty .isTy → Ty .isTy -- type1.eval → type2.eval
-    | pred : {n : ℕ} → (t : RelType R n) → (quantor_type : Shared.quant) → Ty (.isPred t quantor_type)
+    | pred :
+      {arity : ℕ} →
+      (rel_type : RelType R arity) →
+      (quantor_type : Shared.quant) →
+      (disj : Bool) →
+      Ty (.isPred rel_type quantor_type disj)
+
+    | pred_o : (t : RelType R n) → (quantor_type : Shared.quant) → Ty (.isPred_o t quantor_type)
     --| pred_1 : {n : ℕ} → (t : RelType R n) → Ty (.isPred t)
     --| pred_n : {n : ℕ} → (t : RelType R n) → Ty (.isPred t) → Ty (.isPred t)
     | type : (n : ℕ) → Ty .isTy
@@ -39,7 +60,8 @@ inductive TyTy : Type 1 where
     | .formula => Prop
     | .expression rel_type => Rel rel_type
     | .function dom_rel_type ran => Rel dom_rel_type → ran.eval
-    | .pred t _ => Rel t → Prop
+    | .pred rel_type _ _ => Rel rel_type → Prop
+    | .pred_o t _ => Rel t → Prop
     --| .pred_1 dom_rel_type => Rel dom_rel_type → Prop
     --| .pred_n dom_rel_type p' => Rel dom_rel_type → (p'.eval)
      | Ty.type n => ThoR.RelType R n
@@ -314,47 +336,72 @@ inductive TyTy : Type 1 where
       : Term .formula →
         Term .formula
 
-    -- | pred_1 {n : ℕ} {t : RelType R n}
-    --   : (Rel t → Term .formula) →
-    --     Term (Ty.pred_1 t)
-    -- | pred_n {n : ℕ} {t : RelType R n} {ran : Ty (.isPred t)}
-    --   : (Rel t → Term ran) →
-    --     Term (Ty.pred_n t ran)
+    | pred
+      {arity : Nat}
+      {rel_type : RelType R arity}
+      {parameter_count : Nat}
+      (quantor_type : Shared.quant)
+      (disj : Bool)
+      :
+      (function : (Vector (Rel rel_type) parameter_count) → Term .formula) →
+      Term (.pred rel_type quantor_type disj)
 
-    | pred {n : ℕ} {t : RelType R n} (quantor_type : Shared.quant)
+    /-Test to use PROP instead of Term .formula-/
+    | pred_proped
+      {arity : Nat}
+      {rel_type : RelType R arity}
+      {parameter_count : Nat}
+      (quantor_type : Shared.quant)
+      (disj : Bool)
+      :
+      (function : (Vector (Rel rel_type) parameter_count) → Prop) →
+      Term (.pred rel_type quantor_type disj)
+
+    /-old pred for comparison-/
+    | pred_o {n : ℕ} {t : RelType R n} (quantor_type : Shared.quant)
       : (Rel t → Term .formula) →
-        Term (.pred t quantor_type)
+        Term (.pred_o t quantor_type)
 
-    -- | bind_1 {t : RelType R n}
-    --   : (m : Shared.quant) →
-    --     (unary_pred : Term (Ty.pred_1 t)) →
-    --     (parameter : Term (.expression t)) →
-    --     Term .formula
-    -- | bind_n {t : RelType R n} {ran : Ty (.isPred t)}
-    --   : (m : Shared.quant) →
-    --     (nary_pred : Term (Ty.pred_n t ran)) →
-    --     (parameter : Term (.expression t)) →
-    --     Term ran
+    | bind
+      {arity : Nat}
+      {rel_type : RelType R arity}
+      (quantor_type : Shared.quant)
+      (disj : Bool)
+      : (pred : Term (.pred rel_type quantor_type disj) ) →
+        Term .formula
 
-    | bind {t : RelType R n} (quantor_type : Shared.quant)
-      : (pred : Term (.pred t quantor_type)) →
+    | bind_o {t : RelType R n} (quantor_type : Shared.quant)
+      : (pred_o : Term (.pred_o t quantor_type)) →
         Term .formula
 
     | type {n : ℕ} (t : RelType R n) : Term (.type n)
 
 
 variable {R : Type} [TupleSet R] (t : RelType R n)
-#check Term.pred (Shared.quant.all) (λ (r : Rel t) => Term.in
-              (expression1 := Term.local_rel_var r)
-              (expression2 := Term.local_rel_var r) )
 
-#check Term.pred
+-- try without prop
+#check Term.pred (Shared.quant.all) (disj := false)
+          (λ (parameter_vector : (Vector (Rel t) 2)) => Term.in
+              (expression1 := Term.local_rel_var (parameter_vector.get (Fin.mk 0 (by aesop))))
+              (expression2 := Term.local_rel_var (parameter_vector.get 100)) )
+
+-- try with prop -> what to do to use Term in Prop ?
+#check Term.pred_proped (Shared.quant.all) (disj := false)
+          (λ (parameter_vector : (Vector (Rel t) 2)) =>
+            (Term.in
+              (expression1 := Term.local_rel_var (parameter_vector.get (Fin.mk 0 (by aesop))))
+              (expression2 := Term.local_rel_var (parameter_vector.get 100))
+            ).eval
+          )
+
+-- old way, examples
+#check Term.pred_o
   (Shared.quant.all)
   (
     λ (q : Rel t) =>
-    Term.bind
+    Term.bind_o
       (Shared.quant.all)
-      (Term.pred
+      (Term.pred_o
         (Shared.quant.all)
         (λ (r : Rel t) =>
           Term.in
@@ -364,13 +411,13 @@ variable {R : Type} [TupleSet R] (t : RelType R n)
       )
   )
 
-def p1 := Term.pred
+def p1 := Term.pred_o
   (Shared.quant.all)
   (
     λ (q : Rel t) =>
-    Term.bind
+    Term.bind_o
       (Shared.quant.all)
-      (Term.pred
+      (Term.pred_o
         (Shared.quant.all)
         (λ (r : Rel t) =>
           Term.in
@@ -386,13 +433,13 @@ def p1 := Term.pred
 -- set_option diagnostics true
 -- set_option diagnostics.threshold 0
 
-example : p1 t = Term.pred
+example : p1 t = Term.pred_o
   (Shared.quant.all)
   (
     λ (q : Rel t) =>
-      Term.bind
+      Term.bind_o
         (Shared.quant.all)
-        (Term.pred
+        (Term.pred_o
           (Shared.quant.all)
           (λ (r : Rel t) =>
               Term.in
@@ -451,34 +498,17 @@ def Term.eval
       else
         predBody
 
-    -- | .pred_1 f =>
-    --   let result := λ x => (f x).eval
-    --   result
+    | @Term.pred R _ arity rel_type parameter_count quantor disj function =>
+      let bb := fun (x : Vector (Rel rel_type) parameter_count ) => (function x).eval
+      bb
 
-    -- | @Term.pred_n R _ n t ran f =>
-    --   let result := ( λ x => (f x).eval : Rel t → ran.eval )
-    --   result
+    | .pred_o _ f => fun x => (f x).eval
 
-    | .pred _ f => fun x => (f x).eval
+    | @Term.bind R _ arity rel_type quantor disj function =>
+      match function with
+        | x => x
 
-    -- | @Term.bind_1 R _ _ t m f parameter =>
-    --   let function := f.eval
-    --   let param := parameter.eval -- unused currently ?
-    --   let result := ∀ x, function x
-    --   result
-
-    -- | @Term.bind_n R _ arity relType range quantifier term parameter =>
-    --   let test1 := @Term.eval R _ tt ty t
-    --   let test2 := parameter.eval
-
-    --   let function := term.eval
-    --   let param := parameter.eval
-
-    --   /-possible problem? : cant use ∀ outside of prop ?-/
-    --   let result := (function param : range.eval)
-    --   result
-
-    | .bind quantor_type f =>
+    | .bind_o quantor_type f =>
       let function := f.eval
       match quantor_type with
         | .all => ∀ x, function x
