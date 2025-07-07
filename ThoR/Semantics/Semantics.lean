@@ -23,7 +23,9 @@ inductive TyTy : Type 1 where
     (quantor_type : Shared.quant)
     (disj : Bool)
     (parameter_count : Nat)
+    (parameter_count : Nat)
     : TyTy
+
   | isPred_o
     {arity : Nat}
     {R : Type}
@@ -43,6 +45,8 @@ inductive TyTy : Type 1 where
       (rel_type : RelType R arity) →
       (quantor_type : Shared.quant) →
       (disj : Bool) →
+      (parameter_count : Nat) →
+      Ty (.isPred rel_type quantor_type disj parameter_count)
       (parameter_count : Nat) →
       Ty (.isPred rel_type quantor_type disj parameter_count)
 
@@ -347,6 +351,7 @@ inductive TyTy : Type 1 where
       :
       (function : (Vector (Rel rel_type) parameter_count) → Term .formula) →
       Term (.pred rel_type quantor_type disj parameter_count)
+      Term (.pred rel_type quantor_type disj parameter_count)
 
     /-Test to use PROP instead of Term .formula-/
     | pred_proped
@@ -358,6 +363,7 @@ inductive TyTy : Type 1 where
       :
       (function : (Vector (Rel rel_type) parameter_count) → Prop) →
       Term (.pred rel_type quantor_type disj parameter_count)
+      Term (.pred rel_type quantor_type disj parameter_count)
 
     /-old pred for comparison-/
     | pred_o {n : ℕ} {t : RelType R n} (quantor_type : Shared.quant)
@@ -367,6 +373,7 @@ inductive TyTy : Type 1 where
     | bind
       {arity : Nat}
       {rel_type : RelType R arity}
+      {parameter_count : Nat}
       (quantor_type : Shared.quant)
       (disj : Bool)
       (parameter_count : Nat)
@@ -388,13 +395,17 @@ variable {R : Type} [TupleSet R] (t : RelType R n)
               (expression1 := Term.local_rel_var (parameter_vector.get (Fin.mk 0 (by aesop))))
               (expression2 := Term.local_rel_var (parameter_vector.get 100)) )
 
+#check Fin.ofNat 2 10 -- Fin.ofNat 2 10 : Fin 2
+#eval Fin.ofNat 10 2 -- 2
+#eval Fin.ofNat 10 10 -- 0
+
 -- try with prop -> what to do to use Term in Prop ?
 #check Term.pred_proped (Shared.quant.all) (disj := false)
           (λ (parameter_vector : (Vector (Rel t) 2)) =>
             (Term.in
               (expression1 := Term.local_rel_var (parameter_vector.get (Fin.mk 0 (by aesop))))
               (expression2 := Term.local_rel_var (parameter_vector.get 100))
-            ).eval
+            )
           )
 
 -- old way, examples
