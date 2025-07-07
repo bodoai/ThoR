@@ -527,7 +527,7 @@ def Term.eval
     | .pred_o _ f => fun x => (f x).eval
 
     | @Term.bind R _ arity rel_type quantor disj function =>
-      curry_pred (function.eval)
+      (curry_pred (function.eval)) Vector0
 
     | .bind_o quantor_type f =>
       let function := f.eval
