@@ -523,21 +523,37 @@ def curry_pred_try2 {T : Type} {parameter_count : Nat} (pred : Vector T paramete
     match parameter_count with
     | 0 => pred
     | .succ n' =>
-      curry_pred_try4
-        (fun (param_list : Vector T n') =>
-          ∀ (x : T),
-            (if disj then param_list.toList.Nodup else True) →
-            ( pred (
-              (Vector.mk (#[x].append (param_list.toArray))
-                (by
-                  simp
-                  apply add_comm
+      if disj then
+        curry_pred_try4
+          (fun (param_list : Vector T n') =>
+            ∀ (x : T),
+              ((param_list.toList.concat x).Nodup) →
+              ( pred (
+                (Vector.mk (#[x].append (param_list.toArray))
+                  (by
+                    simp
+                    apply add_comm
+                  )
                 )
               )
             )
           )
-        )
-        quant_type
+          quant_type
+      else
+        curry_pred_try4
+          (fun (param_list : Vector T n') =>
+            ∀ (x : T),
+              ( pred (
+                (Vector.mk (#[x].append (param_list.toArray))
+                  (by
+                    simp
+                    apply add_comm
+                  )
+                )
+              )
+            )
+          )
+          quant_type
 
 def Term.eval
   {R : Type}
