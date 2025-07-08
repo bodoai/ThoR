@@ -555,6 +555,118 @@ def curry_pred_try2 {T : Type} {parameter_count : Nat} (pred : Vector T paramete
           )
           quant_type
 
+  def curry_pred_try5
+    {T : Type}
+    {parameter_count : Nat}
+    (pred : Vector T parameter_count → Prop)
+    (quant_type : Shared.quant)
+    : Vector T 0 → Prop :=
+    match parameter_count with
+      | 0 =>
+        if quant_type == .no then
+          (fun (v : Vector T 0) => (¬ pred Vector0))
+        else
+          pred
+      | .succ n' =>
+        let part :=
+          match quant_type with
+            | .all =>
+              (fun (param_list : Vector T n') =>
+                ∀ (x : T)
+                , pred (
+                  (Vector.mk (#[x].append (param_list.toArray))
+                    (by
+                      simp
+                      apply add_comm
+                    )
+                  )
+                )
+              )
+
+            | .some =>
+              (fun (param_list : Vector T n') =>
+                ∃ (x : T)
+                , pred (
+                  (Vector.mk (#[x].append (param_list.toArray))
+                    (by
+                      simp
+                      apply add_comm
+                    )
+                  )
+                )
+              )
+
+            | .no =>
+              (fun (param_list : Vector T n') =>
+                ∃ (x : T)
+                , pred (
+                  (Vector.mk (#[x].append (param_list.toArray))
+                    (by
+                      simp
+                      apply add_comm
+                    )
+                  )
+                )
+              )
+
+            | .lone =>
+              (fun (param_list : Vector T n') =>
+                ∀  (x y : T)
+                ,
+                (pred (
+                  (Vector.mk (#[x].append (param_list.toArray))
+                    (by
+                      simp
+                      apply add_comm
+                    )
+                  )
+                )) →
+                (pred (
+                  (Vector.mk (#[y].append (param_list.toArray))
+                    (by
+                      simp
+                      apply add_comm
+                    )
+                  )
+                )) →
+                (x = y)
+              )
+
+            | .one =>
+              (fun (param_list : Vector T n') =>
+                (∃ (x : T)
+                , pred (
+                  (Vector.mk (#[x].append (param_list.toArray))
+                    (by
+                      simp
+                      apply add_comm
+                    )
+                  )
+                )) ∧
+                ∀  (x y : T)
+                ,
+                (pred (
+                  (Vector.mk (#[x].append (param_list.toArray))
+                    (by
+                      simp
+                      apply add_comm
+                    )
+                  )
+                )) →
+                (pred (
+                  (Vector.mk (#[y].append (param_list.toArray))
+                    (by
+                      simp
+                      apply add_comm
+                    )
+                  )
+                )) →
+                (x = y)
+              )
+
+
+        curry_pred_try5 part quant_type
+
 def Term.eval
   {R : Type}
   [TupleSet R]
@@ -606,8 +718,17 @@ def Term.eval
 
     | .pred_o _ f => fun x => (f x).eval
 
+    | @Term.bind R _ arity rel_tyle parameter_count quantor disj function =>
+      if disj then
+        (curry_pred_try5 (fun (pv : Vector (Rel rel_tyle) parameter_count) =>
+          pv.toList.Nodup -> (function.eval) pv) quantor) Vector0
+      else
+        (curry_pred_try5 (fun (pv : Vector (Rel rel_tyle) parameter_count) =>
+          (function.eval) pv) quantor) Vector0
+    /-
     | .bind quantor disj function =>
       (curry_pred_try4 (function.eval) quantor disj) Vector0
+    -/
 
     | .bind_o quantor_type f =>
       let function := f.eval
