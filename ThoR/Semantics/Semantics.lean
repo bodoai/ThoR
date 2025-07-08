@@ -563,10 +563,7 @@ def curry_pred_try2 {T : Type} {parameter_count : Nat} (pred : Vector T paramete
     : Vector T 0 → Prop :=
     match parameter_count with
       | 0 =>
-        if quant_type == .no then
-          (fun (v : Vector T 0) => (¬ pred Vector0))
-        else
-          pred
+        pred
       | .succ n' =>
         let function :=
           fun (x : T) (param_list : Vector T n') => pred (
@@ -577,6 +574,7 @@ def curry_pred_try2 {T : Type} {parameter_count : Nat} (pred : Vector T paramete
               )
             )
           )
+
         let part :=
           match quant_type with
             | .all =>
@@ -591,7 +589,7 @@ def curry_pred_try2 {T : Type} {parameter_count : Nat} (pred : Vector T paramete
 
             | .no => --TODO: Check if correct
               (fun (param_list : Vector T n') =>
-                ∀ (x : T), function x param_list
+                ∃ (x : T), function x param_list
               )
 
             | .lone =>
@@ -666,12 +664,17 @@ def Term.eval
     | .pred_o _ f => fun x => (f x).eval
 
     | @Term.bind R _ arity rel_tyle parameter_count quantor disj function =>
-      if disj then
+      let result := if disj then
         (curry_pred_try5 (fun (pv : Vector (Rel rel_tyle) parameter_count) =>
           pv.toList.Nodup -> (function.eval) pv) quantor) Vector0
       else
         (curry_pred_try5 (fun (pv : Vector (Rel rel_tyle) parameter_count) =>
           (function.eval) pv) quantor) Vector0
+
+      if quantor == .no then
+        ¬ result
+      else
+        result
     /-
     | .bind quantor disj function =>
       (curry_pred_try4 (function.eval) quantor disj) Vector0
