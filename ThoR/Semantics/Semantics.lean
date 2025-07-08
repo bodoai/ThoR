@@ -467,6 +467,18 @@ def Vector0 {T : Type} : Vector T 0:= #[].toVector
 def curry_pred {T : Type} {parameter_count : Nat} (pred : Vector T (parameter_count + 1) → Prop) :=
   λ (param_list : Vector T parameter_count) => ∀ (x : T), pred (x :: param_list.toList).toVector
 
+def curry_pred_try1 {T : Type} {parameter_count : Nat} (pred : Vector T (parameter_count + 1) → Prop)
+  : Vector T parameter_count → Prop :=
+    λ (param_list : Vector T parameter_count) =>
+    ∀ (x : T), pred (
+          (Vector.mk (#[x].append (param_list.toArray))
+            (by
+              simp
+              apply add_comm
+            )
+          )
+        )
+
 def curry_pred_try2 {T : Type} {parameter_count : Nat} (pred : Vector T parameter_count → Prop)
   : Vector T (parameter_count - 1) → Prop :=
   match parameter_count with
@@ -481,6 +493,22 @@ def curry_pred_try2 {T : Type} {parameter_count : Nat} (pred : Vector T paramete
           )
         )
       )
+
+  def curry_pred_try3 {T : Type} {parameter_count : Nat} (pred : Vector T parameter_count → Prop)
+  : Vector T 0 → Prop :=
+  match parameter_count with
+  | 0 => pred
+  | .succ n' =>
+    curry_pred_try3
+      fun (param_list : Vector T n') =>
+        ∀ (x : T), pred (
+          (Vector.mk (#[x].append (param_list.toArray))
+            (by
+              simp
+              apply add_comm
+            )
+          )
+        )
 
 def Term.eval
   {R : Type}
