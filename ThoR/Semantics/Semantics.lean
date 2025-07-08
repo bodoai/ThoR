@@ -590,7 +590,7 @@ def Term.eval
 
     | .pred_o _ f => fun x => (f x).eval
 
-    | @Term.bind R _ arity rel_type parameter_count quantor disj function =>
+    | .bind quantor disj function =>
       (curry_pred_try4 (function.eval) quantor disj) Vector0
 
     | .bind_o quantor_type f =>
