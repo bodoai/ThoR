@@ -350,6 +350,7 @@ inductive TyTy : Type 1 where
       Term (.pred rel_type quantor_type disj parameter_count)
 
     /-Test to use PROP instead of Term .formula-/
+    /-
     | pred_proped
       {arity : Nat}
       {rel_type : RelType R arity}
@@ -359,6 +360,7 @@ inductive TyTy : Type 1 where
       :
       (function : (Vector (Rel rel_type) parameter_count) → Prop) →
       Term (.pred rel_type quantor_type disj parameter_count)
+    -/
 
     /-old pred for comparison-/
     | pred_o {n : ℕ} {t : RelType R n} (quantor_type : Shared.quant)
