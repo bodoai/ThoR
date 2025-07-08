@@ -664,12 +664,14 @@ def Term.eval
     | .pred_o _ f => fun x => (f x).eval
 
     | @Term.bind R _ arity rel_tyle parameter_count quantor disj function =>
-      let result := if disj then
-        (curry_pred_try5 (fun (pv : Vector (Rel rel_tyle) parameter_count) =>
-          pv.toList.Nodup -> (function.eval) pv) quantor) Vector0
+      let new_function := if disj then
+        (fun (pv : Vector (Rel rel_tyle) parameter_count) =>
+          pv.toList.Nodup -> (function.eval) pv)
       else
-        (curry_pred_try5 (fun (pv : Vector (Rel rel_tyle) parameter_count) =>
-          (function.eval) pv) quantor) Vector0
+        (fun (pv : Vector (Rel rel_tyle) parameter_count) =>
+          (function.eval) pv)
+
+      let result := curry_pred_try5 new_function quantor Vector0
 
       if quantor == .no then
         ¬ result
