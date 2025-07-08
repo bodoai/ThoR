@@ -464,10 +464,8 @@ set_option maxHeartbeats 300000
 
 def Vector0 {T : Type} : Vector T 0:= #[].toVector
 
-def curry_pred {T : Type} {parameter_count : Nat} (pred : Vector T parameter_count → Prop) :=
-  match parameter_count with
-  | 0 => pred
-  | .succ n' => λ (param_list : Vector T n') => ∀ (x : T), pred (x :: param_list.toList).toVector
+def curry_pred {T : Type} {parameter_count : Nat} (pred : Vector T (parameter_count + 1) → Prop) :=
+  λ (param_list : Vector T parameter_count) => ∀ (x : T), pred (x :: param_list.toList).toVector
 
 def curry_pred_try2 {T : Type} {parameter_count : Nat} (pred : Vector T parameter_count → Prop)
   : Vector T (parameter_count - 1) → Prop :=
