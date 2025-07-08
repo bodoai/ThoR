@@ -371,7 +371,6 @@ inductive TyTy : Type 1 where
       {parameter_count : Nat}
       (quantor_type : Shared.quant)
       (disj : Bool)
-      (parameter_count : Nat)
       : (pred : Term (.pred rel_type quantor_type disj parameter_count) ) →
         Term .formula
 
@@ -561,8 +560,8 @@ def Term.eval
 
     | .pred_o _ f => fun x => (f x).eval
 
-    | @Term.bind R _ arity rel_type quantor disj function =>
-      (curry_pred (function.eval)) Vector0
+    | @Term.bind R _ arity rel_type parameter_count quantor disj function =>
+      (curry_pred_try3 (function.eval)) Vector0
 
     | .bind_o quantor_type f =>
       let function := f.eval
