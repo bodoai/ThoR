@@ -396,6 +396,7 @@ variable {R : Type} [TupleSet R] (t : RelType R n)
 #eval Fin.ofNat 10 10 -- 0
 
 -- try with prop -> what to do to use Term in Prop ?
+/-
 #check Term.pred_proped (Shared.quant.all) (disj := false)
           (λ (parameter_vector : (Vector (Rel t) 2)) =>
             (Term.in
@@ -403,6 +404,7 @@ variable {R : Type} [TupleSet R] (t : RelType R n)
               (expression2 := Term.local_rel_var (parameter_vector.get 100))
             )
           )
+-/
 
 -- old way, examples
 #check Term.pred_o
@@ -511,6 +513,32 @@ def curry_pred_try2 {T : Type} {parameter_count : Nat} (pred : Vector T paramete
           )
         )
 
+  def curry_pred_try4
+    {T : Type}
+    {parameter_count : Nat}
+    (pred : Vector T parameter_count → Prop)
+    (quant_type : Shared.quant)
+    (disj : Bool := false) --
+    : Vector T 0 → Prop :=
+    match parameter_count with
+    | 0 => pred
+    | .succ n' =>
+      curry_pred_try4
+        (fun (param_list : Vector T n') =>
+          ∀ (x : T),
+            (if disj then param_list.toList.Nodup else True) →
+            ( pred (
+              (Vector.mk (#[x].append (param_list.toArray))
+                (by
+                  simp
+                  apply add_comm
+                )
+              )
+            )
+          )
+        )
+        quant_type
+
 def Term.eval
   {R : Type}
   [TupleSet R]
@@ -563,7 +591,7 @@ def Term.eval
     | .pred_o _ f => fun x => (f x).eval
 
     | @Term.bind R _ arity rel_type parameter_count quantor disj function =>
-      (curry_pred_try3 (function.eval)) Vector0
+      (curry_pred_try4 (function.eval) quantor disj) Vector0
 
     | .bind_o quantor_type f =>
       let function := f.eval
