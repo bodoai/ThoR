@@ -568,102 +568,49 @@ def curry_pred_try2 {T : Type} {parameter_count : Nat} (pred : Vector T paramete
         else
           pred
       | .succ n' =>
+        let function :=
+          fun (x : T) (param_list : Vector T n') => pred (
+            (Vector.mk (#[x].append (param_list.toArray))
+              (by
+                simp
+                apply add_comm
+              )
+            )
+          )
         let part :=
           match quant_type with
             | .all =>
               (fun (param_list : Vector T n') =>
-                ∀ (x : T)
-                , pred (
-                  (Vector.mk (#[x].append (param_list.toArray))
-                    (by
-                      simp
-                      apply add_comm
-                    )
-                  )
-                )
+                ∀ (x : T), function x param_list
               )
 
             | .some =>
               (fun (param_list : Vector T n') =>
-                ∃ (x : T)
-                , pred (
-                  (Vector.mk (#[x].append (param_list.toArray))
-                    (by
-                      simp
-                      apply add_comm
-                    )
-                  )
-                )
+                ∃ (x : T), function x param_list
               )
 
-            | .no =>
+            | .no => --TODO: Check if correct
               (fun (param_list : Vector T n') =>
-                ∃ (x : T)
-                , pred (
-                  (Vector.mk (#[x].append (param_list.toArray))
-                    (by
-                      simp
-                      apply add_comm
-                    )
-                  )
-                )
+                ∀ (x : T), function x param_list
               )
 
             | .lone =>
               (fun (param_list : Vector T n') =>
-                ∀  (x y : T)
-                ,
-                (pred (
-                  (Vector.mk (#[x].append (param_list.toArray))
-                    (by
-                      simp
-                      apply add_comm
-                    )
-                  )
-                )) →
-                (pred (
-                  (Vector.mk (#[y].append (param_list.toArray))
-                    (by
-                      simp
-                      apply add_comm
-                    )
-                  )
-                )) →
+                ∀  (x y : T),
+                function x param_list →
+                function y param_list →
                 (x = y)
               )
 
             | .one =>
               (fun (param_list : Vector T n') =>
-                (∃ (x : T)
-                , pred (
-                  (Vector.mk (#[x].append (param_list.toArray))
-                    (by
-                      simp
-                      apply add_comm
-                    )
-                  )
-                )) ∧
-                ∀  (x y : T)
-                ,
-                (pred (
-                  (Vector.mk (#[x].append (param_list.toArray))
-                    (by
-                      simp
-                      apply add_comm
-                    )
-                  )
-                )) →
-                (pred (
-                  (Vector.mk (#[y].append (param_list.toArray))
-                    (by
-                      simp
-                      apply add_comm
-                    )
-                  )
-                )) →
-                (x = y)
+                ( ∃ (x : T), function x param_list ∧
+                  ∀  (x y : T),
+                    function x param_list →
+                    function y param_list →
+                    (x = y)
+                )
               )
-
 
         curry_pred_try5 part quant_type
 
