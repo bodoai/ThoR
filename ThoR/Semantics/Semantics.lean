@@ -537,7 +537,7 @@ def Term.eval
       else
         predBody
 
-    | @Term.pred R _ arity rel_type parameter_count quantor disj function =>
+    | @Term.pred R _ arity rel_type parameter_count function =>
       fun (x : Vector (Rel rel_type) parameter_count ) => (function x).eval
 
     | .pred_o _ f => fun x => (f x).eval
@@ -639,7 +639,7 @@ end ThoR.Semantics
   variable (rel_type : RelType R arity)
 
   def abc := (Term.bind (Shared.quant.all) (disj := false)
-      (Term.pred (Shared.quant.all) (disj := false)
+      (Term.pred
         (λ (parameter_vector : (Vector (Rel rel_type) 2)) => Term.in
             (expression1 := Term.local_rel_var (parameter_vector.get (Fin.mk 0 (by aesop))))
             (expression2 := Term.local_rel_var (parameter_vector.get 1)) )))
