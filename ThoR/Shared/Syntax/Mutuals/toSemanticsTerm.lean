@@ -633,16 +633,72 @@ namespace Shared
                 (pureNames.append n)
 
             completefTerm :=
-              unhygienicUnfolder `(( $(completefTerm) ∧
+              unhygienicUnfolder `(
+                ( $(completefTerm)
+                  /-
+                  and to combine different formula terms
+                  (of type ThoR.Semantics.Term)
+                  -/
+                  $(mkIdent ``ThoR.Semantics.Term.and)
                   ($(fTerm))
-                ))
+                )
+              )
 
+          /-
           completefTerm :=
             unhygienicUnfolder `((
               $(mkIdent ``Formula.prop)
               ($(completefTerm))
               ))
+          -/
 
+          let typeTerm ←
+            te.toSemanticsTerm blockName variableNames callableVariables callablePredicates pureNames
+
+          let pred_applied :=
+            unhygienicUnfolder `(
+              ($(mkIdent ``ThoR.Semantics.Term.pred)
+                (fun
+                  (parameter_vector :
+                    (Vector
+                      ($(mkIdent ``ThoR.Rel) $typeTerm)
+                      ($(Syntax.mkNatLit names.length))
+                    )
+                  )
+                  =>
+                  $(completefTerm)
+                )
+              )
+            )
+
+          let namesVectorTerm :=
+            unhygienicUnfolder `(
+              #[$[$(names.toArray)],*].toVector
+            )
+
+          let disjTerm :=
+            unhygienicUnfolder
+              `(
+                $(
+                  if disjunction then
+                    (mkIdent `true)
+                  else
+                    (mkIdent `false)
+                )
+              )
+
+          let bind_applied :=
+            unhygienicUnfolder `(
+              $(mkIdent ``ThoR.Semantics.Term.bind)
+                $(q.toTerm)
+                $(disjTerm)
+                $(namesVectorTerm)
+                $(pred_applied)
+            )
+
+          return bind_applied
+
+          /-
           -- singular parameter is var constructor
           if names.length == 1 then
               return unhygienicUnfolder `(($(mkIdent ``Formula.var) $(q.toTerm)) (
@@ -674,6 +730,7 @@ namespace Shared
                   ))
 
             return formulaGroup
+          -/
 
         | formula.letDeclaration name value body =>
           -- TODO: How to translate to semantics

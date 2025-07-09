@@ -646,7 +646,8 @@ end ThoR.Semantics
   variable (arity : Nat)
   variable (rel_type : RelType R arity)
 
-  def abc := (Term.bind (Shared.quant.all) (disj := false) (#["x","y"].toVector)
+  def abc :=
+    (Term.bind (Shared.quant.all) (disj := false) (#["x","y"].toVector)
       (Term.pred
         (λ (parameter_vector : (Vector (Rel rel_type) 2)) => Term.in
             (expression1 := Term.local_rel_var (parameter_vector.get 0))
@@ -654,6 +655,31 @@ end ThoR.Semantics
 
   #check Term.eval (abc R arity rel_type)
   #check (abc R arity rel_type).eval
+
+  def junctionOfQuants :=
+    Term.and
+    (Term.bind (Shared.quant.all) (disj := false) (#["x","y"].toVector)
+      (Term.pred
+        (λ (parameter_vector : (Vector (Rel rel_type) 2)) => Term.in
+            (expression1 := Term.local_rel_var (parameter_vector.get 0))
+            (expression2 := Term.local_rel_var (parameter_vector.get 1)) )))
+    (Term.bind (Shared.quant.all) (disj := false) (#["x","y"].toVector)
+      (Term.pred
+        (λ (parameter_vector : (Vector (Rel rel_type) 2)) => Term.in
+            (expression1 := Term.local_rel_var (parameter_vector.get 0))
+            (expression2 := Term.local_rel_var (parameter_vector.get 1)) )))
+
+  def junctionOfFormsInQuant :=
+    (Term.bind (Shared.quant.all) (disj := false) (#["x","y"].toVector)
+      (Term.pred
+        (λ (parameter_vector : (Vector (Rel rel_type) 2)) =>
+          Term.and
+            (Term.in
+            (expression1 := Term.local_rel_var (parameter_vector.get 0))
+            (expression2 := Term.local_rel_var (parameter_vector.get 1)) )
+            (Term.in
+            (expression1 := Term.local_rel_var (parameter_vector.get 0))
+            (expression2 := Term.local_rel_var (parameter_vector.get 1)) ))))
 
 -- /-
 -- all disj x, y, z : r | ...
