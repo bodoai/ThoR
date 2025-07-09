@@ -349,19 +349,6 @@ inductive TyTy : Type 1 where
       (function : (Vector (Rel rel_type) parameter_count) → Term .formula) →
       Term (.pred rel_type quantor_type disj parameter_count)
 
-    /-Test to use PROP instead of Term .formula-/
-    /-
-    | pred_proped
-      {arity : Nat}
-      {rel_type : RelType R arity}
-      {parameter_count : Nat}
-      (quantor_type : Shared.quant)
-      (disj : Bool)
-      :
-      (function : (Vector (Rel rel_type) parameter_count) → Prop) →
-      Term (.pred rel_type quantor_type disj parameter_count)
-    -/
-
     /-old pred for comparison-/
     | pred_o {n : ℕ} {t : RelType R n} (quantor_type : Shared.quant)
       : (Rel t → Term .formula) →
@@ -385,26 +372,18 @@ inductive TyTy : Type 1 where
 
 variable {R : Type} [TupleSet R] (t : RelType R n)
 
--- try without prop
 #check Term.pred (Shared.quant.all) (disj := false)
           (λ (parameter_vector : (Vector (Rel t) 2)) => Term.in
               (expression1 := Term.local_rel_var (parameter_vector.get (Fin.mk 0 (by aesop))))
-              (expression2 := Term.local_rel_var (parameter_vector.get 100)) )
+              (expression2 := Term.local_rel_var (parameter_vector.get 1)) )
 
-#check Fin.ofNat 2 10 -- Fin.ofNat 2 10 : Fin 2
-#eval Fin.ofNat 10 2 -- 2
-#eval Fin.ofNat 10 10 -- 0
-
--- try with prop -> what to do to use Term in Prop ?
-/-
-#check Term.pred_proped (Shared.quant.all) (disj := false)
-          (λ (parameter_vector : (Vector (Rel t) 2)) =>
-            (Term.in
+#check Term.bind (Shared.quant.all) (disj := false)
+        (Term.pred (Shared.quant.all) (disj := false)
+          (λ (parameter_vector : (Vector (Rel t) 2)) => (Term.in
               (expression1 := Term.local_rel_var (parameter_vector.get (Fin.mk 0 (by aesop))))
-              (expression2 := Term.local_rel_var (parameter_vector.get 100))
-            )
-          )
--/
+              (expression2 := Term.local_rel_var (parameter_vector.get 1)))
+
+               ))
 
 -- old way, examples
 #check Term.pred_o
@@ -442,9 +421,6 @@ def p1 := Term.pred_o
 
 #check (p1 t)
 
--- set_option diagnostics true
--- set_option diagnostics.threshold 0
-
 example : p1 t = Term.pred_o
   (Shared.quant.all)
   (
@@ -467,44 +443,18 @@ set_option maxHeartbeats 300000
 
 def Vector0 {T : Type} : Vector T 0:= #[].toVector
 
-def curry_pred {T : Type} {parameter_count : Nat} (pred : Vector T (parameter_count + 1) → Prop) :=
-  λ (param_list : Vector T parameter_count) => ∀ (x : T), pred (x :: param_list.toList).toVector
-
-def curry_pred_try1 {T : Type} {parameter_count : Nat} (pred : Vector T (parameter_count + 1) → Prop)
-  : Vector T parameter_count → Prop :=
-    λ (param_list : Vector T parameter_count) =>
-    ∀ (x : T), pred (
-          (Vector.mk (#[x].append (param_list.toArray))
-            (by
-              simp
-              apply add_comm
-            )
-          )
-        )
-
-def curry_pred_try2 {T : Type} {parameter_count : Nat} (pred : Vector T parameter_count → Prop)
-  : Vector T (parameter_count - 1) → Prop :=
-  match parameter_count with
-  | 0 => pred
-  | .succ n' =>
-    fun (param_list : Vector T n') =>
-      ∀ (x : T), pred (
-        (Vector.mk (#[x].append (param_list.toArray))
-          (by
-            simp
-            apply add_comm
-          )
-        )
-      )
-
-  def curry_pred_try3 {T : Type} {parameter_count : Nat} (pred : Vector T parameter_count → Prop)
+def curry_pred
+  {T : Type}
+  {parameter_count : Nat}
+  (pred : Vector T parameter_count → Prop)
+  (quant_type : Shared.quant)
   : Vector T 0 → Prop :=
   match parameter_count with
-  | 0 => pred
-  | .succ n' =>
-    curry_pred_try3
-      fun (param_list : Vector T n') =>
-        ∀ (x : T), pred (
+    | 0 =>
+      pred
+    | .succ n' =>
+      let function :=
+        fun (x : T) (param_list : Vector T n') => pred (
           (Vector.mk (#[x].append (param_list.toArray))
             (by
               simp
@@ -513,104 +463,42 @@ def curry_pred_try2 {T : Type} {parameter_count : Nat} (pred : Vector T paramete
           )
         )
 
-  def curry_pred_try4
-    {T : Type}
-    {parameter_count : Nat}
-    (pred : Vector T parameter_count → Prop)
-    (quant_type : Shared.quant)
-    (disj : Bool := false) --
-    : Vector T 0 → Prop :=
-    match parameter_count with
-    | 0 => pred
-    | .succ n' =>
-      if disj then
-        curry_pred_try4
-          (fun (param_list : Vector T n') =>
-            ∀ (x : T),
-              ((param_list.toList.concat x).Nodup) →
-              ( pred (
-                (Vector.mk (#[x].append (param_list.toArray))
-                  (by
-                    simp
-                    apply add_comm
-                  )
-                )
-              )
+      let part :=
+        match quant_type with
+          | .all =>
+            (fun (param_list : Vector T n') =>
+              ∀ (x : T), function x param_list
             )
-          )
-          quant_type
-      else
-        curry_pred_try4
-          (fun (param_list : Vector T n') =>
-            ∀ (x : T),
-              ( pred (
-                (Vector.mk (#[x].append (param_list.toArray))
-                  (by
-                    simp
-                    apply add_comm
-                  )
-                )
-              )
+
+          | .some =>
+            (fun (param_list : Vector T n') =>
+              ∃ (x : T), function x param_list
             )
-          )
-          quant_type
 
-  def curry_pred_try5
-    {T : Type}
-    {parameter_count : Nat}
-    (pred : Vector T parameter_count → Prop)
-    (quant_type : Shared.quant)
-    : Vector T 0 → Prop :=
-    match parameter_count with
-      | 0 =>
-        pred
-      | .succ n' =>
-        let function :=
-          fun (x : T) (param_list : Vector T n') => pred (
-            (Vector.mk (#[x].append (param_list.toArray))
-              (by
-                simp
-                apply add_comm
-              )
+          | .no => --TODO: Check if correct
+            (fun (param_list : Vector T n') =>
+              ∃ (x : T), function x param_list
             )
-          )
 
-        let part :=
-          match quant_type with
-            | .all =>
-              (fun (param_list : Vector T n') =>
-                ∀ (x : T), function x param_list
-              )
+          | .lone =>
+            (fun (param_list : Vector T n') =>
+              ∀  (x y : T),
+              function x param_list →
+              function y param_list →
+              (x = y)
+            )
 
-            | .some =>
-              (fun (param_list : Vector T n') =>
-                ∃ (x : T), function x param_list
-              )
-
-            | .no => --TODO: Check if correct
-              (fun (param_list : Vector T n') =>
-                ∃ (x : T), function x param_list
-              )
-
-            | .lone =>
-              (fun (param_list : Vector T n') =>
+          | .one =>
+            (fun (param_list : Vector T n') =>
+              ( ∃ (x : T), function x param_list ∧
                 ∀  (x y : T),
-                function x param_list →
-                function y param_list →
-                (x = y)
+                  function x param_list →
+                  function y param_list →
+                  (x = y)
               )
+            )
 
-            | .one =>
-              (fun (param_list : Vector T n') =>
-                ( ∃ (x : T), function x param_list ∧
-                  ∀  (x y : T),
-                    function x param_list →
-                    function y param_list →
-                    (x = y)
-                )
-              )
-
-        curry_pred_try5 part quant_type
+      curry_pred part quant_type
 
 def Term.eval
   {R : Type}
@@ -658,8 +546,7 @@ def Term.eval
         predBody
 
     | @Term.pred R _ arity rel_type parameter_count quantor disj function =>
-      let bb := fun (x : Vector (Rel rel_type) parameter_count ) => (function x).eval
-      bb
+      fun (x : Vector (Rel rel_type) parameter_count ) => (function x).eval
 
     | .pred_o _ f => fun x => (f x).eval
 
@@ -671,16 +558,12 @@ def Term.eval
         (fun (pv : Vector (Rel rel_tyle) parameter_count) =>
           (function.eval) pv)
 
-      let result := curry_pred_try5 new_function quantor Vector0
+      let result := curry_pred new_function quantor Vector0
 
       if quantor == .no then
         ¬ result
       else
         result
-    /-
-    | .bind quantor disj function =>
-      (curry_pred_try4 (function.eval) quantor disj) Vector0
-    -/
 
     | .bind_o quantor_type f =>
       let function := f.eval
@@ -755,6 +638,22 @@ def Term.eval
   --     coe := Rel t.eval
 
 end ThoR.Semantics
+
+  open ThoR.Semantics
+  open ThoR
+  open ThoR.Rel
+  variable (R : Type) [TupleSet R]
+  variable (arity : Nat)
+  variable (rel_type : RelType R arity)
+
+  def abc := (Term.bind (Shared.quant.all) (disj := false)
+      (Term.pred (Shared.quant.all) (disj := false)
+        (λ (parameter_vector : (Vector (Rel rel_type) 2)) => Term.in
+            (expression1 := Term.local_rel_var (parameter_vector.get (Fin.mk 0 (by aesop))))
+            (expression2 := Term.local_rel_var (parameter_vector.get 1)) )))
+
+  #check Term.eval (abc R arity rel_type)
+  #check (abc R arity rel_type).eval
 
 -- /-
 -- all disj x, y, z : r | ...
