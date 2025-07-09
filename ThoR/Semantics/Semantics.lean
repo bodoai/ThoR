@@ -440,10 +440,10 @@ def curry_pred
   {parameter_count : Nat}
   (pred : Vector T parameter_count → Prop)
   (quant_type : Shared.quant)
-  : Vector T 0 → Prop :=
+  : Prop :=
   match parameter_count with
     | 0 =>
-      pred
+      pred Vector0
     | .succ n' =>
       let function :=
         fun (x : T) (param_list : Vector T n') => pred (
@@ -550,7 +550,7 @@ def Term.eval
         (fun (pv : Vector (Rel rel_tyle) parameter_count) =>
           (function.eval) pv)
 
-      let result := curry_pred new_function quantor Vector0
+      let result := curry_pred new_function quantor
 
       if quantor == .no then
         ¬ result
