@@ -20,8 +20,6 @@ inductive TyTy : Type 1 where
     {R : Type}
     [TupleSet R]
     (rel_type : RelType R arity)
-    (quantor_type : Shared.quant)
-    (disj : Bool)
     (parameter_count : Nat)
     : TyTy
 
@@ -42,10 +40,8 @@ inductive TyTy : Type 1 where
     | pred :
       {arity : ℕ} →
       (rel_type : RelType R arity) →
-      (quantor_type : Shared.quant) →
-      (disj : Bool) →
       (parameter_count : Nat) →
-      Ty (.isPred rel_type quantor_type disj parameter_count)
+      Ty (.isPred rel_type parameter_count)
 
     | pred_o : (t : RelType R n) → (quantor_type : Shared.quant) → Ty (.isPred_o t quantor_type)
     --| pred_1 : {n : ℕ} → (t : RelType R n) → Ty (.isPred t)
@@ -63,7 +59,7 @@ inductive TyTy : Type 1 where
     | .formula => Prop
     | .expression rel_type => Rel rel_type
     | .function dom_rel_type ran => Rel dom_rel_type → ran.eval
-    | .pred rel_type _ _ n => Vector (Rel rel_type) n → Prop
+    | .pred rel_type n => Vector (Rel rel_type) n → Prop
     | .pred_o t _ => Rel t → Prop
     --| .pred_1 dom_rel_type => Rel dom_rel_type → Prop
     --| .pred_n dom_rel_type p' => Rel dom_rel_type → (p'.eval)
@@ -343,11 +339,9 @@ inductive TyTy : Type 1 where
       {arity : Nat}
       {rel_type : RelType R arity}
       {parameter_count : Nat}
-      (quantor_type : Shared.quant)
-      (disj : Bool)
       :
       (function : (Vector (Rel rel_type) parameter_count) → Term .formula) →
-      Term (.pred rel_type quantor_type disj parameter_count)
+      Term (.pred rel_type parameter_count)
 
     /-old pred for comparison-/
     | pred_o {n : ℕ} {t : RelType R n} (quantor_type : Shared.quant)
@@ -360,7 +354,7 @@ inductive TyTy : Type 1 where
       {parameter_count : Nat}
       (quantor_type : Shared.quant)
       (disj : Bool)
-      : (pred : Term (.pred rel_type quantor_type disj parameter_count) ) →
+      : (pred : Term (.pred rel_type parameter_count) ) →
         Term .formula
 
     | bind_o {t : RelType R n} (quantor_type : Shared.quant)
@@ -372,31 +366,26 @@ inductive TyTy : Type 1 where
 
 variable {R : Type} [TupleSet R] (t : RelType R n)
 
-#check Term.pred (Shared.quant.all) (disj := false)
+#check Term.pred
           (λ (parameter_vector : (Vector (Rel t) 2)) => Term.in
               (expression1 := Term.local_rel_var (parameter_vector.get (Fin.mk 0 (by aesop))))
               (expression2 := Term.local_rel_var (parameter_vector.get 1)) )
 
 #check Term.bind (Shared.quant.all) (disj := false)
-        (Term.pred (Shared.quant.all) (disj := false)
+        (Term.pred
           (λ (parameter_vector : (Vector (Rel t) 2)) => (Term.in
               (expression1 := Term.local_rel_var (parameter_vector.get (Fin.mk 0 (by aesop))))
               (expression2 := Term.local_rel_var (parameter_vector.get 1)))
-
                ))
 
 -- old way, examples
 #check Term.pred
-  (Shared.quant.all)
-  (disj := false)
   (
     λ (parameter_vector_1 : Vector (Rel t) 1) =>
     Term.bind
       (Shared.quant.all)
       (disj := false)
       (Term.pred
-        (Shared.quant.all)
-        (disj := false)
         (λ (parameter_vector_2 : Vector (Rel t) 1) =>
           Term.in
             (expression1 := Term.local_rel_var (parameter_vector_1.get 0))
