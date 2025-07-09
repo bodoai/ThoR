@@ -59,7 +59,7 @@ inductive TyTy : Type 1 where
     | .formula => Prop
     | .expression rel_type => Rel rel_type
     | .function dom_rel_type ran => Rel dom_rel_type → ran.eval
-    | .pred rel_type n => Vector (Rel rel_type) n → Prop
+    | .pred rel_type n => Vector ((Rel rel_type) × String) n → Prop
     | .pred_o t _ => Rel t → Prop
     --| .pred_1 dom_rel_type => Rel dom_rel_type → Prop
     --| .pred_n dom_rel_type p' => Rel dom_rel_type → (p'.eval)
@@ -340,7 +340,10 @@ inductive TyTy : Type 1 where
       {rel_type : RelType R arity}
       {parameter_count : Nat}
       :
-      (function : (Vector (Rel rel_type) parameter_count) → Term .formula) →
+      (function :
+        (Vector ((Rel rel_type) × String) parameter_count) →
+        Term .formula
+      ) →
       Term (.pred rel_type parameter_count)
 
     /-old pred for comparison-/
@@ -367,29 +370,29 @@ inductive TyTy : Type 1 where
 variable {R : Type} [TupleSet R] (t : RelType R n)
 
 #check Term.pred
-          (λ (parameter_vector : (Vector (Rel t) 2)) => Term.in
-              (expression1 := Term.local_rel_var (parameter_vector.get (Fin.mk 0 (by aesop))))
-              (expression2 := Term.local_rel_var (parameter_vector.get 1)) )
+          (λ (parameter_vector : (Vector ((Rel t) × String) 2)) => Term.in
+              (expression1 := Term.local_rel_var (parameter_vector.get 0).1)
+              (expression2 := Term.local_rel_var (parameter_vector.get 1).1) )
 
 #check Term.bind (Shared.quant.all) (disj := false)
         (Term.pred
-          (λ (parameter_vector : (Vector (Rel t) 2)) => (Term.in
-              (expression1 := Term.local_rel_var (parameter_vector.get (Fin.mk 0 (by aesop))))
-              (expression2 := Term.local_rel_var (parameter_vector.get 1)))
+          (λ (parameter_vector : (Vector ((Rel t) × String) 2)) => (Term.in
+              (expression1 := Term.local_rel_var (parameter_vector.get 0).1)
+              (expression2 := Term.local_rel_var (parameter_vector.get 1).1))
                ))
 
 -- old way, examples
 #check Term.pred
   (
-    λ (parameter_vector_1 : Vector (Rel t) 1) =>
+    λ (parameter_vector_1 : Vector ((Rel t) × String) 1) =>
     Term.bind
       (Shared.quant.all)
       (disj := false)
       (Term.pred
-        (λ (parameter_vector_2 : Vector (Rel t) 1) =>
+        (λ (parameter_vector_2 : Vector ((Rel t) × String) 1) =>
           Term.in
-            (expression1 := Term.local_rel_var (parameter_vector_1.get 0))
-            (expression2 := Term.local_rel_var (parameter_vector_2.get 0))
+            (expression1 := Term.local_rel_var (parameter_vector_1.get 0).1)
+            (expression2 := Term.local_rel_var (parameter_vector_2.get 0).1)
         )
       )
   )
@@ -467,7 +470,7 @@ def curry_pred
               ∃ (x : T), function x param_list
             )
 
-          | .no => --TODO: Check if correct
+          | .no =>
             (fun (param_list : Vector T n') =>
               ∃ (x : T), function x param_list
             )
@@ -538,16 +541,17 @@ def Term.eval
         predBody
 
     | @Term.pred R _ arity rel_type parameter_count function =>
-      fun (x : Vector (Rel rel_type) parameter_count ) => (function x).eval
+      fun (x : Vector ((Rel rel_type) × String) parameter_count ) =>
+      (function x).eval
 
     | .pred_o _ f => fun x => (f x).eval
 
-    | @Term.bind R _ arity rel_tyle parameter_count quantor disj function =>
+    | @Term.bind R _ arity rel_type parameter_count quantor disj function =>
       let new_function := if disj then
-        (fun (pv : Vector (Rel rel_tyle) parameter_count) =>
+        (fun (pv : Vector ((Rel rel_type) × String) parameter_count) =>
           pv.toList.Nodup -> (function.eval) pv)
       else
-        (fun (pv : Vector (Rel rel_tyle) parameter_count) =>
+        (fun (pv : Vector ((Rel rel_type) × String) parameter_count) =>
           (function.eval) pv)
 
       let result := curry_pred new_function quantor
@@ -640,9 +644,9 @@ end ThoR.Semantics
 
   def abc := (Term.bind (Shared.quant.all) (disj := false)
       (Term.pred
-        (λ (parameter_vector : (Vector (Rel rel_type) 2)) => Term.in
-            (expression1 := Term.local_rel_var (parameter_vector.get (Fin.mk 0 (by aesop))))
-            (expression2 := Term.local_rel_var (parameter_vector.get 1)) )))
+        (λ (parameter_vector : (Vector ((Rel rel_type) × String) 2)) => Term.in
+            (expression1 := Term.local_rel_var (parameter_vector.get 0).1)
+            (expression2 := Term.local_rel_var (parameter_vector.get 1).1) )))
 
   #check Term.eval (abc R arity rel_type)
   #check (abc R arity rel_type).eval
