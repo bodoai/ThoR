@@ -386,18 +386,21 @@ variable {R : Type} [TupleSet R] (t : RelType R n)
                ))
 
 -- old way, examples
-#check Term.pred_o
+#check Term.pred
   (Shared.quant.all)
+  (disj := false)
   (
-    λ (q : Rel t) =>
-    Term.bind_o
+    λ (parameter_vector_1 : Vector (Rel t) 1) =>
+    Term.bind
       (Shared.quant.all)
-      (Term.pred_o
+      (disj := false)
+      (Term.pred
         (Shared.quant.all)
-        (λ (r : Rel t) =>
+        (disj := false)
+        (λ (parameter_vector_2 : Vector (Rel t) 1) =>
           Term.in
-            (expression1 := Term.local_rel_var q)
-            (expression2 := Term.local_rel_var r)
+            (expression1 := Term.local_rel_var (parameter_vector_1.get 0))
+            (expression2 := Term.local_rel_var (parameter_vector_2.get 0))
         )
       )
   )
