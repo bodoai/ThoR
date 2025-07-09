@@ -438,7 +438,7 @@ set_option maxHeartbeats 300000
 
 def Vector0 {T : Type} : Vector T 0:= #[].toVector
 
-def curry_pred
+def quantify_predicate
   {T : Type}
   {parameter_count : Nat}
   (pred : Vector T parameter_count → Prop)
@@ -493,7 +493,7 @@ def curry_pred
               )
             )
 
-      curry_pred part quant_type
+      quantify_predicate part quant_type
 
 def Term.eval
   {R : Type}
@@ -554,7 +554,7 @@ def Term.eval
         (fun (pv : Vector ((Rel rel_type) × String) parameter_count) =>
           (function.eval) pv)
 
-      let result := curry_pred new_function quantor
+      let result := quantify_predicate new_function quantor
 
       if quantor == .no then
         ¬ result
