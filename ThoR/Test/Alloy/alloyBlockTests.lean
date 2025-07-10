@@ -69,29 +69,38 @@ end
     [  ThoR.TupleSet  ThoR_TupleSet  ]
     [  x2_testing.vars  ThoR_TupleSet  ]
     :=
-    (  ThoR.Semantics.Term.pred_def  "p1"  (  R  :=  ThoR_TupleSet  )
+    (  ThoR.Semantics.Term.pred_def  "p1"
+      (  R  :=  ThoR_TupleSet  )
       (  ThoR.Semantics.Term.bind
+        (  R  :=  ThoR_TupleSet  )
         Shared.quant.all
         false
         #["t"].toVector
         (  ThoR.Semantics.Term.pred
+          (  R  :=  ThoR_TupleSet  )
           (  fun  (  parameter_vector  :
             (  Vector
               ((  ThoR.Rel
-                --(  ThoR.Semantics.Term.type
-                  (  ThoR.RelType.mk.rel
-                    (  ThoR.Semantics.Term.global_rel_var
-                      (  ∻  x2_testing.vars.this_φ_B  )
-                      "this_φ_B"
+                (  R  :=  ThoR_TupleSet  )
+                (  ThoR.Semantics.Term.type
+                  (  R  :=  ThoR_TupleSet  )
+                  ( t :=
+                    (  ThoR.RelType.mk.rel
+                      (  R  :=  ThoR_TupleSet  )
+                      (  ThoR.Semantics.Term.global_rel_var
+                        (  R  :=  ThoR_TupleSet  )
+                        ( name := "this_φ_B" )
+                        ( r :=  ∻  x2_testing.vars.this_φ_B  ).eval -- TODO: add coe or add eval here
+                      )
                     )
                   )
-                --)
+                ).eval
               ):Type)
             )  (  1  )
           )  =>
           (  ThoR.Semantics.Term.some  (  R  :=  ThoR_TupleSet  )
             (  ThoR.Semantics.Term.union  (  R  :=  ThoR_TupleSet  )
-              (  ThoR.Semantics.Term.local_rel_var  parameter_vector.get 0  )
+              (  ThoR.Semantics.Term.local_rel_var  (parameter_vector.get 0)  )
               (  ThoR.Semantics.Term.dotjoin  (  R  :=  ThoR_TupleSet  )
                 (  ThoR.Semantics.Term.global_rel_var
                   (  ∻  x2_testing.vars.this_φ_B  )
