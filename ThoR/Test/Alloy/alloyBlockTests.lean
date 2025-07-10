@@ -90,11 +90,11 @@ end
                       (  ThoR.Semantics.Term.global_rel_var
                         (  R  :=  ThoR_TupleSet  )
                         ( name := "this_φ_B" )
-                        ( r :=  ∻  x2_testing.vars.this_φ_B  ).eval -- TODO: add coe or add eval here
+                        ( r :=  ∻  x2_testing.vars.this_φ_B  ).eval -- TODO: add/check coe or add eval here
                       )
                     )
                   )
-                ).eval
+                ).eval -- TODO: add/check coe or add eval here
               ):Type)
             )  (  1  )
           )  =>
