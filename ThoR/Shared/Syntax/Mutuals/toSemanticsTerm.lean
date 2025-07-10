@@ -661,7 +661,7 @@ namespace Shared
                 (fun
                   (parameter_vector :
                     (Vector
-                      ($(mkIdent ``ThoR.Rel) $typeTerm)
+                      $(mkIdent ``ThoR.Rel) $typeTerm
                       ($(Syntax.mkNatLit names.length))
                     )
                   )
@@ -671,9 +671,12 @@ namespace Shared
               )
             )
 
+          let stringNameTerms :=
+            names.map fun n => Syntax.mkStrLit n.getId.toString
+
           let namesVectorTerm :=
             unhygienicUnfolder `(
-              #[$[$(names.toArray)],*].toVector
+              #[$[$(stringNameTerms.toArray)],*].toVector
             )
 
           let disjTerm :=
@@ -689,11 +692,13 @@ namespace Shared
 
           let bind_applied :=
             unhygienicUnfolder `(
-              $(mkIdent ``ThoR.Semantics.Term.bind)
-                $(q.toTerm)
-                $(disjTerm)
-                $(namesVectorTerm)
-                $(pred_applied)
+              (
+                $(mkIdent ``ThoR.Semantics.Term.bind)
+                  $(q.toTerm)
+                  $(disjTerm)
+                  $(namesVectorTerm)
+                  $(pred_applied)
+              )
             )
 
           return bind_applied
