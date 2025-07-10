@@ -77,25 +77,20 @@ end
         false
         #["t"].toVector
         (  ThoR.Semantics.Term.pred
-          (  R  :=  ThoR_TupleSet  )
           (  fun  (  parameter_vector  :
             (  Vector
-              ((  ThoR.Rel
-                (  R  :=  ThoR_TupleSet  )
+              (  ThoR.Rel
                 (  ThoR.Semantics.Term.type
-                  (  R  :=  ThoR_TupleSet  )
                   ( t :=
                     (  ThoR.RelType.mk.rel
-                      (  R  :=  ThoR_TupleSet  )
                       (  ThoR.Semantics.Term.global_rel_var
-                        (  R  :=  ThoR_TupleSet  )
                         ( name := "this_φ_B" )
                         ( r :=  ∻  x2_testing.vars.this_φ_B  ).eval -- TODO: add/check coe or add eval here
                       )
                     )
                   )
                 ).eval -- TODO: add/check coe or add eval here
-              ):Type)
+              )
             )  (  1  )
           )  =>
           (  ThoR.Semantics.Term.some  (  R  :=  ThoR_TupleSet  )
