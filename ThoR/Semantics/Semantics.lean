@@ -439,10 +439,10 @@ example : p1 t = Term.pred_o
 --set_option diagnostics true
 set_option maxHeartbeats 300000
 
-def Vector0 {T : Type u} : Vector T 0:= #[].toVector
+def Vector0 {T : Type} : Vector T 0:= #[].toVector
 
 def quantify_predicate
-  {T : Type u}
+  {T : Type}
   {parameter_count : Nat}
   (pred : Vector T parameter_count → Prop)
   (quant_type : Shared.quant)
