@@ -65,10 +65,13 @@ namespace Shared
                 )
               )
 
+            let callIdent := Name.fromComponents [`parameter_vector, `get]
+
             return unhygienicUnfolder `(
                 (
                   $(mkIdent ``ThoR.Semantics.Term.local_rel_var).{0}
-                  $(mkIdent s.toName)
+
+                  ($(mkIdent callIdent) ($(mkIdent )))
                 )
               )
 
@@ -660,10 +663,9 @@ namespace Shared
               ($(mkIdent ``ThoR.Semantics.Term.pred)
                 (fun
                   (parameter_vector :
-                    (Vector
-                      $(mkIdent ``ThoR.Rel) $typeTerm
+                    Vector
+                      ($(mkIdent ``ThoR.Rel) $typeTerm)
                       ($(Syntax.mkNatLit names.length))
-                    )
                   )
                   =>
                   $(completefTerm)

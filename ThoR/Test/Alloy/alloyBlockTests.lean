@@ -114,6 +114,13 @@ end
       )
     )
 
+    def  p1_gen
+      {  ThoR_TupleSet  :  Type  }
+      [  ThoR.TupleSet  ThoR_TupleSet  ]
+      [  x2.vars  ThoR_TupleSet  ]
+      :=
+      (  ThoR.Semantics.Term.pred_def  "p1"  (  R  :=  ThoR_TupleSet  )  (  ThoR.Semantics.Term.bind  Shared.quant.all  false  #[  "t"  ].toVector  (  ThoR.Semantics.Term.pred  (  fun  (  parameter_vector  :  Vector  (  ThoR.Rel  (  ThoR.Semantics.Term.type.{  0  }  (  (  ThoR.RelType.mk.rel  (  ThoR.Semantics.Term.global_rel_var.{  0  }  (  ∻  x2.vars.this_φ_B  )  "this_φ_B"  ).eval  )  )  ).eval  )  (  1  )  )  =>  (  ThoR.Semantics.Term.some  (  R  :=  ThoR_TupleSet  )  (  ThoR.Semantics.Term.union  (  R  :=  ThoR_TupleSet  )  (  ThoR.Semantics.Term.local_rel_var.{  0  }  t  )  (  ThoR.Semantics.Term.dotjoin  (  R  :=  ThoR_TupleSet  )  (  ThoR.Semantics.Term.global_rel_var.{  0  }  (  ∻  x2.vars.this_φ_B  )  "this_φ_B"  )  (  ThoR.Semantics.Term.global_rel_var.{  0  }  (  ∻  x2.vars.this_φ_A_ξ_r  )  "this_φ_A_ξ_r"  )  )  )  )  )  )  )  )
+
   def  p1_no_type_term -- p1 without the Term.type
     {  ThoR_TupleSet  :  Type  }
     [  ThoR.TupleSet  ThoR_TupleSet  ]
