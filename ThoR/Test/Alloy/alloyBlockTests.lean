@@ -130,7 +130,6 @@ end
           (  fun  (  parameter_vector  :
             (  Vector -- .{0} not needed here
               (  ThoR.Rel
-                ( arity  := 1)
                 (  ThoR.RelType.mk.rel
                   ( r :=
                     (  ThoR.Semantics.Term.global_rel_var.{0}
