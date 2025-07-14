@@ -114,6 +114,7 @@ end
       )
     )
 
+    -- TODO: instead of calling t => call the parameter_vector on the position of t in the name vector. Idea: Quantornames are already shared (to make them pure e.g. only t). This mechanism could be replaced by instad giving the current quantors names (and then get the index of the called name to call from param_vector)
     def  p1_gen
       {  ThoR_TupleSet  :  Type  }
       [  ThoR.TupleSet  ThoR_TupleSet  ]
