@@ -59,7 +59,7 @@ namespace Shared
             if !(pureNames.contains s) then
               return unhygienicUnfolder `(
                 (
-                  $(mkIdent ``ThoR.Semantics.Term.global_rel_var)
+                  $(mkIdent ``ThoR.Semantics.Term.global_rel_var).{0}
                   (∻ $(mkIdent s!"{blockName}.vars.{s}".toName))
                   $(Syntax.mkStrLit s)
                 )
@@ -67,7 +67,7 @@ namespace Shared
 
             return unhygienicUnfolder `(
                 (
-                  $(mkIdent ``ThoR.Semantics.Term.local_rel_var)
+                  $(mkIdent ``ThoR.Semantics.Term.local_rel_var).{0}
                   $(mkIdent s.toName)
                 )
               )
@@ -76,7 +76,7 @@ namespace Shared
             let snt := sn.representedNamespace.getId.toString
             return unhygienicUnfolder `(
               (
-                $(mkIdent ``ThoR.Semantics.Term.global_rel_var)
+                $(mkIdent ``ThoR.Semantics.Term.global_rel_var).{0}
                 (∻ $(mkIdent s!"{blockName}.vars.{snt}".toName))
                 $(Syntax.mkStrLit snt)
               )
@@ -784,7 +784,7 @@ namespace Shared
             return unhygienicUnfolder
               `(
                 (
-                  $(mkIdent ``ThoR.Semantics.Term.type)
+                  $(mkIdent ``ThoR.Semantics.Term.type).{0}
                   (
                     $(aeTerm)
                   )
@@ -798,7 +798,7 @@ namespace Shared
             return unhygienicUnfolder
               `(
                 (
-                  $(mkIdent ``ThoR.Semantics.Term.type)
+                  $(mkIdent ``ThoR.Semantics.Term.type).{0}
                   (
                     (
                       $(mkIdent ``RelType.mk.unary_rel)
@@ -815,11 +815,11 @@ namespace Shared
             return unhygienicUnfolder
               `(
                 (
-                  $(mkIdent ``ThoR.Semantics.Term.type)
+                  $(mkIdent ``ThoR.Semantics.Term.type).{0}
                   (
-                    ($(mkIdent ``RelType.mk.rel) $(eTerm))
+                    ($(mkIdent ``RelType.mk.rel) $(eTerm).eval)
                   )
-                )
+                ).eval
               )
 
     /--
