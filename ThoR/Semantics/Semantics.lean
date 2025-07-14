@@ -23,14 +23,6 @@ inductive TyTy : Type 1 where
     (parameter_count : Nat)
     : TyTy
 
-  | isPred_o
-    {arity : Nat}
-    {R : Type}
-    [TupleSet R]
-    (rel_type : RelType R arity)
-    (quantor_type : Shared.quant)
-    : TyTy
-
 -- construction follows https://lean-lang.org/documentation/examples/debruijn/
   inductive Ty {R : Type} [TupleSet R] : (tt : TyTy) → Type u where
     | number : Ty .isTy-- ℤ
@@ -43,9 +35,6 @@ inductive TyTy : Type 1 where
       (parameter_count : Nat) →
       Ty (.isPred rel_type parameter_count)
 
-    | pred_o : (t : RelType R n) → (quantor_type : Shared.quant) → Ty (.isPred_o t quantor_type)
-    --| pred_1 : {n : ℕ} → (t : RelType R n) → Ty (.isPred t)
-    --| pred_n : {n : ℕ} → (t : RelType R n) → Ty (.isPred t) → Ty (.isPred t)
     | type : (n : ℕ) → Ty .isTy
 
   inductive Marker : Type u where
@@ -60,9 +49,6 @@ inductive TyTy : Type 1 where
     | .expression rel_type => Rel rel_type
     | .function dom_rel_type ran => Rel dom_rel_type → ran.eval
     | .pred rel_type n => Vector (Rel rel_type) n → Prop
-    | .pred_o t _ => Rel t → Prop
-    --| .pred_1 dom_rel_type => Rel dom_rel_type → Prop
-    --| .pred_n dom_rel_type p' => Rel dom_rel_type → (p'.eval)
      | Ty.type n => ThoR.RelType R n
 
 
@@ -346,11 +332,6 @@ inductive TyTy : Type 1 where
       ) →
       Term (.pred rel_type parameter_count)
 
-    /-old pred for comparison-/
-    | pred_o {n : ℕ} {t : RelType R n} (quantor_type : Shared.quant)
-      : (Rel t → Term .formula) →
-        Term (.pred_o t quantor_type)
-
     | bind
       {arity : Nat}
       {rel_type : RelType R arity}
@@ -359,10 +340,6 @@ inductive TyTy : Type 1 where
       (disj : Bool)
       (parameter_names : Vector String parameter_count)
       : (pred : Term (.pred rel_type parameter_count) ) →
-        Term .formula
-
-    | bind_o {t : RelType R n} (quantor_type : Shared.quant)
-      : (pred_o : Term (.pred_o t quantor_type)) →
         Term .formula
 
     | type {n : ℕ} (t : RelType R n) : Term (.type n)
@@ -399,19 +376,18 @@ variable {R : Type} [TupleSet R] (t : RelType R n)
       )
   )
 
--- old way, examples
-def p1 := Term.pred_o
-  (Shared.quant.all)
+def p1 := Term.pred
   (
-    λ (q : Rel t) =>
-    Term.bind_o
+    λ (parameter_vector_1 : Vector (Rel t) 1) =>
+    Term.bind
       (Shared.quant.all)
-      (Term.pred_o
-        (Shared.quant.all)
-        (λ (r : Rel t) =>
+      (disj := false)
+      (#["x"].toVector)
+      (Term.pred
+        (λ (parameter_vector_2 : Vector (Rel t) 1) =>
           Term.in
-            (expression1 := Term.local_rel_var q)
-            (expression2 := Term.local_rel_var r)
+            (expression1 := Term.local_rel_var (parameter_vector_1.get 0))
+            (expression2 := Term.local_rel_var (parameter_vector_2.get 0))
         )
       )
   )
@@ -419,19 +395,19 @@ def p1 := Term.pred_o
 
 #check (p1 t)
 
-example : p1 t = Term.pred_o
-  (Shared.quant.all)
+example : p1 t = Term.pred
   (
-    λ (q : Rel t) =>
-      Term.bind_o
+    λ (parameter_vector_1 : Vector (Rel t) 1) =>
+      Term.bind
         (Shared.quant.all)
-        (Term.pred_o
-          (Shared.quant.all)
-          (λ (r : Rel t) =>
-              Term.in
-                (expression1 := Term.local_rel_var q)
-                (expression2 := Term.local_rel_var r)
-          )
+        (disj := false)
+        (#["x"].toVector)
+        (Term.pred
+          (λ (parameter_vector_2 : Vector (Rel t) 1) =>
+          Term.in
+            (expression1 := Term.local_rel_var (parameter_vector_1.get 0))
+            (expression2 := Term.local_rel_var (parameter_vector_2.get 0))
+        )
         )
 ) := by
   sorry
@@ -547,8 +523,6 @@ def Term.eval
       fun (x : Vector (Rel rel_type) parameter_count ) =>
       (function x).eval
 
-    | .pred_o _ f => fun x => (f x).eval
-
     | @Term.bind
       R _ arity rel_type parameter_count quantor disj parameter_names function =>
       let new_function := if disj then
@@ -564,17 +538,6 @@ def Term.eval
         ¬ result
       else
         result
-
-    | .bind_o quantor_type f =>
-      let function := f.eval
-      match quantor_type with
-        | .all => ∀ x, function x
-        | .some => ∃ x, function x
-        | .no => ¬ (∃ x, function x)
-        | .lone =>
-          ∀ x y, (function x) → (function y) → (x = y)
-        | .one =>
-          (∃ x, function x) ∧ (∀ x y, (function x) → (function y) → (x = y))
 
     | .number z => z
 
