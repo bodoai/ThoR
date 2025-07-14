@@ -83,10 +83,11 @@ end
                 (  ThoR.Semantics.Term.type.{0}
                   ( t :=
                     (  ThoR.RelType.mk.rel
+                      ( n := (0 + (0 + 1)))
                       (  ThoR.Semantics.Term.global_rel_var.{0}
                         ( name := "this_φ_B" )
-                        ( r :=  ∻  x2_testing.vars.this_φ_B  ).eval -- TODO: add/check coe or add eval here
-                      )
+                        ( r :=  ∻  x2_testing.vars.this_φ_B  )
+                      ).eval -- TODO: add/check coe or add eval here
                     )
                   )
                 ).eval -- TODO: add/check coe or add eval here
@@ -113,7 +114,65 @@ end
       )
     )
 
+  def  p1_no_type_term -- p1 without the Term.type
+    {  ThoR_TupleSet  :  Type  }
+    [  ThoR.TupleSet  ThoR_TupleSet  ]
+    [  x2_testing.vars  ThoR_TupleSet  ]
+    :=
+    (  ThoR.Semantics.Term.pred_def  "p1"
+      (  R  :=  ThoR_TupleSet  )
+      (  ThoR.Semantics.Term.bind
+        (  R  :=  ThoR_TupleSet  )
+        Shared.quant.all
+        false
+        #["t"].toVector
+        (  ThoR.Semantics.Term.pred
+          (  fun  (  parameter_vector  :
+            (  Vector -- .{0} not needed here
+              (  ThoR.Rel
+                ( arity  := 1)
+                (  ThoR.RelType.mk.rel
+                  ( r :=
+                    (  ThoR.Semantics.Term.global_rel_var.{0}
+                      ( name := "this_φ_B" )
+                      ( r :=  ∻  x2_testing.vars.this_φ_B  )
+                    ).eval -- TODO: add/check coe or add eval here
+                  )
+                )
+              )
+            )  (  1  )
+          )  =>
+          (  ThoR.Semantics.Term.some  (  R  :=  ThoR_TupleSet  )
+            (  ThoR.Semantics.Term.union  (  R  :=  ThoR_TupleSet  )
+              (  ThoR.Semantics.Term.local_rel_var  (parameter_vector.get 0)  )
+              (  ThoR.Semantics.Term.dotjoin  (  R  :=  ThoR_TupleSet  )
+                (  ThoR.Semantics.Term.global_rel_var
+                  (  ∻  x2_testing.vars.this_φ_B  )
+                  "this_φ_B"
+                )
+                (  ThoR.Semantics.Term.global_rel_var
+                  (  ∻  x2_testing.vars.this_φ_A_ξ_r  )
+                  "this_φ_A_ξ_r"
+                )
+              )
+            )
+          )
+          )
+        )
+      )
+    )
+
   end  x2_testing.preds
+
+  #check x2_testing.preds.p1_no_type_term
+  #print x2_testing.preds.p1_no_type_term
+
+  variable
+    (  ThoR_TupleSet_v  :  Type  )
+    [  ThoR.TupleSet  ThoR_TupleSet_v  ]
+    [  x2_testing.vars  ThoR_TupleSet_v  ]
+
+  #eval x2_testing.preds.p1_no_type_term (ThoR_TupleSet  := ThoR_TupleSet_v)
 
 ~alloy x3
   sig A {
