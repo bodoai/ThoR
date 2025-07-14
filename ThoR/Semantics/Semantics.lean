@@ -629,13 +629,47 @@ def Term.eval
     --       Term ran →
     --       Term .formula
 
-  -- instance {R : Type} [TupleSet R] {ty : @Ty R _} (t : @Term R _ ty):
-  --   CoeDep (@Term R _ ty) t ty.eval where
-  --     coe := t.eval
+  /- Coersions -/
+  instance
+    {R : Type} [TupleSet R]
+    {tyty : TyTy}
+    {ty : @Ty R _ tyty}
+    (t : @Term R _ tyty ty)
+    :
+    CoeDep _ t ty.eval where
+      coe := t.eval
 
-  -- instance {R : Type} [TupleSet R] {n : ℕ} (t : @Term R _ (Ty.type n)):
-  --   CoeDep _ t Type where
-  --     coe := Rel t.eval
+  /- Expression to Relation -/
+  instance
+    {R : Type} [TupleSet R]
+    {n : Nat}
+    {rel_type : RelType R n}
+    (t : @Term R _ (TyTy.isTy) (Ty.expression rel_type))
+    :
+    CoeDep
+      _
+      t
+      (Rel rel_type)
+    where
+      coe := t.eval
+
+  instance
+    {R : Type} [TupleSet R]
+    (t : @Term R _ (TyTy.isTy) (Ty.formula))
+    :
+    CoeDep
+      _
+      t
+      Prop
+    where
+      coe := t.eval
+
+  instance
+    {R : Type} [TupleSet R]
+    {n : ℕ}
+    (t : @Term R _ (TyTy.isTy) (Ty.type n)):
+    CoeDep _ t Type where
+      coe := Rel t.eval
 
 end ThoR.Semantics
 
