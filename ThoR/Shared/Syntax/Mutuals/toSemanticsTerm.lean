@@ -27,6 +27,36 @@ open ThoR Quantification Alloy Config
 
 namespace Shared
 
+  private structure indexAndLevel where
+    (index : Nat)
+    (level : Nat)
+
+  private partial def getQuantorIndexAndLevel
+    (input : Std.HashMap Nat (List (String)))
+    (level : Nat)
+    (stringName : String)
+    : Except String indexAndLevel := do
+      if level > input.size then
+        throw s!"Tried to find quantor and index level with a level \
+        of {level}, but the maximum level is {input.size} for {input.toList}"
+
+      if level < 0 then
+        throw s!"Tried to find quantor and index level with a level \
+        of {level}, but the minimum level is 0 for {input.toList}"
+
+      if !input.contains level then
+        throw s!"Tried to find quantor and index level with a level \
+        of {level}, but this level does not exist in {input.toList}"
+
+      let currentLevelNames := input.get! level
+      let index := currentLevelNames.idxOf stringName
+
+      -- if the element is not in the current List, try a lower level
+      if index == currentLevelNames.length then
+        return ← (getQuantorIndexAndLevel input (level - 1) stringName)
+      else
+        return indexAndLevel.mk index level
+
   mutual
 
     /--
@@ -40,13 +70,17 @@ namespace Shared
       (callablePredicates : List (commandDecl × List (expr × List (String × List varDecl))))
       -- used to know which names must be pure
       (pureNames : List (String) := [])
+      (quantorNamesPerQuantorDepth : Std.HashMap Nat (List (String)) := {})
+      (currentQuantorDepth : Nat := 0)
       : Except String Term := do
         match e with
           | expr.bracket e =>
             return unhygienicUnfolder `(
                 (
-                  $(mkIdent ``ThoR.Semantics.Term.bracket)
-                  $(← e.toSemanticsTerm blockName variableNames callableVariables callablePredicates pureNames)
+                  $(  mkIdent ``ThoR.Semantics.Term.bracket )
+                  $(  ← e.toSemanticsTerm blockName variableNames
+                        callableVariables callablePredicates pureNames quantorNamesPerQuantorDepth currentQuantorDepth
+                  )
                 )
               )
 
@@ -56,6 +90,9 @@ namespace Shared
 
           | expr.string s => do
 
+            /-
+            If s is not a pure name, it is a global variable
+            -/
             if !(pureNames.contains s) then
               return unhygienicUnfolder `(
                 (
@@ -65,13 +102,38 @@ namespace Shared
                 )
               )
 
-            let callIdent := Name.fromComponents [`parameter_vector, `get]
+            /- if s is a pure name, check if it is an argument -/
+            let quantorNames :=
+              (quantorNamesPerQuantorDepth.toList.map fun elem => elem.2).flatten
+            let argNames :=
+              pureNames.filter fun elem => !quantorNames.contains elem
+
+            if argNames.contains s then
+              return unhygienicUnfolder `(
+                (
+                  $(mkIdent ``ThoR.Semantics.Term.local_rel_var).{0}
+
+                  ($(mkIdent s.toName))
+                )
+              )
+
+            /-
+            if it is not an argument, it has to be get from the param list
+            of the quantor
+            -/
+            let indexAndLevel ← getQuantorIndexAndLevel
+              quantorNamesPerQuantorDepth currentQuantorDepth s
+            let callIdent :=
+              Name.fromComponents
+                [s!"parameter_vector_{indexAndLevel.level}".toName, `get]
+            let indexNatLit :=
+              Syntax.mkNatLit indexAndLevel.index
 
             return unhygienicUnfolder `(
                 (
                   $(mkIdent ``ThoR.Semantics.Term.local_rel_var).{0}
 
-                  ($(mkIdent callIdent) ($(mkIdent )))
+                  ($(mkIdent callIdent) $(indexNatLit))
                 )
               )
 
@@ -86,13 +148,20 @@ namespace Shared
             )
 
           | expr.function_call_with_args called_function arguments =>
-            let mut argumentsTerm
-              ← (arguments[0]!).toSemanticsTerm blockName
-                variableNames callableVariables callablePredicates pureNames
+            let mut argumentsTerm ←
+              (arguments[0]!).toSemanticsTerm
+                blockName variableNames
+                callableVariables callablePredicates
+                pureNames quantorNamesPerQuantorDepth
+                currentQuantorDepth
 
             for arg in arguments.drop 1 do
-              let argTerm ← arg.toSemanticsTerm blockName
-                variableNames callableVariables callablePredicates pureNames
+              let argTerm ←
+                arg.toSemanticsTerm
+                  blockName variableNames
+                  callableVariables callablePredicates
+                  pureNames quantorNamesPerQuantorDepth
+                  currentQuantorDepth
 
               argumentsTerm :=
                 unhygienicUnfolder
@@ -133,8 +202,12 @@ namespace Shared
                     $(mkIdent ``ThoR.Semantics.Term.reflexive_closure)
                   )
 
-            let eTerm ← e.toSemanticsTerm blockName
-              variableNames callableVariables callablePredicates pureNames
+            let eTerm ←
+              e.toSemanticsTerm
+                blockName variableNames
+                callableVariables callablePredicates
+                pureNames quantorNamesPerQuantorDepth
+                currentQuantorDepth
 
             return unhygienicUnfolder `(
                 (
@@ -146,11 +219,19 @@ namespace Shared
 
           | expr.binaryRelOperation op e1 e2 =>
 
-            let e1Term ← e1.toSemanticsTerm blockName
-              variableNames callableVariables callablePredicates pureNames
+            let e1Term ←
+              e1.toSemanticsTerm
+                blockName variableNames
+                callableVariables callablePredicates
+                pureNames quantorNamesPerQuantorDepth
+                currentQuantorDepth
 
-            let e2Term ← e2.toSemanticsTerm blockName
-              variableNames callableVariables callablePredicates pureNames
+            let e2Term ←
+              e2.toSemanticsTerm
+                blockName variableNames
+                callableVariables callablePredicates
+                pureNames quantorNamesPerQuantorDepth
+                currentQuantorDepth
 
             let binRelOpTerm :=
               match op with
@@ -190,11 +271,19 @@ namespace Shared
               )
 
           | expr.dotjoin _ e1 e2 =>
-            let e1Term ← e1.toSemanticsTerm blockName
-              variableNames callableVariables callablePredicates pureNames
+            let e1Term ←
+              e1.toSemanticsTerm
+                blockName variableNames
+                callableVariables callablePredicates
+                pureNames quantorNamesPerQuantorDepth
+                currentQuantorDepth
 
-            let e2Term ← e2.toSemanticsTerm blockName
-              variableNames callableVariables callablePredicates pureNames
+            let e2Term ←
+              e2.toSemanticsTerm
+                blockName variableNames
+                callableVariables callablePredicates
+                pureNames quantorNamesPerQuantorDepth
+                currentQuantorDepth
 
             return unhygienicUnfolder `(
                 (
@@ -206,14 +295,26 @@ namespace Shared
               )
 
           | expr.ifElse condition thenBody elseBody =>
-            let conditionTerm ← condition.toSemanticsTerm blockName
-              variableNames callableVariables callablePredicates pureNames
+            let conditionTerm ←
+              condition.toSemanticsTerm
+                blockName variableNames
+                callableVariables callablePredicates
+                pureNames quantorNamesPerQuantorDepth
+                currentQuantorDepth
 
-            let thenBodyTerm ← thenBody.toSemanticsTerm blockName
-              variableNames callableVariables callablePredicates pureNames
+            let thenBodyTerm ←
+              thenBody.toSemanticsTerm
+                blockName variableNames
+                callableVariables callablePredicates
+                pureNames quantorNamesPerQuantorDepth
+                currentQuantorDepth
 
-            let elseBodyTerm ← elseBody.toSemanticsTerm blockName
-              variableNames callableVariables callablePredicates pureNames
+            let elseBodyTerm ←
+              elseBody.toSemanticsTerm
+                blockName variableNames
+                callableVariables callablePredicates
+                pureNames quantorNamesPerQuantorDepth
+                currentQuantorDepth
 
             return unhygienicUnfolder
               `(
@@ -242,6 +343,8 @@ namespace Shared
       (callablePredicates : List (commandDecl × List (expr × List (String × List varDecl))))
       -- names that have to be pure with no namespace (quantors and args)
       (pureNames : List (String) := [])
+      (quantorNamesPerQuantorDepth : Std.HashMap Nat (List (String)) := {})
+      (currentQuantorDepth : Nat := 0)
       : Except String Term := do
 
         match f with
@@ -249,7 +352,13 @@ namespace Shared
           return unhygienicUnfolder `(
                 (
                   $(mkIdent ``ThoR.Semantics.Term.bracket)
-                  $(← f.toSemanticsTerm blockName variableNames callableVariables callablePredicates pureNames)
+                  $(
+                      ← f.toSemanticsTerm
+                          blockName variableNames
+                          callableVariables callablePredicates
+                          pureNames quantorNamesPerQuantorDepth
+                          currentQuantorDepth
+                  )
                 )
               )
 
@@ -356,8 +465,12 @@ namespace Shared
                 cv.type.toString == typeReplacementName
               )
 
-            let calledArgTerm ← calledArg.toSemanticsTerm blockName
-              variableNames callableVariables callablePredicates pureNames
+            let calledArgTerm ←
+              calledArg.toSemanticsTerm
+                blockName variableNames
+                callableVariables callablePredicates
+                pureNames quantorNamesPerQuantorDepth
+                currentQuantorDepth
 
             if
               cast_type_as_expr_string == calledArg ||
@@ -374,9 +487,12 @@ namespace Shared
 
             else
 
-              let cast_type_term ← cast_type_as_type_expr_relExpr.toSemanticsTerm
-                blockName variableNames callableVariables
-                callablePredicates pureNames
+              let cast_type_term ←
+                cast_type_as_type_expr_relExpr.toSemanticsTerm
+                  blockName variableNames
+                  callableVariables callablePredicates
+                  pureNames quantorNamesPerQuantorDepth
+                  currentQuantorDepth
 
               let castCommand : Term :=
                 unhygienicUnfolder
@@ -434,15 +550,22 @@ namespace Shared
               (
                 $(unRelBoolOpTerm)
                 ($(mkIdent `R) := $(baseType.ident))
-                $(← e.toSemanticsTerm
-                  blockName variableNames callableVariables
-                  callablePredicates pureNames)
+                $(  ← e.toSemanticsTerm
+                        blockName variableNames
+                        callableVariables callablePredicates
+                        pureNames quantorNamesPerQuantorDepth
+                        currentQuantorDepth
+                )
               )
             )
 
         | formula.unaryLogicOperation op f =>
-          let fTerm ← f.toSemanticsTerm blockName variableNames
-            callableVariables callablePredicates pureNames
+          let fTerm ←
+            f.toSemanticsTerm
+              blockName variableNames
+              callableVariables callablePredicates
+              pureNames quantorNamesPerQuantorDepth
+              currentQuantorDepth
 
           let unLogOpTerm :=
             match op with
@@ -461,12 +584,18 @@ namespace Shared
 
         | formula.binaryLogicOperation op f1 f2 =>
           let f1Term ←
-            f1.toSemanticsTerm blockName variableNames
-              callableVariables callablePredicates pureNames
+            f1.toSemanticsTerm
+              blockName variableNames
+              callableVariables callablePredicates
+              pureNames quantorNamesPerQuantorDepth
+              currentQuantorDepth
 
           let f2Term ←
-            f2.toSemanticsTerm blockName variableNames
-              callableVariables callablePredicates pureNames
+            f2.toSemanticsTerm
+              blockName variableNames
+              callableVariables callablePredicates
+              pureNames quantorNamesPerQuantorDepth
+              currentQuantorDepth
 
           let binLogOpTerm :=
             match op with
@@ -503,17 +632,25 @@ namespace Shared
         | formula.tertiaryLogicOperation _ f1 f2 f3 =>
           -- currently only if else
           let f1Term ←
-            f1.toSemanticsTerm blockName variableNames
-              callableVariables callablePredicates pureNames
+            f1.toSemanticsTerm
+              blockName variableNames
+              callableVariables callablePredicates
+              pureNames quantorNamesPerQuantorDepth
+              currentQuantorDepth
 
           let f2Term ←
-            f2.toSemanticsTerm blockName variableNames
-              callableVariables callablePredicates pureNames
+            f2.toSemanticsTerm
+              blockName variableNames
+              callableVariables callablePredicates
+              pureNames quantorNamesPerQuantorDepth
+              currentQuantorDepth
 
           let f3Term ←
-            f3.toSemanticsTerm blockName variableNames
-              callableVariables callablePredicates pureNames
-
+            f3.toSemanticsTerm
+              blockName variableNames
+              callableVariables callablePredicates
+              pureNames quantorNamesPerQuantorDepth
+              currentQuantorDepth
 
           return unhygienicUnfolder
             `(
@@ -559,8 +696,12 @@ namespace Shared
               (
                 $(algCompOpTerm)
                 ($(mkIdent `R) := $(baseType.ident))
-                $(← ae1.toSemanticsTerm blockName variableNames callableVariables
-                  callablePredicates pureNames)
+                $(  ← ae1.toSemanticsTerm
+                        blockName variableNames
+                        callableVariables callablePredicates
+                        pureNames quantorNamesPerQuantorDepth
+                        currentQuantorDepth
+                )
                 $(← ae2.toSemanticsTerm blockName variableNames callableVariables
                   callablePredicates pureNames)
               )
@@ -619,12 +760,23 @@ namespace Shared
                 (type := te)
                 (requiredDecls := [])
 
+          let newQuantorDepth := currentQuantorDepth+1
+          let newQuantorNamesPerQuantorDepth :=
+            quantorNamesPerQuantorDepth.insert
+              newQuantorDepth n
+
+          let newPureNames := (pureNames.append n)
+
           -- one form ist present -> see syntax (+)
           let firstForm := f[0]!
           let firstFTerm ←
             firstForm.toSemanticsTerm
-              blockName variableNames (callableVariables ++ quantVarDecls) callablePredicates
-              (pureNames.append n)
+              blockName variableNames
+              (callableVariables ++ quantVarDecls)
+              callablePredicates
+              (newPureNames)
+              (newQuantorNamesPerQuantorDepth)
+              (newQuantorDepth)
 
           let mut completefTerm : Term :=
             unhygienicUnfolder `(term | $(firstFTerm))
@@ -632,8 +784,12 @@ namespace Shared
           for form in f.drop 1 do
             let fTerm ←
               form.toSemanticsTerm
-                blockName variableNames (callableVariables ++ quantVarDecls) callablePredicates
-                (pureNames.append n)
+                blockName variableNames
+                (callableVariables ++ quantVarDecls)
+                callablePredicates
+                (newPureNames)
+                (newQuantorNamesPerQuantorDepth)
+                (newQuantorDepth)
 
             completefTerm :=
               unhygienicUnfolder `(
@@ -656,13 +812,21 @@ namespace Shared
           -/
 
           let typeTerm ←
-            te.toSemanticsTerm blockName variableNames callableVariables callablePredicates pureNames
+            te.toSemanticsTerm
+              blockName variableNames
+              callableVariables callablePredicates
+              (newPureNames)
+              (newQuantorNamesPerQuantorDepth)
+              (newQuantorDepth)
+
+          let parameter_vector_ident :=
+            mkIdent (s!"parameter_vector_{newQuantorDepth}".toName)
 
           let pred_applied :=
             unhygienicUnfolder `(
               ($(mkIdent ``ThoR.Semantics.Term.pred)
                 (fun
-                  (parameter_vector :
+                  ($parameter_vector_ident :
                     Vector
                       ($(mkIdent ``ThoR.Rel) $typeTerm)
                       ($(Syntax.mkNatLit names.length))
@@ -742,11 +906,22 @@ namespace Shared
         | formula.letDeclaration name value body =>
           -- TODO: How to translate to semantics
           let nameT := mkIdent name
-          let valueT ← value.toSemanticsTerm blockName variableNames callableVariables callablePredicates
+          let valueT ←
+            value.toSemanticsTerm
+              blockName variableNames
+              callableVariables callablePredicates
+              pureNames quantorNamesPerQuantorDepth
+              currentQuantorDepth
+
           let e_bodyT :=
             (body.map fun e =>
-              e.toSemanticsTerm blockName variableNames callableVariables callablePredicates
+              e.toSemanticsTerm
+                blockName variableNames
+                callableVariables callablePredicates
+                pureNames quantorNamesPerQuantorDepth
+                currentQuantorDepth
               )
+
           let mut bodyTermList : List Term := []
           for elem in e_bodyT do
             match elem with
@@ -776,6 +951,8 @@ namespace Shared
       (callablePredicates : List (commandDecl × List (expr × List (String × List varDecl))))
       -- names that have to be pure with no namespace (quantors and args)
       (pureNames : List (String) := [])
+      (quantorNamesPerQuantorDepth : Std.HashMap Nat (List (String)) := {})
+      (currentQuantorDepth : Nat := 0)
       : Except String Term := do
         /- TODO: Needed in Semantics ?? -/
         match te with
@@ -794,8 +971,12 @@ namespace Shared
               )
 
           | Shared.typeExpr.multExpr m e =>
-            let eTerm ← e.toSemanticsTerm blockName
-              variableNames callableVariables callablePredicates pureNames
+            let eTerm ←
+              e.toSemanticsTerm
+                blockName variableNames
+                callableVariables callablePredicates
+                pureNames quantorNamesPerQuantorDepth
+                currentQuantorDepth
 
             return unhygienicUnfolder
               `(
@@ -811,8 +992,12 @@ namespace Shared
               )
 
           | Shared.typeExpr.relExpr e =>
-            let eTerm ← e.toSemanticsTerm blockName
-              variableNames callableVariables callablePredicates pureNames
+            let eTerm ←
+              e.toSemanticsTerm
+                blockName variableNames
+                callableVariables callablePredicates
+                pureNames quantorNamesPerQuantorDepth
+                currentQuantorDepth
 
             return unhygienicUnfolder
               `(
@@ -835,6 +1020,8 @@ namespace Shared
     (callablePredicates : List (commandDecl × List (expr × List (String × List varDecl))))
     -- names that have to be pure with no namespace (quantors and args)
     (pureNames : List (String) := [])
+    (quantorNamesPerQuantorDepth : Std.HashMap Nat (List (String)) := {})
+    (currentQuantorDepth : Nat := 0)
     : Except String Term := do
       match ae with
         | algExpr.number n =>
@@ -847,8 +1034,12 @@ namespace Shared
             )
 
         | algExpr.cardExpression e =>
-          let eTerm ← e.toSemanticsTerm blockName
-            variableNames callableVariables callablePredicates pureNames
+          let eTerm ←
+            e.toSemanticsTerm
+              blockName variableNames
+              callableVariables callablePredicates
+              pureNames quantorNamesPerQuantorDepth
+              currentQuantorDepth
 
           return unhygienicUnfolder
             `(
@@ -868,8 +1059,12 @@ namespace Shared
                   $(mkIdent ``ThoR.Semantics.Term.negation)
                 )
 
-          let aeTerm ← ae.toSemanticsTerm blockName
-            variableNames callableVariables callablePredicates pureNames
+          let aeTerm ←
+            ae.toSemanticsTerm
+              blockName variableNames
+              callableVariables callablePredicates
+              pureNames quantorNamesPerQuantorDepth
+              currentQuantorDepth
 
           return unhygienicUnfolder
             `(
@@ -905,11 +1100,19 @@ namespace Shared
                   $(mkIdent ``ThoR.Semantics.Term.rem)
                 )
 
-          let ae1Term ← ae1.toSemanticsTerm blockName
-            variableNames callableVariables callablePredicates pureNames
+          let ae1Term ←
+            ae1.toSemanticsTerm
+              blockName variableNames
+              callableVariables callablePredicates
+              pureNames quantorNamesPerQuantorDepth
+              currentQuantorDepth
 
-          let ae2Term ← ae2.toSemanticsTerm blockName
-            variableNames callableVariables callablePredicates pureNames
+          let ae2Term ←
+            ae2.toSemanticsTerm
+              blockName variableNames
+              callableVariables callablePredicates
+              pureNames quantorNamesPerQuantorDepth
+              currentQuantorDepth
 
           return unhygienicUnfolder
             `(
