@@ -79,19 +79,18 @@ end
         (  ThoR.Semantics.Term.pred
           (  fun  (  parameter_vector  :
             (  Vector.{0}
-              (  ThoR.Rel
-                (  ThoR.Semantics.Term.type.{0}
-                  ( t :=
-                    (  ThoR.RelType.mk.rel
-                      ( n := (0 + (0 + 1)))
+              -- (  ThoR.Rel
+              --   (  ThoR.Semantics.Term.type.{0}
+                  --( t :=
+--                    (  ThoR.RelType.mk.rel
                       (  ThoR.Semantics.Term.global_rel_var.{0}
                         ( name := "this_φ_B" )
                         ( r :=  ∻  x2_testing.vars.this_φ_B  )
-                      ).eval -- TODO: add/check coe or add eval here
-                    )
-                  )
-                ).eval -- TODO: add/check coe or add eval here
-              )
+                      ) --.eval -- TODO: add/check coe or add eval here
+  --                  )
+                  --)
+              --   ).eval -- TODO: add/check coe or add eval here
+              -- )
             )  (  1  )
           )  =>
           (  ThoR.Semantics.Term.some  (  R  :=  ThoR_TupleSet  )

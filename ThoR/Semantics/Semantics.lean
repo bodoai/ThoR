@@ -612,9 +612,9 @@ def Term.eval
     CoeDep
       _
       t
-      (Rel rel_type)
+      Type
     where
-      coe := t.eval
+      coe := Rel (RelType.mk.rel (t.eval))
 
   instance
     {R : Type} [TupleSet R]
