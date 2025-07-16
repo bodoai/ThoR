@@ -4,66 +4,311 @@ Copyright (c) 2024 RheinMain University of Applied Sciences
 Released under license as described in the file LICENSE.
 Authors: s. file CONTRIBUTORS
 -/
+import ThoR.Relation.Rel
+import ThoR.Shared.Syntax.quant
+
+open ThoR
 
 inductive TyTy : Type 1 where
   | isTy
   | isPred
+    {arity : Nat}
+    {R : Type}
+    [ThoR.TupleSet R]
+    (rel_type : ThoR.RelType R arity)
     (parameter_count : Nat)
     : TyTy
 
 -- construction follows https://lean-lang.org/documentation/examples/debruijn/
-  inductive Ty : (tt : TyTy) → Type u where
-    | expression : Ty .isTy-- Rel rel_type
+  inductive Ty {R : Type} [ThoR.TupleSet R] : (tt : TyTy) → Type u where
+    | expression : {n : ℕ} → (rel_type : ThoR.RelType R n) → Ty .isTy-- Rel rel_type
     | formula : Ty .isTy -- Prop
     | pred :
+      {arity : Nat} →
+      (rel_type : ThoR.RelType R arity) →
       (parameter_count : Nat) →
-      Ty (.isPred parameter_count)
+      Ty (.isPred rel_type parameter_count)
 
   @[reducible]
-  def Ty.eval {tt : TyTy} (ty : Ty tt) : Type :=
+  def Ty.eval {R : Type} [ThoR.TupleSet R] {tt : TyTy} (ty : @Ty R _ tt) : Type :=
     match ty with
-    | .expression => Nat
+    | .expression rel_type => ThoR.Rel rel_type
     | .formula => Prop
-    | .pred n => Vector Nat n → Prop
+    | .pred rel_type n => Vector (ThoR.Rel rel_type) n → Prop
 
 
   inductive Term
-    : (ty : Ty.{u} tt) →
+    {R : Type}
+    [ThoR.TupleSet R]
+    : {tt : TyTy} → (ty : @Ty.{u} R _ tt) →
       Type (u+1)
       where
 
-    | toExpr (n : Nat) : Term .expression
+    | global_rel_var {n : ℕ} {t : RelType R n} (r : Rel t) (name : String): Term (.expression t)
+    | local_rel_var {n : ℕ} {t : RelType R n} (r : Rel t): Term (.expression t)
+
+    | toExpr {n : ℕ} {t : ThoR.RelType R n} (r : ThoR.Rel t) : Term (.expression t)
+
+    /- binary expression operators -/
+    | union
+      {n : ℕ}
+      {t1 t2 : RelType R n}
+      : Term (.expression t1) →
+        Term (.expression t2) →
+        Term (.expression (t1 + t2))
+
+    | intersect
+      {n : ℕ}
+      {t1 t2 : RelType R n}
+      : Term (.expression t1) →
+        Term (.expression t2) →
+        Term (.expression (t1 & t2))
+
+    | difference
+      {n : ℕ}
+      {t1 t2 : RelType R n}
+      : Term (.expression t1) →
+        Term (.expression t2) →
+        Term (.expression (t1 - t2))
+
+    | overwrite
+      {n : ℕ}
+      {t1 t2 : RelType R n}
+      : Term (.expression t1) →
+        Term (.expression t2) →
+        Term (.expression (t1 ++ t2))
+
+    | domain_restriction
+      {n : ℕ}
+      {t1 : RelType R 1}
+      {t2 : RelType R n}
+      : Term (.expression t1) →
+        Term (.expression t2) →
+        Term (.expression (t1 <: t2))
+
+    | range_restriction
+      {n : ℕ}
+      {t1 : RelType R n}
+      {t2 : RelType R 1}
+      : Term (.expression t1) →
+        Term (.expression t2) →
+        Term (.expression (t1 :> t2))
+
+    | dotjoin
+      {n m : ℕ}
+      {t1 : RelType R (n+1)}
+      {t2 : RelType R (m+2)}
+      : Term (.expression t1) →
+        Term (.expression t2) →
+        Term (.expression (t1 ⋈ t2))
+
+    /- unary expression operators -/
+    | transclos
+      {t : RelType R 2}
+      : Term (.expression t) →
+        Term (.expression (^ t))
+
+    | reflexive_closure
+      {t : RelType R 2}
+      : Term (.expression t) →
+        Term (.expression (* t))
+
+    | transposition
+      {t : RelType R 2}
+      : Term (.expression t) →
+        Term (.expression (~ t))
+
+    /- expression if else -/
+    | if_then_else
+      {n : ℕ}
+      {t1 t2 : RelType R n}
+      : Term .formula →
+        Term (.expression t1) →
+        Term (.expression t2) →
+        Term (.expression (RelType.ifThenElse t1 t2))
+
+    /- function call from expression ? -/
+    --| call -- skip ?
+
+    /--bracket definition-/
+    | bracket : Term ty → Term ty
+
+    | pred_def (name : String) : Term ty → Term ty
+
+    /--function definition-/
+    | fun_def (name : String) : Term ty → Term ty
+    -- | marker : Marker → Term ty → Term ty
+    -- | name : String → Term ty → Term ty
+
+    /- algebra expression number -/
+    | number (z : ℤ) : Term .number -- may have to be from N
+
+    /- algebra expression unary operation -/
+    | negation : Term .number → Term .number
+
+    /- algebra expression binary operation -/
+    | add
+      : Term .number →
+      Term .number →
+      Term .number
+
+    | sub
+      : Term .number →
+      Term .number →
+      Term .number
+
+    | mul
+      : Term .number →
+        Term .number →
+        Term .number
+
+    | div
+      : Term .number →
+        Term .number →
+        Term .number
+
+    | rem
+      : Term .number →
+        Term .number →
+        Term .number
+
+    /- algebra expression card operation (rel operation)-/
+    | card
+      {n : ℕ}
+      {t : RelType R n}
+      : Term (.expression t) →
+        Term .number
+
+    /- formula unary rel bool operator-/
+    | no
+      {n : ℕ}
+      {t : RelType R n}
+      : Term (.expression t) →
+        Term .formula
+
+    | one
+      {n : ℕ}
+      {t : RelType R n}
+      : Term (.expression t) →
+        Term .formula
+
+    | lone
+      {n : ℕ}
+      {t : RelType R n}
+      : Term (.expression t) →
+        Term .formula
+
+    | some
+      {n : ℕ}
+      {t : RelType R n}
+      : Term (.expression t) →
+        Term .formula
+
+    /- formula unary logic operator -/
+    | not : Term .formula → Term .formula
+
+    /- formula binary logic operator -/
+    | or
+      : Term .formula →
+        Term .formula →
+        Term .formula
+
+    | and
+      : Term .formula →
+        Term .formula →
+        Term .formula
+
+    | implication
+      : Term .formula →
+        Term .formula →
+        Term .formula
+
+    | equivalent
+      : Term .formula →
+        Term .formula →
+        Term .formula
+
+    /- formula if else-/
+    | f_if_then_else
+      : Term .formula →
+        Term .formula →
+        Term .formula →
+        Term .formula
+
+    /- formula algebraic comparison operator -/
+    | algebraic_leq
+      : Term .number →
+        Term .number →
+        Term .formula
+
+    | algebraic_geq
+      : Term .number →
+        Term .number →
+        Term .formula
+
+    | algebraic_eq
+      : Term .number →
+        Term .number →
+        Term .formula
+
+    | algebraic_lt
+      : Term .number →
+        Term .number →
+        Term .formula
+
+    | algebraic_gt
+      : Term .number →
+        Term .number →
+        Term .formula
+
+    /- formula relation comparison operation -/
+    | in
+      {n : ℕ}
+      {t1 t2 : RelType R n}
+      : (expression1 : Term (.expression t1)) →
+        (expression2 : Term (.expression t2)) →
+        Term .formula
 
     | eq
-      : (expression1 : Term .expression) →
-        (expression2 : Term .expression) →
+      {n : ℕ}
+      {t1 t2 : ThoR.RelType R n}
+      : (expression1 : Term (.expression t1)) →
+        (expression2 : Term (.expression t2)) →
         Term .formula
 
     | pred
+      {arity : Nat}
+      {rel_type : ThoR.RelType R arity}
       {parameter_count : Nat}
       :
       (function :
-        (Vector Nat parameter_count) →
+        (Vector (ThoR.Rel rel_type) parameter_count) →
         Term .formula
       ) →
-      Term (.pred parameter_count)
+      Term (.pred rel_type parameter_count)
 
     | bind
+      {arity : Nat}
+      {rel_type : ThoR.RelType R arity}
       {parameter_count : Nat}
-      : (pred : Term (.pred parameter_count) ) →
+      : (pred : Term (.pred rel_type parameter_count) ) →
         Term .formula
 
     -- | type {n : ℕ} (t : RelType R n) : Term (.type n)
 
 
+variable (I : Type) [ThoR.TupleSet I]
+instance : ThoR.TupleSet I := by sorry
+variable (t : ThoR.RelType I n)
+
 #check Term.pred
-          (λ (parameter_vector : (Vector Nat 2)) => Term.eq
+          (λ (parameter_vector : (Vector (ThoR.Rel t) 2)) => Term.eq
               (expression1 := Term.toExpr (parameter_vector.get 0))
               (expression2 := Term.toExpr (parameter_vector.get 0)) )
 
 #check Term.bind
         (Term.pred
-          (λ (parameter_vector : (Vector Nat 2)) => Term.eq
+          (λ (parameter_vector : (Vector (ThoR.Rel t) 2)) => Term.eq
               (expression1 := Term.toExpr (parameter_vector.get 0))
               (expression2 := Term.toExpr (parameter_vector.get 0)) )
         )
@@ -73,6 +318,7 @@ def quantify_predicate
   {T : Type}
   {parameter_count : Nat}
   (pred : Vector T parameter_count → Prop)
+  (quant_type : Shared.quant)
   : Prop :=
   match parameter_count with
     | 0 =>
@@ -83,41 +329,97 @@ def quantify_predicate
           (Vector.mk (#[x].append (param_list.toArray))
             (by
               simp
-              apply Nat.add_comm
+              apply add_comm
             )
           )
         )
 
       let part :=
+        match quant_type with
+          | .all =>
             (fun (param_list : Vector T n') =>
               ∀ (x : T), function x param_list
             )
 
-      quantify_predicate part
+          | .some =>
+            (fun (param_list : Vector T n') =>
+              ∃ (x : T), function x param_list
+            )
+
+          | .no =>
+            (fun (param_list : Vector T n') =>
+              ∃ (x : T), function x param_list
+            )
+
+          | .lone =>
+            (fun (param_list : Vector T n') =>
+              ∀  (x y : T),
+              function x param_list →
+              function y param_list →
+              (x = y)
+            )
+
+          | .one =>
+            (fun (param_list : Vector T n') =>
+              ( ∃ (x : T), function x param_list ∧
+                ∀  (x y : T),
+                  function x param_list →
+                  function y param_list →
+                  (x = y)
+              )
+            )
+
+      quantify_predicate part quant_type
 
 def Term.eval
+  {R : Type}
+  [ThoR.TupleSet R]
   {tt : TyTy}
-  {ty : Ty tt}
-  (t : Term ty)
+  {ty : @Ty R _ tt}
+  (t : @Term R _ _ ty)
   : ty.eval :=
     match t with
 
+    | .global_rel_var r _ => r
+    | .local_rel_var r => r
+
     | .toExpr n => n
 
-    | @Term.pred parameter_count function =>
-      fun (x : Vector Nat parameter_count ) =>
+    /- binary expression operators -/
+    | .intersect r1 r2 => (r1.eval) & (r2.eval)
+    | .union r1 r2 => HAdd.hAdd (r1.eval) (r2.eval)
+    | .difference r1 r2 => (r1.eval) - (r2.eval)
+    | .overwrite r1 r2 => (r1.eval) ++ (r2.eval)
+    | .domain_restriction r1 r2 => (r1.eval) <: (r2.eval)
+    | .range_restriction r1 r2 => (r1.eval) :> (r2.eval)
+    | .dotjoin r1 r2 => (r1.eval) ⋈ (r2.eval)
+
+    /- unary expression operators -/
+    | .transclos r => ^ (r.eval)
+    | .reflexive_closure  r => * (r.eval)
+    | .transposition r => ~ (r.eval)
+
+    /- expression if else -/
+    | .if_then_else f r1 r2 => HIfThenElse.hIfThenElse (f.eval) (r1.eval) (r2.eval)
+
+    | .bracket t => t.eval
+
+    | .pred_def _ t => t.eval
+
+    | @Term.pred R _ arity rel_type parameter_count function =>
+      fun (x : Vector _ parameter_count ) =>
       (function x).eval
 
-    | @Term.bind parameter_count function =>
+    | @Term.bind R _ arity rel_type parameter_count function =>
       let new_function :=
-        (fun (pv : Vector Nat parameter_count) =>
+        (fun (pv : Vector _ parameter_count) =>
           (function.eval) pv)
 
-      let result := quantify_predicate new_function
+      let result := quantify_predicate new_function Shared.quant.all
 
       result
 
-    | .eq e1 e2 => (e1.eval) = (e2.eval)
+    | .eq e1 e2 => (e1.eval) ≡ (e2.eval)
 
 
 
@@ -125,7 +427,7 @@ def Term.eval
     :=
     (  Term.bind
         (  Term.pred
-          (  fun  (  parameter_vector  : Vector.{0} Nat 1)
+          (  fun  (  parameter_vector  : Vector.{0} (ThoR.Rel t) 1)
             =>
             (  Term.eq
               (  Term.toExpr  (parameter_vector.get 0)  )
@@ -140,7 +442,7 @@ def Term.eval
     :=
     (  Term.bind
         (  Term.pred
-          (  fun  (  parameter_vector  : Vector.{0} Nat 2)
+          (  fun  (  parameter_vector  : Vector.{0} (ThoR.Rel t) 2)
             =>
             (  Term.eq
               (  Term.toExpr  (parameter_vector.get 0)  )
@@ -150,9 +452,12 @@ def Term.eval
         )
       )
 
-theorem theorem1 : p1.eval = p2.eval := by
+#check p1 I t
+
+theorem theorem1 : (p1 I t).eval = (p2 I t).eval := by
   unfold p1
   unfold p2
+  unfold Term.eval
   simp only [Term.eval]
   simp only [quantify_predicate]
 
