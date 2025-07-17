@@ -21,6 +21,7 @@ inductive TyTy : Type 1 where
 
 -- construction follows https://lean-lang.org/documentation/examples/debruijn/
   inductive Ty {R : Type} [ThoR.TupleSet R] : (tt : TyTy) → Type u where
+    | number : Ty .isTy-- ℤ
     | expression : {n : ℕ} → (rel_type : ThoR.RelType R n) → Ty .isTy-- Rel rel_type
     | formula : Ty .isTy -- Prop
     | pred :
@@ -32,6 +33,7 @@ inductive TyTy : Type 1 where
   @[reducible]
   def Ty.eval {R : Type} [ThoR.TupleSet R] {tt : TyTy} (ty : @Ty R _ tt) : Type :=
     match ty with
+    | .number => ℤ
     | .expression rel_type => ThoR.Rel rel_type
     | .formula => Prop
     | .pred rel_type n => Vector (ThoR.Rel rel_type) n → Prop
@@ -141,43 +143,43 @@ inductive TyTy : Type 1 where
     -- | name : String → Term ty → Term ty
 
     /- algebra expression number -/
-    | number (z : ℤ) : Term .number -- may have to be from N
+    --| number (z : ℤ) : Term .number -- may have to be from N
 
     /- algebra expression unary operation -/
-    | negation : Term .number → Term .number
+    --| negation : Term .number → Term .number
 
     /- algebra expression binary operation -/
-    | add
-      : Term .number →
-      Term .number →
-      Term .number
+    -- | add
+    --   : Term .number →
+    --   Term .number →
+    --   Term .number
 
-    | sub
-      : Term .number →
-      Term .number →
-      Term .number
+    -- | sub
+    --   : Term .number →
+    --   Term .number →
+    --   Term .number
 
-    | mul
-      : Term .number →
-        Term .number →
-        Term .number
+    -- | mul
+    --   : Term .number →
+    --     Term .number →
+    --     Term .number
 
-    | div
-      : Term .number →
-        Term .number →
-        Term .number
+    -- | div
+    --   : Term .number →
+    --     Term .number →
+    --     Term .number
 
-    | rem
-      : Term .number →
-        Term .number →
-        Term .number
+    -- | rem
+    --   : Term .number →
+    --     Term .number →
+    --     Term .number
 
-    /- algebra expression card operation (rel operation)-/
-    | card
-      {n : ℕ}
-      {t : RelType R n}
-      : Term (.expression t) →
-        Term .number
+    -- /- algebra expression card operation (rel operation)-/
+    -- | card
+    --   {n : ℕ}
+    --   {t : RelType R n}
+    --   : Term (.expression t) →
+    --     Term .number
 
     /- formula unary rel bool operator-/
     | no
