@@ -1000,13 +1000,15 @@ namespace Shared
                 currentQuantorDepth
 
             return unhygienicUnfolder
-              `(
+              `( $(eTerm)
+                /-
                 (
                   $(mkIdent ``ThoR.Semantics.Term.type).{0}
                   (
                     ($(mkIdent ``RelType.mk.rel) $(eTerm).eval)
                   )
                 ).eval
+                -/
               )
 
     /--
