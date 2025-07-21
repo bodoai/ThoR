@@ -23,6 +23,7 @@ namespace ThoR.Semantics
     | number : Ty .isTy-- ℤ
     | expression : {n : ℕ} → (rel_type : ThoR.RelType R n) → Ty .isTy-- Rel rel_type
     | formula : Ty .isTy -- Prop
+    | function : {n : ℕ} → (t : RelType R n) → Ty .isTy → Ty .isTy
     | pred :
       {arity : Nat} →
       (rel_type : ThoR.RelType R arity) →
@@ -35,6 +36,7 @@ namespace ThoR.Semantics
     | .number => ℤ
     | .expression rel_type => ThoR.Rel rel_type
     | .formula => Prop
+    | .function dom_rel_type ran => Rel dom_rel_type → ran.eval
     | .pred rel_type n => Vector (ThoR.Rel rel_type) n → Prop
 
   inductive AlgebraTerm
@@ -304,8 +306,12 @@ namespace ThoR.Semantics
         {arity : Nat}
         {rel_type : ThoR.RelType R arity}
         {parameter_count : Nat}
+        (quantor_type : Shared.quant)
+        (disj : Bool)
+        (parameter_names : Vector String parameter_count)
         : (pred : FormulaTerm (.pred rel_type parameter_count) ) →
           FormulaTerm .formula
+
   end
 
   inductive Term
@@ -326,6 +332,18 @@ namespace ThoR.Semantics
 
       /--function definition-/
       | fun_def (name : String) : Term ty → Term ty
+
+      /- TODO: CHeck if lam and app are correct -/
+      /- function abstraction -/
+      | lam (t : RelType R n)
+        : (Rel t → Term ran) →
+          Term (.function t ran)
+
+      /- function application -/
+      | app
+        : Term (.function t ran) →
+          Term (.expression t) →
+          Term ran
 
 def Vector0 {T : Type} : Vector T 0:= #[].toVector
 
@@ -461,12 +479,13 @@ mutual
         fun (x : Vector _ parameter_count ) =>
         (function x).eval
 
-        | @FormulaTerm.bind R _ arity rel_type parameter_count function =>
-          let new_function :=
-            (fun (pv : Vector _ parameter_count) =>
-              (function.eval) pv)
+        | @FormulaTerm.bind
+            R _ _ _ parameter_count quantor_type _ _ function =>
+            let new_function :=
+              (fun (pv : Vector _ parameter_count) =>
+                (function.eval) pv)
 
-          let result := quantify_predicate new_function Shared.quant.all
+            let result := quantify_predicate new_function quantor_type
 
           result
 
@@ -512,5 +531,87 @@ mutual
     | .pred_def _ t => t.eval
 
     | .fun_def _ t => t.eval
+
+    /- TODO: Check if lam and app correct -/
+    | @Term.lam R _ _ _ t f => λ (x : Rel t) => (f x).eval
+    | .app f r => f.eval r.eval
+
+  /- Coersions -/
+  /- general eval -/
+  instance
+    {R : Type} [TupleSet R]
+    {tyty : TyTy}
+    {ty : @Ty R _ tyty}
+    (t : @Term R _ tyty ty)
+    :
+    CoeDep _ t ty.eval where
+      coe := t.eval
+
+  /- Expression to Term -/
+  instance
+    {R : Type} [TupleSet R]
+    (tyty : TyTy)
+    (ty : Ty tyty (R := R))
+    (t : @ExpressionTerm R _ tyty ty)
+    :
+    CoeDep
+      _
+      t
+      (@Term R _ tyty ty)
+    where
+      coe := Term.expr t
+
+  /- Formular to Term -/
+  instance
+    {R : Type} [TupleSet R]
+    (tyty : TyTy)
+    (ty : Ty tyty (R := R))
+    (t : @FormulaTerm R _ tyty ty)
+    :
+    CoeDep
+      _
+      t
+      (@Term R _ tyty ty)
+    where
+      coe := Term.formula t
+
+  /- Term to Type -/
+  instance
+    {R : Type} [TupleSet R]
+    {n : Nat}
+    {rel_type : RelType R n}
+    (t : @Term R _ (TyTy.isTy) (Ty.expression rel_type))
+    :
+    CoeDep
+      _
+      t
+      Type
+    where
+      coe := Rel (RelType.mk.rel (t.eval))
+
+  /- Expression to Type -/
+  instance
+    {R : Type} [TupleSet R]
+    {n : Nat}
+    {rel_type : RelType R n}
+    (t : @ExpressionTerm R _ (TyTy.isTy) (Ty.expression rel_type))
+    :
+    CoeDep
+      _
+      t
+      Type
+    where
+      coe := Term.expr t
+
+  instance
+    {R : Type} [TupleSet R]
+    (t : @Term R _ (TyTy.isTy) (Ty.formula))
+    :
+    CoeDep
+      _
+      t
+      Prop
+    where
+      coe := t.eval
 
 end ThoR.Semantics

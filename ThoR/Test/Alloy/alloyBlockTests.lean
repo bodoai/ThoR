@@ -71,19 +71,19 @@ end
     :=
     (  ThoR.Semantics.Term.pred_def  "p1"
       (  R  :=  ThoR_TupleSet  )
-      (  ThoR.Semantics.Term.bind
+      (  ThoR.Semantics.FormulaTerm.bind
         (  R  :=  ThoR_TupleSet  )
         Shared.quant.all
         false
         #["t"].toVector
-        (  ThoR.Semantics.Term.pred
+        (  ThoR.Semantics.FormulaTerm.pred
           (  fun  (  parameter_vector  :
             (  Vector.{0}
               -- (  ThoR.Rel
               --   (  ThoR.Semantics.Term.type.{0}
                   --( t :=
 --                    (  ThoR.RelType.mk.rel
-                      (  ThoR.Semantics.Term.global_rel_var.{0}
+                      (  ThoR.Semantics.ExpressionTerm.global_rel_var.{0}
                         ( name := "this_φ_B" )
                         ( r :=  ∻  x2_testing.vars.this_φ_B  )
                       ) --.eval -- TODO: add/check coe or add eval here
@@ -93,15 +93,15 @@ end
               -- )
             )  (  1  )
           )  =>
-          (  ThoR.Semantics.Term.some  (  R  :=  ThoR_TupleSet  )
-            (  ThoR.Semantics.Term.union  (  R  :=  ThoR_TupleSet  )
-              (  ThoR.Semantics.Term.local_rel_var  (parameter_vector.get 0)  )
-              (  ThoR.Semantics.Term.dotjoin  (  R  :=  ThoR_TupleSet  )
-                (  ThoR.Semantics.Term.global_rel_var
+          (  ThoR.Semantics.FormulaTerm.some  (  R  :=  ThoR_TupleSet  )
+            (  ThoR.Semantics.ExpressionTerm.union  (  R  :=  ThoR_TupleSet  )
+              (  ThoR.Semantics.ExpressionTerm.local_rel_var  (parameter_vector.get 0)  )
+              (  ThoR.Semantics.ExpressionTerm.dotjoin  (  R  :=  ThoR_TupleSet  )
+                (  ThoR.Semantics.ExpressionTerm.global_rel_var
                   (  ∻  x2_testing.vars.this_φ_B  )
                   "this_φ_B"
                 )
-                (  ThoR.Semantics.Term.global_rel_var
+                (  ThoR.Semantics.ExpressionTerm.global_rel_var
                   (  ∻  x2_testing.vars.this_φ_A_ξ_r  )
                   "this_φ_A_ξ_r"
                 )
