@@ -39,52 +39,52 @@ namespace ThoR.Semantics
     | .function dom_rel_type ran => Rel dom_rel_type → ran.eval
     | .pred rel_type n => Vector (ThoR.Rel rel_type) n → Prop
 
-  inductive AlgebraTerm
-    {R : Type}
-    [ThoR.TupleSet R]
-    : {tt : TyTy} → (ty : @Ty.{u} R _ tt) →
-      Type (u+1)
-      where
-      /- algebra expression number -/
-      | number (z : ℤ) : AlgebraTerm .number -- may have to be from N
-
-      /- algebra expression unary operation -/
-      | negation : AlgebraTerm .number → AlgebraTerm .number
-
-      /- algebra expression binary operation -/
-      | add
-        : AlgebraTerm .number →
-        AlgebraTerm .number →
-        AlgebraTerm .number
-
-      | sub
-        : AlgebraTerm .number →
-        AlgebraTerm .number →
-        AlgebraTerm .number
-
-      | mul
-        : AlgebraTerm .number →
-          AlgebraTerm .number →
-          AlgebraTerm .number
-
-      | div
-        : AlgebraTerm .number →
-          AlgebraTerm .number →
-          AlgebraTerm .number
-
-      | rem
-        : AlgebraTerm .number →
-          AlgebraTerm .number →
-          AlgebraTerm .number
-
-      /- algebra expression card operation (rel operation)-/
-      | card
-        {n : ℕ}
-        {t : RelType R n}
-        : AlgebraTerm (.expression t) →
-          AlgebraTerm .number
-
   mutual
+    inductive AlgebraTerm
+      {R : Type}
+      [ThoR.TupleSet R]
+      : {tt : TyTy} → (ty : @Ty.{u} R _ tt) →
+        Type (u+1)
+        where
+        /- algebra expression number -/
+        | number (z : ℤ) : AlgebraTerm .number -- may have to be from N
+
+        /- algebra expression unary operation -/
+        | negation : AlgebraTerm .number → AlgebraTerm .number
+
+        /- algebra expression binary operation -/
+        | add
+          : AlgebraTerm .number →
+          AlgebraTerm .number →
+          AlgebraTerm .number
+
+        | sub
+          : AlgebraTerm .number →
+          AlgebraTerm .number →
+          AlgebraTerm .number
+
+        | mul
+          : AlgebraTerm .number →
+            AlgebraTerm .number →
+            AlgebraTerm .number
+
+        | div
+          : AlgebraTerm .number →
+            AlgebraTerm .number →
+            AlgebraTerm .number
+
+        | rem
+          : AlgebraTerm .number →
+            AlgebraTerm .number →
+            AlgebraTerm .number
+
+        /- algebra expression card operation (rel operation)-/
+        | card
+          {n : ℕ}
+          {t : RelType R n}
+          : ExpressionTerm (.expression t) →
+            AlgebraTerm .number
+
     inductive ExpressionTerm
       {R : Type}
       [ThoR.TupleSet R]
