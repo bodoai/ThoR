@@ -859,7 +859,15 @@ namespace Shared
               )
             )
 
-          return bind_applied
+          let termConverter :=
+            unhygienicUnfolder `(
+              (
+                $(mkIdent ``ThoR.Semantics.Term.formula)
+                  $(bind_applied)
+              )
+            )
+
+          return termConverter
 
           /-
           -- singular parameter is var constructor

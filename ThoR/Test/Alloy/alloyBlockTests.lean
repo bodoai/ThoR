@@ -71,43 +71,48 @@ end
     :=
     (  ThoR.Semantics.Term.pred_def  "p1"
       (  R  :=  ThoR_TupleSet  )
-      (  ThoR.Semantics.FormulaTerm.bind
-        (  R  :=  ThoR_TupleSet  )
-        Shared.quant.all
-        false
-        #["t"].toVector
-        (  ThoR.Semantics.FormulaTerm.pred
-          (  fun  (  parameter_vector  :
-            (  Vector.{0}
-              -- (  ThoR.Rel
-              --   (  ThoR.Semantics.Term.type.{0}
-                  --( t :=
---                    (  ThoR.RelType.mk.rel
-                      (  ThoR.Semantics.ExpressionTerm.global_rel_var.{0}
-                        ( name := "this_φ_B" )
-                        ( r :=  ∻  x2_testing.vars.this_φ_B  )
-                      ) --.eval -- TODO: add/check coe or add eval here
-  --                  )
-                  --)
-              --   ).eval -- TODO: add/check coe or add eval here
-              -- )
-            )  (  1  )
-          )  =>
-          (  ThoR.Semantics.FormulaTerm.some  (  R  :=  ThoR_TupleSet  )
-            (  ThoR.Semantics.ExpressionTerm.union  (  R  :=  ThoR_TupleSet  )
-              (  ThoR.Semantics.ExpressionTerm.local_rel_var  (parameter_vector.get 0)  )
-              (  ThoR.Semantics.ExpressionTerm.dotjoin  (  R  :=  ThoR_TupleSet  )
-                (  ThoR.Semantics.ExpressionTerm.global_rel_var
-                  (  ∻  x2_testing.vars.this_φ_B  )
-                  "this_φ_B"
-                )
-                (  ThoR.Semantics.ExpressionTerm.global_rel_var
-                  (  ∻  x2_testing.vars.this_φ_A_ξ_r  )
-                  "this_φ_A_ξ_r"
+      (
+        ThoR.Semantics.Term.formula
+        (
+          (  ThoR.Semantics.FormulaTerm.bind
+            (  R  :=  ThoR_TupleSet  )
+            Shared.quant.all
+            false
+            #["t"].toVector
+            (  ThoR.Semantics.FormulaTerm.pred
+              (  fun  (  parameter_vector  :
+                (  Vector.{0}
+                  -- (  ThoR.Rel
+                  --   (  ThoR.Semantics.Term.type.{0}
+                      --( t :=
+    --                    (  ThoR.RelType.mk.rel
+                          (  ThoR.Semantics.ExpressionTerm.global_rel_var.{0}
+                            ( name := "this_φ_B" )
+                            ( r :=  ∻  x2_testing.vars.this_φ_B  )
+                          ) --.eval -- TODO: add/check coe or add eval here
+      --                  )
+                      --)
+                  --   ).eval -- TODO: add/check coe or add eval here
+                  -- )
+                )  (  1  )
+              )  =>
+              (  ThoR.Semantics.FormulaTerm.some  (  R  :=  ThoR_TupleSet  )
+                (  ThoR.Semantics.ExpressionTerm.union  (  R  :=  ThoR_TupleSet  )
+                  (  ThoR.Semantics.ExpressionTerm.local_rel_var  (parameter_vector.get 0)  )
+                  (  ThoR.Semantics.ExpressionTerm.dotjoin  (  R  :=  ThoR_TupleSet  )
+                    (  ThoR.Semantics.ExpressionTerm.global_rel_var
+                      (  ∻  x2_testing.vars.this_φ_B  )
+                      "this_φ_B"
+                    )
+                    (  ThoR.Semantics.ExpressionTerm.global_rel_var
+                      (  ∻  x2_testing.vars.this_φ_A_ξ_r  )
+                      "this_φ_A_ξ_r"
+                    )
+                  )
                 )
               )
+              )
             )
-          )
           )
         )
       )

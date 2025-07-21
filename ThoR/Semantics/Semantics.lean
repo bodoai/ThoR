@@ -575,6 +575,20 @@ mutual
     where
       coe := Term.formula t
 
+  /- Formular to Term -/
+  instance
+    {R : Type} [TupleSet R]
+    (tyty : TyTy)
+    (ty : Ty tyty (R := R))
+    (t : @FormulaTerm R _ tyty ty)
+    :
+    CoeDep
+      _
+      t
+      (@Term R _ tyty ty)
+    where
+      coe := Term.formula t
+
   /- Term to Type -/
   instance
     {R : Type} [TupleSet R]
