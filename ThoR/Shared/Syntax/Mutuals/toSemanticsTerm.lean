@@ -96,7 +96,7 @@ namespace Shared
             if !(pureNames.contains s) then
               return unhygienicUnfolder `(
                 (
-                  $(mkIdent ``ThoR.Semantics.Term.global_rel_var).{0}
+                  $(mkIdent ``ThoR.Semantics.ExpressionTerm.global_rel_var).{0}
                   (∻ $(mkIdent s!"{blockName}.vars.{s}".toName))
                   $(Syntax.mkStrLit s)
                 )
@@ -111,7 +111,7 @@ namespace Shared
             if argNames.contains s then
               return unhygienicUnfolder `(
                 (
-                  $(mkIdent ``ThoR.Semantics.Term.local_rel_var).{0}
+                  $(mkIdent ``ThoR.Semantics.ExpressionTerm.local_rel_var).{0}
 
                   ($(mkIdent s.toName))
                 )
@@ -131,7 +131,7 @@ namespace Shared
 
             return unhygienicUnfolder `(
                 (
-                  $(mkIdent ``ThoR.Semantics.Term.local_rel_var).{0}
+                  $(mkIdent ``ThoR.Semantics.ExpressionTerm.local_rel_var).{0}
 
                   ($(mkIdent callIdent) $(indexNatLit))
                 )
@@ -141,7 +141,7 @@ namespace Shared
             let snt := sn.representedNamespace.getId.toString
             return unhygienicUnfolder `(
               (
-                $(mkIdent ``ThoR.Semantics.Term.global_rel_var).{0}
+                $(mkIdent ``ThoR.Semantics.ExpressionTerm.global_rel_var).{0}
                 (∻ $(mkIdent s!"{blockName}.vars.{snt}".toName))
                 $(Syntax.mkStrLit snt)
               )
@@ -189,17 +189,17 @@ namespace Shared
               match op with
                 | unRelOp.transposition =>
                   unhygienicUnfolder `(
-                    $(mkIdent ``ThoR.Semantics.Term.transposition)
+                    $(mkIdent ``ThoR.Semantics.ExpressionTerm.transposition)
                   )
 
                 | unRelOp.transitive_closure =>
                   unhygienicUnfolder `(
-                    $(mkIdent ``ThoR.Semantics.Term.transclos)
+                    $(mkIdent ``ThoR.Semantics.ExpressionTerm.transclos)
                   )
 
                 | unRelOp.reflexive_closure =>
                   unhygienicUnfolder `(
-                    $(mkIdent ``ThoR.Semantics.Term.reflexive_closure)
+                    $(mkIdent ``ThoR.Semantics.ExpressionTerm.reflexive_closure)
                   )
 
             let eTerm ←
@@ -237,28 +237,28 @@ namespace Shared
               match op with
                 | binRelOp.intersection =>
                   unhygienicUnfolder `(
-                    $(mkIdent ``ThoR.Semantics.Term.intersect)
+                    $(mkIdent ``ThoR.Semantics.ExpressionTerm.intersect)
                   )
 
                 | binRelOp.union =>
                   unhygienicUnfolder `(
-                        $(mkIdent ``ThoR.Semantics.Term.union)
+                        $(mkIdent ``ThoR.Semantics.ExpressionTerm.union)
                       )
 
                 | binRelOp.difference => unhygienicUnfolder `(
-                    $(mkIdent ``ThoR.Semantics.Term.difference)
+                    $(mkIdent ``ThoR.Semantics.ExpressionTerm.difference)
                   )
 
                 | binRelOp.overwrite => unhygienicUnfolder `(
-                    $(mkIdent ``ThoR.Semantics.Term.overwrite)
+                    $(mkIdent ``ThoR.Semantics.ExpressionTerm.overwrite)
                   )
 
                 | binRelOp.domain_restriction => unhygienicUnfolder `(
-                    $(mkIdent ``ThoR.Semantics.Term.domain_restriction)
+                    $(mkIdent ``ThoR.Semantics.ExpressionTerm.domain_restriction)
                   )
 
                 | binRelOp.range_restriction => unhygienicUnfolder `(
-                    $(mkIdent ``ThoR.Semantics.Term.range_restriction)
+                    $(mkIdent ``ThoR.Semantics.ExpressionTerm.range_restriction)
                   )
 
             return unhygienicUnfolder `(
@@ -287,7 +287,7 @@ namespace Shared
 
             return unhygienicUnfolder `(
                 (
-                  $(mkIdent ``ThoR.Semantics.Term.dotjoin)
+                  $(mkIdent ``ThoR.Semantics.ExpressionTerm.dotjoin)
                   ($(mkIdent `R) := $(baseType.ident))
                   $(e1Term)
                   $(e2Term)
@@ -319,7 +319,7 @@ namespace Shared
             return unhygienicUnfolder
               `(
                 (
-                  $(mkIdent ``ThoR.Semantics.Term.if_then_else)
+                  $(mkIdent ``ThoR.Semantics.ExpressionTerm.if_then_else)
                   ($(mkIdent `R) := $(baseType.ident))
                   $(conditionTerm)
                   $(thenBodyTerm)
@@ -527,22 +527,22 @@ namespace Shared
             match op with
               | unRelBoolOp.no =>
                  unhygienicUnfolder `(
-                    $(mkIdent ``ThoR.Semantics.Term.no)
+                    $(mkIdent ``ThoR.Semantics.FormulaTerm.no)
                   )
 
               | unRelBoolOp.one =>
                 unhygienicUnfolder `(
-                    $(mkIdent ``ThoR.Semantics.Term.one)
+                    $(mkIdent ``ThoR.Semantics.FormulaTerm.one)
                   )
 
               | unRelBoolOp.lone =>
                 unhygienicUnfolder `(
-                    $(mkIdent ``ThoR.Semantics.Term.lone)
+                    $(mkIdent ``ThoR.Semantics.FormulaTerm.lone)
                   )
 
               | unRelBoolOp.some =>
                 unhygienicUnfolder `(
-                    $(mkIdent ``ThoR.Semantics.Term.some)
+                    $(mkIdent ``ThoR.Semantics.FormulaTerm.some)
                   )
 
           return unhygienicUnfolder
@@ -571,7 +571,7 @@ namespace Shared
             match op with
               | unLogOp.not =>
                 unhygienicUnfolder `(
-                  $(mkIdent ``ThoR.Semantics.Term.not)
+                  $(mkIdent ``ThoR.Semantics.FormulaTerm.not)
                 )
 
           return unhygienicUnfolder `(term |
@@ -601,22 +601,22 @@ namespace Shared
             match op with
               | binLogOp.and =>
                 unhygienicUnfolder `(
-                  $(mkIdent ``ThoR.Semantics.Term.and)
+                  $(mkIdent ``ThoR.Semantics.FormulaTerm.and)
                 )
 
               | binLogOp.or =>
                 unhygienicUnfolder `(
-                  $(mkIdent ``ThoR.Semantics.Term.or)
+                  $(mkIdent ``ThoR.Semantics.FormulaTerm.or)
                 )
 
               | binLogOp.implication =>
                 unhygienicUnfolder `(
-                  $(mkIdent ``ThoR.Semantics.Term.implication)
+                  $(mkIdent ``ThoR.Semantics.FormulaTerm.implication)
                 )
 
               | binLogOp.equivalent =>
                 unhygienicUnfolder `(
-                  $(mkIdent ``ThoR.Semantics.Term.equivalent)
+                  $(mkIdent ``ThoR.Semantics.FormulaTerm.equivalent)
                 )
 
           return unhygienicUnfolder
@@ -655,7 +655,7 @@ namespace Shared
           return unhygienicUnfolder
             `(
               (
-                $(mkIdent ``ThoR.Semantics.Term.f_if_then_else)
+                $(mkIdent ``ThoR.Semantics.FormulaTerm.f_if_then_else)
                 ($(mkIdent `R) := $(baseType.ident))
                 $(f1Term)
                 $(f2Term)
@@ -668,27 +668,27 @@ namespace Shared
             match op with
               | algCompareOp.leq =>
                 unhygienicUnfolder `(
-                  $(mkIdent ``ThoR.Semantics.Term.algebraic_leq)
+                  $(mkIdent ``ThoR.Semantics.FormulaTerm.algebraic_leq)
                 )
 
               | algCompareOp.geq =>
                 unhygienicUnfolder `(
-                  $(mkIdent ``ThoR.Semantics.Term.algebraic_geq)
+                  $(mkIdent ``ThoR.Semantics.FormulaTerm.algebraic_geq)
                 )
 
               | algCompareOp.lt =>
                 unhygienicUnfolder `(
-                  $(mkIdent ``ThoR.Semantics.Term.algebraic_lt)
+                  $(mkIdent ``ThoR.Semantics.FormulaTerm.algebraic_lt)
                 )
 
               | algCompareOp.gt =>
                 unhygienicUnfolder `(
-                  $(mkIdent ``ThoR.Semantics.Term.algebraic_gt)
+                  $(mkIdent ``ThoR.Semantics.FormulaTerm.algebraic_gt)
                 )
 
               | algCompareOp.eq =>
                 unhygienicUnfolder `(
-                  $(mkIdent ``ThoR.Semantics.Term.algebraic_eq)
+                  $(mkIdent ``ThoR.Semantics.FormulaTerm.algebraic_eq)
                 )
 
           return unhygienicUnfolder
@@ -713,15 +713,15 @@ namespace Shared
             match op with
               | relCompareOp.in =>
                 unhygienicUnfolder `(
-                  $(mkIdent ``ThoR.Semantics.Term.in)
+                  $(mkIdent ``ThoR.Semantics.FormulaTerm.in)
                 )
               | relCompareOp.eq =>
                 unhygienicUnfolder `(
-                  $(mkIdent ``ThoR.Semantics.Term.eq)
+                  $(mkIdent ``ThoR.Semantics.FormulaTerm.eq)
                 )
               | relCompareOp.neq =>
                 unhygienicUnfolder `(
-                  $(mkIdent ``ThoR.Semantics.Term.neq)
+                  $(mkIdent ``ThoR.Semantics.FormulaTerm.neq)
                 )
 
           let e1Term ← e1.toSemanticsTerm
@@ -798,18 +798,10 @@ namespace Shared
                   and to combine different formula terms
                   (of type ThoR.Semantics.Term)
                   -/
-                  $(mkIdent ``ThoR.Semantics.Term.and)
+                  $(mkIdent ``ThoR.Semantics.FormulaTerm.and)
                   ($(fTerm))
                 )
               )
-
-          /-
-          completefTerm :=
-            unhygienicUnfolder `((
-              $(mkIdent ``Formula.prop)
-              ($(completefTerm))
-              ))
-          -/
 
           let typeTerm ←
             te.toSemanticsTerm
@@ -824,11 +816,11 @@ namespace Shared
 
           let pred_applied :=
             unhygienicUnfolder `(
-              ($(mkIdent ``ThoR.Semantics.Term.pred)
+              ($(mkIdent ``ThoR.Semantics.FormulaTerm.pred)
                 (fun
                   ($parameter_vector_ident :
                     Vector
-                      ($(mkIdent ``ThoR.Rel) $typeTerm)
+                      ($typeTerm)
                       ($(Syntax.mkNatLit names.length))
                   )
                   =>
@@ -859,7 +851,7 @@ namespace Shared
           let bind_applied :=
             unhygienicUnfolder `(
               (
-                $(mkIdent ``ThoR.Semantics.Term.bind)
+                $(mkIdent ``ThoR.Semantics.FormulaTerm.bind)
                   $(q.toTerm)
                   $(disjTerm)
                   $(namesVectorTerm)
@@ -961,13 +953,15 @@ namespace Shared
               variableNames callableVariables callablePredicates pureNames
 
             return unhygienicUnfolder
-              `(
+              `( $(aeTerm)
+                /-
                 (
                   $(mkIdent ``ThoR.Semantics.Term.type).{0}
                   (
                     $(aeTerm)
                   )
                 )
+                -/
               )
 
           | Shared.typeExpr.multExpr m e =>
@@ -979,7 +973,8 @@ namespace Shared
                 currentQuantorDepth
 
             return unhygienicUnfolder
-              `(
+              `( $(m.toTerm) $(eTerm)
+                /-
                 (
                   $(mkIdent ``ThoR.Semantics.Term.type).{0}
                   (
@@ -989,6 +984,7 @@ namespace Shared
                     )
                   )
                 )
+                -/
               )
 
           | Shared.typeExpr.relExpr e =>
@@ -1030,7 +1026,7 @@ namespace Shared
           return unhygienicUnfolder
             `(
               (
-                $(mkIdent ``ThoR.Semantics.Term.number)
+                $(mkIdent ``ThoR.Semantics.AlgebraTerm.number)
                 $(Lean.Syntax.mkNumLit s!"{n.natAbs}"):num
               )
             )
@@ -1046,7 +1042,7 @@ namespace Shared
           return unhygienicUnfolder
             `(
               (
-                $(mkIdent ``ThoR.Semantics.Term.card)
+                $(mkIdent ``ThoR.Semantics.AlgebraTerm.card)
                 ($(mkIdent `R) := $(baseType.ident))
                 $(eTerm)
               )
@@ -1058,7 +1054,7 @@ namespace Shared
             match op with
               | unAlgOp.negation =>
                 unhygienicUnfolder `(
-                  $(mkIdent ``ThoR.Semantics.Term.negation)
+                  $(mkIdent ``ThoR.Semantics.AlgebraTerm.negation)
                 )
 
           let aeTerm ←
@@ -1083,23 +1079,23 @@ namespace Shared
             match op with
               | binAlgOp.add =>
                 unhygienicUnfolder `(
-                  $(mkIdent ``ThoR.Semantics.Term.add)
+                  $(mkIdent ``ThoR.Semantics.AlgebraTerm.add)
                 )
               | binAlgOp.sub =>
                 unhygienicUnfolder `(
-                  $(mkIdent ``ThoR.Semantics.Term.sub)
+                  $(mkIdent ``ThoR.Semantics.AlgebraTerm.sub)
                 )
               | binAlgOp.div =>
                 unhygienicUnfolder `(
-                  $(mkIdent ``ThoR.Semantics.Term.div)
+                  $(mkIdent ``ThoR.Semantics.AlgebraTerm.div)
                 )
               | binAlgOp.mult =>
                 unhygienicUnfolder `(
-                  $(mkIdent ``ThoR.Semantics.Term.mul)
+                  $(mkIdent ``ThoR.Semantics.AlgebraTerm.mul)
                 )
               | binAlgOp.rem =>
                 unhygienicUnfolder `(
-                  $(mkIdent ``ThoR.Semantics.Term.rem)
+                  $(mkIdent ``ThoR.Semantics.AlgebraTerm.rem)
                 )
 
           let ae1Term ←

@@ -1,10 +1,68 @@
 import ThoR.Semantics.Semantics
 import ThoR.Relation.ElabCallMacro
 
-open ThoR ThoR.Semantics
+open ThoR
 
+variable (I : Type) [ThoR.TupleSet I]
+instance : ThoR.TupleSet I := by sorry
+variable (t : ThoR.RelType I n)
+
+#check FormulaTerm.pred
+          (λ (parameter_vector : (Vector (ThoR.Rel t) 2)) => FormulaTerm.eq
+              (expression1 := ExpressionTerm.toExpr (parameter_vector.get 0))
+              (expression2 := ExpressionTerm.toExpr (parameter_vector.get 0)) )
+
+#check FormulaTerm.bind
+        (FormulaTerm.pred
+          (λ (parameter_vector : (Vector (ThoR.Rel t) 2)) => FormulaTerm.eq
+              (expression1 := ExpressionTerm.toExpr (parameter_vector.get 0))
+              (expression2 := ExpressionTerm.toExpr (parameter_vector.get 0)) )
+        )
+
+def  p1
+    :=
+    (  FormulaTerm.bind
+        (  FormulaTerm.pred
+          (  fun  (  parameter_vector  : Vector.{0} (ThoR.Rel t) 1)
+            =>
+            (  FormulaTerm.eq
+              (  ExpressionTerm.toExpr  (parameter_vector.get 0)  )
+              (  ExpressionTerm.toExpr  (parameter_vector.get 0)  )
+            )
+          )
+        )
+      )
+
+
+  def  p2
+    :=
+    (  FormulaTerm.bind
+        (  FormulaTerm.pred
+          (  fun  (  parameter_vector  : Vector.{0} (ThoR.Rel t) 2)
+            =>
+            (  FormulaTerm.eq
+              (  ExpressionTerm.toExpr  (parameter_vector.get 0)  )
+              (  ExpressionTerm.toExpr  (parameter_vector.get 1)  )
+            )
+          )
+        )
+      )
+
+#check p1 I t
+
+theorem theorem1 : (p1 I t).eval = (p2 I t).eval := by
+  unfold p1
+  unfold p2
+  unfold FormulaTerm.eval
+  unfold FormulaTerm.eval
+  simp only [quantify_predicate, Vector.get]
+  simp
+  apply Iff.intro
+
+  repeat sorry
+
+/-
 namespace  predtest
-
   /-
   sig a {}
   sig b {}
@@ -84,3 +142,4 @@ namespace  predtest.functions
     [  ThoR.TupleSet  ThoR_TupleSet  ]
     [  predtest.vars  ThoR_TupleSet  ]
     :=  (  ∻  predtest.functions.f1  )
+-/
