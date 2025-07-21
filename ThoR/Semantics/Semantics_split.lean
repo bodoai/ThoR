@@ -7,6 +7,8 @@ Authors: s. file CONTRIBUTORS
 import ThoR.Relation.Rel
 import ThoR.Shared.Syntax.quant
 
+import ThoR.Basic
+
 open ThoR
 
 inductive TyTy : Type 1 where
@@ -567,10 +569,12 @@ theorem theorem1 : (p1 I t).eval = (p2 I t).eval := by
   unfold p1
   unfold p2
   unfold FormulaTerm.eval
+  unfold FormulaTerm.eval
+  simp only [quantify_predicate, Vector.get]
   simp
-  simp only [quantify_predicate]
+  apply Iff.intro
 
-  sorry
+  repeat sorry
 
 
   -- def junctionOfQuants :=
