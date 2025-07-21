@@ -15,7 +15,7 @@ open Lean PrettyPrinter Delaborator SubExpr
 open Shared
 
 
-@[app_unexpander ThoR.Semantics.Term.local_rel_var]
+@[app_unexpander ThoR.Semantics.ExpressionTerm.local_rel_var]
 def unexpTerm_local_rel_var : Unexpander
   | `($_ $value) => do
 
@@ -31,7 +31,7 @@ def unexpTerm_local_rel_var : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.global_rel_var]
+@[app_unexpander ThoR.Semantics.ExpressionTerm.global_rel_var]
 def unexpTerm_global_rel_var : Unexpander
   | `($_ $_:ident $name:str) => do
     let name_ident := mkIdent name.getString.toName
@@ -43,7 +43,7 @@ def unexpTerm_global_rel_var : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.union]
+@[app_unexpander ThoR.Semantics.ExpressionTerm.union]
 def unexpTerm_union : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -53,7 +53,7 @@ def unexpTerm_union : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.intersect]
+@[app_unexpander ThoR.Semantics.ExpressionTerm.intersect]
 def unexpTerm_intersection : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -63,7 +63,7 @@ def unexpTerm_intersection : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.difference]
+@[app_unexpander ThoR.Semantics.ExpressionTerm.difference]
 def unexpTerm_difference : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -73,7 +73,7 @@ def unexpTerm_difference : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.overwrite]
+@[app_unexpander ThoR.Semantics.ExpressionTerm.overwrite]
 def unexpTerm_overwrite : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -83,7 +83,7 @@ def unexpTerm_overwrite : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.domain_restriction]
+@[app_unexpander ThoR.Semantics.ExpressionTerm.domain_restriction]
 def unexpTerm_domain_restriction : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -93,7 +93,7 @@ def unexpTerm_domain_restriction : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.range_restriction]
+@[app_unexpander ThoR.Semantics.ExpressionTerm.range_restriction]
 def unexpTerm_range_restriction : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -103,7 +103,7 @@ def unexpTerm_range_restriction : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.dotjoin]
+@[app_unexpander ThoR.Semantics.ExpressionTerm.dotjoin]
 def unexpTerm_dotjoin : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -113,7 +113,7 @@ def unexpTerm_dotjoin : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.transclos]
+@[app_unexpander ThoR.Semantics.ExpressionTerm.transclos]
 def unexpTerm_transclos : Unexpander
   | `($_ [alloy'|$body] ) => do
     let bb := unhygienicUnfolder
@@ -123,7 +123,7 @@ def unexpTerm_transclos : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.reflexive_closure]
+@[app_unexpander ThoR.Semantics.ExpressionTerm.reflexive_closure]
 def unexpTerm_reflexive_closure : Unexpander
   | `($_ [alloy'|$body] ) => do
     let bb := unhygienicUnfolder
@@ -133,7 +133,7 @@ def unexpTerm_reflexive_closure : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.transposition]
+@[app_unexpander ThoR.Semantics.ExpressionTerm.transposition]
 def unexpTerm_transposition : Unexpander
   | `($_ [alloy'|$body] ) => do
     let bb := unhygienicUnfolder
@@ -144,7 +144,7 @@ def unexpTerm_transposition : Unexpander
   | _ => throw Unit.unit
 
 /- expr if else-/
-@[app_unexpander ThoR.Semantics.Term.if_then_else]
+@[app_unexpander ThoR.Semantics.ExpressionTerm.if_then_else]
 def unexpTerm_if_then_else : Unexpander
   | `($_ [alloy'|$condition] [alloy'|$thenBody] [alloy'|$elseBody] ) => do
     let bb := unhygienicUnfolder
@@ -295,7 +295,7 @@ def unexpTerm_fun_def : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.number]
+@[app_unexpander ThoR.Semantics.AlgebraTerm.number]
 def unexpTerm_number : Unexpander
   | `($_ $value ) => do
 
@@ -311,7 +311,7 @@ def unexpTerm_number : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.negation]
+@[app_unexpander ThoR.Semantics.AlgebraTerm.negation]
 def unexpTerm_negation : Unexpander
   | `($_ [alloy'|$body] ) => do
     let bb := unhygienicUnfolder
@@ -321,7 +321,7 @@ def unexpTerm_negation : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.add]
+@[app_unexpander ThoR.Semantics.AlgebraTerm.add]
 def unexpTerm_add : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -331,7 +331,7 @@ def unexpTerm_add : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.sub]
+@[app_unexpander ThoR.Semantics.AlgebraTerm.sub]
 def unexpTerm_sub : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -341,7 +341,7 @@ def unexpTerm_sub : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.mul]
+@[app_unexpander ThoR.Semantics.AlgebraTerm.mul]
 def unexpTerm_mul : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -351,7 +351,7 @@ def unexpTerm_mul : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.div]
+@[app_unexpander ThoR.Semantics.AlgebraTerm.div]
 def unexpTerm_div : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -361,7 +361,7 @@ def unexpTerm_div : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.rem]
+@[app_unexpander ThoR.Semantics.AlgebraTerm.rem]
 def unexpTerm_rem : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -371,7 +371,7 @@ def unexpTerm_rem : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.card]
+@[app_unexpander ThoR.Semantics.AlgebraTerm.card]
 def unexpTerm_card : Unexpander
   | `($_ [alloy'|$body] ) => do
     let bb := unhygienicUnfolder
@@ -381,7 +381,7 @@ def unexpTerm_card : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.no]
+@[app_unexpander ThoR.Semantics.FormulaTerm.no]
 def unexpTerm_no : Unexpander
   | `($_ [alloy'|$body] ) => do
     let bb := unhygienicUnfolder
@@ -391,7 +391,7 @@ def unexpTerm_no : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.one]
+@[app_unexpander ThoR.Semantics.FormulaTerm.one]
 def unexpTerm_one : Unexpander
   | `($_ [alloy'|$body] ) => do
     let bb := unhygienicUnfolder
@@ -401,7 +401,7 @@ def unexpTerm_one : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.lone]
+@[app_unexpander ThoR.Semantics.FormulaTerm.lone]
 def unexpTerm_lone : Unexpander
   | `($_ [alloy'|$body] ) => do
     let bb := unhygienicUnfolder
@@ -411,7 +411,7 @@ def unexpTerm_lone : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.some]
+@[app_unexpander ThoR.Semantics.FormulaTerm.some]
 def unexpTerm_some : Unexpander
   | `($_ [alloy'|$body] ) => do
     let bb := unhygienicUnfolder
@@ -421,7 +421,7 @@ def unexpTerm_some : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.not]
+@[app_unexpander ThoR.Semantics.FormulaTerm.not]
 def unexpTerm_not : Unexpander
   | `($_ [alloy'|$body] ) => do
     let bb := unhygienicUnfolder
@@ -431,7 +431,7 @@ def unexpTerm_not : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.or]
+@[app_unexpander ThoR.Semantics.FormulaTerm.or]
 def unexpTerm_or : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -441,7 +441,7 @@ def unexpTerm_or : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.and]
+@[app_unexpander ThoR.Semantics.FormulaTerm.and]
 def unexpTerm_and : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -451,7 +451,7 @@ def unexpTerm_and : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.implication]
+@[app_unexpander ThoR.Semantics.FormulaTerm.implication]
 def unexpTerm_implication : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -461,7 +461,7 @@ def unexpTerm_implication : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.equivalent]
+@[app_unexpander ThoR.Semantics.FormulaTerm.equivalent]
 def unexpTerm_equivalent : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -472,7 +472,7 @@ def unexpTerm_equivalent : Unexpander
   | _ => throw Unit.unit
 
 /- expr if else-/
-@[app_unexpander ThoR.Semantics.Term.f_if_then_else]
+@[app_unexpander ThoR.Semantics.FormulaTerm.f_if_then_else]
 def unexpTerm_f_if_then_else : Unexpander
   | `($_ [alloy'|$condition] [alloy'|$thenBody] [alloy'|$elseBody] ) => do
     let bb := unhygienicUnfolder
@@ -485,7 +485,7 @@ def unexpTerm_f_if_then_else : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.algebraic_leq]
+@[app_unexpander ThoR.Semantics.FormulaTerm.algebraic_leq]
 def unexpTerm_algebraic_leq : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -495,7 +495,7 @@ def unexpTerm_algebraic_leq : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.algebraic_geq]
+@[app_unexpander ThoR.Semantics.FormulaTerm.algebraic_geq]
 def unexpTerm_algebraic_geq : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -505,7 +505,7 @@ def unexpTerm_algebraic_geq : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.algebraic_eq]
+@[app_unexpander ThoR.Semantics.FormulaTerm.algebraic_eq]
 def unexpTerm_algebraic_eq : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -515,7 +515,7 @@ def unexpTerm_algebraic_eq : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.algebraic_lt]
+@[app_unexpander ThoR.Semantics.FormulaTerm.algebraic_lt]
 def unexpTerm_algebraic_lt : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -525,7 +525,7 @@ def unexpTerm_algebraic_lt : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.algebraic_gt]
+@[app_unexpander ThoR.Semantics.FormulaTerm.algebraic_gt]
 def unexpTerm_algebraic_gt : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -535,7 +535,7 @@ def unexpTerm_algebraic_gt : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.in]
+@[app_unexpander ThoR.Semantics.FormulaTerm.in]
 def unexpTerm_in : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -545,7 +545,7 @@ def unexpTerm_in : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.eq]
+@[app_unexpander ThoR.Semantics.FormulaTerm.eq]
 def unexpTerm_eq : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
@@ -555,7 +555,7 @@ def unexpTerm_eq : Unexpander
 
   | _ => throw Unit.unit
 
-@[app_unexpander ThoR.Semantics.Term.neq]
+@[app_unexpander ThoR.Semantics.FormulaTerm.neq]
 def unexpTerm_neq : Unexpander
   | `($_ [alloy'|$param1] [alloy'|$param2] ) => do
     let bb := unhygienicUnfolder
