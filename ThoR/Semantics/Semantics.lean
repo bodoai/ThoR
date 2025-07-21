@@ -91,6 +91,8 @@ namespace ThoR.Semantics
       : {tt : TyTy} → (ty : @Ty.{u} R _ tt) →
         Type (u+1)
         where
+        | bracket : ExpressionTerm ty → ExpressionTerm ty
+
         | global_rel_var
           {n : ℕ} {t : RelType R n}
           (r : Rel t) (name : String): ExpressionTerm (.expression t)
@@ -187,6 +189,8 @@ namespace ThoR.Semantics
     : {tt : TyTy} → (ty : @Ty.{u} R _ tt) →
       Type (u+1)
       where
+      | bracket : FormulaTerm ty → FormulaTerm ty
+
       /- formula unary rel bool operator-/
       | no
         {n : ℕ}
@@ -413,6 +417,7 @@ mutual
     (t : @ExpressionTerm R _ _ ty)
     : ty.eval :=
       match t with
+      | .bracket t => t.eval
 
       | .global_rel_var r _ => r
       | .local_rel_var r => r
@@ -444,6 +449,8 @@ mutual
       (t : @FormulaTerm R _ _ ty)
       : ty.eval :=
       match t with
+        | .bracket t => t.eval
+
         /- formula unary rel bool operator-/
         | .no r => SetMultPredicates.no (r.eval)
         | .one r => SetMultPredicates.one (r.eval)

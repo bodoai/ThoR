@@ -77,7 +77,7 @@ namespace Shared
           | expr.bracket e =>
             return unhygienicUnfolder `(
                 (
-                  $(  mkIdent ``ThoR.Semantics.Term.bracket )
+                  $(  mkIdent ``ThoR.Semantics.ExpressionTerm.bracket )
                   $(  ← e.toSemanticsTerm blockName variableNames
                         callableVariables callablePredicates pureNames quantorNamesPerQuantorDepth currentQuantorDepth
                   )
@@ -351,7 +351,7 @@ namespace Shared
         | formula.bracket f =>
           return unhygienicUnfolder `(
                 (
-                  $(mkIdent ``ThoR.Semantics.Term.bracket)
+                  $(mkIdent ``ThoR.Semantics.FormulaTerm.bracket)
                   $(
                       ← f.toSemanticsTerm
                           blockName variableNames

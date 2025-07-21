@@ -166,6 +166,14 @@ namespace Alloy
               cd.requiredVars callableVariables cd.predCalls
             let names := (arg.1.names.map fun name => (mkIdent name.toName)).toArray
 
+            bodyTerm :=
+              unhygienicUnfolder `(
+                (
+                  $(mkIdent ``ThoR.Semantics.Term.formula)
+                  $(bodyTerm)
+                )
+              )
+
             for name in names do
               bodyTerm := unhygienicUnfolder `( term |
                 (
