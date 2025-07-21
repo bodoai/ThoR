@@ -64,7 +64,7 @@ end
 
   variable  {  ThoR_TupleSet  :  Type  }  [  ThoR.TupleSet  ThoR_TupleSet  ]  [  x2_testing.vars  ThoR_TupleSet  ]
 
-  def  p1
+  def  p1_working_example
     {  ThoR_TupleSet  :  Type  }
     [  ThoR.TupleSet  ThoR_TupleSet  ]
     [  x2_testing.vars  ThoR_TupleSet  ]
@@ -82,18 +82,10 @@ end
             (  ThoR.Semantics.FormulaTerm.pred
               (  fun  (  parameter_vector  :
                 (  Vector.{0}
-                  -- (  ThoR.Rel
-                  --   (  ThoR.Semantics.Term.type.{0}
-                      --( t :=
-    --                    (  ThoR.RelType.mk.rel
-                          (  ThoR.Semantics.ExpressionTerm.global_rel_var.{0}
-                            ( name := "this_φ_B" )
-                            ( r :=  ∻  x2_testing.vars.this_φ_B  )
-                          ) --.eval -- TODO: add/check coe or add eval here
-      --                  )
-                      --)
-                  --   ).eval -- TODO: add/check coe or add eval here
-                  -- )
+                  (  ThoR.Semantics.ExpressionTerm.global_rel_var.{0}
+                    ( name := "this_φ_B" )
+                    ( r :=  ∻  x2_testing.vars.this_φ_B  )
+                  )
                 )  (  1  )
               )  =>
               (  ThoR.Semantics.FormulaTerm.some  (  R  :=  ThoR_TupleSet  )
@@ -118,68 +110,7 @@ end
       )
     )
 
-    -- TODO: instead of calling t => call the parameter_vector on the position of t in the name vector. Idea: Quantornames are already shared (to make them pure e.g. only t). This mechanism could be replaced by instad giving the current quantors names (and then get the index of the called name to call from param_vector)
-    def  p1_gen
-      {  ThoR_TupleSet  :  Type  }  [  ThoR.TupleSet  ThoR_TupleSet  ]  [  x2.vars  ThoR_TupleSet  ]  :=  (  ThoR.Semantics.Term.pred_def  "p1"  (  R  :=  ThoR_TupleSet  )  (  ThoR.Semantics.Term.bind  Shared.quant.all  false  #[  "t"  ].toVector  (  ThoR.Semantics.Term.pred  (  fun  (  parameter_vector_1  :  Vector  (  ThoR.Rel  (  ThoR.Semantics.Term.type.{  0  }  (  (  ThoR.RelType.mk.rel  (  ThoR.Semantics.Term.global_rel_var.{  0  }  (  ∻  x2.vars.this_φ_B  )  "this_φ_B"  ).eval  )  )  ).eval  )  (  1  )  )  =>  (  ThoR.Semantics.Term.some  (  R  :=  ThoR_TupleSet  )  (  ThoR.Semantics.Term.union  (  R  :=  ThoR_TupleSet  )  (  ThoR.Semantics.Term.local_rel_var.{  0  }  (  parameter_vector_1.get  0  )  )  (  ThoR.Semantics.Term.dotjoin  (  R  :=  ThoR_TupleSet  )  (  ThoR.Semantics.Term.global_rel_var.{  0  }  (  ∻  x2.vars.this_φ_B  )  "this_φ_B"  )  (  ThoR.Semantics.Term.global_rel_var.{  0  }  (  ∻  x2.vars.this_φ_A_ξ_r  )  "this_φ_A_ξ_r"  )  )  )  )  )  )  )  )
-
-  def  p1_no_type_term -- p1 without the Term.type
-    {  ThoR_TupleSet  :  Type  }
-    [  ThoR.TupleSet  ThoR_TupleSet  ]
-    [  x2_testing.vars  ThoR_TupleSet  ]
-    :=
-    (  ThoR.Semantics.Term.pred_def  "p1"
-      (  R  :=  ThoR_TupleSet  )
-      (  ThoR.Semantics.Term.bind
-        (  R  :=  ThoR_TupleSet  )
-        Shared.quant.all
-        false
-        #["t"].toVector
-        (  ThoR.Semantics.Term.pred
-          (  fun  (  parameter_vector  :
-            (  Vector -- .{0} not needed here
-              (  ThoR.Rel
-                (  ThoR.RelType.mk.rel
-                  ( r :=
-                    (  ThoR.Semantics.Term.global_rel_var.{0}
-                      ( name := "this_φ_B" )
-                      ( r :=  ∻  x2_testing.vars.this_φ_B  )
-                    ).eval -- TODO: add/check coe or add eval here
-                  )
-                )
-              )
-            )  (  1  )
-          )  =>
-          (  ThoR.Semantics.Term.some  (  R  :=  ThoR_TupleSet  )
-            (  ThoR.Semantics.Term.union  (  R  :=  ThoR_TupleSet  )
-              (  ThoR.Semantics.Term.local_rel_var  (parameter_vector.get 0)  )
-              (  ThoR.Semantics.Term.dotjoin  (  R  :=  ThoR_TupleSet  )
-                (  ThoR.Semantics.Term.global_rel_var
-                  (  ∻  x2_testing.vars.this_φ_B  )
-                  "this_φ_B"
-                )
-                (  ThoR.Semantics.Term.global_rel_var
-                  (  ∻  x2_testing.vars.this_φ_A_ξ_r  )
-                  "this_φ_A_ξ_r"
-                )
-              )
-            )
-          )
-          )
-        )
-      )
-    )
-
   end  x2_testing.preds
-
-  #check x2_testing.preds.p1_no_type_term
-  #print x2_testing.preds.p1_no_type_term
-
-  variable
-    (  ThoR_TupleSet_v  :  Type  )
-    [  ThoR.TupleSet  ThoR_TupleSet_v  ]
-    [  x2_testing.vars  ThoR_TupleSet_v  ]
-
-  #eval x2_testing.preds.p1_no_type_term (ThoR_TupleSet  := ThoR_TupleSet_v)
 
 ~alloy x3
   sig A {
