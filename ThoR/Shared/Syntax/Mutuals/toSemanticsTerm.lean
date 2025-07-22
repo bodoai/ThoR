@@ -112,8 +112,8 @@ namespace Shared
               return unhygienicUnfolder `(
                 (
                   $(mkIdent ``ThoR.Semantics.ExpressionTerm.local_rel_var).{0}
-
                   ($(mkIdent s.toName))
+                  $(Syntax.mkStrLit s) -- not needed here (but below)
                 )
               )
 
@@ -132,8 +132,8 @@ namespace Shared
             return unhygienicUnfolder `(
                 (
                   $(mkIdent ``ThoR.Semantics.ExpressionTerm.local_rel_var).{0}
-
                   ($(mkIdent callIdent) $(indexNatLit))
+                  $(Syntax.mkStrLit s) -- to delab the name
                 )
               )
 

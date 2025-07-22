@@ -90,7 +90,7 @@ end
               )  =>
               (  ThoR.Semantics.FormulaTerm.some  (  R  :=  ThoR_TupleSet  )
                 (  ThoR.Semantics.ExpressionTerm.union  (  R  :=  ThoR_TupleSet  )
-                  (  ThoR.Semantics.ExpressionTerm.local_rel_var  (parameter_vector.get 0)  )
+                  (  ThoR.Semantics.ExpressionTerm.local_rel_var   (parameter_vector.get 0) "t" )
                   (  ThoR.Semantics.ExpressionTerm.dotjoin  (  R  :=  ThoR_TupleSet  )
                     (  ThoR.Semantics.ExpressionTerm.global_rel_var
                       (  ∻  x2_testing.vars.this_φ_B  )

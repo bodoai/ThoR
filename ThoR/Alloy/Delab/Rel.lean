@@ -8,6 +8,7 @@ import Lean
 import ThoR.Relation.Notation
 import ThoR.Relation.Elab
 import ThoR.Alloy.Delab.DelaborationService
+import ThoR.Alloy.Delab.DelaborationAlloySyntax
 
 open Lean PrettyPrinter Delaborator SubExpr
 
@@ -33,15 +34,17 @@ def unexpTypedRel : Unexpander
 
 @[app_unexpander ThoR.Rel.constant.univ]
 def unexpTypedRelConstantUniv : Unexpander
-  | `($_ $_) => `($(mkIdent `univ))
+  | `($_ $_) =>
+    `([alloy' | $(mkIdent `univ):delaborator_body])
+
   | _ => throw Unit.unit
 
 @[app_unexpander ThoR.Rel.constant.none]
 def unexpTypedRelConstantNone : Unexpander
-  | `($_ $_) => `($(mkIdent `none))
+  | `($_ $_) => `([alloy' | $(mkIdent `none):delaborator_body])
   | _ => throw Unit.unit
 
 @[app_unexpander ThoR.Rel.constant.iden]
 def unexpTypedRelConstantIden : Unexpander
-  | `($_ $_) => `($(mkIdent `iden))
+  | `($_ $_) => `([alloy' | $(mkIdent `iden):delaborator_body])
   | _ => throw Unit.unit

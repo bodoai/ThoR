@@ -99,7 +99,7 @@ namespace ThoR.Semantics
 
         | local_rel_var
           {n : ℕ} {t : RelType R n}
-          (r : Rel t): ExpressionTerm (.expression t)
+          (r : Rel t) (name : String): ExpressionTerm (.expression t)
 
         | toExpr
           {n : ℕ} {t : ThoR.RelType R n}
@@ -420,7 +420,7 @@ mutual
       | .bracket t => t.eval
 
       | .global_rel_var r _ => r
-      | .local_rel_var r => r
+      | .local_rel_var r _ => r
 
       | .toExpr n => n
 

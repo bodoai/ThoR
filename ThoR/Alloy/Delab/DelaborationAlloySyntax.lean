@@ -6,12 +6,15 @@ Authors: s. file CONTRIBUTORS
 
 import Lean
 
+import ThoR.Alloy.Syntax.SeparatedNamespace
+
 open Lean Lean.Elab Term
 
 namespace Alloy
 
   declare_syntax_cat delaborator_body
   syntax ident : delaborator_body
+  syntax separatedNamespace : delaborator_body
   syntax num : delaborator_body
 
   /-unaryRelOperation-/
@@ -104,14 +107,25 @@ namespace Alloy
   syntax "pred" ident delaborator_body+ : delaborator_body
   syntax "fun" ident delaborator_body+ : delaborator_body
 
-  syntax "[" delaborator_body,+ "]" : delaborator_body
-  syntax "{" delaborator_body "}" : delaborator_body
-  syntax "(" delaborator_body ")" : delaborator_body
+  declare_syntax_cat delabArg
+  syntax (delaborator_body,+ " :" delaborator_body) : delabArg
+  syntax (delaborator_body) : delabArg
+
+  syntax " [ " (delabArg),+ " ] " : delaborator_body
+
+  syntax " { " delaborator_body " } " : delaborator_body
+  syntax " ( " delaborator_body " ) " : delaborator_body
 
   instance : Coe (TSyntax `delaborator_body) Ident where
   coe s := ⟨s.raw⟩
 
   instance : Coe Ident (TSyntax `delaborator_body) where
+  coe s := ⟨s.raw⟩
+
+  instance : Coe (TSyntax `delaborator_body) SeparatedNamespace where
+  coe s := ⟨s.raw⟩
+
+  instance : Coe SeparatedNamespace (TSyntax `delaborator_body) where
   coe s := ⟨s.raw⟩
 
   instance : Coe NumLit (TSyntax `delaborator_body) where
@@ -122,7 +136,7 @@ namespace Alloy
 
   syntax
     (name := delaboration_alloy_syntax)
-    "[" "alloy'" "|"
+    "[" "alloy'" "| "
       delaborator_body
     "]"
     : term

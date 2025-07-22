@@ -17,15 +17,12 @@ open Shared
 
 @[app_unexpander ThoR.Semantics.ExpressionTerm.local_rel_var]
 def unexpTerm_local_rel_var : Unexpander
-  | `($_ $value) => do
+  | `($_ $_:ident $name:str) => do
 
-    let value_ident :=
-      match value with
-        |`(ident | $value_ident:ident) => value_ident
-        | _ => unreachable!
+    let name_ident := mkIdent name.getString.toName
 
     let bb := unhygienicUnfolder
-      `(delaborator_body | $value_ident:ident )
+      `(delaborator_body | $name_ident:ident )
 
     `([alloy' | $bb:delaborator_body ])
 
@@ -157,8 +154,48 @@ def unexpTerm_if_then_else : Unexpander
 
   | _ => throw Unit.unit
 
+@[app_unexpander ThoR.Semantics.Term.formula]
+def unexpTerm_formula : Unexpander
+  | `($_ [alloy'| $body] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body |  $body:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.Term.expr]
+def unexpTerm_expression : Unexpander
+  | `($_ [alloy'| $body] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body |  $body:delaborator_body )
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
 @[app_unexpander ThoR.Semantics.Term.bracket]
 def unexpTerm_bracket : Unexpander
+  | `($_ [alloy'| $body] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body |  ($body:delaborator_body ))
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.ExpressionTerm.bracket]
+def unexpExpressionTerm_bracket : Unexpander
+  | `($_ [alloy'| $body] ) => do
+    let bb := unhygienicUnfolder
+      `(delaborator_body |  ($body:delaborator_body ))
+
+    `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+@[app_unexpander ThoR.Semantics.FormulaTerm.bracket]
+def unexpFormulaTerm_bracket : Unexpander
   | `($_ [alloy'| $body] ) => do
     let bb := unhygienicUnfolder
       `(delaborator_body |  ($body:delaborator_body ))
@@ -193,13 +230,42 @@ def unexp_lam : Unexpander
   | _ => throw Unit.unit
 -/
 
+
+private partial def getType
+  (type : TSyntax `term)
+  : TSyntax `delaborator_body × Bool := Id.run do
+    let mut showType := true
+
+    let mut final_type := unhygienicUnfolder `(delaborator_body| $(mkIdent `t):ident)
+
+    match type with
+      | `([alloy'| $body].eval) => final_type := body
+      | `([alloy'| $body]) => final_type := body
+      | _ => showType := false
+
+    return (final_type, showType)
+
+private structure delabArg where
+  (name : (TSyntax `delaborator_body))
+  (type : (TSyntax `delaborator_body))
+  (showType : Bool)
+
+instance : Inhabited delabArg where
+  default := {name := default, type := default, showType := false}
+
 private partial def getArgs
   (body : TSyntax `term)
-  : (Array (TSyntax `delaborator_body)) × (TSyntax `delaborator_body) := Id.run do
+  : (Array delabArg) × (TSyntax `delaborator_body)
+  := Id.run do
   let mut result := #[]
   let mut trueBody := unhygienicUnfolder `(delaborator_body|$(mkIdent `default):ident)
   match body with
-    | `(ThoR.Semantics.Term.lam $lambda_function) =>
+    | `(ThoR.Semantics.Term.lam $type $lambda_function) =>
+
+      let type_and_showType := getType type
+      let type := type_and_showType.1
+      let showType := type_and_showType.2
+
       match lambda_function with
         | `(fun $lambda_variable ↦ $body) =>
           match lambda_variable with
@@ -207,8 +273,17 @@ private partial def getArgs
                 $(variable_nameTerm):term ) =>
                   match variable_nameTerm with
                     | `($variable_name:ident) =>
-                      let arg := unhygienicUnfolder `(delaborator_body|$variable_name:ident)
-                      result := result.push arg
+                      let arg :=
+                        unhygienicUnfolder
+                          `(delaborator_body |
+                            $variable_name:ident)
+
+                      result :=
+                        result.push
+                          { name := arg,
+                            type :=type,
+                            showType := showType }
+
                     | _ => result := result
 
           /- if the body is not a lam then its the final body -/
@@ -217,13 +292,52 @@ private partial def getArgs
               trueBody := body
             | _ =>
               let subResult := (getArgs body)
-              result := result.append subResult.1
+              result := result.append subResult.1.reverse
               trueBody := subResult.2
 
         | _ => result := result
     | _ => result := result
 
-  (result, trueBody)
+  (result.reverse, trueBody)
+
+open Std in
+private def groupArgs
+  (args : Array delabArg)
+  : Array (TSyntax `delabArg)
+  := Id.run do
+  let mut args_per_type
+    : (HashMap String (List delabArg))
+    := HashMap.emptyWithCapacity
+
+  for arg in args do
+    let type_as_string := s!"{arg.type.raw}"
+    args_per_type :=
+      args_per_type.insert type_as_string
+        ((args_per_type.getD type_as_string []).concat arg)
+
+  let mut groupedArgs := #[]
+  for type_with_args in args_per_type.toList do
+    let args := type_with_args.2
+    if !args.isEmpty then
+      let argNames := (type_with_args.2.map fun a => a.name).toArray
+
+      let firstArg := (type_with_args.2[0]!)
+      let type := firstArg.type
+      let showType := firstArg.showType
+
+      if showType then
+        groupedArgs :=
+          groupedArgs.push
+            (unhygienicUnfolder
+              `(delabArg | $[$(argNames)],* : $type ))
+      else
+        for name in argNames do
+          groupedArgs :=
+            groupedArgs.push
+              (unhygienicUnfolder
+                `(delabArg | $name:delaborator_body ))
+
+  return groupedArgs
 
 @[app_unexpander ThoR.Semantics.Term.pred_def]
 def unexpTerm_predDef : Unexpander
@@ -231,12 +345,14 @@ def unexpTerm_predDef : Unexpander
 
     let nn := match name with
       | `(term | $n:str) => n.getString
-      | _ => unreachable!
+      | _ => "Error matching Name"
 
     /-get args here to group them-/
     let argsAndBody := getArgs body
     let args := argsAndBody.1
-    let argsBody := unhygienicUnfolder `(delaborator_body | [$[$(args)],*])
+    let groupedArgs := groupArgs args
+
+    let argsBody := unhygienicUnfolder `(delaborator_body | [$[$(groupedArgs)],*])
     let body := unhygienicUnfolder `(delaborator_body | { $(argsAndBody.2) } )
 
     let bb :=
@@ -266,12 +382,14 @@ def unexpTerm_fun_def : Unexpander
 
     let nn := match name with
       | `(term | $n:str) => n.getString
-      | _ => unreachable!
+      | _ => "Error matching Name"
 
     /-get args here to group them-/
     let argsAndBody := getArgs body
     let args := argsAndBody.1
-    let argsBody := unhygienicUnfolder `(delaborator_body | [$[$(args)],*])
+    let groupedArgs := groupArgs args
+
+    let argsBody := unhygienicUnfolder `(delaborator_body | [$[$(groupedArgs)],*])
     let body := unhygienicUnfolder `(delaborator_body | { $(argsAndBody.2) } )
 
     let bb :=
