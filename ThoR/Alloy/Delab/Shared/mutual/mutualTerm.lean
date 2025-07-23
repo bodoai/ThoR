@@ -17,7 +17,7 @@ open Shared Alloy
 
 @[app_unexpander ThoR.Semantics.ExpressionTerm.local_rel_var]
 def unexpTerm_local_rel_var : Unexpander
-  | `($_ $_:ident $name:str) => do
+  | `($_ $_ $name:str) => do
 
     let name_ident := mkIdent name.getString.toName
 
@@ -258,7 +258,7 @@ private partial def getArgs
   : (Array delabArg) × (TSyntax `delaborator_body)
   := Id.run do
   let mut result := #[]
-  let mut trueBody := unhygienicUnfolder `(delaborator_body|$(mkIdent `default):ident)
+  let mut trueBody := unhygienicUnfolder `(delaborator_body|$(mkIdent `Error):ident)
   match body with
     /- Either lam -/
     | `(ThoR.Semantics.Term.lam $type $lambda_function) =>
@@ -748,7 +748,10 @@ def unexpFormulaTerm_bind : Unexpander
 
           | _ => default
 
-        let body := unhygienicUnfolder `(delaborator_body | { $(mkIdent `TODO) } )
+        let body :=
+          match body with
+            | `(ThoR.Semantics.FormulaTerm.pred fun $_ ↦ [alloy'|$body]) => body
+            | _ => unhygienicUnfolder `(delaborator_body | { $(mkIdent `Error) } )
 
         let bb :=
           if bindCollection.showDisj then
