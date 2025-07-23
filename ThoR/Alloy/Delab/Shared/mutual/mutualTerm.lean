@@ -730,7 +730,7 @@ private def getBindCollection
 /- quantor bind -/
 @[app_unexpander ThoR.Semantics.FormulaTerm.bind]
 def unexpFormulaTerm_bind : Unexpander
-  | `($_ $quantor_type $disjoint $names $body) => do
+  | `($_ $quantor_type $disjoint $names $type:str $body) => do
     let bindCollection := getBindCollection quantor_type disjoint
     match bindCollection with
       | Except.error _ => throw Unit.unit
@@ -744,7 +744,7 @@ def unexpFormulaTerm_bind : Unexpander
 
               unhygienicUnfolder
                 `(delabArg |
-                  $[$(argBodies)],* : $(mkIdent `type) )
+                  $[$(argBodies)],* : $(mkIdent type.getString.toName))
 
           | _ => default
 

@@ -313,6 +313,7 @@ namespace ThoR.Semantics
         (quantor_type : Shared.quant)
         (disj : Bool)
         (parameter_names : Vector String parameter_count)
+        (parameter_type : String)
         : (pred : FormulaTerm (.pred rel_type parameter_count) ) →
           FormulaTerm .formula
 
@@ -487,7 +488,7 @@ mutual
         (function x).eval
 
         | @FormulaTerm.bind
-            R _ _ _ parameter_count quantor_type _ _ function =>
+            R _ _ _ parameter_count quantor_type _ _ _ function =>
             let new_function :=
               (fun (pv : Vector _ parameter_count) =>
                 (function.eval) pv)

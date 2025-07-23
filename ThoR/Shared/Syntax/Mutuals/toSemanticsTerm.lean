@@ -855,6 +855,7 @@ namespace Shared
                   $(q.toTerm)
                   $(disjTerm)
                   $(namesVectorTerm)
+                  $(Syntax.mkStrLit te.toString)
                   $(pred_applied)
               )
             )

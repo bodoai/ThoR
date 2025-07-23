@@ -79,6 +79,7 @@ end
             Shared.quant.all
             false
             #["y","x"].toVector
+            "B"
             (  ThoR.Semantics.FormulaTerm.pred
               (  fun  (  parameter_vector  :
                 (  Vector.{0}
