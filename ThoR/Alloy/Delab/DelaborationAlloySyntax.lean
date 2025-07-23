@@ -113,6 +113,16 @@ namespace Alloy
 
   syntax " [ " (delabArg),+ " ] " : delaborator_body
 
+  declare_syntax_cat delabQuantor
+  abbrev DelabQuantor := TSyntax `delabQuantor
+  syntax "all" : delabQuantor
+  syntax "some" : delabQuantor
+  syntax "one" : delabQuantor
+  syntax "lone" : delabQuantor
+  syntax "no" : delabQuantor
+
+  syntax delabQuantor (" disj ")? delabArg " | " delaborator_body : delaborator_body
+
   syntax " { " delaborator_body " } " : delaborator_body
   syntax " ( " delaborator_body " ) " : delaborator_body
 

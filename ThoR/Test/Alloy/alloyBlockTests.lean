@@ -78,7 +78,7 @@ end
             (  R  :=  ThoR_TupleSet  )
             Shared.quant.all
             false
-            #["t"].toVector
+            #["y","x"].toVector
             (  ThoR.Semantics.FormulaTerm.pred
               (  fun  (  parameter_vector  :
                 (  Vector.{0}
@@ -86,7 +86,7 @@ end
                     ( name := "this_φ_B" )
                     ( r :=  ∻  x2_testing.vars.this_φ_B  )
                   )
-                )  (  1  )
+                )  (  2  )
               )  =>
               (  ThoR.Semantics.FormulaTerm.some  (  R  :=  ThoR_TupleSet  )
                 (  ThoR.Semantics.ExpressionTerm.union  (  R  :=  ThoR_TupleSet  )

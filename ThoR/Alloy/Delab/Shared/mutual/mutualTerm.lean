@@ -12,7 +12,7 @@ import ThoR.Alloy.UnhygienicUnfolder
 
 open Lean PrettyPrinter Delaborator SubExpr
 
-open Shared
+open Shared Alloy
 
 
 @[app_unexpander ThoR.Semantics.ExpressionTerm.local_rel_var]
@@ -260,6 +260,7 @@ private partial def getArgs
   let mut result := #[]
   let mut trueBody := unhygienicUnfolder `(delaborator_body|$(mkIdent `default):ident)
   match body with
+    /- Either lam -/
     | `(ThoR.Semantics.Term.lam $type $lambda_function) =>
 
       let type_and_showType := getType type
@@ -286,7 +287,7 @@ private partial def getArgs
 
                     | _ => result := result
 
-          /- if the body is not a lam then its the final body -/
+          /- if the body (inside lam) is not a lam then its the final body -/
           match body with
             | `([alloy'| $body]) =>
               trueBody := body
@@ -296,6 +297,11 @@ private partial def getArgs
               trueBody := subResult.2
 
         | _ => result := result
+
+    /- or can be a direct body -/
+    | `([alloy'| $body]) =>
+      trueBody := body
+
     | _ => result := result
 
   (result.reverse, trueBody)
@@ -680,5 +686,90 @@ def unexpTerm_neq : Unexpander
       `(delaborator_body | $param1:delaborator_body != $param2:delaborator_body )
 
     `([alloy' | $bb:delaborator_body ])
+
+  | _ => throw Unit.unit
+
+private def quantExtractor (t :Term) : Except String Shared.quant := do
+  match t with
+    | `(Shared.quant.all) => return quant.all
+    | `(Shared.quant.some) => return quant.some
+    | `(Shared.quant.lone) => return quant.lone
+    | `(Shared.quant.one) => return quant.one
+    | `(Shared.quant.no) => return quant.no
+    | _ => throw s!"Could not find match "
+
+private def quant.toDelabQuantor (q : Shared.quant) : DelabQuantor :=
+  match q with
+    | .all => unhygienicUnfolder `(delabQuantor | all)
+    | .some =>unhygienicUnfolder `(delabQuantor | some)
+    | .lone => unhygienicUnfolder `(delabQuantor | lone)
+    | .one => unhygienicUnfolder `(delabQuantor | one)
+    | .no => unhygienicUnfolder `(delabQuantor | no)
+
+private def boolExtractor (t : Term) : Except String Bool := do
+  match t with
+    | `(false) => return false
+    | `(true) => return true
+    | _ => throw s!"Could not find match "
+
+private structure bind_collection where
+  (quantor : DelabQuantor)
+  (showDisj : Bool)
+
+private def getBindCollection
+  (quantor disjoint : Term)
+  : Except String bind_collection := do
+    let quantor ← (quantExtractor quantor)
+    let delab_quantor := quant.toDelabQuantor quantor
+    let showDisj ←  boolExtractor disjoint
+    return  {
+              quantor := delab_quantor,
+              showDisj := showDisj
+            }
+
+/- quantor bind -/
+@[app_unexpander ThoR.Semantics.FormulaTerm.bind]
+def unexpFormulaTerm_bind : Unexpander
+  | `($_ $quantor_type $disjoint $names $body) => do
+    let bindCollection := getBindCollection quantor_type disjoint
+    match bindCollection with
+      | Except.error _ => throw Unit.unit
+      | Except.ok bindCollection =>
+
+        let names : TSyntax `delabArg := match names with
+          | `(#[ $[$str_names:str],* ].toVector) =>
+              let argBodies :=
+                str_names.map fun n =>
+                  unhygienicUnfolder `(delaborator_body | $(mkIdent n.getString.toName))
+
+              unhygienicUnfolder
+                `(delabArg |
+                  $[$(argBodies)],* : $(mkIdent `type) )
+
+          | _ => default
+
+        let body := unhygienicUnfolder `(delaborator_body | { $(mkIdent `TODO) } )
+
+        let bb :=
+          if bindCollection.showDisj then
+            unhygienicUnfolder
+            `(delaborator_body |
+              $bindCollection.quantor:delabQuantor
+              disj
+              $(names)
+              |
+              $(body)
+            )
+          else
+            unhygienicUnfolder
+            `(delaborator_body |
+              $bindCollection.quantor:delabQuantor
+              $(names)
+              |
+              $(body)
+            )
+
+        `([alloy' | $bb:delaborator_body ])
+
 
   | _ => throw Unit.unit
