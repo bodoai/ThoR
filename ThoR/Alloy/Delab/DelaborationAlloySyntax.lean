@@ -27,17 +27,17 @@ namespace Alloy
 
   /-binaryRelOperation-/
   /--intersection-/
-  syntax delaborator_body "&" delaborator_body : delaborator_body
+  syntax delaborator_body " & " delaborator_body : delaborator_body
   /--union-/
-  syntax delaborator_body "+" delaborator_body : delaborator_body
+  syntax delaborator_body " + " delaborator_body : delaborator_body
   /--difference-/
-  syntax delaborator_body "-" delaborator_body : delaborator_body
+  syntax delaborator_body " - " delaborator_body : delaborator_body
   /--overwrite-/
-  syntax delaborator_body "++" delaborator_body : delaborator_body
+  syntax delaborator_body " ++ " delaborator_body : delaborator_body
   /--domain_restriction-/
-  syntax delaborator_body "<:" delaborator_body : delaborator_body
+  syntax delaborator_body " <: " delaborator_body : delaborator_body
   /--range_restriction-/
-  syntax delaborator_body ":>" delaborator_body : delaborator_body
+  syntax delaborator_body " :> " delaborator_body : delaborator_body
 
   /-dotjoin-/
   syntax delaborator_body "." delaborator_body : delaborator_body
@@ -61,15 +61,15 @@ namespace Alloy
 
   /-algCompareOp-/
   /--leq-/
-  syntax delaborator_body "<=" delaborator_body  : delaborator_body
+  syntax delaborator_body " <= " delaborator_body  : delaborator_body
   /--geq-/
-  syntax delaborator_body ">=" delaborator_body  : delaborator_body
+  syntax delaborator_body " >= " delaborator_body  : delaborator_body
   /--eq-/
-  syntax delaborator_body "=" delaborator_body  : delaborator_body
+  syntax delaborator_body " = " delaborator_body  : delaborator_body
   /--lt-/
-  syntax delaborator_body "<" delaborator_body  : delaborator_body
+  syntax delaborator_body " < " delaborator_body  : delaborator_body
   /--gt-/
-  syntax delaborator_body ">" delaborator_body  : delaborator_body
+  syntax delaborator_body " > " delaborator_body  : delaborator_body
 
   /--card-/
   syntax "#" delaborator_body : delaborator_body
@@ -111,7 +111,7 @@ namespace Alloy
   syntax (delaborator_body,+ " :" delaborator_body) : delabArg
   syntax (delaborator_body) : delabArg
 
-  syntax " [ " (delabArg),+ " ] " : delaborator_body
+  syntax " [" (delabArg),+ "]" : delaborator_body
 
   declare_syntax_cat delabQuantor
   abbrev DelabQuantor := TSyntax `delabQuantor
@@ -123,8 +123,8 @@ namespace Alloy
 
   syntax delabQuantor (" disj ")? delabArg " | " delaborator_body : delaborator_body
 
-  syntax " { " delaborator_body " } " : delaborator_body
-  syntax " ( " delaborator_body " ) " : delaborator_body
+  syntax " {" delaborator_body "}" : delaborator_body
+  syntax "(" delaborator_body ")" : delaborator_body
 
   instance : Coe (TSyntax `delaborator_body) Ident where
   coe s := ⟨s.raw⟩
