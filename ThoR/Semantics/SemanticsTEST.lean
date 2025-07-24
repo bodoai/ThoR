@@ -1,7 +1,8 @@
 import ThoR.Semantics.Semantics
 import ThoR.Relation.ElabCallMacro
+import ThoR.Shared.Syntax.quant
 
-open ThoR
+open ThoR Semantics Shared
 
 variable (I : Type) [ThoR.TupleSet I]
 instance : ThoR.TupleSet I := by sorry
@@ -13,6 +14,10 @@ variable (t : ThoR.RelType I n)
               (expression2 := ExpressionTerm.toExpr (parameter_vector.get 0)) )
 
 #check FormulaTerm.bind
+        quant.all
+        true
+        #["x", "y"].toVector
+        "type"
         (FormulaTerm.pred
           (λ (parameter_vector : (Vector (ThoR.Rel t) 2)) => FormulaTerm.eq
               (expression1 := ExpressionTerm.toExpr (parameter_vector.get 0))
@@ -22,6 +27,10 @@ variable (t : ThoR.RelType I n)
 def  p1
     :=
     (  FormulaTerm.bind
+        quant.all
+        true
+        #["x"].toVector
+        "type"
         (  FormulaTerm.pred
           (  fun  (  parameter_vector  : Vector.{0} (ThoR.Rel t) 1)
             =>
@@ -37,6 +46,10 @@ def  p1
   def  p2
     :=
     (  FormulaTerm.bind
+       quant.all
+        true
+        #["x", "y"].toVector
+        "type"
         (  FormulaTerm.pred
           (  fun  (  parameter_vector  : Vector.{0} (ThoR.Rel t) 2)
             =>
