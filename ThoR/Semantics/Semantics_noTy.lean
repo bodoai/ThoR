@@ -298,12 +298,13 @@ namespace ThoR.Semantics
         (quantor_type : Shared.quant)
         (disj : Bool)
         (parameter_names : Vector String parameter_count)
-        : (pred : PredBind (R := R) ) →
+        : (pred : PredBind (R := R) arity rel_type parameter_count) →
           FormulaTerm
 
   inductive PredBind
     {R : Type}
-    [ThoR.TupleSet R]
+    [ThoR.TupleSet R] :
+    (arity : Nat) → ThoR.RelType R arity → (parameter_count : Nat) → Type
     where
       | pred
         {arity : Nat}
@@ -314,36 +315,37 @@ namespace ThoR.Semantics
           (Vector (ThoR.Rel rel_type) parameter_count) →
           FormulaTerm (R := R)
         ) →
-        PredBind
+        PredBind arity rel_type parameter_count
   end
 
 
   inductive Term
     {R : Type}
     [ThoR.TupleSet R]
+    : (TargetType : Type) → Type 1
     where
 
-      | expr : ExpressionTerm (R := R) t → Term
-      | formula : FormulaTerm (R:= R)  → Term
+      | expr arity (rel_type : RelType R arity) : ExpressionTerm rel_type → Term (Rel rel_type)
+      | formula : FormulaTerm (R:= R)  → Term Prop
 
       /--bracket definition-/
-      | bracket : Term → Term
+      | bracket : Term ty → Term ty
 
-      | pred_def (name : String) : Term → Term
+      | pred_def (name : String) : Term ty → Term ty
 
       /--function definition-/
-      | fun_def (name : String) : Term → Term
+      | fun_def (name : String) : Term ty → Term ty
 
       /- TODO: CHeck if lam and app are correct -/
       /- function abstraction -/
-      | lam (t : RelType R n)
-        : (Rel t → Term) → Term
+      | lam (rel_type : RelType R n)
+        : (Rel rel_type → Term ty) → Term (Rel rel_type → ty)
 
       /- function application -/
-      | app
-        : Term →
-          Term →
-          Term
+      | app {t : RelType R n}
+        : (f : Rel t → Term ty) →
+          (r : Term (Rel t)) →
+          Term ty
 
 def Vector0 {T : Type} : Vector T 0:= #[].toVector
 
@@ -404,23 +406,23 @@ def quantify_predicate
 
       quantify_predicate part quant_type
 
-  def PredBind.ga
-      {R : Type}
-      [ThoR.TupleSet R]
-      (t : @PredBind R _)
-      : Nat :=
-      match t with
-        | @PredBind.pred R _ arity _ _ _ =>
-          arity
+  -- def PredBind.ga
+  --     {R : Type}
+  --     [ThoR.TupleSet R]
+  --     (t : @PredBind R _)
+  --     : Nat :=
+  --     match t with
+  --       | @PredBind.pred R _ arity _ _ _ =>
+  --         arity
 
-    def PredBind.grt
-      {R : Type}
-      [ThoR.TupleSet R]
-      (t : @PredBind R _)
-      : RelType R (PredBind.ga t) :=
-      match t with
-        | @PredBind.pred R _ _ rel_type _ _ =>
-          rel_type
+  --   def PredBind.grt
+  --     {R : Type}
+  --     [ThoR.TupleSet R]
+  --     (t : @PredBind R _)
+  --     : RelType R (PredBind.ga t) :=
+  --     match t with
+  --       | @PredBind.pred R _ _ rel_type _ _ =>
+  --         rel_type
 
 mutual
   def ExpressionTerm.eval
@@ -506,11 +508,14 @@ mutual
     def PredBind.eval
       {R : Type}
       [ThoR.TupleSet R]
-      (t : @PredBind R _)
-      : Vector (Rel t.grt) parameter_count → Prop :=
+      {arity : Nat}
+      {rel_type : RelType R arity}
+      {parameter_count : Nat}
+      (t : PredBind arity rel_type parameter_count)
+      : Vector (Rel rel_type) parameter_count → Prop :=
       match t with
-        | @PredBind.pred R _ arity rel_type parameter_count function =>
-          fun (x : Vector (Rel rel_type) parameter_count ) =>
+        | @PredBind.pred R _ _ _ _ function =>
+          fun (x : Vector _ _ ) =>
             (function x).eval
 
     def AlgebraTerm.eval
@@ -539,13 +544,14 @@ mutual
   def Term.eval
     {R : Type}
     [ThoR.TupleSet R]
-    {tt : TyTy}
-    (t : @Term R _)
-    : Prop :=
+    {ty : Type}
+    (t : @Term R _ ty)
+    : ty
+    :=
     match t with
     | .bracket t => t.eval
 
-    | .expr t => t.eval
+    | .expr arity rel_type t => t.eval
 
     | .formula t => t.eval
 
@@ -554,68 +560,50 @@ mutual
     | .fun_def _ t => t.eval
 
     /- TODO: Check if lam and app correct -/
-    | @Term.lam R _ _ t f => λ (x : Rel t) => (f x).eval
-    | .app f r => f.eval r.eval
+    | Term.lam rel_type f => (λ (x : Rel rel_type) => (f x).eval)
+    | .app f r => (f (r.eval)).eval
 
   /- Coersions -/
   /- general eval -/
   instance
-    {R : Type} [TupleSet R]
-    {tyty : TyTy}
-    {ty : @Ty R _ tyty}
-    (t : @Term R _ tyty ty)
+    {R : Type} [TupleSet R] {ty : Type}
+    (t : Term (R:=R) ty)
     :
-    CoeDep _ t ty.eval where
+    CoeDep _ t ty where
       coe := t.eval
 
   /- Expression to Term -/
   instance
     {R : Type} [TupleSet R]
-    (tyty : TyTy)
-    (ty : Ty tyty (R := R))
-    (t : @ExpressionTerm R _ tyty ty)
+    rel_type
+    (t : @ExpressionTerm R _ n rel_type)
     :
     CoeDep
       _
       t
-      (@Term R _ tyty ty)
+      (Term (R:=R) (Rel (R:=R) rel_type))
     where
-      coe := Term.expr t
+      coe := Term.expr n rel_type t
 
-  /- Formular to Term -/
+  /- Formula to Term -/
   instance
     {R : Type} [TupleSet R]
-    (tyty : TyTy)
-    (ty : Ty tyty (R := R))
-    (t : @FormulaTerm R _ tyty ty)
+    (t : @FormulaTerm R _ )
     :
     CoeDep
       _
       t
-      (@Term R _ tyty ty)
+      (@Term R _ Prop)
     where
       coe := Term.formula t
 
-  /- Formular to Term -/
-  instance
-    {R : Type} [TupleSet R]
-    (tyty : TyTy)
-    (ty : Ty tyty (R := R))
-    (t : @FormulaTerm R _ tyty ty)
-    :
-    CoeDep
-      _
-      t
-      (@Term R _ tyty ty)
-    where
-      coe := Term.formula t
 
   /- Term to Type -/
   instance
     {R : Type} [TupleSet R]
     {n : Nat}
     {rel_type : RelType R n}
-    (t : @Term R _ (TyTy.isTy) (Ty.expression rel_type))
+    (t : Term (R:=R) (Rel rel_type))
     :
     CoeDep
       _
@@ -629,24 +617,13 @@ mutual
     {R : Type} [TupleSet R]
     {n : Nat}
     {rel_type : RelType R n}
-    (t : @ExpressionTerm R _ (TyTy.isTy) (Ty.expression rel_type))
+    (t : @ExpressionTerm R _ n rel_type)
     :
     CoeDep
       _
       t
       Type
     where
-      coe := Term.expr t
-
-  instance
-    {R : Type} [TupleSet R]
-    (t : @Term R _ (TyTy.isTy) (Ty.formula))
-    :
-    CoeDep
-      _
-      t
-      Prop
-    where
-      coe := t.eval
+      coe := (Term.expr n rel_type t)
 
 end ThoR.Semantics
