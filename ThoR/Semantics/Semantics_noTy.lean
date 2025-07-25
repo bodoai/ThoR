@@ -98,7 +98,7 @@ namespace ThoR.Semantics
 
         | local_rel_var
           {n : ℕ} {rt : RelType R n}
-          (r : Rel rt): ExpressionTerm rt
+          (r : Rel rt) (name : String): ExpressionTerm rt
 
         | toExpr
           {n : ℕ} {rt : ThoR.RelType R n}
@@ -298,6 +298,7 @@ namespace ThoR.Semantics
         (quantor_type : Shared.quant)
         (disj : Bool)
         (parameter_names : Vector String parameter_count)
+        (parameter_type : String)
         : (pred : PredBind (R := R) arity rel_type parameter_count) →
           FormulaTerm
 
@@ -435,7 +436,7 @@ mutual
       | .bracket t => t.eval
 
       | .global_rel_var r _ => r
-      | .local_rel_var r => r
+      | .local_rel_var r _ => r
 
       | .toExpr n => n
 
@@ -481,7 +482,7 @@ mutual
 
         /- formula if else -/
         | .f_if_then_else f1 f2 f3 =>
-          ((f1.eval) -> (f2.eval)) ∧ (¬ (f1.eval) → (f2.eval))
+          ((f1.eval) -> (f2.eval)) ∧ (¬ (f1.eval) → (f3.eval))
 
         /- formula algebraic comparison operator -/
         | .algebraic_leq z1 z2 => (z1.eval) <= (z2.eval)
@@ -496,7 +497,7 @@ mutual
         | .neq r1 r2 => (r1.eval) ≢  (r2.eval)
 
         | @FormulaTerm.bind
-            R _ _ rt parameter_count quantor_type _ _ function =>
+            R _ _ rt parameter_count quantor_type _ _ _ function =>
             let new_function :=
               (fun (pv : Vector (Rel rt) parameter_count) =>
                 (function.eval) pv)
