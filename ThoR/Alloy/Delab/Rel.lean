@@ -35,16 +35,16 @@ def unexpTypedRel : Unexpander
 @[app_unexpander ThoR.Rel.constant.univ]
 def unexpTypedRelConstantUniv : Unexpander
   | `($_ $_) =>
-    `([alloy' | $(mkIdent `univ):delaborator_body])
+    `([alloy' | univ])
 
   | _ => throw Unit.unit
 
 @[app_unexpander ThoR.Rel.constant.none]
 def unexpTypedRelConstantNone : Unexpander
-  | `($_ $_) => `([alloy' | $(mkIdent `none):delaborator_body])
+  | `($_ $_) => `([alloy' | none])
   | _ => throw Unit.unit
 
 @[app_unexpander ThoR.Rel.constant.iden]
 def unexpTypedRelConstantIden : Unexpander
-  | `($_ $_) => `([alloy' | $(mkIdent `iden):delaborator_body])
+  | `($_ $_) => `([alloy' | iden])
   | _ => throw Unit.unit

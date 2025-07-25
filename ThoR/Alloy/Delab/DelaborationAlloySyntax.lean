@@ -103,6 +103,10 @@ namespace Alloy
   /--equivalent-/
   syntax delaborator_body "<=>" delaborator_body : delaborator_body
 
+  /-Constants-/
+  syntax "univ" : delaborator_body
+  syntax "iden" : delaborator_body
+  syntax "none" : delaborator_body
 
   syntax "pred" ident delaborator_body+ : delaborator_body
   syntax "fun" ident delaborator_body+ : delaborator_body
