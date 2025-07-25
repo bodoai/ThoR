@@ -8,7 +8,7 @@ variable (I : Type) [ThoR.TupleSet I]
 instance : ThoR.TupleSet I := by sorry
 variable (t : ThoR.RelType I n)
 
-#check FormulaTerm.pred
+#check PredBind.pred
           (λ (parameter_vector : (Vector (ThoR.Rel t) 2)) => FormulaTerm.eq
               (expression1 := ExpressionTerm.toExpr (parameter_vector.get 0))
               (expression2 := ExpressionTerm.toExpr (parameter_vector.get 0)) )
@@ -18,7 +18,7 @@ variable (t : ThoR.RelType I n)
         true
         #["x", "y"].toVector
         "type"
-        (FormulaTerm.pred
+        (PredBind.pred
           (λ (parameter_vector : (Vector (ThoR.Rel t) 2)) => FormulaTerm.eq
               (expression1 := ExpressionTerm.toExpr (parameter_vector.get 0))
               (expression2 := ExpressionTerm.toExpr (parameter_vector.get 0)) )
@@ -31,7 +31,7 @@ def  p1
         true
         #["x"].toVector
         "type"
-        (  FormulaTerm.pred
+        (  PredBind.pred
           (  fun  (  parameter_vector  : Vector.{0} (ThoR.Rel t) 1)
             =>
             (  FormulaTerm.eq
@@ -50,7 +50,7 @@ def  p1
         true
         #["x", "y"].toVector
         "type"
-        (  FormulaTerm.pred
+        (  PredBind.pred
           (  fun  (  parameter_vector  : Vector.{0} (ThoR.Rel t) 2)
             =>
             (  FormulaTerm.eq
@@ -67,7 +67,7 @@ theorem theorem1 : (p1 I t).eval = (p2 I t).eval := by
   unfold p1
   unfold p2
   unfold FormulaTerm.eval
-  unfold FormulaTerm.eval
+  unfold PredBind.eval
   simp only [quantify_predicate, Vector.get]
   simp
   apply Iff.intro

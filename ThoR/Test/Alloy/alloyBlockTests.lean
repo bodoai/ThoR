@@ -64,6 +64,8 @@ end
 
   variable  {  ThoR_TupleSet  :  Type  }  [  ThoR.TupleSet  ThoR_TupleSet  ]  [  x2_testing.vars  ThoR_TupleSet  ]
 
+   def  p1  {  ThoR_TupleSet  :  Type  }  [  ThoR.TupleSet  ThoR_TupleSet  ]  [  x2.vars  ThoR_TupleSet  ]  :=  (  ThoR.Semantics.Term.pred_def  "p1"  (  R  :=  ThoR_TupleSet  )  (  ThoR.Semantics.Term.formula  (  ThoR.Semantics.FormulaTerm.bind  Shared.quant.all  false  #[  "t"  ].toVector  "this_φ_B"  (  ThoR.Semantics.PredBind.pred  (  fun  (  parameter_vector_1  :  Vector  (  (  ThoR.Semantics.ExpressionTerm.global_rel_var  (  ∻  x2.vars.this_φ_B  )  "this_φ_B"  )  )  (  1  )  )  =>  (  ThoR.Semantics.FormulaTerm.some  (  R  :=  ThoR_TupleSet  )  (  ThoR.Semantics.ExpressionTerm.union  (  R  :=  ThoR_TupleSet  )  (  ThoR.Semantics.ExpressionTerm.local_rel_var  (  parameter_vector_1.get  0  )  "t"  )  (  ThoR.Semantics.ExpressionTerm.dotjoin  (  R  :=  ThoR_TupleSet  )  (  ThoR.Semantics.ExpressionTerm.global_rel_var  (  ∻  x2.vars.this_φ_B  )  "this_φ_B"  )  (  ThoR.Semantics.ExpressionTerm.global_rel_var  (  ∻  x2.vars.this_φ_A_ξ_r  )  "this_φ_A_ξ_r"  )  )  )  )  )  )  )  )  )
+
   def  p1_working_example
     {  ThoR_TupleSet  :  Type  }
     [  ThoR.TupleSet  ThoR_TupleSet  ]
@@ -80,10 +82,10 @@ end
             false
             #["y","x"].toVector
             "B"
-            (  ThoR.Semantics.FormulaTerm.pred
+            (  ThoR.Semantics.PredBind.pred
               (  fun  (  parameter_vector  :
                 (  Vector.{0}
-                  (  ThoR.Semantics.ExpressionTerm.global_rel_var.{0}
+                  (  ThoR.Semantics.ExpressionTerm.global_rel_var
                     ( name := "this_φ_B" )
                     ( r :=  ∻  x2_testing.vars.this_φ_B  )
                   )

@@ -750,7 +750,7 @@ def unexpFormulaTerm_bind : Unexpander
 
         let body :=
           match body with
-            | `(ThoR.Semantics.FormulaTerm.pred fun $_ ↦ [alloy'|$body]) => body
+            | `(ThoR.Semantics.PredBind.pred fun $_ ↦ [alloy'|$body]) => body
             | _ => unhygienicUnfolder `(delaborator_body | { $(mkIdent `Error) } )
 
         let bb :=

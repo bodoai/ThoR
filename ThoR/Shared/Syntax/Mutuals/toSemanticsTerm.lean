@@ -96,7 +96,7 @@ namespace Shared
             if !(pureNames.contains s) then
               return unhygienicUnfolder `(
                 (
-                  $(mkIdent ``ThoR.Semantics.ExpressionTerm.global_rel_var).{0}
+                  $(mkIdent ``ThoR.Semantics.ExpressionTerm.global_rel_var)
                   (∻ $(mkIdent s!"{blockName}.vars.{s}".toName))
                   $(Syntax.mkStrLit s)
                 )
@@ -111,7 +111,7 @@ namespace Shared
             if argNames.contains s then
               return unhygienicUnfolder `(
                 (
-                  $(mkIdent ``ThoR.Semantics.ExpressionTerm.local_rel_var).{0}
+                  $(mkIdent ``ThoR.Semantics.ExpressionTerm.local_rel_var)
                   ($(mkIdent s.toName))
                   $(Syntax.mkStrLit s) -- not needed here (but below)
                 )
@@ -131,7 +131,7 @@ namespace Shared
 
             return unhygienicUnfolder `(
                 (
-                  $(mkIdent ``ThoR.Semantics.ExpressionTerm.local_rel_var).{0}
+                  $(mkIdent ``ThoR.Semantics.ExpressionTerm.local_rel_var)
                   ($(mkIdent callIdent) $(indexNatLit))
                   $(Syntax.mkStrLit s) -- to delab the name
                 )
@@ -141,7 +141,7 @@ namespace Shared
             let snt := sn.representedNamespace.getId.toString
             return unhygienicUnfolder `(
               (
-                $(mkIdent ``ThoR.Semantics.ExpressionTerm.global_rel_var).{0}
+                $(mkIdent ``ThoR.Semantics.ExpressionTerm.global_rel_var)
                 (∻ $(mkIdent s!"{blockName}.vars.{snt}".toName))
                 $(Syntax.mkStrLit snt)
               )
@@ -816,7 +816,7 @@ namespace Shared
 
           let pred_applied :=
             unhygienicUnfolder `(
-              ($(mkIdent ``ThoR.Semantics.FormulaTerm.pred)
+              ($(mkIdent ``ThoR.Semantics.PredBind.pred)
                 (fun
                   ($parameter_vector_ident :
                     Vector

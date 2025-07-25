@@ -8,6 +8,7 @@ import ThoR.Shared.Syntax.quant
 
 namespace ThoR.Semantics
 
+  /-
   inductive TyTy : Type 1 where
     | isTy
     | isPred
@@ -38,273 +39,257 @@ namespace ThoR.Semantics
     | .formula => Prop
     | .function dom_rel_type ran => Rel dom_rel_type → ran.eval
     | .pred rel_type n => Vector (ThoR.Rel rel_type) n → Prop
+  -/
 
   mutual
     inductive AlgebraTerm
       {R : Type}
       [ThoR.TupleSet R]
-      : {tt : TyTy} → (ty : @Ty.{u} R _ tt) →
-        Type (u+1)
-        where
+      where
         /- algebra expression number -/
-        | number (z : ℤ) : AlgebraTerm .number -- may have to be from N
+        | number (z : ℤ) : AlgebraTerm -- may have to be from N
 
         /- algebra expression unary operation -/
-        | negation : AlgebraTerm .number → AlgebraTerm .number
+        | negation : AlgebraTerm → AlgebraTerm
 
         /- algebra expression binary operation -/
         | add
-          : AlgebraTerm .number →
-          AlgebraTerm .number →
-          AlgebraTerm .number
+          : AlgebraTerm →
+          AlgebraTerm →
+          AlgebraTerm
 
         | sub
-          : AlgebraTerm .number →
-          AlgebraTerm .number →
-          AlgebraTerm .number
+          : AlgebraTerm →
+          AlgebraTerm →
+          AlgebraTerm
 
         | mul
-          : AlgebraTerm .number →
-            AlgebraTerm .number →
-            AlgebraTerm .number
+          : AlgebraTerm →
+            AlgebraTerm →
+            AlgebraTerm
 
         | div
-          : AlgebraTerm .number →
-            AlgebraTerm .number →
-            AlgebraTerm .number
+          : AlgebraTerm  →
+            AlgebraTerm  →
+            AlgebraTerm
 
         | rem
-          : AlgebraTerm .number →
-            AlgebraTerm .number →
-            AlgebraTerm .number
+          : AlgebraTerm  →
+            AlgebraTerm  →
+            AlgebraTerm
 
         /- algebra expression card operation (rel operation)-/
         | card
           {n : ℕ}
           {t : RelType R n}
-          : ExpressionTerm (.expression t) →
-            AlgebraTerm .number
+          : ExpressionTerm t →
+            AlgebraTerm
 
     inductive ExpressionTerm
       {R : Type}
       [ThoR.TupleSet R]
-      : {tt : TyTy} → (ty : @Ty.{u} R _ tt) →
-        Type (u+1)
-        where
-        | bracket : ExpressionTerm ty → ExpressionTerm ty
+      : (RelType R n) → Type
+      where
+        | bracket : ExpressionTerm rt → ExpressionTerm rt
 
         | global_rel_var
-          {n : ℕ} {t : RelType R n}
-          (r : Rel t) (name : String): ExpressionTerm (.expression t)
+          {n : ℕ} {rt : RelType R n}
+          (r : Rel rt) (name : String): ExpressionTerm rt
 
         | local_rel_var
-          {n : ℕ} {t : RelType R n}
-          (r : Rel t) (name : String): ExpressionTerm (.expression t)
+          {n : ℕ} {rt : RelType R n}
+          (r : Rel rt) (name : String): ExpressionTerm rt
 
         | toExpr
-          {n : ℕ} {t : ThoR.RelType R n}
-          (r : ThoR.Rel t) : ExpressionTerm (.expression t)
-
+          {n : ℕ} {rt : ThoR.RelType R n}
+          (r : ThoR.Rel rt) : ExpressionTerm rt
         /- binary expression operators -/
         | union
           {n : ℕ}
-          {t1 t2 : RelType R n}
-          : ExpressionTerm (.expression t1) →
-            ExpressionTerm (.expression t2) →
-            ExpressionTerm (.expression (t1 + t2))
+          {rt1 rt2 : RelType R n}
+          : ExpressionTerm rt1 →
+            ExpressionTerm rt2 →
+            ExpressionTerm (rt1 + rt2)
 
         | intersect
           {n : ℕ}
-          {t1 t2 : RelType R n}
-          : ExpressionTerm (.expression t1) →
-            ExpressionTerm (.expression t2) →
-            ExpressionTerm (.expression (t1 & t2))
+          {rt1 rt2 : RelType R n}
+          : ExpressionTerm rt1 →
+            ExpressionTerm rt2 →
+            ExpressionTerm (rt1 & rt2)
 
         | difference
           {n : ℕ}
-          {t1 t2 : RelType R n}
-          : ExpressionTerm (.expression t1) →
-            ExpressionTerm (.expression t2) →
-            ExpressionTerm (.expression (t1 - t2))
+          {rt1 rt2 : RelType R n}
+          : ExpressionTerm rt1 →
+            ExpressionTerm rt2 →
+            ExpressionTerm (rt1 - rt2)
 
         | overwrite
           {n : ℕ}
-          {t1 t2 : RelType R n}
-          : ExpressionTerm (.expression t1) →
-            ExpressionTerm (.expression t2) →
-            ExpressionTerm (.expression (t1 ++ t2))
+          {rt1 rt2 : RelType R n}
+          : ExpressionTerm rt1 →
+            ExpressionTerm rt2 →
+            ExpressionTerm (rt1 ++ rt2)
 
         | domain_restriction
           {n : ℕ}
-          {t1 : RelType R 1}
-          {t2 : RelType R n}
-          : ExpressionTerm (.expression t1) →
-            ExpressionTerm (.expression t2) →
-            ExpressionTerm (.expression (t1 <: t2))
+          {rt1 : RelType R 1}
+          {rt2 : RelType R n}
+          : ExpressionTerm rt1 →
+            ExpressionTerm rt2 →
+            ExpressionTerm (rt1 <: rt2)
 
         | range_restriction
           {n : ℕ}
-          {t1 : RelType R n}
-          {t2 : RelType R 1}
-          : ExpressionTerm (.expression t1) →
-            ExpressionTerm (.expression t2) →
-            ExpressionTerm (.expression (t1 :> t2))
+          {rt1 : RelType R n}
+          {rt2 : RelType R 1}
+          : ExpressionTerm rt1 →
+            ExpressionTerm rt2 →
+            ExpressionTerm (rt1 :> rt2)
 
         | dotjoin
           {n m : ℕ}
-          {t1 : RelType R (n+1)}
-          {t2 : RelType R (m+2)}
-          : ExpressionTerm (.expression t1) →
-            ExpressionTerm (.expression t2) →
-            ExpressionTerm (.expression (t1 ⋈ t2))
+          {rt1 : RelType R (n+1)}
+          {rt2 : RelType R (m+2)}
+          : ExpressionTerm rt1 →
+            ExpressionTerm rt2 →
+            ExpressionTerm (rt1 ⋈ rt2)
 
         /- unary expression operators -/
         | transclos
-          {t : RelType R 2}
-          : ExpressionTerm (.expression t) →
-            ExpressionTerm (.expression (^ t))
+          {rt : RelType R 2}
+          : ExpressionTerm rt →
+            ExpressionTerm (^rt)
 
         | reflexive_closure
-          {t : RelType R 2}
-          : ExpressionTerm (.expression t) →
-            ExpressionTerm (.expression (* t))
+          {rt : RelType R 2}
+          : ExpressionTerm rt  →
+            ExpressionTerm (* rt)
 
         | transposition
-          {t : RelType R 2}
-          : ExpressionTerm (.expression t) →
-            ExpressionTerm (.expression (~ t))
+          {rt : RelType R 2}
+          : ExpressionTerm rt →
+            ExpressionTerm (~ rt)
 
         /- expression if else -/
         | if_then_else
           {n : ℕ}
-          {t1 t2 : RelType R n}
-          : FormulaTerm .formula →
-            ExpressionTerm (.expression t1) →
-            ExpressionTerm (.expression t2) →
-            ExpressionTerm (.expression (RelType.ifThenElse t1 t2))
+          {rt1 rt2 : RelType R n}
+          : FormulaTerm →
+            ExpressionTerm rt1 →
+            ExpressionTerm  rt2 →
+            ExpressionTerm (RelType.ifThenElse rt1 rt2)
 
     inductive FormulaTerm
     {R : Type}
     [ThoR.TupleSet R]
-    : {tt : TyTy} → (ty : @Ty.{u} R _ tt) →
-      Type (u+1)
-      where
-      | bracket : FormulaTerm ty → FormulaTerm ty
+    where
+      | bracket : FormulaTerm → FormulaTerm
 
       /- formula unary rel bool operator-/
       | no
         {n : ℕ}
-        {t : RelType R n}
-        : ExpressionTerm (.expression t) →
-          FormulaTerm .formula
+        {rt : RelType R n}
+        : ExpressionTerm rt →
+          FormulaTerm
 
       | one
         {n : ℕ}
-        {t : RelType R n}
-        : ExpressionTerm (.expression t) →
-          FormulaTerm .formula
+        {rt : RelType R n}
+        : ExpressionTerm rt →
+          FormulaTerm
 
       | lone
         {n : ℕ}
-        {t : RelType R n}
-        : ExpressionTerm (.expression t) →
-          FormulaTerm .formula
+        {rt : RelType R n}
+        : ExpressionTerm rt →
+          FormulaTerm
 
       | some
         {n : ℕ}
-        {t : RelType R n}
-        : ExpressionTerm (.expression t) →
-          FormulaTerm .formula
+        {rt : RelType R n}
+        : ExpressionTerm rt →
+          FormulaTerm
 
       /- formula unary logic operator -/
-      | not : FormulaTerm .formula → FormulaTerm .formula
+      | not : FormulaTerm → FormulaTerm
 
       /- formula binary logic operator -/
       | or
-        : FormulaTerm .formula →
-          FormulaTerm .formula →
-          FormulaTerm .formula
+        : FormulaTerm  →
+          FormulaTerm  →
+          FormulaTerm
 
       | and
-        : FormulaTerm .formula →
-          FormulaTerm .formula →
-          FormulaTerm .formula
+        : FormulaTerm  →
+          FormulaTerm  →
+          FormulaTerm
 
       | implication
-        : FormulaTerm .formula →
-          FormulaTerm .formula →
-          FormulaTerm .formula
+        : FormulaTerm  →
+          FormulaTerm  →
+          FormulaTerm
 
       | equivalent
-        : FormulaTerm .formula →
-          FormulaTerm .formula →
-          FormulaTerm .formula
+        : FormulaTerm  →
+          FormulaTerm  →
+          FormulaTerm
 
       /- formula if else-/
       | f_if_then_else
-        : FormulaTerm .formula →
-          FormulaTerm .formula →
-          FormulaTerm .formula →
-          FormulaTerm .formula
+        : FormulaTerm  →
+          FormulaTerm  →
+          FormulaTerm  →
+          FormulaTerm
 
       /- formula algebraic comparison operator -/
       | algebraic_leq
-        : AlgebraTerm (R := R) .number →
-          AlgebraTerm (R := R) .number →
-          FormulaTerm .formula
+        : AlgebraTerm   →
+          AlgebraTerm  →
+          FormulaTerm
 
       | algebraic_geq
-        : AlgebraTerm (R := R) .number →
-          AlgebraTerm (R := R) .number →
-          FormulaTerm .formula
+        : AlgebraTerm  →
+          AlgebraTerm  →
+          FormulaTerm
 
       | algebraic_eq
-        : AlgebraTerm (R := R) .number →
-          AlgebraTerm (R := R) .number →
-          FormulaTerm .formula
+        : AlgebraTerm  →
+          AlgebraTerm  →
+          FormulaTerm
 
       | algebraic_lt
-        : AlgebraTerm (R := R) .number →
-          AlgebraTerm (R := R) .number →
-          FormulaTerm .formula
+        : AlgebraTerm  →
+          AlgebraTerm  →
+          FormulaTerm
 
       | algebraic_gt
-        : AlgebraTerm (R := R) .number →
-          AlgebraTerm (R := R) .number →
-          FormulaTerm .formula
+        : AlgebraTerm  →
+          AlgebraTerm  →
+          FormulaTerm
 
       /- formula relation comparison operation -/
       | in
         {n : ℕ}
-        {t1 t2 : RelType R n}
-        : (expression1 : ExpressionTerm (.expression t1)) →
-          (expression2 : ExpressionTerm (.expression t2)) →
-          FormulaTerm .formula
+        {rt1 rt2 : RelType R n}
+        : (expression1 : ExpressionTerm rt1) →
+          (expression2 : ExpressionTerm rt2) →
+          FormulaTerm
 
       | eq
         {n : ℕ}
-        {t1 t2 : ThoR.RelType R n}
-        : (expression1 : ExpressionTerm (.expression t1)) →
-          (expression2 : ExpressionTerm (.expression t2)) →
-          FormulaTerm .formula
+        {rt1 rt2 : ThoR.RelType R n}
+        : (expression1 : ExpressionTerm rt1) →
+          (expression2 : ExpressionTerm rt2) →
+          FormulaTerm
 
       | neq
         {n : ℕ}
-        {t1 t2 : RelType R n}
-        : (expression1 : ExpressionTerm (.expression t1)) →
-          (expression2 : ExpressionTerm (.expression t2)) →
-          FormulaTerm .formula
-
-      | pred
-        {arity : Nat}
-        {rel_type : ThoR.RelType R arity}
-        {parameter_count : Nat}
-        :
-        (function :
-          (Vector (ThoR.Rel rel_type) parameter_count) →
-          FormulaTerm .formula
-        ) →
-        FormulaTerm (.pred rel_type parameter_count)
+        {rt1 rt2 : RelType R n}
+        : (expression1 : ExpressionTerm rt1) →
+          (expression2 : ExpressionTerm rt2) →
+          FormulaTerm
 
       | bind
         {arity : Nat}
@@ -314,21 +299,36 @@ namespace ThoR.Semantics
         (disj : Bool)
         (parameter_names : Vector String parameter_count)
         (parameter_type : String)
-        : (pred : FormulaTerm (.pred rel_type parameter_count) ) →
-          FormulaTerm .formula
+        : (pred : PredBind (R := R) arity rel_type parameter_count) →
+          FormulaTerm
 
+  /- Maybe there is a better name -/
+  inductive PredBind
+    {R : Type}
+    [ThoR.TupleSet R] :
+    (arity : Nat) → ThoR.RelType R arity → (parameter_count : Nat) → Type
+    where
+      | pred
+        {arity : Nat}
+        {rel_type : ThoR.RelType R arity}
+        {parameter_count : Nat}
+        :
+        (function :
+          (Vector (ThoR.Rel rel_type) parameter_count) →
+          FormulaTerm (R := R)
+        ) →
+        PredBind arity rel_type parameter_count
   end
+
 
   inductive Term
     {R : Type}
     [ThoR.TupleSet R]
-    : {tt : TyTy} →
-      (ty : @Ty.{u} R _ tt) →
-      Type (u+1)
+    : (TargetType : Type) → Type 1
     where
 
-      | expr : ExpressionTerm ty → Term ty
-      | formula : FormulaTerm ty → Term ty
+      | expr arity (rel_type : RelType R arity) : ExpressionTerm rel_type → Term (Rel rel_type)
+      | formula : FormulaTerm (R:= R)  → Term Prop
 
       /--bracket definition-/
       | bracket : Term ty → Term ty
@@ -340,15 +340,14 @@ namespace ThoR.Semantics
 
       /- TODO: CHeck if lam and app are correct -/
       /- function abstraction -/
-      | lam (t : RelType R n)
-        : (Rel t → Term ran) →
-          Term (.function t ran)
+      | lam (rel_type : RelType R n)
+        : (Rel rel_type → Term ty) → Term (Rel rel_type → ty)
 
       /- function application -/
-      | app
-        : Term (.function t ran) →
-          Term (.expression t) →
-          Term ran
+      | app {t : RelType R n}
+        : (f : Rel t → Term ty) →
+          (r : Term (Rel t)) →
+          Term ty
 
 def Vector0 {T : Type} : Vector T 0:= #[].toVector
 
@@ -409,14 +408,31 @@ def quantify_predicate
 
       quantify_predicate part quant_type
 
+  -- def PredBind.ga
+  --     {R : Type}
+  --     [ThoR.TupleSet R]
+  --     (t : @PredBind R _)
+  --     : Nat :=
+  --     match t with
+  --       | @PredBind.pred R _ arity _ _ _ =>
+  --         arity
+
+  --   def PredBind.grt
+  --     {R : Type}
+  --     [ThoR.TupleSet R]
+  --     (t : @PredBind R _)
+  --     : RelType R (PredBind.ga t) :=
+  --     match t with
+  --       | @PredBind.pred R _ _ rel_type _ _ =>
+  --         rel_type
+
 mutual
   def ExpressionTerm.eval
     {R : Type}
     [ThoR.TupleSet R]
-    {tt : TyTy}
-    {ty : @Ty R _ tt}
-    (t : @ExpressionTerm R _ _ ty)
-    : ty.eval :=
+    {rt : RelType R n}
+    (t : @ExpressionTerm R _ n rt)
+    : ThoR.Rel rt :=
       match t with
       | .bracket t => t.eval
 
@@ -445,10 +461,8 @@ mutual
     def FormulaTerm.eval
       {R : Type}
       [ThoR.TupleSet R]
-      {tt : TyTy}
-      {ty : @Ty R _ tt}
-      (t : @FormulaTerm R _ _ ty)
-      : ty.eval :=
+      (t : @FormulaTerm R _)
+      : Prop :=
       match t with
         | .bracket t => t.eval
 
@@ -469,7 +483,7 @@ mutual
 
         /- formula if else -/
         | .f_if_then_else f1 f2 f3 =>
-          ((f1.eval) -> (f2.eval)) ∧ (¬ (f1.eval) → (f2.eval))
+          ((f1.eval) -> (f2.eval)) ∧ (¬ (f1.eval) → (f3.eval))
 
         /- formula algebraic comparison operator -/
         | .algebraic_leq z1 z2 => (z1.eval) <= (z2.eval)
@@ -483,27 +497,34 @@ mutual
         | .eq r1 r2 => (r1.eval) ≡ (r2.eval)
         | .neq r1 r2 => (r1.eval) ≢  (r2.eval)
 
-        | @FormulaTerm.pred R _ arity rel_type parameter_count function =>
-        fun (x : Vector _ parameter_count ) =>
-        (function x).eval
-
         | @FormulaTerm.bind
-            R _ _ _ parameter_count quantor_type _ _ _ function =>
+            R _ _ rt parameter_count quantor_type _ _ _ function =>
             let new_function :=
-              (fun (pv : Vector _ parameter_count) =>
+              (fun (pv : Vector (Rel rt) parameter_count) =>
                 (function.eval) pv)
 
             let result := quantify_predicate new_function quantor_type
 
           result
 
+    def PredBind.eval
+      {R : Type}
+      [ThoR.TupleSet R]
+      {arity : Nat}
+      {rel_type : RelType R arity}
+      {parameter_count : Nat}
+      (t : PredBind arity rel_type parameter_count)
+      : Vector (Rel rel_type) parameter_count → Prop :=
+      match t with
+        | @PredBind.pred R _ _ _ _ function =>
+          fun (x : Vector _ _ ) =>
+            (function x).eval
+
     def AlgebraTerm.eval
       {R : Type}
       [ThoR.TupleSet R]
-      {tt : TyTy}
-      {ty : @Ty R _ tt}
-      (t : @AlgebraTerm R _ _ ty)
-      : ty.eval :=
+      (t : @AlgebraTerm R _)
+      : ℤ :=
       match t with
         | .number z => z
 
@@ -525,14 +546,14 @@ mutual
   def Term.eval
     {R : Type}
     [ThoR.TupleSet R]
-    {tt : TyTy}
-    {ty : @Ty R _ tt}
-    (t : @Term R _ _ ty)
-    : ty.eval :=
+    {ty : Type}
+    (t : @Term R _ ty)
+    : ty
+    :=
     match t with
     | .bracket t => t.eval
 
-    | .expr t => t.eval
+    | .expr arity rel_type t => t.eval
 
     | .formula t => t.eval
 
@@ -541,68 +562,50 @@ mutual
     | .fun_def _ t => t.eval
 
     /- TODO: Check if lam and app correct -/
-    | @Term.lam R _ _ _ t f => λ (x : Rel t) => (f x).eval
-    | .app f r => f.eval r.eval
+    | Term.lam rel_type f => (λ (x : Rel rel_type) => (f x).eval)
+    | .app f r => (f (r.eval)).eval
 
   /- Coersions -/
   /- general eval -/
   instance
-    {R : Type} [TupleSet R]
-    {tyty : TyTy}
-    {ty : @Ty R _ tyty}
-    (t : @Term R _ tyty ty)
+    {R : Type} [TupleSet R] {ty : Type}
+    (t : Term (R:=R) ty)
     :
-    CoeDep _ t ty.eval where
+    CoeDep _ t ty where
       coe := t.eval
 
   /- Expression to Term -/
   instance
     {R : Type} [TupleSet R]
-    (tyty : TyTy)
-    (ty : Ty tyty (R := R))
-    (t : @ExpressionTerm R _ tyty ty)
+    rel_type
+    (t : @ExpressionTerm R _ n rel_type)
     :
     CoeDep
       _
       t
-      (@Term R _ tyty ty)
+      (Term (R:=R) (Rel (R:=R) rel_type))
     where
-      coe := Term.expr t
+      coe := Term.expr n rel_type t
 
-  /- Formular to Term -/
+  /- Formula to Term -/
   instance
     {R : Type} [TupleSet R]
-    (tyty : TyTy)
-    (ty : Ty tyty (R := R))
-    (t : @FormulaTerm R _ tyty ty)
+    (t : @FormulaTerm R _ )
     :
     CoeDep
       _
       t
-      (@Term R _ tyty ty)
+      (@Term R _ Prop)
     where
       coe := Term.formula t
 
-  /- Formular to Term -/
-  instance
-    {R : Type} [TupleSet R]
-    (tyty : TyTy)
-    (ty : Ty tyty (R := R))
-    (t : @FormulaTerm R _ tyty ty)
-    :
-    CoeDep
-      _
-      t
-      (@Term R _ tyty ty)
-    where
-      coe := Term.formula t
 
   /- Term to Type -/
   instance
     {R : Type} [TupleSet R]
     {n : Nat}
     {rel_type : RelType R n}
-    (t : @Term R _ (TyTy.isTy) (Ty.expression rel_type))
+    (t : Term (R:=R) (Rel rel_type))
     :
     CoeDep
       _
@@ -616,24 +619,13 @@ mutual
     {R : Type} [TupleSet R]
     {n : Nat}
     {rel_type : RelType R n}
-    (t : @ExpressionTerm R _ (TyTy.isTy) (Ty.expression rel_type))
+    (t : @ExpressionTerm R _ n rel_type)
     :
     CoeDep
       _
       t
       Type
     where
-      coe := Term.expr t
-
-  instance
-    {R : Type} [TupleSet R]
-    (t : @Term R _ (TyTy.isTy) (Ty.formula))
-    :
-    CoeDep
-      _
-      t
-      Prop
-    where
-      coe := t.eval
+      coe := (Term.expr n rel_type t)
 
 end ThoR.Semantics
