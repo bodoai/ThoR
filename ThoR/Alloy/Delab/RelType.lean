@@ -6,6 +6,7 @@ Authors: s. file CONTRIBUTORS
 
 import Lean
 import ThoR.Relation.Elab
+import ThoR.Alloy.Delab.DelaborationAlloySyntax
 import ThoR.Alloy.Delab.DelaborationService
 
 open Lean PrettyPrinter Delaborator SubExpr
@@ -15,9 +16,7 @@ def unexpRelTypeConsSimple : Unexpander
   | `($_ $m $s:ident) =>
     let new_s :=
       delaborationService.switch_thoR_representation_to_alloy_representation s
-    `($m $new_s)
-
-  | `($_ $m $s) => `($m XX $s)
+    `($m [alloy' | $new_s.toSyntax])
 
   | _ => throw Unit.unit
 
@@ -33,7 +32,7 @@ def unexpRelTypeMkUnaryRel : Unexpander
   | `($_ $m $r:ident) =>
     let new_r :=
       delaborationService.switch_thoR_representation_to_alloy_representation r
-    `($m $new_r)
+    `($m [alloy' | $new_r.toSyntax])
 
   | `($_ $m $r) =>  `($m $r)
 
@@ -44,6 +43,6 @@ def unexpRelTypeMkRel : Unexpander
   | `($_ $r:ident) =>
     let new_r :=
       delaborationService.switch_thoR_representation_to_alloy_representation r
-    `($new_r )
+    `([alloy' | $new_r.toSyntax] )
   | `($_ $r) => `($r)
   | _ => throw Unit.unit

@@ -7,6 +7,7 @@ Authors: s. file CONTRIBUTORS
 import Lean
 import ThoR.Semantics.Semantics
 import ThoR.Alloy.Delab.DelaborationAlloySyntax
+import ThoR.Alloy.Delab.DelaborationService
 
 import ThoR.Alloy.UnhygienicUnfolder
 
@@ -20,9 +21,12 @@ def unexpTerm_local_rel_var : Unexpander
   | `($_ $_ $name:str) => do
 
     let name_ident := mkIdent name.getString.toName
+    let optimizedName :=
+      delaborationService.switch_thoR_representation_to_alloy_representation  name_ident
+    let optimizedName_syntax := optimizedName.toSyntax
 
     let bb := unhygienicUnfolder
-      `(delaborator_body | $name_ident:ident )
+      `(delaborator_body | $optimizedName_syntax )
 
     `([alloy' | $bb:delaborator_body ])
 
@@ -32,9 +36,12 @@ def unexpTerm_local_rel_var : Unexpander
 def unexpTerm_global_rel_var : Unexpander
   | `($_ $_:ident $name:str) => do
     let name_ident := mkIdent name.getString.toName
+    let optimizedName :=
+      delaborationService.switch_thoR_representation_to_alloy_representation  name_ident
+    let optimizedName_syntax := optimizedName.toSyntax
 
     let bb := unhygienicUnfolder
-      `(delaborator_body | $name_ident:ident )
+      `(delaborator_body | $optimizedName_syntax )
 
     `([alloy' | $bb:delaborator_body ])
 
@@ -736,6 +743,10 @@ def unexpFormulaTerm_bind : Unexpander
       | Except.error _ => throw Unit.unit
       | Except.ok bindCollection =>
 
+        let type_name :=
+          delaborationService.switch_thoR_representation_to_alloy_representation
+            (mkIdent type.getString.toName)
+
         let names : TSyntax `delabArg := match names with
           | `(#[ $[$str_names:str],* ].toVector) =>
               let argBodies :=
@@ -744,7 +755,7 @@ def unexpFormulaTerm_bind : Unexpander
 
               unhygienicUnfolder
                 `(delabArg |
-                  $[$(argBodies)],* : $(mkIdent type.getString.toName))
+                  $[$(argBodies)],* : $(type_name.toSyntax))
 
           | _ => default
 

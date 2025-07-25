@@ -28,7 +28,7 @@ def unexpTypedRel : Unexpander
   | `($_ $t:ident) =>
     let new_t :=
       delaborationService.switch_thoR_representation_to_alloy_representation t
-    `($new_t)
+    `([alloy' | $new_t.toSyntax ] )
   | `($_ $t) => `($t)
   | _ => throw Unit.unit
 

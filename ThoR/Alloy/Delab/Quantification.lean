@@ -7,6 +7,7 @@ Authors: s. file CONTRIBUTORS
 import ThoR.Relation.Quantification
 import ThoR.Relation.Rel
 
+import ThoR.Alloy.Delab.DelaborationAlloySyntax
 import ThoR.Alloy.Delab.DelaborationService
 import ThoR.Shared.Syntax.Formula.formula
 
@@ -46,7 +47,7 @@ def delab2 : Delab := do
     | `(term | $type_as_ident:ident) =>
       let newType :=
         delaborationService.switch_thoR_representation_to_alloy_representation type_as_ident
-      `($(mkIdent name) $(newType) $body)
+      `($(mkIdent name) [alloy' | $newType.toSyntax] $body)
     | _ => `($(mkIdent name) $(type) $body)
 
 -- TODO How can we get rid of the (obsolete?) syntax
@@ -95,7 +96,7 @@ def delab3 : Delab := do
     | `(term | $type_as_ident:ident) =>
       let newType :=
         delaborationService.switch_thoR_representation_to_alloy_representation type_as_ident
-      `(term | $(q.toSyntax):quant $(mkIdent name) : $(newType) | $(body))
+      `(term | $(q.toSyntax):quant $(mkIdent name) : [alloy' | $newType.toSyntax] | $(body))
     | _ => `(term | $(q.toSyntax):quant $(mkIdent name) : $(type) | $(body))
 
 @[app_unexpander ThoR.Quantification.Formula.eval]
@@ -164,7 +165,7 @@ def delab4 : Delab := do
     | `(term | $type_as_ident:ident) =>
       let newType :=
         delaborationService.switch_thoR_representation_to_alloy_representation type_as_ident
-      `(term |  $(q.toSyntax):quant $[ $namesArray ],* : $(newType) | $(body))
+      `(term |  $(q.toSyntax):quant $[ $namesArray ],* : [alloy' | $newType.toSyntax] | $(body))
     | _ => `(term |  $(q.toSyntax):quant $[ $namesArray ],* : $(type) | $(body))
 
 @[delab app.ThoR.Quantification.Formula.disj]
@@ -187,5 +188,5 @@ def delab5 : Delab := do
     | `(term | $type_as_ident:ident) =>
       let newType :=
         delaborationService.switch_thoR_representation_to_alloy_representation type_as_ident
-      `(term |  $(q.toSyntax):quant disj $[ $namesArray ],* : $(newType) | $(body))
+      `(term |  $(q.toSyntax):quant disj $[ $namesArray ],* : [alloy' | $newType.toSyntax] | $(body))
     | _ => `(term |  $(q.toSyntax):quant disj $[ $namesArray ],* : $(type) | $(body))
