@@ -934,7 +934,7 @@ namespace Shared
 
           let mut bodyTerm := `(term | ($(bodyTermList[0]!)))
           for elem in bodyTermList do
-            bodyTerm := `(bodyTerm ∧ ($(elem)))
+            bodyTerm := `($(unhygienicUnfolder bodyTerm) ∧ ($(elem)))
 
           let letTerm : Term := unhygienicUnfolder
             `(let $(nameT):ident := $(valueT):term; $(unhygienicUnfolder bodyTerm))
