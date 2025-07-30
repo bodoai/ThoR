@@ -38,6 +38,10 @@ end
     x = (x + y)
   }
 
+  pred p3 {
+    let x = A | {x = x}
+  }
+
 end
 
 #create x2
@@ -112,6 +116,34 @@ end
         )
       )
     )
+
+     def  p3
+      {  ThoR_TupleSet  :  Type  }
+      [  ThoR.TupleSet  ThoR_TupleSet  ]
+      [  x2.vars  ThoR_TupleSet  ]  :=
+      (
+        ThoR.Semantics.Term.pred_def
+          "p3"
+          ThoR.Semantics.Term.let_app
+            (
+            ThoR.Semantics.Term.lam
+              ( λ x : x2.preds.A =>
+                (
+                  (
+                    ThoR.Semantics.FormulaTerm.eq
+                      (  ThoR.Semantics.ExpressionTerm.local_rel_var  (  x  )  "x"  )
+                      (  ThoR.Semantics.ExpressionTerm.local_rel_var  (  x  )  "x"  )
+                  ) ∧
+                  (
+                    ThoR.Semantics.FormulaTerm.eq
+                      (  ThoR.Semantics.ExpressionTerm.local_rel_var  (  x  )  "x"  )
+                      (  ThoR.Semantics.ExpressionTerm.local_rel_var  (  x  )  "x"  )
+                  )
+                )
+              )
+            )
+            x2.preds.A
+      )
 
   end  x2_testing.preds
 
