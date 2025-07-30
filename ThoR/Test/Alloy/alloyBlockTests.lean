@@ -124,25 +124,25 @@ end
       (
         ThoR.Semantics.Term.pred_def
           "p3"
-          ThoR.Semantics.Term.let_app
+          ((ThoR.Semantics.Term.let_app
             (
             ThoR.Semantics.Term.lam
-              ( λ x : x2.preds.A =>
+              ( λ x : (x2_testing.vars.A) => -- TODO: Fix type
                 (
                   (
                     ThoR.Semantics.FormulaTerm.eq
                       (  ThoR.Semantics.ExpressionTerm.local_rel_var  (  x  )  "x"  )
                       (  ThoR.Semantics.ExpressionTerm.local_rel_var  (  x  )  "x"  )
-                  ) ∧
+                  ).eval ∧
                   (
                     ThoR.Semantics.FormulaTerm.eq
                       (  ThoR.Semantics.ExpressionTerm.local_rel_var  (  x  )  "x"  )
                       (  ThoR.Semantics.ExpressionTerm.local_rel_var  (  x  )  "x"  )
-                  )
+                  ).eval
                 )
               )
+            ) (x2_testing.vars.A) )
             )
-            x2.preds.A
       )
 
   end  x2_testing.preds
