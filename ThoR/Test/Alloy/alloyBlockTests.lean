@@ -127,7 +127,7 @@ end
           ((ThoR.Semantics.Term.let_app
             (
             ThoR.Semantics.Term.lam
-              ( λ x : (x2_testing.vars.A) => -- TODO: Fix type
+              ( λ x : (  ThoR.Semantics.ExpressionTerm.global_rel_var  (  ∻  x2.vars.A  )  "this_φ_B"  ) => -- TODO: Fix type
                 (
                   (
                     ThoR.Semantics.FormulaTerm.eq
