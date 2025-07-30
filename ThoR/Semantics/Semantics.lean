@@ -340,11 +340,17 @@ namespace ThoR.Semantics
 
       /- TODO: CHeck if lam and app are correct -/
       /- function abstraction -/
-      | lam (rel_type : RelType R n)
+      | lam {n ty} (rel_type : RelType R n)
         : (Rel rel_type → Term ty) → Term (Rel rel_type → ty)
 
       /- function application -/
       | app {t : RelType R n}
+        : (f : Rel t → Term ty) →
+          (r : Term (Rel t)) →
+          Term ty
+
+      /- let application (using lam) -/
+      | let_app {t : RelType R n}
         : (f : Rel t → Term ty) →
           (r : Term (Rel t)) →
           Term ty
@@ -564,6 +570,9 @@ mutual
     /- TODO: Check if lam and app correct -/
     | Term.lam rel_type f => (λ (x : Rel rel_type) => (f x).eval)
     | .app f r => (f (r.eval)).eval
+
+    /- TODO: Check if practicable for let-/
+    | .let_app f r => (f (r.eval)).eval
 
   /- Coersions -/
   /- general eval -/

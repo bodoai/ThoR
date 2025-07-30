@@ -939,6 +939,25 @@ namespace Shared
           let letTerm : Term := unhygienicUnfolder
             `(let $(nameT):ident := $(valueT):term; $(unhygienicUnfolder bodyTerm))
 
+
+          /-TODO: Test ThoR.Semantics.Term.lam & let_app-/
+          let y : Term := unhygienicUnfolder
+            `(
+              (
+                $(mkIdent ``ThoR.Semantics.Term.lam)
+                  ($(mkIdent `R) := $(baseType.ident))
+                  ( λ ( $(nameT) : ($(valueT) : Type)) => $(unhygienicUnfolder bodyTerm) )
+              )
+            )
+
+          let x : Term := unhygienicUnfolder
+            `(
+              (
+                $(mkIdent ``ThoR.Semantics.Term.let_app)
+                  $y
+              )
+            )
+
           return letTerm
 
     /--
