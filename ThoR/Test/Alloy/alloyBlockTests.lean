@@ -117,6 +117,9 @@ end
       )
     )
 
+    def ThoR.Semantics.ExpressionTerm.getType {R : Type} [ThoR.TupleSet R]
+      {n : Nat} {rel_type : ThoR.RelType R n} (_ : ThoR.Semantics.ExpressionTerm rel_type) := ThoR.Rel rel_type
+
      def  p3
       {  ThoR_TupleSet  :  Type  }
       [  ThoR.TupleSet  ThoR_TupleSet  ]
@@ -127,7 +130,7 @@ end
           ((ThoR.Semantics.Term.let_app
             (
             ThoR.Semantics.Term.lam
-              ( λ x : (  ThoR.Semantics.ExpressionTerm.global_rel_var  (  ∻  x2.vars.A  )  "this_φ_B"  ) => -- TODO: Fix type
+              ( λ x : (ThoR.Semantics.ExpressionTerm.getType (  ThoR.Semantics.ExpressionTerm.global_rel_var  (  ∻  x2.vars.A  )  "this_φ_B"  )) => -- TODO: Fix type
                 (
                   (
                     ThoR.Semantics.FormulaTerm.eq
